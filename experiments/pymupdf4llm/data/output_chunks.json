@@ -1,0 +1,1212 @@
+[
+  {
+    "chunk_index": 1,
+    "content": "## Mahasiswa \n\n- ~~=e1)~~",
+    "chunk_parent": "Mahasiswa",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 1,
+      "end": 1
+    }
+  },
+  {
+    "chunk_index": 2,
+    "content": "## **DAFTAR ISI**",
+    "chunk_parent": "DAFTAR ISI",
+    "chunk_prev": null,
+    "chunk_next": 3,
+    "page": {
+      "start": 2,
+      "end": 2
+    }
+  },
+  {
+    "chunk_index": 3,
+    "content": "|**DAFTAR ISI**||\n|---|---|\n|DAFTAR ISI|i|\n|PKM-KC|1|\n|Pendahuluan|1|\n|Tujuan|2|\n|Ruang Lingkup|2|\n|Konsep Pelaksanaan Program|4|\n|Luaran|4|\n|Kriteria Pengusulan|6|\n|Sumber Dana Kegiatan|6|\n|Implementasi MBKM dan Pencapaian IKU|7|\n|Sistematika Penulisan Proposal|8|\n|Seleksi dan Penilaian Proposal|12|\n|Penilaian Kemajuan Pelaksanaan PKM (PKP2) dan Pelaporan|12|\n|Sistematika Laporan Kemajuan|13|\n|Sistematika Laporan Akhir|15|\n|Lampiran|17|\n|Lampiran 1. Format Jadwal Kegiatan|17|\n|Lampiran 2. Biodata Ketua dan Anggota|18|\n|Lampiran 3. Biodata Dosen Pendamping|19|\n|Lampiran 4. Format Justifikasi Anggaran Kegiatan (contoh)|20|\n|Lampiran 5. Susunan Tim Pengusul dan Pembagian Tugas|21|\n|Lampiran 6. Surat Pernyataan Ketua Tim Pengusul|22|\n|Lampiran 7. Format Penyusunan Rujukan dan Daftar Pustaka|23|\n|Lampiran 8. Formulir Penilaian Proposal|26|\n|Lampiran 9. Formulir Penilaian Laporan Kemajuan Pelaksanaan|27|\n|Lampiran 10. Formulir Penilaian PKP2 (Presentasi)|28|",
+    "chunk_parent": "DAFTAR ISI",
+    "chunk_prev": 2,
+    "chunk_next": 4,
+    "page": {
+      "start": 2,
+      "end": 2
+    }
+  },
+  {
+    "chunk_index": 4,
+    "content": "|Lampiran 9. Formulir Penilaian Laporan Kemajuan Pelaksanaan|27|\n|Lampiran 10. Formulir Penilaian PKP2 (Presentasi)|28|\n|Lampiran 11. Formulir Penilaian Laporan Akhir|29|",
+    "chunk_parent": "DAFTAR ISI",
+    "chunk_prev": 3,
+    "chunk_next": 5,
+    "page": {
+      "start": 2,
+      "end": 2
+    }
+  },
+  {
+    "chunk_index": 5,
+    "content": "1",
+    "chunk_parent": "DAFTAR ISI",
+    "chunk_prev": 4,
+    "chunk_next": null,
+    "page": {
+      "start": 2,
+      "end": 2
+    }
+  },
+  {
+    "chunk_index": 6,
+    "content": "## mw KK ON.",
+    "chunk_parent": "mw KK ON.",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 3,
+      "end": 3
+    }
+  },
+  {
+    "chunk_index": 7,
+    "content": "## **PKM-KC**",
+    "chunk_parent": "PKM-KC",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 3,
+      "end": 3
+    }
+  },
+  {
+    "chunk_index": 8,
+    "content": "## **Pendahuluan** \n\nPKM-KC merupakan wahana mahasiswa untuk mewujudkan ide konstruktif berbasis karsa dan nalar walaupun masih belum sampai pada tahap memberikan nilai fungsional yang sempurna dan atau kemanfaatan langsung bagi pihak lain. \n\nProduk PKM-KC harus sudah berada pada skala siap pakai dan fungsional atau minimal skala prototipe siap diuji coba. Dalam melaksanakan program ini tidak diperbolehkan  ada tahapan penelitian yang terkait dengan perancangan dan pengembangan produk. PKM-KC menekankan keaslian ide atau minimal modifikasi produk yang sudah ada dan bukan menggunakan atau menerapkan karya yang sudah ada. \n\nSebagai contoh pembuatan alat pengolah air limbah tekstil yang menggabungkan teknologi _growth biofilm_ dan _biofilter_ sarang tawon modifikasi.",
+    "chunk_parent": "Pendahuluan",
+    "chunk_prev": null,
+    "chunk_next": 9,
+    "page": {
+      "start": 3,
+      "end": 3
+    }
+  },
+  {
+    "chunk_index": 9,
+    "content": "Sebagai contoh pembuatan alat pengolah air limbah tekstil yang menggabungkan teknologi _growth biofilm_ dan _biofilter_ sarang tawon modifikasi. \n\nDalam meminimalisasikan akumulasi air limbah Industri tekstil Rahmadi _et al_ . (2022) memiliki ide rekayasa proses air limbah secara biologis untuk mengolah konsentrasi kontaminan yang tinggi dalam waktu singkat pada kondisi aliran yang dinamis. \n\nDalam merealisasikan ide tersebut mereka merancang satu unit kompak alat pengolah air limbah berbasis hybrid attached growth biofilm berupa _Rotating Biological Contactor_ (RBC) dan biofilter sarang tawon modifikasi. Modifikasi unit ini bertujuan untuk meningkatkan luas bidang pertumbuhan mikroorganisme sehingga diperoleh efisiensi penyisihan yang lebih tinggi.",
+    "chunk_parent": "Pendahuluan",
+    "chunk_prev": 8,
+    "chunk_next": 10,
+    "page": {
+      "start": 3,
+      "end": 3
+    }
+  },
+  {
+    "chunk_index": 10,
+    "content": "Prototipe alat yang diciptakan ini berhasil mengolah lebih banyak air limbah dalam waktu lebih singkat jika dibandingkan dengan unit pengolahan RBC konvensional. Efluen air limbah yang dihasilkan alat ini memenuhi baku mutu dan aman untuk dibuang ke lingkungan. \n\nGambar 1. Reaktor Pengolahan Limbah Cair Tekstil Berbasis Hybrid Attached Growth Biofilm Terintegrasi Arduino (Rahmadi _et al_ . (2022). \n\nGambar 1 merupakan contoh lain dari kegiatan PKM-KC. Dalam gambar tersebut terlihat perkembangan ide kreativitas dan inovasi yang diharapkan muncul dari mahasiswa untuk menghasilkan _vacuum cleaner_ yang lebih baik lagi dari segi iptek dalam wujud model, fungsi, desain dan manfaatnya. \n\n1 \n\nGambar 2. Perkembangan _vacuum cleaner_ dari tahun 1900 ke 2010 an \n\nBerdasarkan uraian di atas PKM-KC lebih menekankan pada kreativitas produk/prototipe yang akan dihasilkan, level teknologi, keterbaruan, metode pembuatan produk serta prediksi tingkat kemanfaatannya.",
+    "chunk_parent": "Pendahuluan",
+    "chunk_prev": 9,
+    "chunk_next": null,
+    "page": {
+      "start": 3,
+      "end": 4
+    }
+  },
+  {
+    "chunk_index": 11,
+    "content": "## **Tujuan** \n\nProgam ini dirancang untuk menumbuh kembangkan kreativitas dan inovasi mahasiswa berbasis iptek dalam upaya menghasilkan suatu produk baik itu berwujud sistem, desain, model/barang, prototipe, produk kesenian kontemporer, aplikasi, produk literasi atau jasa layanan yang bermanfaat bagi masyarakat luas, instansi pemerintah atau dunia usaha.",
+    "chunk_parent": "Tujuan",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 4,
+      "end": 4
+    }
+  },
+  {
+    "chunk_index": 12,
+    "content": "## **Ruang Lingkup** \n\nKegiatan dan produk PKM-KC meliputi semua bidang keilmuan dan disarankan sesuai atau relevan dengan kepakaran tim pengusul (mono atau multi disiplin ilmu). \n\nSumber inspirasi dalam PKM-KC antara lain: \n\n1. Hasil riset yang baru sampai tahap desain teknis dan belum menghasilkan prototipe atau lainnya yang siap diuji coba \n\n2. Solusi atas persoalan, kebutuhan atau tantangan yang dihadapi masyarakat, pemerintah, maupun dunia usaha. Jika tidak ditemukan hasil riset yang dapat dijadikan dasar kegiatan PKM-KC, maka riset aplikatif yang menghasilkan produk fungsional disetarakan dengan PKM-KC \n\n2 \n\n3. Pengembangan atau penyempurnaan fungsi produk yang ada dengan tetap memperhatikan kaidah-kaidah keilmuan yang relevan dengan menunjukkan di mana letak perbedaannya",
+    "chunk_parent": "Ruang Lingkup",
+    "chunk_prev": null,
+    "chunk_next": 13,
+    "page": {
+      "start": 4,
+      "end": 5
+    }
+  },
+  {
+    "chunk_index": 13,
+    "content": "Proses konstruksi ide PKM-KC dimulai dari hasil pengamatan persoalan, kebutuhan dan tantangan yang ada di masyarakat (fase inspirasi) yang akan menimbulkan ide mahasiswa untuk memecahkan permasalahan tersebut (fase konstrusi). Tahap akhir PKM-KC adalah Fase Implementasi di mana produk dapat difungsikan dan dinilai level kemanfaatannya. Dalam kasus tertentu, jika produk PKM-KC belum fungsional, maka paling tidak fase konstruksi sudah harus tercapai dan dilakukan uji coba (lihat Gambar 3.). \n\nGambar 3. Bagan alir proses konstruksi ide dalam PKM-KC \n\nProduk PKM-KC dapat menjadi landasan pengusulan dan pelaksanaan PKM-K, PKM-PM atau PKM-PI pada tahun-tahun berikutnya. \n\nKondisi kegiatan berikut tidak dapat dikategorikan sebagai PKM-KC: \n\n1. PKM-KC yang menghasilkan model siap uji tetapi belum mencapai skala 1:1 dan belum fungsional",
+    "chunk_parent": "Ruang Lingkup",
+    "chunk_prev": 12,
+    "chunk_next": 14,
+    "page": {
+      "start": 5,
+      "end": 5
+    }
+  },
+  {
+    "chunk_index": 14,
+    "content": "1. PKM-KC yang menghasilkan model siap uji tetapi belum mencapai skala 1:1 dan belum fungsional \n\n2. Solusi bagi kebutuhan dunia usaha yang masih bersifat generik dan spesifik. Jika solusi tersebut bersifat non generik (belum ada produk dengan spesifikasi yang identik di pasar) maka kegiatan ini termasuk ke dalam PKM-KC. \n\n3",
+    "chunk_parent": "Ruang Lingkup",
+    "chunk_prev": 13,
+    "chunk_next": null,
+    "page": {
+      "start": 5,
+      "end": 5
+    }
+  },
+  {
+    "chunk_index": 15,
+    "content": "## me! \\ NE",
+    "chunk_parent": "me! \\ NE",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 6,
+      "end": 6
+    }
+  },
+  {
+    "chunk_index": 16,
+    "content": "## **Konsep Pelaksanaan Program** \n\nPelaksanaan PKM-KC dilakukan secara luring _._ Pelaksanaan PKM-KC wajib didokumentasikan, serta dipublikasikan dan/atau dipromosikan di media sosial. Uraian dan bukti kegiatan juga harus diunggah ke _logbook_ kegiatan pada laman Simbelmawa. Pembuatan laporan kemajuan dan laporan akhir harus merujuk pada _logbook_ kegiatan.",
+    "chunk_parent": "Konsep Pelaksanaan Program",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 6,
+      "end": 6
+    }
+  },
+  {
+    "chunk_index": 17,
+    "content": "## **Luaran** \n\nLuaran kegiatan PKM-KC berupa: \n\n1. Laporan kemajuan; \n\n2. Laporan akhir; \n\n3. Prototipe atau produk fungsional yang akan dihasilkan dengan batasan bahwa biaya untuk menghasilkan produk fisik maupun produk fungsional (jika direalisasikan dalam bentuk fisik) sesuai dengan pendanaan yang disetujui; \n\n4. Akun media sosial. \n\nBeberapa contoh produk PKM-KC dapat dijadikan sumber inspirasi penulisan proposal PKMKC antara lain: \n\n1. Alat deteksi dini risiko neuropati perifer pada penyandang diabetes melitus yang terintegrasi dengan aplikasi smartphone, \n\n2. Sistem otomatisasi berbasis IoT untuk pembersihan limbah dasar tambak udang, \n\n3. Sistem peringatan dini tsunami secara real time berbasis pengukuran ketinggian air laut menggunakan pelampung gantung, \n\n4. Self-monitoring kadar gula darah dengan metode near-infrared spectroscopy, \n\n5. Aplikasi muter (teman tuli, teman dengar) sebagai upaya mencapai pelayanan publik inklusif di commuter line jabodetabek,",
+    "chunk_parent": "Luaran",
+    "chunk_prev": null,
+    "chunk_next": 18,
+    "page": {
+      "start": 6,
+      "end": 6
+    }
+  },
+  {
+    "chunk_index": 18,
+    "content": "5. Aplikasi muter (teman tuli, teman dengar) sebagai upaya mencapai pelayanan publik inklusif di commuter line jabodetabek, \n\n6. Scanner penentu usia korban kecelakaan, \n\n7. Detektor gelembung udara dalam infus, \n\n8. Automatic Flat Tire Detection dengan Metode Convolutional Neural Network sebagai Upaya Meminimalisasi Kecelakaan Akibat Tekanan Ban di Jalan Tol \n\n9. Ukiran gaya kontemporer, musik atau lukisan unik/kontemporer terkait aspek kesehatan, pendidikan, disabilitas dan lain-lain. \n\n10. Pengembangan virtual instrumen suling tresna v.1.0 \n\nLaporan kemajuan dan laporan akhir harus ditulis sesuai dengan Panduan pelaksanaan PKMKC. Luaran berupa prototipe atau produk fungsional bersifat wajib untuk semua tim yang mendapatkan pendanaan PKM-KC.",
+    "chunk_parent": "Luaran",
+    "chunk_prev": 17,
+    "chunk_next": 19,
+    "page": {
+      "start": 6,
+      "end": 6
+    }
+  },
+  {
+    "chunk_index": 19,
+    "content": "Tim pengusul PKM yang mendapatkan pendanaan wajib membuat luaran berupa akun media sosial yang dibuat khusus oleh tim dengan nama akun yang terkait dengan topik PKM. Akun tersebut harus dalam status aktif, diisi dengan konten edukasi yang sesuai dengan topik PKM (video, gambar, dan lain lain) untuk menunjang publikasi dan/atau promosi pelaksanaan atau hasil kegiatan PKM. Pengiklanan unggahan wajib dilakukan secara serentak sesuai dengan jadwal pada tabel berikut: \n\n4 \n\nTabel 1. Jadwal pengiklanan di media sosial \n\n|**Hari, Tanggal**|**Waktu**|**Konten diiklankan**|\n|---|---|---|\n|Minggu,5 Mei 2024|12.00 WIB,13.00 WITA,14.00 WIT|Pengenalan Program|\n|Rabu,5 Juni 2024|12.00 WIB,13.00 WITA,14.00 WIT|Konten 1|\n|Jumat,5 Juli 2024|12.00 WIB,13.00 WITA,14.00 WIT|Konten 2|\n|Senin,5 Agustus 2024|12.00 WIB,13.00 WITA,14.00 WIT|Hasil Program PKM|\n\n\n\nAkun media sosial yang telah dibuat harus memenuhi kriteria sebagai berikut:",
+    "chunk_parent": "Luaran",
+    "chunk_prev": 18,
+    "chunk_next": 20,
+    "page": {
+      "start": 6,
+      "end": 7
+    }
+  },
+  {
+    "chunk_index": 20,
+    "content": "Akun media sosial yang telah dibuat harus memenuhi kriteria sebagai berikut: \n\n1. Media sosial dibuat oleh tim pelaksana PKM yang memperoleh pendanaan. \n\n2. Media sosial yang dibuat dapat dipilih salah satu atau lebih, berupa Instagram, Tiktok, Facebook, Youtube. dan Twitter. \n\n3. Penamaan akun harus memiliki kaitan dengan topik PKM yang diangkat. \n\n4. Profil media sosial wajib mencantumkan informasi tentang topik PKM yang diangkat dan program PKM. \n\n5. Akun media sosial dan unggahan dalam status aktif, bersifat publik dan tidak dikunci. \n\n6. Tautan profil media sosial dientrikan pada menu Simbelmawa-akun. \n\n7. Unggahan dapat dibuat dalam bentuk _trailer, flyer, microblog_ (gambar, video, dan lainlain) sesuai dengan media sosial yang telah dibuat. \n\n8. Setiap unggahan wajib memuat logo **Kemendikbudristek** dan **logo PKM** . \n\n9. Setiap unggahan wajib diberikan tagar **#pkm** , **#pkm2024,** dan **#pkmpendanaan2024.**",
+    "chunk_parent": "Luaran",
+    "chunk_prev": 19,
+    "chunk_next": 21,
+    "page": {
+      "start": 7,
+      "end": 7
+    }
+  },
+  {
+    "chunk_index": 21,
+    "content": "9. Setiap unggahan wajib diberikan tagar **#pkm** , **#pkm2024,** dan **#pkmpendanaan2024.** \n\n10. Bagi yang membuat media sosial _Instagram_ , setiap unggahan harus menandai akun Instagram **@kemahasiswaan.dikti** , **@dit.belmawadikti** , **@ditjen.dikti** , dan **@kemdikbud.ri.** \n\n11. Dalam masa unggah laporan kemajuan dan laporan akhir, tim pelaksana PKM mengisi jumlah pengikut ( _followers_ ) dan jumlah unggahan pada sosial media yang dipilih. \n\n12. 4 (empat) unggahan wajib diberikan _adsense_ ( _ads_ ). Sebaiknya jadwal pengunggahan dan pengiklanan dilakukan secara serentak oleh tim pelaksana PKM sesuai jadwal pada tabel jadwal pengunggahan (Tabel 1). \n\n13. Total pendanaan yang dialokasikan untuk _adsense_ ( _ads_ ) pada seluruh unggahan untuk semua media sosial yang dipilih, maksimum sebesar Rp500.000,00 (lima ratus ribu rupiah).",
+    "chunk_parent": "Luaran",
+    "chunk_prev": 20,
+    "chunk_next": 22,
+    "page": {
+      "start": 7,
+      "end": 7
+    }
+  },
+  {
+    "chunk_index": 22,
+    "content": "Selain unggahan wajib yang diiklankan, tim pelaksana PKM juga disarankan membuat postingan reguler yang dapat dilakukan secara harian atau mingguan. Beberapa contoh topik konten yang dapat disusun oleh kelompok PKM: \n\n1. Pengenalan Topik/Program PKM; \n\n2. Pengenalan tim pelaksana PKM; \n\n3. Rencana pelaksanaan PKM; \n\n4. Edukasi terkait topik PKM; \n\n5. Kegiatan selama pelaksanaan PKM; \n\n6. Apresiasi dari PKM; \n\n7. Proses pembuatan produk PKM; \n\n8. Produk hasil PKM; \n\n9. Dampak pelaksanaan PKM; \n\n10. Testimoni hasil PKM; \n\n11. dan lain lain. \n\n5 \n\nContoh beberapa akun media sosial hasil PKM-KC: \n\n- _Instagram_ @pkmkc.smartrose \n\n- _Tiktok_ @houseseedling \n\n- _Youtube_ Smart Glove Translator",
+    "chunk_parent": "Luaran",
+    "chunk_prev": 21,
+    "chunk_next": null,
+    "page": {
+      "start": 7,
+      "end": 8
+    }
+  },
+  {
+    "chunk_index": 23,
+    "content": "## **Kriteria Pengusulan** \n\nKriteria, persyaratan pengusul dan tata cara pengusulan dijelaskan sebagai berikut: \n\n1. Peserta adalah tim yang terdiri mahasiswa aktif program pendidikan Diploma 3 (D3); Diploma 4 (D4) atau Strata 1 (S1) di seluruh Perguruan Tinggi (PT) di bawah Kemendikbud-Ristek yang terdaftar di Pangkalan Data Pendidikan Tinggi (PDDikti). Mahasiswa yang sudah menyandang gelar diploma (D3), sarjana terapan (D4), sarjana (S1) atau yang sedang mengikuti pendidikan profesi dan koas (farmasi, kedokteran, kedokteran hewan, kedokteran gigi, dan lainnya) tidak diperbolehkan mengusulkan proposal PKM; \n\n2. Tim pengusul terdiri dari 3 - 5 mahasiswa aktif dengan susunan berupa 1 mahasiswa sebagai ketua dan 2 - 4 mahasiswa sebagai anggota; \n\n3. Nama-nama pengusul (ketua dan anggota) harus ditulis lengkap sesuai dengan nama mahasiswa yang terdaftar pada PDDikti; \n\n4. Topik PKM yang diangkat harus sesuai atau relevan dengan bidang ilmu ketua dan/atau anggota tim pengusul;",
+    "chunk_parent": "Kriteria Pengusulan",
+    "chunk_prev": null,
+    "chunk_next": 24,
+    "page": {
+      "start": 8,
+      "end": 8
+    }
+  },
+  {
+    "chunk_index": 24,
+    "content": "4. Topik PKM yang diangkat harus sesuai atau relevan dengan bidang ilmu ketua dan/atau anggota tim pengusul; \n\n5. Mahasiswa pengusul dapat berasal dari program studi yang sama atau dari program studi yang berbeda, tetapi masih dalam satu PT; \n\n6. Keanggotaan tim PKM disarankan berasal dari minimum 2 (dua) angkatan yang berbeda agar terjadi pembinaan dan kesinambungan pengusulan program tahun berikutnya. \n\n7. Mahasiswa pengusul proposal PKM tidak diperkenankan mengusulkan proposal program PPK Ormawa dan P2MW di tahun yang sama. \n\n8. Besarnya dana kegiatan per judul minimum Rp6.000.000,00 (enam juta rupiah) sampai Rp10.000.000,00 (sepuluh juta rupiah). \n\n9. Dana pendamping dari Perguruan Tinggi wajib ada dan maksimum sejumlah Rp2.000.000,00 (dua juta rupiah) dalam bentuk _in cash_ dan/atau _in-kind_ dan ditunjukkan dalam surat komitmen dukungan pendanaan dari PT. \n\n10. Dana pendamping dari sponsor dan mitra lainnya dimungkinkan maksimum Rp1.000.000,00 (satu juta rupiah).",
+    "chunk_parent": "Kriteria Pengusulan",
+    "chunk_prev": 23,
+    "chunk_next": null,
+    "page": {
+      "start": 8,
+      "end": 8
+    }
+  },
+  {
+    "chunk_index": 25,
+    "content": "## **Sumber Dana Kegiatan** \n\n1. Proposal yang lolos dari standar nilai yang ditetapkan ( _passing grade_ ) akan didanai oleh Kemdikbudristek dengan besaran dana kegiatan per judul Rp6.000.000,00 (enam juta rupiah) sampai Rp10.000.000,00 (sepuluh juta rupiah). \n\n2. PT wajib memberikan tambahan pendanaan pada proposal yang lolos dengan jumlah pendanaan maksimum sebesar Rp2.000.000,00 (dua juta rupiah) dalam bentuk _in-cash_ dan/atau _in-kind_ . \n\n3. Tim PKM dapat memperoleh dana tambahan dari instansi lain dengan jumlah pendanaan maksimum sebesar Rp1.000.000,00 (satu juta rupiah) dalam bentuk _in cash_ dan/atau _in_ \n\n6 \n\n4. Dana tambahan wajib dari PT dan dana tambahan dari instansi lain (jika ada) harus dimasukkan dalam proposal. \n\n5. PT wajib membuat surat komitmen pendanaan dana tambahan diunggah pada akun operator Perguruan Tinggi di Simbelmawa.",
+    "chunk_parent": "Sumber Dana Kegiatan",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 8,
+      "end": 9
+    }
+  },
+  {
+    "chunk_index": 26,
+    "content": "## **Implementasi MBKM dan Pencapaian IKU** \n\nSebagai bagian dari implementasi Program Merdeka Belajar-Kampus Merdeka (MBKM) dan upaya mendukung pencapaian indikator kinerja utama (IKU-2) perguruan tinggi, khususnya untuk kegiatan mahasiswa di luar kampus, kegiatan PKM dapat dikonversi ke dalam SKS mata kuliah yang relevan di program studi masing-masing. Melalui IKU ini diharapkan pihak kampus memberikan fasilitas lebih kepada mahasiswa untuk mengembangkan diri dengan cara melakukan kegiatan pembelajaran dengan model variatif, dan mampu memberi bekal keterampilan yang mumpuni. \n\nSelaras dengan pembelajaran Kampus Merdeka, kegiatan PKM diharapkan dapat memberikan kesempatan dan tantangan dalam pengembangan kreativitas, inovasi, dan kapasitas, serta kemandirian dalam mencari dan menemukan pengetahuan atau solusi melalui masalah dan dinamika yang ada di masyarakat.",
+    "chunk_parent": "Implementasi MBKM dan Pencapaian IKU",
+    "chunk_prev": null,
+    "chunk_next": 27,
+    "page": {
+      "start": 9,
+      "end": 9
+    }
+  },
+  {
+    "chunk_index": 27,
+    "content": "Penjelasan Rekomendasi konversi SKS dapat dilihat di Panduan Umum pada Tabel 1.  Sasaran IKU dan sks konversi PKM berbasis MBKM \n\nBentuk kegiatan pembelajaran yang sesuai dengan PKM-KC adalah Studi/Proyek Independen seperti terlihat dalam berikut. \n\nGambar 4. Bentuk kegiatan pembelajaran sesuai dengan Permendikbud No 3 Tahun 2020 Pasal 15 ayat 1 \n\n7",
+    "chunk_parent": "Implementasi MBKM dan Pencapaian IKU",
+    "chunk_prev": 26,
+    "chunk_next": null,
+    "page": {
+      "start": 9,
+      "end": 9
+    }
+  },
+  {
+    "chunk_index": 28,
+    "content": "## mw KK \n\nBagi mahasiswa kegiatan  PKM-KC terkait erat dengan IKU 2 yaitu Mahasiswa Mendapat Pengalaman di Luar Kampus, sedangkan bagi dosen pendamping kegiatan PKM ini terkait erat dengan  IKU 3 yaitu Dosen Berkegiatan di Luar Kampus dan IKU 5 yaitu Hasil Kerja Dosen Digunakan oleh Masyarakat.",
+    "chunk_parent": "mw KK",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 10,
+      "end": 10
+    }
+  },
+  {
+    "chunk_index": 29,
+    "content": "## **Sistematika Penulisan Proposal** \n\nJudul tidak boleh menggunakan akronim atau singkatan yang tidak baku dan hanya diperbolehkan maksimum 20 kata. \n\nIsian kelengkapan \n\nDientrikan langsung secara interaktif pada Simbelmawa dan proses pengesahan dilakukan melalui validasi oleh dosen pendamping dan pimpinan perguruan tinggi bidang kemahasiswaan. Isian kelengkapan sampul meliputi judul PKM, bidang PKM, nama dan nomor induk tim mahasiswa, asal perguruan tinggi pengusul, dan tahun usulan. \n\nIsi utama proposal",
+    "chunk_parent": "Sistematika Penulisan Proposal",
+    "chunk_prev": null,
+    "chunk_next": 30,
+    "page": {
+      "start": 10,
+      "end": 10
+    }
+  },
+  {
+    "chunk_index": 30,
+    "content": "Isi utama proposal \n\nDilampirkan dalam bentuk _file pdf_ . Isi utama proposal terdiri dari: daftar isi, halaman inti, dan lampiran. Halaman daftar isi diberi nomor halaman dengan huruf: i, ii, iii, …, yang diletakkan pada sudut kanan bawah. Penomoran halaman i dimulai dari Daftar Isi. Halaman inti adalah halaman proposal yang memuat Bab Pendahuluan sampai dengan Daftar Pustaka. Halaman inti memuat maksimum 10 (sepuluh) halaman. Halaman inti dan lampiran diberi nomor halaman dengan angka arab: 1, 2, 3, …, yang diletakkan pada sudut kanan atas. Penomoran halaman 1 (satu) dimulai dari Bab Pendahuluan. _File_ isi utama proposal diunggah ke Simbelmawa dengan penamaan _file_ : namaketua_namapt_PKM-KC.pdf untuk divalidasi oleh dosen pendamping dan disahkan oleh pimpinan perguruan tinggi bidang kemahasiswaan. Tidak ada halaman sampul dan halaman pengesahan pada _file_ proposal. \n\nIsi utama proposal ditulis dengan ketentuan sebagai berikut:",
+    "chunk_parent": "Sistematika Penulisan Proposal",
+    "chunk_prev": 29,
+    "chunk_next": 31,
+    "page": {
+      "start": 10,
+      "end": 10
+    }
+  },
+  {
+    "chunk_index": 31,
+    "content": "Isi utama proposal ditulis dengan ketentuan sebagai berikut: \n\n1. Tipe huruf menggunakan _Times New Roman_ ukuran 12. \n\n2. Teks paragraf menggunakan jarak baris 1,15 spasi dan perataan teks menggunakan rata kiri dan kanan. \n\n3. Tata letak menggunakan ukuran kertas A-4, satu kolom, margin kiri 4 cm, margin kanan, atas, dan bawah masing-masing 3 cm. \n\n**Format penulisan isi utama proposal mengikuti sistematika sebagai berikut:** ~~Pn~~ \n\n**DAFTAR ISI** \n\n**DAFTAR GAMBAR (** jika ada) \n\n**DAFTAR TABEL** (jika ada) \n\n**DAFTAR LAMPIRAN (** jika ada **)** \n\n**BAB 1. PENDAHULUAN** \n\n8 \n\nBerisi uraian tentang proses identifikasi permasalahan yang akan dicari solusi atau pengembangannya termasuk sumber inspirasinya. Jika dasar inspirasi adalah hasil riset orang lain, maka nyatakan nama pelaksana dan institusi tim riset serta hasilnya yang akan dikonstruksikan dalam PKM-KC. Ungkapkan juga fase final yang akan dicapai dalam PKM-KC.",
+    "chunk_parent": "Sistematika Penulisan Proposal",
+    "chunk_prev": 30,
+    "chunk_next": 32,
+    "page": {
+      "start": 10,
+      "end": 11
+    }
+  },
+  {
+    "chunk_index": 32,
+    "content": "Jika akan melakukan pengembangan atau penyempurnaan atas produk yang sudah ada di masyarakat atau sudah digunakan di kalangan terbatas, maka nyatakan nama produsen/ pembuat dan institusinya. Ungkapkan target yang akan dicapai dan aspek pengembangan/ penyempurnaan yang akan dilakukan disertai justifikasi ilmiah dan/atau aspek ekonominya. \n\nJika produk PKM-KC harus dibuat mulai dari awal karena belum ada produk riset sebelumnya yang dapat dijadikan landasan, juga tidak ada produk yang ditemukan/digunakan di masyarakat, maka ungkapkan target fungsionalnya disertai justifikasi ilmiah yang akhirnya dimuarakan pada desain sebelum dikonstruksikan menjadi produk/jasa final yang fungsional. \n\nBagian pendahuluan ini juga berisi uraian modifikasi dan keterbaruan produk atau prototipe yang akan dihasilkan serta luaran yang ditargetkan dan prediksi manfaatnya.",
+    "chunk_parent": "Sistematika Penulisan Proposal",
+    "chunk_prev": 31,
+    "chunk_next": null,
+    "page": {
+      "start": 11,
+      "end": 11
+    }
+  },
+  {
+    "chunk_index": 33,
+    "content": "## **BAB 2. TINJAUAN PUSTAKA** \n\nBerisikan gambaran perkembangan mutakhir yang terkait dengan produk PKM-KC yang akan dihasilkan yang berasal dari berbagai sumber seperti skripsi, tesis, disertasi, buku referensi, artikel jurnal ilmiah ataupun prosiding, internet, brosur, media cetak dan sumber-sumber informasi lainnya. Pada bagian ini diuraikan informasi ilmiah lainnya yang relevan dan terkait langsung dengan spesifikasi awal dan/atau akhir produk serta solusi yang bermanfaat.",
+    "chunk_parent": "BAB 2. TINJAUAN PUSTAKA",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 11,
+      "end": 11
+    }
+  },
+  {
+    "chunk_index": 34,
+    "content": "## **BAB 3. TAHAP PELAKSANAAN** \n\nPada bagian ini diuraikan tahapan pelaksanaan program dan fase akhir yang akan dicapai secara rinci dimulai dari pengumpulan data sekunder yang diperlukan untuk desain atau rancangan awal, penyusunan desain teknis, pembuatan produk/jasa layanan, cara pengujian keandalan karya, evaluasi atau prediksi penerimaan masyarakat (jika dimungkinkan) dan hal lain yang relevan. Pada tahapan pengujian diperbolehkan melakukan pengujian langsung produk fisik atau menggunakan _software_ atau program pendukung yang memungkinkan melakukan input data dan menghasilkan prediksi hasil ujinya untuk memperkuat kelayakan dan prediksi kinerja produk produk yang akan dihasilkan.",
+    "chunk_parent": "BAB 3. TAHAP PELAKSANAAN",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 11,
+      "end": 11
+    }
+  },
+  {
+    "chunk_index": 35,
+    "content": "## **BAB 4. BIAYA DAN JADWAL KEGIATAN**",
+    "chunk_parent": "BAB 4. BIAYA DAN JADWAL KEGIATAN",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 11,
+      "end": 11
+    }
+  },
+  {
+    "chunk_index": 36,
+    "content": "## 4.1 Anggaran Biaya \n\nRekomendasi besarnya pengalokasian dan penggunaan dana PKM-KC dari BELMAWA adalah antara Rp6.000.000,00 (lima juta rupiah) s.d. Rp10.000.000,00 (sepuluh juta rupiah) ditambah dengan dana pendamping dari internal PT maksimum Rp2.000.000,00 \n\n9 \n\ndan dari mitra/sponsor lainnya maksimum Rp1.000.000,00 dengan komposisi minimum 80% untuk operasional dan maksimum 20% untuk administrasi. . Khusus untuk biaya perjalanan PKM-KC hendaknya dilakukan seefisien dan seminimal mungkin _(at cost)_ . Rencana Anggaran Biaya (RAB) yang diajukan tim pengusul harus memuat alokasi dana publikasi dan/atau promosi kegiatan PKM di media sosial. \n\nRekomendasi pengalokasian dan penggunaan dana adalah sebagai berikut: \n\n1. Rujukan publikasi ilmiah utama yang harus didapatkan secara berbayar. \n\n2. Biaya sewa/jasa penggunaan software atau program yang mendukung pengujian produk yang akan dihasilkan \n\n3. Pembelian bahan-bahan pembuatan produk/prototipe",
+    "chunk_parent": "4.1 Anggaran Biaya",
+    "chunk_prev": null,
+    "chunk_next": 37,
+    "page": {
+      "start": 11,
+      "end": 12
+    }
+  },
+  {
+    "chunk_index": 37,
+    "content": "3. Pembelian bahan-bahan pembuatan produk/prototipe \n\n4. Kertas tidak lebih dari 2 rim, ATK sesuai kebutuhan \n\n5. Transport lokal jika diperlukan diusahakan seminimal mungkin. \n\n6. Biaya publikasi di media sosial (medsos) maksimal Rp500.000,00 \n\n7. Sewa laboratorium/peralatan laboratorium lainnya (jika sifatnya wajib agar besarannya tidak melebihi Rp1.000.000,00). \n\nAdapun item biaya yang **tidak diperkenankan** diusulkan dalam Rencana Anggaran Biaya (RAB): \n\n1. Honorarium, konsumsi, hadiah, dan sejenisnya untuk tim, dosen pendamping, narasumber, pemateri, pihak ke-3 atau sejenisnya; \n\n2. Sewa komputer PC, laptop, printer, ponsel, kamera, _handycam_ , tempat/ruangan/aula atau sejenis; \n\n3. Pembelian alat/bahan lebih dari Rp1.000.000,00 per item; \n\n4. Pembelian penyimpanan data ( _flashdisk, hard disk_ dsb); \n\n5. Pembelian kuota internet lebih dari Rp100.000,00 per bulan per tim; \n\n6. Durasi sewa lisensi atau sejenisnya yang melebihi 6 bulan;",
+    "chunk_parent": "4.1 Anggaran Biaya",
+    "chunk_prev": 36,
+    "chunk_next": 38,
+    "page": {
+      "start": 12,
+      "end": 12
+    }
+  },
+  {
+    "chunk_index": 38,
+    "content": "5. Pembelian kuota internet lebih dari Rp100.000,00 per bulan per tim; \n\n6. Durasi sewa lisensi atau sejenisnya yang melebihi 6 bulan; \n\n7. Penyusunan, penggandaan, dan/atau penjilidan laporan kemajuan, laporan akhir (kecuali PTS, atau PTN yang mewajibkan _hardcopy_ ). \n\n8. Biaya publikasi dan/atau promosi kegiatan di media sosial lebih dari Rp500.000,00. \n\nRekapitulasi rencana anggaran biaya disusun sesuai dengan kebutuhan dan mengikuti format Tabel 4.1 berikut. \n\nTabel 4.1. Format Rekapitulasi Rencana Anggaran Biaya",
+    "chunk_parent": "4.1 Anggaran Biaya",
+    "chunk_prev": 37,
+    "chunk_next": 39,
+    "page": {
+      "start": 12,
+      "end": 12
+    }
+  },
+  {
+    "chunk_index": 39,
+    "content": "Tabel 4.1. Format Rekapitulasi Rencana Anggaran Biaya \n\n|**No**|**Jenis Pengeluaran**|**Sumber Dana**|**Besaran Dana**<br>**(Rp)**|\n|---|---|---|---|\n|1|Bahan habis pakai (contoh: ATK, kertas,<br>bahan, dll) maksimal 60% dari jumlah dana<br>yang diusulkan|Belmawa||\n|||Perguruan Tinggi||\n|||Instansi Lain(jika ada)||\n|2|Sewa dan jasa (sewa/jasa alat; jasa pembuatan<br>produk pihak ketiga, dll), maksimal 15% dari<br>jumlah dana yang diusulkan|Sewa dan jasa (sewa/jasa alat; jasa pembuatan<br>Belmawa||\n|||Perguruan Tinggi||\n|||Instansi Lain(jika ada)||\n|3|Transportasi lokal maksimal 30% dari jumlah<br>dana yang diusulkan|Belmawa||\n|||Perguruan Tinggi||\n|||Instansi Lain(jika ada)||\n|5|Lain-lain (contoh: biaya komunikasi, biaya<br>bayar akses publikasi, biaya_adsense_media|Belmawa||\n|||Perguruan Tinggi||\n|||Instansi Lain(jika ada)||\n\n\n\n10",
+    "chunk_parent": "4.1 Anggaran Biaya",
+    "chunk_prev": 38,
+    "chunk_next": 40,
+    "page": {
+      "start": 12,
+      "end": 12
+    }
+  },
+  {
+    "chunk_index": 40,
+    "content": "10 \n\nsosial, dan lain-lain) maksimal 15% dari jumlah dana yang diusulkan **Jumlah Rekap Sumber Dana** Belmawa Perguruan Tinggi Instansi Lain (jika ada) **Jumlah** \n\nAngka persentase di setiap jenis pengeluaran adalah nilai maksimum yang diperkenankan, namun total persentase keempat jenis pengeluaran tetap senilai 100%.",
+    "chunk_parent": "4.1 Anggaran Biaya",
+    "chunk_prev": 39,
+    "chunk_next": null,
+    "page": {
+      "start": 12,
+      "end": 13
+    }
+  },
+  {
+    "chunk_index": 41,
+    "content": "## 4.2 Jadwal Kegiatan \n\nJadwal kegiatan disesuaikan dengan tahap kegiatan dan dibatasi selama 3 (tiga) bulan sampai 4 (empat) bulan. Jadwal disusun dalam bentuk _bar chart_ untuk rencana kegiatan yang diajukan serta sesuai dengan format pada Lampiran 1.",
+    "chunk_parent": "4.2 Jadwal Kegiatan",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 13,
+      "end": 13
+    }
+  },
+  {
+    "chunk_index": 42,
+    "content": "## **DAFTAR PUSTAKA** \n\nDaftar pustaka ditulis dengan tipe huruf menggunakan _Times New Roman_ ukuran 12 cetak normal. Teks menggunakan jarak baris 1,15 spasi dan perataan teks menggunakan rata kiri dan kanan dengan ketentuan baris kedua dan setelahnya menjorok ke dalam (lihat contoh pada Lampiran 7). Daftar Pustaka berisi informasi tentang sumber pustaka yang telah dirujuk dalam tubuh tulisan. Setiap pustaka yang dirujuk dalam naskah harus ada dalam daftar Pustaka, dan sebaliknya. Format perujukan pustaka mengikuti _Harvard style_ (nama belakang, tahun dan diurutkan berdasar abjad).",
+    "chunk_parent": "DAFTAR PUSTAKA",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 13,
+      "end": 13
+    }
+  },
+  {
+    "chunk_index": 43,
+    "content": "## **LAMPIRAN** \n\nLampiran 1. Biodata   Ketua   dan   Anggota,   serta   Dosen Pendamping Lampiran 2. Justifikasi Anggaran Kegiatan Lampiran 3. Susunan Tim Pengusul dan Pembagian Tugas Lampiran 4. Surat Pernyataan Ketua Tim Pengusul Lampiran 5. Gambaran Teknologi yang akan Dikembangkan \n\nIsian Kelengkapan dientrikan secara langsung interaktif pada Simbelmawa. Isi utama proposal (Daftar Isi, Halaman Inti, dan Lampiran) diunggah ke Simbelmawa. Jika isi utama proposal mencantumkan cover dan atau halaman pengesahan, maka akan digugurkan pada Seleksi Tahap 1 \n\n11",
+    "chunk_parent": "LAMPIRAN",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 13,
+      "end": 13
+    }
+  },
+  {
+    "chunk_index": 44,
+    "content": "## **Seleksi dan Penilaian Proposal** \n\nSeleksi dan penilaian proposal PKM-KC dilakukan secara daring dalam 2 (dua) tahap. Secara lengkap sistem seleksi dan penilaian proposal dapat dilihat dalam buku Panduan Umum PKM tahun 2024. Kriteria dan bobot penilaian proposal PKM-KC dapat dilihat pada Lampiran 8 (Formulir Penilaian Proposal).",
+    "chunk_parent": "Seleksi dan Penilaian Proposal",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 14,
+      "end": 14
+    }
+  },
+  {
+    "chunk_index": 45,
+    "content": "## **Penilaian Kemajuan Pelaksanaan PKM (PKP2) dan Pelaporan** \n\nTim pengusul pada skim PKM-KC yang telah memperoleh pendanaan wajib melaksanakan kegiatan PKM sesuai dengan rencana kegiatan yang telah diusulkan. Pelaksanaan PKM akan dipantau dan dievaluasi tim penilai dari Direktorat Belmawa dalam bentuk Penilaian Kemajuan Pelaksanaan PKM (PKP2). Dokumentasi dan catatan pelaksanaan PKM diunggah ke Simbelmawa secara berkala dalam bentuk unggahan catatan harian ( _logbook_ ). Sebelum pelaksanaan PKP2, tim pelaksana PKM wajib mengunggah laporan kemajuan, tautan ( _link_ ) profil media sosial, dan luaran wajib berupa _draft_ video prototipe pada laman Simbelmawa. Di akhir masa pelaksanaan PKM, setiap tim melaporkan hasil kegiatannya dalam bentuk kompilasi luaran berupa laporan akhir dan video prototipe. \n\nSetiap tim pelaksana wajib melaporkan pelaksanaan PKM dengan melakukan hal-hal berikut:",
+    "chunk_parent": "Penilaian Kemajuan Pelaksanaan PKM (PKP2) dan Pelaporan",
+    "chunk_prev": null,
+    "chunk_next": 46,
+    "page": {
+      "start": 14,
+      "end": 14
+    }
+  },
+  {
+    "chunk_index": 46,
+    "content": "Setiap tim pelaksana wajib melaporkan pelaksanaan PKM dengan melakukan hal-hal berikut: \n\n1. Mencatat semua kegiatan pelaksanaan pada buku catatan harian kegiatan dan mengisi kegiatan harian rutin secara daring ( _logbook_ ) Simbelmawa terhitung sejak penandatanganan perjanjian. Format catatan harian dapat dilihat pada Lampiran 3 Buku Panduan Umum PKM 2024. \n\n2. Menyusun dan mengunggah laporan kemajuan (daftar isi, halaman inti dan lampiran), halaman inti (pendahuluan sampai dengan daftar pustaka) maksimum 10 (sepuluh) halaman dengan jarak 1,15 spasi. _File_ laporan kemajuan diunggah ke Simbelmawa dengan penamaan _file_ namaKetua_namaPT_PKM-KC.pdf yang divalidasi dosen pendamping. \n\n3. Mengunggah luaran kemajuan berupa _draft_ video prototipe pada laman Simbelmawa. \n\n4. Mengunggah semua tautan ( _link_ ) profil media sosial PKM-KC pada laman Simbelmawa.",
+    "chunk_parent": "Penilaian Kemajuan Pelaksanaan PKM (PKP2) dan Pelaporan",
+    "chunk_prev": 45,
+    "chunk_next": 47,
+    "page": {
+      "start": 14,
+      "end": 14
+    }
+  },
+  {
+    "chunk_index": 47,
+    "content": "4. Mengunggah semua tautan ( _link_ ) profil media sosial PKM-KC pada laman Simbelmawa. \n\n5. Mengikuti Penilaian Kemajuan Pelaksanaan PKM (PKP2) secara daring berupa penilaian pelaksanaan kegiatan. Pada saat PKP2 kemajuan hasil kerja mahasiswa dinilai dalam bentuk presentasi penyampaian pelaksanaan kegiatan dan laporan kemajuan serta mempertimbangkan data pendukung yang disampaikan di _Logbook_ Kegiatan dan _Logbook_ Keuangan. Pembagian jadwal, tempat pelaksanaan, dan judul yang mengikuti penilaian daring akan ditetapkan oleh Direktorat Belmawa. \n\n6. Menyusun dan mengunggah laporan akhir ke Simbelmawa dengan mengunggah isi utama laporan akhir (ringkasan, daftar isi, halaman inti dan lampiran), halaman inti (pendahuluan sampai dengan daftar pustaka) maksimum 10 (sepuluh) halaman dengan jarak 1,15 spasi, berkas diunggah ke Simbelmawa dengan penamaan file namaKetua_namaPT_PKM-KC.pdf yang divalidasi dosen pendamping. \n\n12",
+    "chunk_parent": "Penilaian Kemajuan Pelaksanaan PKM (PKP2) dan Pelaporan",
+    "chunk_prev": 46,
+    "chunk_next": null,
+    "page": {
+      "start": 14,
+      "end": 14
+    }
+  },
+  {
+    "chunk_index": 48,
+    "content": "## mw KK ON. \n\n7. Mengunggah luaran akhir berupa video prototipe pada laman Simbelmawa.",
+    "chunk_parent": "mw KK ON.",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 15,
+      "end": 15
+    }
+  },
+  {
+    "chunk_index": 49,
+    "content": "## **Sistematika Laporan Kemajuan** \n\nSetiap tim pelaksana wajib membuat laporan kemajuan yang menjelaskan progres kegiatan PKM-KC yang telah dilaksanakan. \n\nLaporan Kemajuan yang disusun terdiri dari: \n\n- Isi utama laporan kemajuan",
+    "chunk_parent": "Sistematika Laporan Kemajuan",
+    "chunk_prev": null,
+    "chunk_next": 50,
+    "page": {
+      "start": 15,
+      "end": 15
+    }
+  },
+  {
+    "chunk_index": 50,
+    "content": "Laporan Kemajuan yang disusun terdiri dari: \n\n- Isi utama laporan kemajuan \n\n- Dikemas dalam bentuk _file_ pdf. Isi utama laporan kemajuan terdiri dari: daftar isi, halaman inti, dan lampiran. Halaman daftar isi diberi nomor halaman dengan huruf: i, ii, iii, …, yang diletakkan pada sudut kanan bawah. Penomoran halaman i dimulai dari Daftar Isi. Halaman inti adalah halaman yang memuat Bab Pendahuluan sampai dengan Daftar Pustaka. Halaman inti memuat maksimum 10 (sepuluh) halaman. Halaman inti dan lampiran diberi nomor halaman dengan angka arab: 1, 2, 3, …, yang diletakkan pada sudut kanan atas. Penomoran halaman 1 (satu) dimulai dari Bab Pendahuluan. File isi utama laporan kemajuan diunggah ke SIMelmawa dengan penamaan file: namaketua_namapt_PKM-KC.pdf untuk divalidasi oleh dosen pendamping. Tidak ada halaman sampul dan halaman pengesahan pada file laporan kemajuan. \n\nKetentuan penulisan Isi utama laporan kemajuan : \n\n1. Tipe huruf menggunakan _Times New Roman_ ukuran 12.",
+    "chunk_parent": "Sistematika Laporan Kemajuan",
+    "chunk_prev": 49,
+    "chunk_next": 51,
+    "page": {
+      "start": 15,
+      "end": 15
+    }
+  },
+  {
+    "chunk_index": 51,
+    "content": "Ketentuan penulisan Isi utama laporan kemajuan : \n\n1. Tipe huruf menggunakan _Times New Roman_ ukuran 12. \n\n2. Teks paragraf menggunakan jarak baris 1,15 spasi dan perataan teks menggunakan rata kiri dan kanan. \n\n3. _Layout_ menggunakan ukuran kertas A-4, satu kolom, margin kiri 4 cm, margin kanan, atas, dan bawah masing-masing 3 cm. \n\n**Format penulisan isi utama laporan kemajuan mengikuti sistematika sebagai berikut:** ~~Pd~~ \n\n**DAFTAR ISI** \n\n**DAFTAR GAMBAR (** jika ada **)** \n\n**DAFTAR TABEL (** jika ada) \n\n**DAFTAR LAMPIRAN** (jika ada) \n\n**BAB 1. PENDAHULUAN** \n\n**BAB 2. TARGET LUARAN** \n\n**BAB 3. TAHAP PELAKSANAAN** \n\n**BAB 4. HASIL YANG DICAPAI** \n\nKesesuaian jenis dan jumlah luaran yang telah dihasilkan serta persentase hasil terhadap keseluruhan target kegiatan. \n\n13",
+    "chunk_parent": "Sistematika Laporan Kemajuan",
+    "chunk_prev": 50,
+    "chunk_next": null,
+    "page": {
+      "start": 15,
+      "end": 15
+    }
+  },
+  {
+    "chunk_index": 52,
+    "content": "## **BAB 5. POTENSI HASIL** \n\nArtikel ilmiah, peluang perolehan Kekayaan Intelektual (KI) atau sejenisnya dan/atau prediksi manfaat (sosial-ekonomi-pendidikan dll) bagi pengguna.",
+    "chunk_parent": "BAB 5. POTENSI HASIL",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 16,
+      "end": 16
+    }
+  },
+  {
+    "chunk_index": 53,
+    "content": "## **BAB 6. RENCANA TAHAPAN BERIKUTNYA** \n\nUpaya untuk pencapaian target 100% kegiatan.",
+    "chunk_parent": "BAB 6. RENCANA TAHAPAN BERIKUTNYA",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 16,
+      "end": 16
+    }
+  },
+  {
+    "chunk_index": 54,
+    "content": "## **DAFTAR PUSTAKA** \n\nDaftar pustaka ditulis dengan tipe huruf _Times New Roman_ ukuran 12 cetak normal. Teks menggunakan jarak baris 1,15 spasi dan perataan teks menggunakan rata kiri dan kanan dengan ketentuan baris kedua dan setelahnya menjorok ke dalam (lihat contoh pada Lampiran 7). Daftar Pustaka berisi informasi tentang sumber pustaka yang telah dirujuk dalam tubuh tulisan. Setiap pustaka yang dirujuk dalam naskah harus ada dalam daftar Pustaka, dan sebaliknya. Format perujukan pustaka mengikuti _Harvard style_ (nama belakang, tahun dan diurutkan berdasar abjad).",
+    "chunk_parent": "DAFTAR PUSTAKA",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 16,
+      "end": 16
+    }
+  },
+  {
+    "chunk_index": 55,
+    "content": "## **LAMPIRAN** \n\n1. Penggunaan dana \n\n2. Bukti-bukti pendukung kegiatan \n\n- Isi utama laporan kemajuan (Daftar Isi, Halaman Inti, dan Lampiran) diunggah ke Simbelmawa. \n\n- ——— \n\n14",
+    "chunk_parent": "LAMPIRAN",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 16,
+      "end": 16
+    }
+  },
+  {
+    "chunk_index": 56,
+    "content": "## mw KK ON.",
+    "chunk_parent": "mw KK ON.",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 17,
+      "end": 17
+    }
+  },
+  {
+    "chunk_index": 57,
+    "content": "## **Sistematika Laporan Akhir** \n\nSetiap tim pelaksana diwajibkan membuat laporan akhir yang berisi tentang keberhasilan pelaksanaan PKM-KC yang telah dilaksanakan oleh tim. \n\nLaporan Akhir yang disusun terdiri dari: \n\nIsi utama laporan akhir",
+    "chunk_parent": "Sistematika Laporan Akhir",
+    "chunk_prev": null,
+    "chunk_next": 58,
+    "page": {
+      "start": 17,
+      "end": 17
+    }
+  },
+  {
+    "chunk_index": 58,
+    "content": "Laporan Akhir yang disusun terdiri dari: \n\nIsi utama laporan akhir \n\nDikemas dalam bentuk file pdf. Isi utama laporan akhir terdiri dari: ringkasan, daftar isi, halaman inti, dan lampiran. Halaman ringkasan tanpa penomoran halaman. Halaman daftar isi diberi nomor halaman dengan huruf: i, ii, iii, …, yang diletakkan pada sudut kanan bawah. Penomoran halaman i dimulai dari Daftar Isi. Halaman inti adalah halaman yang memuat Bab Pendahuluan sampai dengan Daftar Pustaka. Halaman inti memuat maksimum 10 (sepuluh) halaman. Halaman inti dan lampiran diberi nomor halaman dengan angka arab: 1, 2, 3, …, yang diletakkan pada sudut kanan atas. Penomoran halaman 1 (satu) dimulai dari Bab Pendahuluan. File isi utama laporan akhir diunggah ke Simbelmawa dengan penamaan file: namaketua_namapt_PKM-KC.pdf untuk divalidasi oleh dosen pendamping dan disahkan oleh pimpinan perguruan tinggi bidang kemahasiswaan. Tidak ada halaman sampul dan halaman pengesahan pada file laporan akhir.",
+    "chunk_parent": "Sistematika Laporan Akhir",
+    "chunk_prev": 57,
+    "chunk_next": 59,
+    "page": {
+      "start": 17,
+      "end": 17
+    }
+  },
+  {
+    "chunk_index": 59,
+    "content": "Ketentuan penulisan Isi utama laporan akhir: \n\n1. Tipe huruf menggunakan _Times New Roman_ ukuran 12. \n\n2. Teks paragraf menggunakan jarak baris 1,15 spasi dan perataan teks menggunakan rata kiri dan kanan. \n\n3. Tata letak menggunakan ukuran kertas A-4, satu kolom, margin kiri 4 cm, margin kanan, atas, dan bawah masing-masing 3 cm. \n\n**Format penulisan isi utama laporan akhir mengikuti sistematika sebagai berikut:** ~~Po~~",
+    "chunk_parent": "Sistematika Laporan Akhir",
+    "chunk_prev": 58,
+    "chunk_next": null,
+    "page": {
+      "start": 17,
+      "end": 17
+    }
+  },
+  {
+    "chunk_index": 60,
+    "content": "## **RINGKASAN (Tanpa nomor halaman)**",
+    "chunk_parent": "RINGKASAN (Tanpa nomor halaman)",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 17,
+      "end": 17
+    }
+  },
+  {
+    "chunk_index": 61,
+    "content": "## **DAFTAR ISI** \n\n**DAFTAR GAMBAR (jika ada)** \n\n**DAFTAR TABEL (jika ada)** \n\n**DAFTAR LAMPIRAN (jika ada)**",
+    "chunk_parent": "DAFTAR ISI",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 17,
+      "end": 17
+    }
+  },
+  {
+    "chunk_index": 62,
+    "content": "## **BAB 1. PENDAHULUAN** \n\nGambaran tentang sumber inspirasi tantangan intelektual dalam mewujudkan karsa baik dalam bentuk prototipe atau produk fungsional dan keunikan serta level teknologi produk yang dibuat \n\n15",
+    "chunk_parent": "BAB 1. PENDAHULUAN",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 17,
+      "end": 17
+    }
+  },
+  {
+    "chunk_index": 63,
+    "content": "## mw KK ON.",
+    "chunk_parent": "mw KK ON.",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 18,
+      "end": 18
+    }
+  },
+  {
+    "chunk_index": 64,
+    "content": "## **BAB 2. TINJAUAN PUSTAKA** \n\ngambaran tentang kajian teori dari tantangan intelektual yang terkait langsung dengan prototipe atau produk fungsional serta gambaran produk sejenis yang pernah ada",
+    "chunk_parent": "BAB 2. TINJAUAN PUSTAKA",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 18,
+      "end": 18
+    }
+  },
+  {
+    "chunk_index": 65,
+    "content": "## **BAB 3. TAHAP PELAKSANAAN** \n\ngambaran tentang prosedur konstruksi mulai dari munculnya inspirasi sampai dengan tahapan mewujudkan prototipe atau produk fungsional",
+    "chunk_parent": "BAB 3. TAHAP PELAKSANAAN",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 18,
+      "end": 18
+    }
+  },
+  {
+    "chunk_index": 66,
+    "content": "## **BAB 4. HASIL YANG DICAPAI DAN POTENSI KHUSUS** \n\ngambaran tentang prototipe atau produk fungsional yang dihasilkan, fungsi dan cara kerjanya, keunggulan serta prediksi kemanfaatan bagi pengguna. Bagian ini dilengkapi dengan gambar visualisasi produk",
+    "chunk_parent": "BAB 4. HASIL YANG DICAPAI DAN POTENSI KHUSUS",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 18,
+      "end": 18
+    }
+  },
+  {
+    "chunk_index": 67,
+    "content": "## **BAB 5. PENUTUP** \n\nberisi kesimpulan dan saran yang terkait langsung dengan produk/prototipe yang dihasilkan",
+    "chunk_parent": "BAB 5. PENUTUP",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 18,
+      "end": 18
+    }
+  },
+  {
+    "chunk_index": 68,
+    "content": "## **DAFTAR PUSTAKA** \n\nDaftar pustaka ditulis dengan tipe huruf _Times New Roman_ ukuran 12 cetak normal. Teks menggunakan jarak baris 1,15 spasi dan perataan teks menggunakan rata kiri dan kanan dengan ketentuan baris kedua dan setelahnya menjorok ke dalam (lihat contoh pada Lampiran 7). Daftar Pustaka berisi informasi tentang sumber pustaka yang telah dirujuk dalam tubuh tulisan. Setiap pustaka yang dirujuk dalam naskah harus ada dalam daftar Pustaka, dan sebaliknya. Format perujukan pustaka mengikuti _Harvard style_ (nama belakang, tahun dan diurutkan berdasar abjad).",
+    "chunk_parent": "DAFTAR PUSTAKA",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 18,
+      "end": 18
+    }
+  },
+  {
+    "chunk_index": 69,
+    "content": "## **LAMPIRAN** \n\n1. Penggunaan dana (rincian dan bukti pengeluaran dana) \n\n2. Bukti-bukti pendukung kegiatan (berisi dokumentasi pelaksanaan kegiatan, dokumentasi konstruksi produk, gambaran detail produk yang diciptakan, cara kerja dan manfaatnya). \n\nIsian Kelengkapan dientrikan secara langsung interaktif pada Simbelmawa. Isi utama laporan akhir (Ringkasan, Daftar Isi, Halaman Inti, dan Lampiran) diunggah ke Simbelmawa. ~~i~~ \n\n16",
+    "chunk_parent": "LAMPIRAN",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 18,
+      "end": 18
+    }
+  },
+  {
+    "chunk_index": 70,
+    "content": "## N PRES",
+    "chunk_parent": "N PRES",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 19,
+      "end": 19
+    }
+  },
+  {
+    "chunk_index": 71,
+    "content": "## **Lampiran**",
+    "chunk_parent": "Lampiran",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 19,
+      "end": 19
+    }
+  },
+  {
+    "chunk_index": 72,
+    "content": "## **Lampiran 1. Format Jadwal Kegiatan** \n\n|**No.**|**Jenis Kegiatan**|**Bulan**|**Bulan**|**Bulan**|**Bulan**|**Person Penanggung Jawab**|\n|---|---|---|---|---|---|---|\n|||**1**|**2**|**3**|**4**||\n|1.|Kegiatan 1||||||\n|2.|Kegiatan 2||||||\n|3.|…||||||\n\n\n\n17",
+    "chunk_parent": "Lampiran 1. Format Jadwal Kegiatan",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 19,
+      "end": 19
+    }
+  },
+  {
+    "chunk_index": 73,
+    "content": "## mw KK ON.",
+    "chunk_parent": "mw KK ON.",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 20,
+      "end": 20
+    }
+  },
+  {
+    "chunk_index": 74,
+    "content": "## **Lampiran 2. Biodata Ketua dan Anggota**",
+    "chunk_parent": "Lampiran 2. Biodata Ketua dan Anggota",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 20,
+      "end": 20
+    }
+  },
+  {
+    "chunk_index": 75,
+    "content": "## A. Identitas Diri \n\n||1|1|Nama Lengkap|||\n|---|---|---|---|---|---|\n||2|2|Jenis Kelamin|Laki-laki / Perempuan||\n||3|3|Program Studi|||\n||4|4|NIM|||\n||5|5|Tempat dan Tanggal Lahir|||\n||6|6|Alamat E-mail|||\n||7|7|Nomor Telepon/HP|||\n|B.||Kegiatan Kemahasiswaan Yang Sedang/Pernah Diikuti||||\n||No||No<br>Jenis Kegiatan|Status dalam Kegiatan|Waktu dan Tempat|\n|||1||||\n|||2||||\n|||3||||\n\n\n\nC. Penghargaan Yang Pernah Diterima \n\n|No|Jenis Penghargaan|Pihak Pemberi Penghargaan|Tahun|\n|---|---|---|---|\n|1||||\n|2||||\n\n\n\nSemua data yang saya isikan dan tercantum dalam biodata ini adalah benar dan dapat dipertanggungjawabkan secara hukum. Apabila di kemudian hari ternyata dijumpai ketidaksesuaian dengan kenyataan, saya sanggup menerima sanksi. \n\nDemikian biodata ini saya buat dengan sebenarnya untuk memenuhi salah satu persyaratan dalam pengajuan PKM-KC. \n\nKota, tanggal-bulan-tahun Ketua/Anggota Tim Tanda tangan (asli TT basah) \n\n(Nama Lengkap)",
+    "chunk_parent": "A. Identitas Diri",
+    "chunk_prev": null,
+    "chunk_next": 76,
+    "page": {
+      "start": 20,
+      "end": 20
+    }
+  },
+  {
+    "chunk_index": 76,
+    "content": "Kota, tanggal-bulan-tahun Ketua/Anggota Tim Tanda tangan (asli TT basah) \n\n(Nama Lengkap) \n\nSetelah diisi dan diberi tanda tangan basah, satu halaman penuh yang ada tanda tangannya dipindai atau difoto yang rapi. Jika ada tandatangan hasil _cropping_ lokal, maka proposal tersebut TIDAK LOLOS tahap 1. ~~i~~ 18",
+    "chunk_parent": "A. Identitas Diri",
+    "chunk_prev": 75,
+    "chunk_next": null,
+    "page": {
+      "start": 20,
+      "end": 20
+    }
+  },
+  {
+    "chunk_index": 77,
+    "content": "## mw KK ON.",
+    "chunk_parent": "mw KK ON.",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 21,
+      "end": 21
+    }
+  },
+  {
+    "chunk_index": 78,
+    "content": "## **Lampiran 3. Biodata Dosen Pendamping**",
+    "chunk_parent": "Lampiran 3. Biodata Dosen Pendamping",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 21,
+      "end": 21
+    }
+  },
+  {
+    "chunk_index": 79,
+    "content": "## A. Identitas Diri \n\n|1|Nama Lengkap (dengangelar)||\n|---|---|---|\n|2|Jenis Kelamin|Laki-laki / Perempuan|\n|3|Program Studi||\n|4|NIP/NIDN||\n|5|Tempat dan Tanggal Lahir||\n|6|Alamat E-mail||\n|7|Nomor Telepon/HP||",
+    "chunk_parent": "A. Identitas Diri",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 21,
+      "end": 21
+    }
+  },
+  {
+    "chunk_index": 80,
+    "content": "## B. Riwayat Pendidikan \n\n|No|Jenjang|BidangIlmu|Institusi|Institusi|Tahun Lulus|Tahun Lulus|\n|---|---|---|---|---|---|---|\n|1|Sarjana(S1)||||||\n|2|Magister(S2)||||||\n|3|Doktor(S3)||||||\n|C. Rekam Jejak Tri Dharma PT|||||||\n|Pendidikan/Pen|Pendidikan/Pengajaran||||||\n|No|Nama Mata Kuliah|||Wajib/Pilihan||SKS|\n|1|||||||\n|2|||||||\n\n\n\nC. Rekam Jejak Tri Dharma PT \n\nPendidikan/Pengajaran",
+    "chunk_parent": "B. Riwayat Pendidikan",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 21,
+      "end": 21
+    }
+  },
+  {
+    "chunk_index": 81,
+    "content": "## Penelitian \n\n|No|Judul Penelitian|Penyandang Dana|Tahun|\n|---|---|---|---|\n|1||||\n|2||||\n|Pengabdian Ke|abdian Kepada Masyarakat|||\n|No|Judul Pengabdian kepada Masyarakat|Penyandang Dana|Tahun|\n|1||||\n|2||||",
+    "chunk_parent": "Penelitian",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 21,
+      "end": 21
+    }
+  },
+  {
+    "chunk_index": 82,
+    "content": "## Pengabdian Kepada Masyarakat \n\nSemua data yang saya isikan dan tercantum dalam biodata ini adalah benar dan dapat dipertanggungjawabkan secara hukum. Apabila di kemudian hari ternyata dijumpai ketidaksesuaian dengan kenyataan, saya sanggup menerima sanksi. \n\nDemikian biodata ini saya buat dengan sebenarnya untuk memenuhi salah satu persyaratan dalam pengajuan PKM-KC. \n\nKota, tanggal-bulan-tahun Dosen Pendamping Tanda tangan (asli TT basah) \n\n(Nama Lengkap) \n\nSetelah diisi dan diberi tanda tangan basah, satu halaman penuh yang ada tanda tangannya dipindai atau difoto yang rapi. Jika ada tandatangan hasil _cropping_ lokal, maka proposal tersebut TIDAK LOLOS tahap 1. ~~ES~~ \n\n19",
+    "chunk_parent": "Pengabdian Kepada Masyarakat",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 21,
+      "end": 21
+    }
+  },
+  {
+    "chunk_index": 83,
+    "content": "## **Lampiran 4. Format Justifikasi Anggaran Kegiatan (contoh)**",
+    "chunk_parent": "Lampiran 4. Format Justifikasi Anggaran Kegiatan (contoh)",
+    "chunk_prev": null,
+    "chunk_next": 84,
+    "page": {
+      "start": 22,
+      "end": 22
+    }
+  },
+  {
+    "chunk_index": 84,
+    "content": "|**No**|**Jenis Pengeluaran**|**Volume**|**Harga Satuan**<br>**(Rp)**|**Total (Rp)**|\n|---|---|---|---|---|\n|1|Belanja Bahan (maks. 60%)||||\n||CONTOH :<br>Kabel/engsel/mur/baut dan sejenisnya||||\n||Bahan Kimia Lab/Bahan Logam/kayu dan sejenisnya||||\n||Bibit Tanaman/Simplisia/Pupuk||||\n||Alat Ukir/Alat Lukis||||\n||Suku Cadang/Microcontroller/ Sensor/Kit||||\n||Bahan lainnya sesuai program PKM-KC||||\n|SUB TOTAL||SUB TOTAL|-||\n|2|Belanja Sewa (maks. 15%)||||\n||CONTOH:<br>Sewagedung/Alat||||\n||Sewa server/Hosting/Domain/SSL/Akses Jurnal||||\n||Sewa lab (termasuk penggunaan alat lab)||||\n||Sewa lainnya sesuai program PKM-KC||||\n|SUB TOTAL||SUB TOTAL|||\n|3|Perjalanan (maks. 30 %)||||\n||Kegiatan penyiapan bahan||||\n||Kegiatan pendampingan||||\n||Kegiatan lainnya sesuai program PKM-KC||||\n|SUB TOTAL||SUB TOTAL|||\n|4|Lain-lain (maks. 15 %)||||\n||Jasa bengkel/Uji Coba||||\n||Percetakan produk||||\n||ATK lainnya||||\n||_Adsense_akun media sosial||||\n||Lainnya sesuai program PKM-KC||||",
+    "chunk_parent": "Lampiran 4. Format Justifikasi Anggaran Kegiatan (contoh)",
+    "chunk_prev": 83,
+    "chunk_next": 85,
+    "page": {
+      "start": 22,
+      "end": 22
+    }
+  },
+  {
+    "chunk_index": 85,
+    "content": "||Jasa bengkel/Uji Coba||||\n||Percetakan produk||||\n||ATK lainnya||||\n||_Adsense_akun media sosial||||\n||Lainnya sesuai program PKM-KC||||\n|SUB TOTAL||SUB TOTAL|||\n|GRAND TOTAL||GRAND TOTAL|-||\n|GRAND TOTAL (Terbilang ---------------------)|||||",
+    "chunk_parent": "Lampiran 4. Format Justifikasi Anggaran Kegiatan (contoh)",
+    "chunk_prev": 84,
+    "chunk_next": 86,
+    "page": {
+      "start": 22,
+      "end": 22
+    }
+  },
+  {
+    "chunk_index": 86,
+    "content": "SUB TOTAL GRAND TOTAL - \n\nGRAND TOTAL (Terbilang ---------------------) \n\n**Perhatikan hasil perkalian dan penjumlahan agar tidak terjadi penolakan yang diakibatkan kesalahan perhitungan** ~~——~~ \n\n20",
+    "chunk_parent": "Lampiran 4. Format Justifikasi Anggaran Kegiatan (contoh)",
+    "chunk_prev": 85,
+    "chunk_next": null,
+    "page": {
+      "start": 22,
+      "end": 22
+    }
+  },
+  {
+    "chunk_index": 87,
+    "content": "## **Lampiran 5. Susunan Tim Pengusul dan Pembagian Tugas** \n\n|**No**|**Nama /NIM**|**Program**<br>**Studi**|**Bidang**<br>**Ilmu**|**Alokasi Waktu**<br>**(jam/minggu)**|**Uraian Tugas**|\n|---|---|---|---|---|---|\n|1||||||\n|2||||||\n|3||||||\n\n\n\n21",
+    "chunk_parent": "Lampiran 5. Susunan Tim Pengusul dan Pembagian Tugas",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 23,
+      "end": 23
+    }
+  },
+  {
+    "chunk_index": 88,
+    "content": "## KK ON.",
+    "chunk_parent": "KK ON.",
+    "chunk_prev": null,
+    "chunk_next": null,
+    "page": {
+      "start": 24,
+      "end": 24
+    }
+  },
+  {
+    "chunk_index": 89,
+    "content": "## **Lampiran 6. Surat Pernyataan Ketua Tim Pengusul** \n\nSURAT PERNYATAAN KETUA TIM PENGUSUL \n\nYang bertandatangan di bawah ini: \n\n|Nama Ketua Tim|:|……………………………………………………|\n|---|---|---|\n|Nomor Induk Mahasiswa|:|……………………………………………………|\n|Program Studi|:|……………………………………………………|\n|Nama Dosen pendamping|:|……………………………………………………|\n|Perguruan Tinggi|:|……………………………………………………|\n\n\n\nDengan ini menyatakan bahwa proposal PKM-KC saya dengan judul ....................... yang diusulkan untuk tahun anggaran ........ adalah: \n\n1. Asli karya kami, belum pernah dibiayai oleh lembaga atau sumber dana lain, dan tidak dibuat dengan menggunakan kecerdasan buatan/ _artificial intelligence_ (AI). \n\n2. Kami berkomitmen untuk menjalankan kegiatan PKM secara sungguh-sungguh hingga selesai. \n\nBilamana di kemudian hari ditemukan ketidaksesuaian dengan pernyataan ini, maka saya bersedia dituntut dan diproses sesuai dengan ketentuan yang berlaku dan mengembalikan seluruh biaya yang sudah diterima ke kas negara.",
+    "chunk_parent": "Lampiran 6. Surat Pernyataan Ketua Tim Pengusul",
+    "chunk_prev": null,
+    "chunk_next": 90,
+    "page": {
+      "start": 24,
+      "end": 24
+    }
+  },
+  {
+    "chunk_index": 90,
+    "content": "Demikian pernyataan ini dibuat dengan sesungguhnya dan dengan sebenar-benarnya. \n\nKota, Tanggal-Bulan-Tahun Yang menyatakan, **Materai senilai Rp10.000** Tanda tangan (asli TT basah) (Nama Lengkap) NIM. \n\nSetelah diisi dan diberi tanda tangan basah, satu halaman penuh yang ada tanda tangannya dipindai atau difoto dengan rapi. Jika ada tandatangan hasil _cropping_ lokal, maka proposal tersebut TIDAK LOLOS tahap 1. ~~ES~~ \n\n22",
+    "chunk_parent": "Lampiran 6. Surat Pernyataan Ketua Tim Pengusul",
+    "chunk_prev": 89,
+    "chunk_next": null,
+    "page": {
+      "start": 24,
+      "end": 24
+    }
+  },
+  {
+    "chunk_index": 91,
+    "content": "## **Lampiran 7. Format Penyusunan Rujukan dan Daftar Pustaka** \n\nPenulisan Daftar Pustaka menggunakan sistem harvard _(author-date style)_ . Sistem harvard menggunakan nama penulis dan tahun publikasi dengan urutan pemunculan berdasarkan nama penulis secara alfabetis. Publikasi dari penulis yang sama dan dalam tahun yang sama ditulis dengan cara menambahkan huruf a, b, atau c dan seterusnya tepat di belakang tahun publikasi (baik penulisan dalam daftar pustaka maupun sitasi dalam naskah tulisan). Alamat Internet ditulis menggunakan huruf miring _(italic)_ . Terdapat banyak varian dari sistem harvard yang digunakan dalam berbagai jurnal di dunia. Penyusunan daftar pustaka menggunakan perangkat lunak manajemen referensi Mendeley yang dikembangkan oleh Elsevier. \n\nCara penulisan daftar pustaka mengikuti format dan sistematika:",
+    "chunk_parent": "Lampiran 7. Format Penyusunan Rujukan dan Daftar Pustaka",
+    "chunk_prev": null,
+    "chunk_next": 92,
+    "page": {
+      "start": 25,
+      "end": 25
+    }
+  },
+  {
+    "chunk_index": 92,
+    "content": "|**No**|**Sumber Penulisan**|**Format Penulisan**|\n|---|---|---|\n|1|Buku|Penulis1, Penulis2, Penulis…. (Nama belakang, nama depan disingkat).<br>Tahun publikasi._Judul Buku_(_cetak miring_)_._Edisi,<br>Penerbit.Tempat Publikasi.<br>Hodges, N.J. dan Link, A.N. 2018._Knowledge-Intensive_<br>_Entrepreneurship: An Analysis of the European Textile and_<br>_Apparel Industries_. Edisi ke-1. Springer International Publishing.<br>Cham.|\n|2|Artikel atau Jurnal|Penulis1, Penulis2, Penulis…. (Nama belakang, nama depan disingkat).<br>Tahun publikasi. Judul Artikel._Nama Jurnal_(_cetak miring_)_._<br>Volume:nomor halaman.<br>Flowers, S. dan Meyer, M. 2020. How can entrepreneurs benefit from<br>user knowledge to create innovation in the digital services sector?<br>_Journal of Business Research_.  119 (11):122-130.|",
+    "chunk_parent": "Lampiran 7. Format Penyusunan Rujukan dan Daftar Pustaka",
+    "chunk_prev": 91,
+    "chunk_next": 93,
+    "page": {
+      "start": 25,
+      "end": 25
+    }
+  },
+  {
+    "chunk_index": 93,
+    "content": "|3|Prosiding<br>Seminar/Conference|Penulis1, Penulis2, Penulis…. (Nama belakang, nama depan disingkat).<br>Tahun publikasi. Judul artikel_. Nama Konferensi_(_cetak miring_).<br>Tanggal, Bulan dan Tahun, Kota, Negara. Halaman.<br>Tekin, M., Baş, D., Geçkil, T. dan Koyuncuoğlu, Ö. 2019.<br>Entrepreneurial competences of university students in the digital<br>age: A scale development study._Proceedings of the International_<br>_Symposium for Production Research_. 28-30 Agustus 2019,<br>Vienna, Austria. pp. 593-604.|\n|4|Skripsi/Tesis/ Disertasi|Penulis (Nama belakang, nama depan disingkat). Tahun publikasi.<br>Judul._Skripsi, Tesis, atau Disertasi_(_cetak miring_)_._Universitas.<br>Rimastuty, T.R. 2020. Dampak Dynamic Capabilities terhadap<br>Sustainability Business Performance pada UMKM di Kulon<br>Progo._Tesis_. Universitas Islam Indonesia.|",
+    "chunk_parent": "Lampiran 7. Format Penyusunan Rujukan dan Daftar Pustaka",
+    "chunk_prev": 92,
+    "chunk_next": 94,
+    "page": {
+      "start": 25,
+      "end": 25
+    }
+  },
+  {
+    "chunk_index": 94,
+    "content": "23",
+    "chunk_parent": "Lampiran 7. Format Penyusunan Rujukan dan Daftar Pustaka",
+    "chunk_prev": 93,
+    "chunk_next": 95,
+    "page": {
+      "start": 25,
+      "end": 25
+    }
+  },
+  {
+    "chunk_index": 95,
+    "content": "|5|Website|Penulis (Nama belakang, nama depan disingkat). Tahun._Judul_(_cetak_<br>_miring_). Alamat_Uniform Resources Locator_(URL). Tanggal<br>diakses.<br>Barker, J. 2021._Your big agenda just got bigger_. URL:<br>https://www2.deloitte.com/global/en/insights/topics/strategy/curr<br>ent-business-problems-strategic-imperatives.html.Diakses<br>tanggal 2 Desember 2021.|\n|---|---|---|\n|6|Undang-Undang dan<br>Peraturan|Nama Penulis. Tahun terbit._Judul dokumen yakni Undang-Undang_<br>_atau Peraturan Pemerintah_(_cetak miring_). Keterangan<br>Penerbitan. Penerbit. Tempat Penerbitan.<br>Pemerintah Indonesia. 2017._Undang-Undang No 7 Tahun 2017_<br>_tentang Pemilihan Umum_._Lembaran Negara RI Tahun 2017, No_<br>_60_. Sekretariat Negara. Jakarta.<br>Kementerian Pendidikan dan Kebudayaan. 2020._Peraturan Menteri_<br>_Pendidikan dan Kebudayaan (Permendikbud) Nomor 3 Tahun_<br>_2020 tentang Standar Nasional Pendidikan Tinggi_.<br>Kemendikbud. Jakarta.|",
+    "chunk_parent": "Lampiran 7. Format Penyusunan Rujukan dan Daftar Pustaka",
+    "chunk_prev": 94,
+    "chunk_next": 96,
+    "page": {
+      "start": 26,
+      "end": 26
+    }
+  },
+  {
+    "chunk_index": 96,
+    "content": "|7|Surat Kabar atau Media<br>Cetak lainnya|Nama Penulis. (Nama belakang, nama depan disingkat). Tahun terbit.<br>Judul tulisan. Tempat penerbitan: Nama Media. (tanggal, bulan,<br>tahun), halaman ke-berapa.<br>Linawati, S. 2012._Hikmah Kebijakan Para Pemimpin Baru._Jakarta:<br>Media Indonesia. (15 Maret 2012), hal 4 & 5.|\n|8|Film atau Video|Nama Produsen Film atau Pembuat Video. Tahun terbit._Judul film_<br>_atau video_(_cetak miring_). Tempat produsen. Nama produsen.<br>Durasi film/video<br>Handfield, D., Lunder, K., Renner, J. dan Ryder, A. 2016._The_<br>_Founder._Amerika Serikat.  The Weinstein Company. 115 menit.|",
+    "chunk_parent": "Lampiran 7. Format Penyusunan Rujukan dan Daftar Pustaka",
+    "chunk_prev": 95,
+    "chunk_next": null,
+    "page": {
+      "start": 26,
+      "end": 26
+    }
+  },
+  {
+    "chunk_index": 97,
+    "content": "## Daftar Pustaka (contoh) \n\n- Abdel-Daim, M.M., Khalifa, H.A., Abushouk, A.I., Dkhil, M.A. dan Al-Quraishy, S.A. 2017. Diosmin attenuates methotrexate-induced hepatic, renal, and cardiac injury: a biochemical and histopathological study in mice. _Oxidative medicine and cellular longevity_ , 2017. ID: 3281670. 10 pages. \n\n- Abdifetah, O. and Na-Bangchang, K. 2019. Pharmacokinetic studies of nanoparticles as a delivery system for conventional drugs and herb-derived compounds for cancer therapy: a systematic review’, _International Journal of Nanomedicine_ , 14, pp. 5659–5677. doi:10.2147/IJN.S213229. \n\n- Ahmed, S. dan Zlate, A. 2012. _Capital flows to emerging market economies: A brave new world Hyperlink reference not valid_ . URL: https://newworld/234/paper. Diakses tanggal 18 Juni 2013. \n\n- Cartlidge, J. 2012 _._ Crossing boundaries: Using fact and fiction in adult learning _. The Journal of Artistic and Creative Education_ . 6 (1): 94-111.",
+    "chunk_parent": "Daftar Pustaka (contoh)",
+    "chunk_prev": null,
+    "chunk_next": 98,
+    "page": {
+      "start": 26,
+      "end": 26
+    }
+  },
+  {
+    "chunk_index": 98,
+    "content": "- Chung, A.I. 2020. _The development of earthquake early warning methods_ . URL: https://www.nature.com/articles/s43017-020-0070-x. Diakses tanggal 19 Januari 2021. \n\n24 \n\n- me! \\ NE Fatimah, A.S. 2020. Deteksi Residu Antibiotik dalam Minuman Susu Aneka Rasa Menggunakan Metode Yogurt Test. _Tesis_ . Fakultas Kedokteran Hewan IPB University, Bogor. \n\n   - Goyal, M.R., Suleria, H.A.R. and Harikrishnan, R. (2020) _The Role of Phytoconstitutents in Health Care: Biocompounds in Medicinal Plants_ . CRC Press. \n\n   - Hsu, C.C., Lin, M.H., Cheng, J.T. dan Wu, M.C. 2017. Diosmin, a citrus nutrient, activates imidazoline receptors to alleviate blood glucose and lipids in type 1-like diabetic rats. _Nutrients_ , 9(7), 684. \n\n   - Ikawati, Z. 2018. _Farmakologi Molekuler: Target Aksi Obat Dan Mekanisme Molekulernya_ . UGM PRESS.",
+    "chunk_parent": "Daftar Pustaka (contoh)",
+    "chunk_prev": 97,
+    "chunk_next": 99,
+    "page": {
+      "start": 26,
+      "end": 27
+    }
+  },
+  {
+    "chunk_index": 99,
+    "content": "- Ikawati, Z. 2018. _Farmakologi Molekuler: Target Aksi Obat Dan Mekanisme Molekulernya_ . UGM PRESS. \n\n   - Islam, J., Shree, A., Afzal, S.M., Vafa, A. dan Sultana, S. 2020. Protective effect of Diosmin against benzo (a) pyrene‐induced lung injury in Swiss Albino Mice. _Environmental Toxicology_ 7(35): 747-757. \n\n   - Kementerian Kesehatan RI. 2015. _Stop Kanker, Infodatin, Pusat Data dan Informasi, website,_ http://www.depkes.go.id/resources/download/pusdatin/infodatin/infodatin-kanker.pdf, Diakses pada tanggal 25 Mei 2015. \n\n   - Khoirunnisa M., Miladiyah I., 2019. Antioxidant activity study of self-nanoemulsifying drug delivery system (SNEDDS) black cumin seed extract (nigella sativa l.) Using the dpph method. Thesis publication manuscript. Faculty of Medicine. Universitas Islam Indonesia. \n\n   - Kuete V. 2017. Chapter 23. Myristica fragrans: A Review, in: Medicinal Spices and Vegetables from Africa, edited by Kuete V, Academic Press, London, UK. pp 497‑512.",
+    "chunk_parent": "Daftar Pustaka (contoh)",
+    "chunk_prev": 98,
+    "chunk_next": 100,
+    "page": {
+      "start": 27,
+      "end": 27
+    }
+  },
+  {
+    "chunk_index": 100,
+    "content": "- Michael, R. 2011. Integrating innovation into enterprise architecture management. _Proceeding on Tenth International Conference on Wirt-schafts Informatik_ .16-18 February 2011, Zurich, Swiss. pp.776-786. \n\n   - O’Brien, J.A. dan Marakas, J.M. 2011. _Management Information Systems_ . Edisi ke-10. McGraw-Hill. New York. USA. \n\n   - Shalkami, A.S., Hassan, M.I.A. dan Bakr, A.G. 2018. Anti-inflammatory, antioxidant and antiapoptotic activity of diosmin in acetic acid-induced ulcerative colitis. _Human & experimental toxicology_ , 37(1), 78-86. \n\n   - Sulichantini, E.D. 2015. Produksi Metabolit Sekunder Melalui Kultur Jaringan’, _Proceeding of Mulawarman Pharmaceuticals Conferences_ , 1, pp. 205–212. doi:10.25026/mpc.v1i1.27. \n\n   - Syukri, Y. 2017. Self-Nano Emulsifying Drug Delivery System (SNEDDS) Isolat Andrografolid: Aspek Formulasi, Ketersediaan Hayati Dan Farmakologi. _Dissertation._ Universitas Gadjah Mada, Yogyakarta.",
+    "chunk_parent": "Daftar Pustaka (contoh)",
+    "chunk_prev": 99,
+    "chunk_next": 101,
+    "page": {
+      "start": 27,
+      "end": 27
+    }
+  },
+  {
+    "chunk_index": 101,
+    "content": "- World Health Organization. 2021. _Living guidance for clinical management of COVID-19_ . Available at: https://www.who.int/publications-detail-redirect/WHO-2019-nCoVclinical-2021-2 (Accessed: 2 December 2021).",
+    "chunk_parent": "Daftar Pustaka (contoh)",
+    "chunk_prev": 100,
+    "chunk_next": null,
+    "page": {
+      "start": 27,
+      "end": 27
+    }
+  },
+  {
+    "chunk_index": 102,
+    "content": "## **Lampiran 8. Formulir Penilaian Proposal** \n\n25 \n\n|Judul Kegiatan|:|..............................................................................|\n|---|---|---|\n|Skema PKM|:|PKM-KC|\n|Bidang Ilmu|:|..............................................................................|\n|NIM / Nama Ketua|:|..............................................................................|\n|NIM / Nama Anggota 1|:|..............................................................................|\n|…………….|:|..............................................................................|\n|NIM / Nama Anggota 4|:|..............................................................................|\n|Perguruan Tinggi|:|..............................................................................|\n|Program Studi|:|..............................................................................|",
+    "chunk_parent": "Lampiran 8. Formulir Penilaian Proposal",
+    "chunk_prev": null,
+    "chunk_next": 103,
+    "page": {
+      "start": 27,
+      "end": 28
+    }
+  },
+  {
+    "chunk_index": 103,
+    "content": "|No|Kriteria|Bobot|Skor|Nilai|\n|---|---|---|---|---|\n|1|Kreativitas:||||\n||Gagasan (orisinalitas, unik dan manfaat masa depan)|20|||\n||Kemutakhiran ipteks yang diadopsi|20|||\n|2|Kesesuaian Tahap Pelaksanaan|15|||\n|3|Potensi Program:||||\n||Kontribusi Produk Luaran Terhadap Perkembangan IPTEKS|25|||\n||Potensi Publikasi Artikel Ilmiah/KI|10|||\n|4|Penjadwalan Kegiatan dan Personalia:<br>Lengkap, Jelas, Waktu, dan Personalianya Sesuai|5|||\n|5|Penyusunan Anggaran Biaya:<br>Lengkap, Rinci, Wajar dan Jelas Peruntukannya|5|||\n|Total||100|||\n\n\n\nKeterangan: \n\nNilai=Bobot x Skor; Skor (1=Buruk; 2=Sangat kurang; 3=Kurang; 5=Cukup; 6=Baik; 7=Sangat baik); Komentar: .......................................................................... \n\nKota, tanggal-bulan-tahun Penilai, \n\nTandatangan \n\n(Nama Lengkap) \n\n26",
+    "chunk_parent": "Lampiran 8. Formulir Penilaian Proposal",
+    "chunk_prev": 102,
+    "chunk_next": null,
+    "page": {
+      "start": 28,
+      "end": 28
+    }
+  },
+  {
+    "chunk_index": 104,
+    "content": "## **Lampiran 9. Formulir Penilaian Laporan Kemajuan Pelaksanaan** \n\n|Judul Kegiatan|:|..............................................................................|\n|---|---|---|\n|Skema PKM|:|PKM-KC|\n|Bidang Ilmu|:|..............................................................................|\n|NIM / Nama Ketua|:|..............................................................................|\n|NIM / Nama Anggota 1|:|..............................................................................|\n|…………….|:|..............................................................................|\n|NIM / Nama Anggota 4|:|..............................................................................|\n|Perguruan Tinggi|:|..............................................................................|\n|Program Studi|:|..............................................................................|",
+    "chunk_parent": "Lampiran 9. Formulir Penilaian Laporan Kemajuan Pelaksanaan",
+    "chunk_prev": null,
+    "chunk_next": 105,
+    "page": {
+      "start": 29,
+      "end": 29
+    }
+  },
+  {
+    "chunk_index": 105,
+    "content": "|No|Kriteria|Bobot|Skor|Nilai|\n|---|---|---|---|---|\n|1|Pendahuluan|10|||\n|2|Target Luaran|15|||\n|3|TahapPelaksanaan|25|||\n|4|Hasil Yang Dicapai|25|||\n|5|Potensi Hasil|15|||\n|6|Publikasi danpromosi hasil PKM di media sosial|5|||\n|7|Rencana tahapan selanjutnya|5|||\n|Total||100|||\n\n\n\nKeterangan: \n\nNilai=Bobot x Skor; Skor (1=Buruk; 2=Sangat kurang; 3=Kurang; 5=Cukup; 6=Baik; 7=Sangat baik); Komentar: .......................................................................... \n\nKota, tanggal-bulan-tahun Penilai, \n\nTandatangan \n\n(Nama Lengkap) \n\n27",
+    "chunk_parent": "Lampiran 9. Formulir Penilaian Laporan Kemajuan Pelaksanaan",
+    "chunk_prev": 104,
+    "chunk_next": null,
+    "page": {
+      "start": 29,
+      "end": 29
+    }
+  },
+  {
+    "chunk_index": 106,
+    "content": "## **Lampiran 10. Formulir Penilaian PKP2 (Presentasi)** \n\n|Judul Kegiatan|:|..............................................................................|\n|---|---|---|\n|Skema PKM|:|PKM-KC|\n|Bidang Ilmu|:|..............................................................................|\n|NIM / Nama Ketua|:|..............................................................................|\n|NIM / Nama Anggota1|:|..............................................................................|\n|…………….|:|..............................................................................|\n|NIM / Nama Anggota4|:|..............................................................................|\n|Perguruan Tinggi|:|..............................................................................|\n|Program Studi|:|..............................................................................|",
+    "chunk_parent": "Lampiran 10. Formulir Penilaian PKP2 (Presentasi)",
+    "chunk_prev": null,
+    "chunk_next": 107,
+    "page": {
+      "start": 30,
+      "end": 30
+    }
+  },
+  {
+    "chunk_index": 107,
+    "content": "|No|Kriteria|Bobot|Skor|Nilai|\n|---|---|---|---|---|\n|1|Target Luaran (kesesuaian luaran dan permasalahan)|10|||\n|2|Tahap Pelaksanaan (kemutakhiran dan keberhasilan tahap<br>pelaksanaan)|20|||\n|3|Tingkat Kreativitas dan Ketercapaian Target Luaran<br>(permasalahan, ketepatan solusi, kesesuaian jenis dan jumlah<br>luaran, kesesuaian dengan catatan harian)|35|||\n|4|Kesesuaian pelaksanaan dan rencana tahapan berikutnya<br>(waktu pelaksanaan, bahan dan alat serta metode yang<br>digunakan, personalia, biaya)|10|||\n|5|Kekompakan Tim Pelaksana dan Peranan Dosen Pendamping<br>(kerjasama, pembagian tugas, mengoreksi Proposal, memantau<br>pelaksanaan, melayani konsultasi)|10|||\n|6|Potensi Khusus (artikel ilmiah, peluang paten, peluang<br>komersial, keberlanjutan program)|15|||\n|Total||100|||\n\n\n\nKeterangan: \n\nNilai=Bobot x Skor; Skor (1=Buruk; 2=Sangat kurang; 3=Kurang; 5=Cukup; 6=Baik; 7=Sangat baik); Komentar: ..........................................................................",
+    "chunk_parent": "Lampiran 10. Formulir Penilaian PKP2 (Presentasi)",
+    "chunk_prev": 106,
+    "chunk_next": 108,
+    "page": {
+      "start": 30,
+      "end": 30
+    }
+  },
+  {
+    "chunk_index": 108,
+    "content": "Kota, tanggal-bulan-tahun Penilai, Tandatangan (Nama Lengkap) \n\n28",
+    "chunk_parent": "Lampiran 10. Formulir Penilaian PKP2 (Presentasi)",
+    "chunk_prev": 107,
+    "chunk_next": null,
+    "page": {
+      "start": 30,
+      "end": 30
+    }
+  },
+  {
+    "chunk_index": 109,
+    "content": "## **Lampiran 11. Formulir Penilaian Laporan Akhir** \n\n|Judul Kegiatan|:|..............................................................................|\n|---|---|---|\n|Skema PKM|:|PKM-KC|\n|Bidang Ilmu|:|..............................................................................|\n|NIM / Nama Ketua|:|..............................................................................|\n|NIM / Nama Anggota 1|:|..............................................................................|\n|…………….|:|..............................................................................|\n|NIM / Nama Anggota 4|:|..............................................................................|\n|Perguruan Tinggi|:|..............................................................................|\n|Program Studi|:|..............................................................................|",
+    "chunk_parent": "Lampiran 11. Formulir Penilaian Laporan Akhir",
+    "chunk_prev": null,
+    "chunk_next": 110,
+    "page": {
+      "start": 31,
+      "end": 31
+    }
+  },
+  {
+    "chunk_index": 110,
+    "content": "|No|Kriteria|Bobot|Skor|Nilai|\n|---|---|---|---|---|\n|1|Pendahuluan (sumber inspirasi, tantangan intelektual)|15|||\n|2|Tinjauan pustaka (kajian teori dari tantangan Intelektual)|15|||\n|3|Tahap Pelaksanaan (Konstruksi dari Inspirasi)|25|||\n|4|Hasil yang dicapai dan potensi khusus|30|||\n|5|Penutup (Kesimpulan dan Saran)|10|||\n|6|Daftar Pustaka|5|||\n|Total||100|||\n\n\n\nKeterangan: \n\nNilai=Bobot x Skor; Skor (1=Buruk; 2=Sangat kurang; 3=Kurang; 5=Cukup; 6=Baik; 7=Sangat baik); Komentar: .......................................................................... \n\nKota, tanggal-bulan-tahun Penilai, \n\nTandatangan \n\n(Nama Lengkap) \n\n29",
+    "chunk_parent": "Lampiran 11. Formulir Penilaian Laporan Akhir",
+    "chunk_prev": 109,
+    "chunk_next": null,
+    "page": {
+      "start": 31,
+      "end": 31
+    }
+  }
+]

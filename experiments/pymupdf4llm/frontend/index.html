@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocRAG — Pencarian Dokumen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="app-shell">
+
+    <!-- ── Sidebar kiri ───────────────────────────── -->
+    <aside class="sidebar">
+      <div class="sidebar-inner">
+
+        <header class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <rect x="1.5" y="1.5" width="7" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+              <rect x="11.5" y="1.5" width="7" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+              <rect x="11.5" y="10.5" width="7" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <span class="brand-name">DocRAG</span>
+        </header>
+
+        <div class="sidebar-content">
+          <h1 class="sidebar-title">Tanya<br><em>dokumen</em><br>Anda.</h1>
+          <p class="sidebar-desc">
+            Pertanyaan dikirim ke pipeline Python &mdash; Supabase mengambil chunk
+            paling relevan, lalu Gemini menyusun jawaban terstruktur dengan sitasi.
+          </p>
+
+          <dl class="meta-list">
+            <div class="meta-item">
+              <dt>Retrieval</dt>
+              <dd>pgvector · cosine similarity</dd>
+            </div>
+            <div class="meta-item">
+              <dt>Embedding</dt>
+              <dd>gemini-embedding-001 · 768d</dd>
+            </div>
+            <div class="meta-item">
+              <dt>Generator</dt>
+              <dd>Gemini · structured output</dd>
+            </div>
+          </dl>
+        </div>
+
+        <footer class="sidebar-footer">
+          <div class="status-row">
+            <span class="status-dot" id="status-dot"></span>
+            <span id="server-status">Siap menerima pertanyaan</span>
+          </div>
+        </footer>
+
+      </div>
+    </aside>
+
+    <!-- ── Panel chat utama ───────────────────────── -->
+    <section class="chat-panel">
+
+      <div class="chat-topbar">
+        <div>
+          <span class="topbar-eyebrow">Percakapan</span>
+          <h2 class="topbar-title">Basis pengetahuan dokumen</h2>
+        </div>
+        <button id="clear-chat" class="btn-ghost" type="button">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          Bersihkan
+        </button>
+      </div>
+
+      <div id="messages" class="messages" aria-live="polite" aria-label="Riwayat percakapan">
+        <article class="message message--ai">
+          <div class="msg-role">DocRAG</div>
+          <div class="message-card">
+            <p>Halo. Tanyakan sesuatu tentang dokumen PKM yang sudah di-ingest ke Supabase.</p>
+          </div>
+        </article>
+      </div>
+
+      <form id="chat-form" class="composer" autocomplete="off">
+        <div class="composer-field">
+          <textarea
+            id="message-input"
+            name="message"
+            rows="1"
+            placeholder="Contoh: Apa tujuan PKM-KC?"
+            required
+          ></textarea>
+          <button id="send-button" class="btn-send" type="submit" aria-label="Kirim pertanyaan">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M8 13V3M3 8l5-5 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        <p class="composer-hint">Jawaban akan dibatasi pada sumber PKM yang tersedia, lengkap dengan status grounding, poin penting, langkah, dan sitasi.</p>
+      </form>
+
+    </section>
+  </main>
+
+  <template id="message-template">
+    <article class="message">
+      <div class="msg-role"></div>
+      <div class="message-card"></div>
+    </article>
+  </template>
+
+  <script src="/app.js"></script>
+</body>
+</html>

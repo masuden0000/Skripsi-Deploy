@@ -1,0 +1,14 @@
+# Python virtual environment
+.venv/
+**/.venv/
+
+# Environment and secrets
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+
+# PDF documents
+*.pdf
+**/*.pdf

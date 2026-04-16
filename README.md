@@ -35,6 +35,19 @@ Repository untuk eksperimen PyMuPDF4LLM + RAG dengan backend Supabase dan fronte
 - **Explicit Load**: Tambahkan `load_dotenv(dotenv_path=ENV_FILE)` di `chat_server.py` untuk explicit .env handling
 - **Consistent Path**: Menggunakan `APP_DIR / ".env"` untuk path loading yang reliable
 
+### ✅ Modular Refactor (model_ai)
+- **Struktur Baru**: Memecah modul AI ke subpackage terpisah agar lebih maintainable:
+   - `model_ai/loader/` untuk extraction, chunk building, dan Supabase ingest
+   - `model_ai/rag/` untuk RAG service dan simple LLM flow
+   - `model_ai/ui/` untuk server chat
+   - `model_ai/dev/` untuk script inspeksi/dev helper
+- **Cleanup Legacy**: Menghapus file modul lama yang duplikatif di root `model_ai/`
+
+### ✅ Chunk Quality Improvements
+- **Page Range Accuracy**: Memperbaiki urutan chunk dan rentang halaman di `data/output_chunks.json`
+- **OCR Artifact Cleanup**: Mengurangi artefak strikethrough/noise hasil OCR pada konten chunk
+- **Output Refresh**: Regenerasi `data/output.md` agar sinkron dengan pipeline terbaru
+
 ## Quick Start
 
 1. Clone repository:

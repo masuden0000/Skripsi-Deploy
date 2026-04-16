@@ -7,11 +7,14 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 if __package__:
-    from .llm_rag import ask_rag
+    from ..rag.rag_service import ask_rag
 else:
-    from llm_rag import ask_rag
+    import sys
 
-APP_DIR = Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from model_ai.rag.rag_service import ask_rag
+
+APP_DIR = Path(__file__).resolve().parents[2]
 ENV_FILE = APP_DIR / ".env"
 
 load_dotenv(dotenv_path=ENV_FILE)

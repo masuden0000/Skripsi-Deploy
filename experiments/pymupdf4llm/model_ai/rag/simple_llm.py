@@ -2,24 +2,43 @@ import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
-from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-APP_DIR = Path(__file__).resolve().parent.parent
+APP_DIR = Path(__file__).resolve().parents[2]
 ENV_FILE = APP_DIR / ".env"
 
 load_dotenv(dotenv_path=ENV_FILE)
 
-MODEL_NAME = os.getenv("MODEL_NAME")
-TEMPERATURE = float(os.getenv("TEMPERATURE", "0.7"))
+
+def get_required_env(name: str) -> str:
+    """Get required environment variable or raise ValueError."""
+    value = os.getenv(name, "").strip()
+    if not value:
+        raise ValueError(f"{name} belum di-set di file .env.")
+    return value
+
+
+def _validate_env_vars() -> None:
+    """Validate required environment variables at module load time."""
+    required_vars = ["MODEL_NAME", "TEMPERATURE"]
+    for var in required_vars:
+        get_required_env(var)
+
+
+MODEL_NAME = get_required_env("MODEL_NAME")
+TEMPERATURE = float(get_required_env("TEMPERATURE"))
+
+_validate_env_vars()
 
 
 class LLMResponse(BaseModel):
     answer: str = Field(description="Jawaban utama untuk pertanyaan user.")
     keywords: list[str] = Field(description="Kata kunci penting dari jawaban.")
     language: str = Field(description="Bahasa yang dipakai dalam jawaban.")
+
 
 def get_google_api_key() -> str:
     api_key = os.getenv("GOOGLE_API_KEY", "").strip()

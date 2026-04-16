@@ -7,17 +7,30 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from pydantic import BaseModel
 from supabase import Client, create_client
 
-APP_DIR = Path(__file__).resolve().parent.parent
+APP_DIR = Path(__file__).resolve().parents[2]
 ENV_FILE = APP_DIR / ".env"
 CHUNKS_FILE = APP_DIR / "data" / "output_chunks.json"
 
 load_dotenv(dotenv_path=ENV_FILE)
 
-EMBEDDING_MODEL_NAME = os.getenv(
-    "EMBEDDING_MODEL_NAME", "gemini-embedding-001"
-)
+
+def get_required_env(name: str) -> str:
+    value = os.getenv(name, "").strip()
+    if not value:
+        raise ValueError(f"{name} belum di-set di file .env.")
+    return value
+
+
+def _validate_env_vars() -> None:
+    """Validate required environment variables at module load time."""
+    get_required_env("EMBEDDING_MODEL_NAME")
+
+
+EMBEDDING_MODEL_NAME = get_required_env("EMBEDDING_MODEL_NAME")
 EMBEDDING_DIMENSION = 768
 BATCH_SIZE = 20
+
+_validate_env_vars()
 
 
 class PageRange(BaseModel):
@@ -32,13 +45,6 @@ class ChunkRecord(BaseModel):
     chunk_prev: int | None
     chunk_next: int | None
     page: PageRange
-
-
-def get_required_env(name: str) -> str:
-    value = os.getenv(name, "").strip()
-    if not value:
-        raise ValueError(f"{name} belum di-set di file .env.")
-    return value
 
 
 def load_chunks(path: Path) -> list[ChunkRecord]:

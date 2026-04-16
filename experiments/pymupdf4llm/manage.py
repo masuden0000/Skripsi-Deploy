@@ -17,9 +17,10 @@ def ensure_supported_python() -> None:
             "Gunakan Python 3.11, 3.12, atau 3.13."
         )
 
+
 def run_setup(skip_ingest: bool = False) -> None:
-    from model_ai.embed_chunks_supabase import upsert_embeddings
-    from model_ai.extractor import extract_chunks
+    from model_ai.loader.pdf_extractor import extract_chunks
+    from model_ai.loader.supabase_ingest import upsert_embeddings
 
     total_chunks, output_path = extract_chunks()
     print(f"[setup] Berhasil membuat {total_chunks} chunk: {output_path}")
@@ -52,7 +53,7 @@ def main() -> None:
 
     subparsers.add_parser(
         "ui",
-        help="Jalankan web chat UI yang terhubung ke llm_rag.py.",
+        help="Jalankan web chat UI yang terhubung ke model_ai.rag.rag_service.",
     )
 
     args = parser.parse_args()
@@ -62,7 +63,7 @@ def main() -> None:
         return
 
     if args.command == "ui":
-        from model_ai.chat_server import main as run_chat_server
+        from model_ai.ui.chat_server import main as run_chat_server
 
         run_chat_server()
 

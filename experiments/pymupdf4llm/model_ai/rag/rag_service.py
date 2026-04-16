@@ -1,30 +1,43 @@
 import os
 import sys
-from typing import Literal
 from pathlib import Path
+from typing import Literal
 
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_genai import (
-    ChatGoogleGenerativeAI,
-    GoogleGenerativeAIEmbeddings,
-)
+from langchain_google_genai import (ChatGoogleGenerativeAI,
+                                    GoogleGenerativeAIEmbeddings)
 from pydantic import BaseModel, Field
 from supabase import Client, create_client
 
-APP_DIR = Path(__file__).resolve().parent.parent
+APP_DIR = Path(__file__).resolve().parents[2]
 ENV_FILE = APP_DIR / ".env"
 
 load_dotenv(dotenv_path=ENV_FILE)
 
-MODEL_NAME = os.getenv("MODEL_NAME")
-TEMPERATURE = float(os.getenv("TEMPERATURE", "0.7"))
-EMBEDDING_MODEL_NAME = os.getenv(
-    "EMBEDDING_MODEL_NAME", "gemini-embedding-001"
-)
+
+def get_required_env(name: str) -> str:
+    value = os.getenv(name, "").strip()
+    if not value:
+        raise ValueError(f"{name} belum di-set di file .env.")
+    return value
+
+
+def _validate_env_vars() -> None:
+    """Validate required environment variables at module load time."""
+    required_vars = ["MODEL_NAME", "TEMPERATURE", "EMBEDDING_MODEL_NAME"]
+    for var in required_vars:
+        get_required_env(var)
+
+
+MODEL_NAME = get_required_env("MODEL_NAME")
+TEMPERATURE = float(get_required_env("TEMPERATURE"))
+EMBEDDING_MODEL_NAME = get_required_env("EMBEDDING_MODEL_NAME")
 EMBEDDING_DIMENSION = 768
-RAG_TOP_K = int(os.getenv("RAG_TOP_K", "5"))
-MIN_CONTEXT_SIMILARITY = float(os.getenv("RAG_MIN_CONTEXT_SIMILARITY", "0.45"))
+RAG_TOP_K = int(get_required_env("RAG_TOP_K"))
+MIN_CONTEXT_SIMILARITY = float(get_required_env("RAG_MIN_CONTEXT_SIMILARITY"))
+
+_validate_env_vars()
 
 
 class Citation(BaseModel):
@@ -62,13 +75,6 @@ class RetrievedChunk(BaseModel):
     similarity: float | None = None
 
 
-def get_required_env(name: str) -> str:
-    value = os.getenv(name, "").strip()
-    if not value:
-        raise ValueError(f"{name} belum di-set di file .env.")
-    return value
-
-
 def validate_question(question: str) -> str:
     clean_question = question.strip()
     if not clean_question:
@@ -90,7 +96,7 @@ def build_supabase_client() -> Client:
 def build_embedder() -> GoogleGenerativeAIEmbeddings:
     return GoogleGenerativeAIEmbeddings(
         model=EMBEDDING_MODEL_NAME,
-        google_api_key=get_required_env("GOOGLE_API_KEY"),
+        google_api_key=get_required_env("GOOGLE_API_KEY"),  # type: ignore
     )
 
 
@@ -115,7 +121,7 @@ def retrieve_chunks(question: str) -> list[RetrievedChunk]:
     ).execute()
 
     records = response.data or []
-    return [RetrievedChunk.model_validate(item) for item in records]
+    return [RetrievedChunk.model_validate(item) for item in records]  # type: ignore
 
 
 def build_context(chunks: list[RetrievedChunk]) -> str:
@@ -278,7 +284,7 @@ def ask_rag(question: str) -> RAGResponse:
     context = build_context(retrieved_chunks)
     chain = build_chain()
     answer = chain.invoke({"question": clean_question, "context": context})
-    return normalize_response(answer, retrieved_chunks)
+    return normalize_response(answer, retrieved_chunks)  # type: ignore
 
 
 def main() -> None:

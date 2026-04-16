@@ -1,6 +1,8 @@
 # Python virtual environment
 .venv/
 **/.venv/
+__pycache__/
+*.py[cod]
 
 # Environment and secrets
 .env
@@ -12,3 +14,6 @@
 # PDF documents
 *.pdf
 **/*.pdf
+
+# Experiment-generated data
+experiments/pymupdf4llm/data/

@@ -1,36 +1,18 @@
 import json
-import os
 from pathlib import Path
 
-from dotenv import load_dotenv
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from pydantic import BaseModel
 from supabase import Client, create_client
 
+from model_ai.config import get_config
+
 APP_DIR = Path(__file__).resolve().parents[2]
-ENV_FILE = APP_DIR / ".env"
 CHUNKS_FILE = APP_DIR / "data" / "output_chunks.json"
-
-load_dotenv(dotenv_path=ENV_FILE)
-
-
-def get_required_env(name: str) -> str:
-    value = os.getenv(name, "").strip()
-    if not value:
-        raise ValueError(f"{name} belum di-set di file .env.")
-    return value
-
-
-def _validate_env_vars() -> None:
-    """Validate required environment variables at module load time."""
-    get_required_env("EMBEDDING_MODEL_NAME")
-
-
-EMBEDDING_MODEL_NAME = get_required_env("EMBEDDING_MODEL_NAME")
+CONFIG = get_config()
+EMBEDDING_MODEL_NAME = CONFIG.embedding_model_name
 EMBEDDING_DIMENSION = 768
 BATCH_SIZE = 20
-
-_validate_env_vars()
 
 
 class PageRange(BaseModel):
@@ -62,15 +44,15 @@ def load_chunks(path: Path) -> list[ChunkRecord]:
 
 def build_supabase_client() -> Client:
     return create_client(
-        get_required_env("SUPABASE_URL"),
-        get_required_env("SUPABASE_SERVICE_ROLE_KEY"),
+        CONFIG.supabase_url,
+        CONFIG.supabase_service_role_key.get_secret_value(),
     )
 
 
 def build_embedder() -> GoogleGenerativeAIEmbeddings:
     return GoogleGenerativeAIEmbeddings(
         model=EMBEDDING_MODEL_NAME,
-        google_api_key=get_required_env("GOOGLE_API_KEY"),
+        google_api_key=CONFIG.google_api_key.get_secret_value(),
     )
 
 

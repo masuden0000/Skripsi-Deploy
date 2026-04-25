@@ -33,16 +33,10 @@ def run_setup(skip_ingest: bool = False) -> None:
     print(f"[setup] Berhasil upsert {total_rows} chunk ke Supabase.")
 
 
-def run_generate_testset() -> None:
-    from model_ai.eval.testset_generator import generate_testset
+def run_extract() -> None:
+    from model_ai.extractor.doc_extractor import run_extraction
 
-    generate_testset()
-
-
-def run_eval() -> None:
-    from model_ai.eval.ragas_evaluator import run_evaluation
-
-    run_evaluation()
+    run_extraction()
 
 
 def main() -> None:
@@ -69,13 +63,8 @@ def main() -> None:
     )
 
     subparsers.add_parser(
-        "generate_testset",
-        help="Generate synthetic Q&A testset dari output_chunks.json menggunakan RAGAS + gpt-4o.",
-    )
-
-    subparsers.add_parser(
-        "eval",
-        help="Evaluasi RAG pipeline menggunakan RAGAS metrics (Faithfulness, AnswerRelevancy, dll).",
+        "extract",
+        help="Ekstrak metadata terstruktur dari chunks Supabase dan simpan ke output.json.",
     )
 
     args = parser.parse_args()
@@ -89,12 +78,9 @@ def main() -> None:
 
         run_chat_server()
 
-    if args.command == "generate_testset":
-        run_generate_testset()
+    if args.command == "extract":
+        run_extract()
         return
-
-    if args.command == "eval":
-        run_eval()
 
 
 if __name__ == "__main__":

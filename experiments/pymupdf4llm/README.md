@@ -42,7 +42,8 @@ experiments/pymupdf4llm/
 ## Kebutuhan Environment
 
 - Python `3.11`, `3.12`, atau `3.13`
-- Google API key untuk Gemini
+- Groq API key
+- Google API key untuk embedding Gemini
 - Project Supabase dengan tabel dan RPC yang sesuai
 
 Salin `.env.example` menjadi `.env`, lalu isi semua nilai yang diperlukan.
@@ -77,6 +78,7 @@ python experiments/pymupdf4llm/manage.py ui
 
 Nilai yang saat ini dipakai oleh kode:
 
+- `GROQ_API_KEY`
 - `GOOGLE_API_KEY`
 - `MODEL_NAME`
 - `TEMPERATURE`
@@ -87,6 +89,11 @@ Nilai yang saat ini dipakai oleh kode:
 - `CHAT_PORT`
 - `RAG_TOP_K`
 - `RAG_MIN_CONTEXT_SIMILARITY`
+
+Catatan:
+
+- Chat model untuk `simple_llm.py`, `rag_service.py`, `doc_extractor.py`, dan `doc_extractor_typography_dummy.py` sekarang memakai Groq via `langchain-groq`.
+- Embedding untuk retrieval dan ingest Supabase masih memakai Gemini embedding (`langchain-google-genai`).
 
 ## Output Penting
 

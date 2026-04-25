@@ -1,10 +1,9 @@
 import json
-import os
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from dotenv import load_dotenv
+from model_ai.config import get_config
 
 if __package__:
     from ..rag.rag_service import ask_rag
@@ -15,12 +14,9 @@ else:
     from model_ai.rag.rag_service import ask_rag
 
 APP_DIR = Path(__file__).resolve().parents[2]
-ENV_FILE = APP_DIR / ".env"
-
-load_dotenv(dotenv_path=ENV_FILE)
-
-HOST = os.getenv("CHAT_HOST", "127.0.0.1")
-PORT = int(os.getenv("CHAT_PORT", "8000"))
+CONFIG = get_config()
+HOST = CONFIG.chat_host
+PORT = CONFIG.chat_port
 
 STATIC_FILES = {
     "/": ("frontend/index.html", "text/html; charset=utf-8"),

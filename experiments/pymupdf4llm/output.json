@@ -1,0 +1,157 @@
+{
+    "document_type": "Proposal & Laporan PKM-KC",
+    "source_document": "Panduan PKM Karsa Cipta (KC) 2024 - Ditjen Diktiristek",
+    "typography": {
+        "font_family": "Times New Roman",
+        "font_size_body_pt": 12,
+        "font_size_heading_pt": "12pt (sama dengan body, bold untuk BAB)",
+        "heading_style": "Bold; cetak tebal untuk heading BAB",
+        "heading_capitalization": "ALL CAPS untuk judul BAB (contoh: BAB 1. PENDAHULUAN)"
+    },
+    "page_layout": {
+        "margin_top_cm": 3.0,
+        "margin_bottom_cm": 3.0,
+        "margin_left_cm": 4.0,
+        "margin_right_cm": 3.0,
+        "paper_size": "A4",
+        "orientation": "Portrait",
+        "columns": 1
+    },
+    "spacing": {
+        "line_spacing_body": 1.15,
+        "paragraph_alignment": "Justify (rata kiri dan kanan)",
+        "paragraph_first_indent": null,
+        "hanging_indent_references": "Baris ke-2 dan seterusnya menjorok ke dalam (hanging indent)"
+    },
+    "document_structure_proposal": {
+        "halaman_sampul": false,
+        "halaman_pengesahan": false,
+        "ringkasan": false,
+        "daftar_isi": true,
+        "daftar_gambar": "Opsional (jika ada)",
+        "daftar_tabel": "Opsional (jika ada)",
+        "daftar_lampiran": "Opsional (jika ada)",
+        "bab_list": [
+            {
+                "bab_number": "BAB 1",
+                "title": "PENDAHULUAN"
+            },
+            {
+                "bab_number": "BAB 2",
+                "title": "TINJAUAN PUSTAKA"
+            },
+            {
+                "bab_number": "BAB 3",
+                "title": "TAHAP PELAKSANAAN"
+            },
+            {
+                "bab_number": "BAB 4",
+                "title": "BIAYA DAN JADWAL KEGIATAN"
+            }
+        ],
+        "daftar_pustaka": true,
+        "lampiran": true,
+        "max_halaman_inti": 10,
+        "format_nama_file": "namaketua_namapt_PKM-KC.pdf"
+    },
+    "document_structure_laporan_kemajuan": {
+        "halaman_sampul": false,
+        "halaman_pengesahan": false,
+        "ringkasan": false,
+        "daftar_isi": true,
+        "daftar_gambar": "Opsional (jika ada)",
+        "daftar_tabel": "Opsional (jika ada)",
+        "daftar_lampiran": "Opsional (jika ada)",
+        "bab_list": [
+            {
+                "bab_number": "BAB 1",
+                "title": "PENDAHULUAN"
+            },
+            {
+                "bab_number": "BAB 2",
+                "title": "TARGET LUARAN"
+            },
+            {
+                "bab_number": "BAB 3",
+                "title": "TAHAP PELAKSANAAN"
+            },
+            {
+                "bab_number": "BAB 4",
+                "title": "HASIL YANG DICAPAI"
+            },
+            {
+                "bab_number": "BAB 5",
+                "title": "POTENSI HASIL"
+            },
+            {
+                "bab_number": "BAB 6",
+                "title": "RENCANA TAHAPAN BERIKUTNYA"
+            }
+        ],
+        "daftar_pustaka": true,
+        "lampiran": true,
+        "max_halaman_inti": 10,
+        "format_nama_file": "namaketua_namapt_PKM-KC.pdf"
+    },
+    "document_structure_laporan_akhir": {
+        "halaman_sampul": false,
+        "halaman_pengesahan": false,
+        "ringkasan": true,
+        "daftar_isi": true,
+        "daftar_gambar": "Opsional (jika ada)",
+        "daftar_tabel": "Opsional (jika ada)",
+        "daftar_lampiran": "Opsional (jika ada)",
+        "bab_list": [
+            {
+                "bab_number": "BAB 1",
+                "title": "PENDAHULUAN"
+            },
+            {
+                "bab_number": "BAB 2",
+                "title": "TINJAUAN PUSTAKA"
+            },
+            {
+                "bab_number": "BAB 3",
+                "title": "TAHAP PELAKSANAAN"
+            },
+            {
+                "bab_number": "BAB 4",
+                "title": "HASIL YANG DICAPAI DAN POTENSI KHUSUS"
+            },
+            {
+                "bab_number": "BAB 5",
+                "title": "PENUTUP"
+            }
+        ],
+        "daftar_pustaka": true,
+        "lampiran": true,
+        "max_halaman_inti": 10,
+        "format_nama_file": "namaketua_namapt_PKM-KC.pdf"
+    },
+    "numbering": {
+        "preliminary_page_format": "Romawi kecil (i, ii, iii, ...)",
+        "preliminary_page_position": "Sudut kanan bawah",
+        "preliminary_page_start_from": "Daftar Isi (halaman i)",
+        "content_page_format": "Angka Arab (1, 2, 3, ...)",
+        "content_page_position": "Sudut kanan atas",
+        "content_page_start_from": "BAB Pendahuluan (halaman 1)",
+        "chapter_numbering_format": "BAB 1, BAB 2, BAB 3, ...",
+        "sub_chapter_format": "4.1, 4.2, dst.",
+        "figure_numbering_format": "Gambar 1., Gambar 2., dst.",
+        "table_numbering_format": "Tabel 4.1, Tabel 1., dst."
+    },
+    "figures_and_tables": {
+        "table_caption_position": "Di atas tabel",
+        "figure_caption_position": "Di bawah gambar",
+        "caption_format_figure": "Gambar [N]. [Judul Gambar] ([Sumber jika ada])",
+        "caption_format_table": "Tabel [N.N] [Judul Tabel]",
+        "source_required_if_not_own": true,
+        "max_width_constraint": "Tidak melebihi batas margin dokumen"
+    },
+    "page_count_limits": {
+        "proposal_halaman_inti_maks": 10,
+        "laporan_kemajuan_halaman_inti_maks": 10,
+        "laporan_akhir_halaman_inti_maks": 10,
+        "catatan": "Halaman inti = BAB Pendahuluan s/d Daftar Pustaka. Lampiran tidak dihitung dalam batas 10 halaman."
+    }
+}

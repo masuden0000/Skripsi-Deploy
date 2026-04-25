@@ -1,52 +1,25 @@
-import os
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from pydantic import BaseModel, Field
 
-APP_DIR = Path(__file__).resolve().parents[2]
-ENV_FILE = APP_DIR / ".env"
+if __package__:
+    from ..config import get_config
+else:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from model_ai.config import get_config
 
-load_dotenv(dotenv_path=ENV_FILE)
-
-
-def get_required_env(name: str) -> str:
-    """Get required environment variable or raise ValueError."""
-    value = os.getenv(name, "").strip()
-    if not value:
-        raise ValueError(f"{name} belum di-set di file .env.")
-    return value
-
-
-def _validate_env_vars() -> None:
-    """Validate required environment variables at module load time."""
-    required_vars = ["MODEL_NAME", "TEMPERATURE"]
-    for var in required_vars:
-        get_required_env(var)
-
-
-MODEL_NAME = get_required_env("MODEL_NAME")
-TEMPERATURE = float(get_required_env("TEMPERATURE"))
-
-_validate_env_vars()
+CONFIG = get_config()
+MODEL_NAME = CONFIG.model_name
+TEMPERATURE = CONFIG.temperature
 
 
 class LLMResponse(BaseModel):
     answer: str = Field(description="Jawaban utama untuk pertanyaan user.")
     keywords: list[str] = Field(description="Kata kunci penting dari jawaban.")
     language: str = Field(description="Bahasa yang dipakai dalam jawaban.")
-
-
-def get_google_api_key() -> str:
-    api_key = os.getenv("GOOGLE_API_KEY", "").strip()
-    if not api_key:
-        raise ValueError(
-            "GOOGLE_API_KEY belum di-set. Tambahkan variabel itu ke file .env di folder pymupdf4llm."
-        )
-    return api_key
 
 
 def validate_question(question: str) -> str:
@@ -57,8 +30,6 @@ def validate_question(question: str) -> str:
 
 
 def build_chain():
-    api_key = get_google_api_key()
-
     prompt = ChatPromptTemplate.from_messages(
         [
             (
@@ -76,10 +47,11 @@ def build_chain():
         ]
     )
 
-    llm = ChatGoogleGenerativeAI(
+    CONFIG.disable_blackhole_proxies()
+    llm = ChatGroq(
         model=MODEL_NAME,
         temperature=TEMPERATURE,
-        google_api_key=api_key,
+        api_key=CONFIG.groq_api_key.get_secret_value(),
     )
 
     structured_llm = llm.with_structured_output(LLMResponse)

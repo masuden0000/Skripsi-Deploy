@@ -1,43 +1,23 @@
-import os
 import sys
 from pathlib import Path
 from typing import Literal
 
-from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_genai import (ChatGoogleGenerativeAI,
-                                    GoogleGenerativeAIEmbeddings)
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_groq import ChatGroq
 from pydantic import BaseModel, Field
 from supabase import Client, create_client
 
+from model_ai.config import get_config
+
 APP_DIR = Path(__file__).resolve().parents[2]
-ENV_FILE = APP_DIR / ".env"
-
-load_dotenv(dotenv_path=ENV_FILE)
-
-
-def get_required_env(name: str) -> str:
-    value = os.getenv(name, "").strip()
-    if not value:
-        raise ValueError(f"{name} belum di-set di file .env.")
-    return value
-
-
-def _validate_env_vars() -> None:
-    """Validate required environment variables at module load time."""
-    required_vars = ["MODEL_NAME", "TEMPERATURE", "EMBEDDING_MODEL_NAME"]
-    for var in required_vars:
-        get_required_env(var)
-
-
-MODEL_NAME = get_required_env("MODEL_NAME")
-TEMPERATURE = float(get_required_env("TEMPERATURE"))
-EMBEDDING_MODEL_NAME = get_required_env("EMBEDDING_MODEL_NAME")
+CONFIG = get_config()
+MODEL_NAME = CONFIG.model_name
+TEMPERATURE = CONFIG.temperature
+EMBEDDING_MODEL_NAME = CONFIG.embedding_model_name
 EMBEDDING_DIMENSION = 768
-RAG_TOP_K = int(get_required_env("RAG_TOP_K"))
-MIN_CONTEXT_SIMILARITY = float(get_required_env("RAG_MIN_CONTEXT_SIMILARITY"))
-
-_validate_env_vars()
+RAG_TOP_K = CONFIG.rag_top_k
+MIN_CONTEXT_SIMILARITY = CONFIG.rag_min_context_similarity
 
 
 class Citation(BaseModel):
@@ -88,15 +68,16 @@ def get_question_from_cli() -> str:
 
 def build_supabase_client() -> Client:
     return create_client(
-        get_required_env("SUPABASE_URL"),
-        get_required_env("SUPABASE_SERVICE_ROLE_KEY"),
+        CONFIG.supabase_url,
+        CONFIG.supabase_service_role_key.get_secret_value(),
     )
 
 
 def build_embedder() -> GoogleGenerativeAIEmbeddings:
+    CONFIG.disable_blackhole_proxies()
     return GoogleGenerativeAIEmbeddings(
         model=EMBEDDING_MODEL_NAME,
-        google_api_key=get_required_env("GOOGLE_API_KEY"),  # type: ignore
+        google_api_key=CONFIG.require_google_api_key(),
     )
 
 
@@ -189,10 +170,11 @@ def build_chain():
         ]
     )
 
-    llm = ChatGoogleGenerativeAI(
-        model=get_required_env("MODEL_NAME"),
+    CONFIG.disable_blackhole_proxies()
+    llm = ChatGroq(
+        model=MODEL_NAME,
         temperature=TEMPERATURE,
-        google_api_key=get_required_env("GOOGLE_API_KEY"),
+        api_key=CONFIG.groq_api_key.get_secret_value(),
     )
 
     structured_llm = llm.with_structured_output(RAGResponse)

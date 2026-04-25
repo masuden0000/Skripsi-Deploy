@@ -4,6 +4,11 @@ Repository untuk eksperimen PyMuPDF4LLM + RAG dengan backend Supabase dan fronte
 
 ## Update Terbaru
 
+### Structured Extractor Output
+- **JSON Output Tracking**: Pipeline `experiments/pymupdf4llm` sekarang menyimpan output terstruktur seperti `output.json` dan `data/output_chunks.json` untuk validasi hasil ekstraksi
+- **Reference Comparison**: Disiapkan file pembanding seperti `data/hasil_ekstraksi_claude.json` agar hasil parser bisa dicek field yang beda atau masih miss
+- **Metadata Expansion**: Skema ekstraksi sekarang mengakomodasi detail format dokumen, numbering, caption, dan batas halaman dengan lebih eksplisit
+
 ### ✅ Security & Configuration
 - **Environment Management**: Menambahkan `.gitignore` untuk file sensitif (`.env`, `.pdf`, `.venv`)
 - **Template Environment**: Membuat `.env.example` sebagai template konfigurasi aman tanpa secret values

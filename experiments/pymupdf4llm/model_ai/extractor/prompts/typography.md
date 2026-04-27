@@ -17,13 +17,14 @@ Jangan gunakan pengetahuan umum — hanya berdasarkan konteks yang diberikan.
 
 ## Normalization Rules
 - Gunakan JSON null (bukan string "null") untuk nilai yang tidak ditemukan
-- font_size_heading_pt: jika sama dengan body, tulis sebagai string dengan keterangan (contoh: "12pt (sama dengan body, bold untuk BAB)")
-- heading_style: ekstrak dari konteks, jangan tulis "null" sebagai string
-- heading_capitalization: cari aturan apakah judul BAB ditulis ALL CAPS, Title Case, dsb. (contoh: "ALL CAPS untuk judul BAB")
+- font_size_heading_pt: selalu keluarkan sebagai integer pt (contoh: 12)
+  - **Fallback**: Jika dokumen tidak menyebut ukuran font heading secara eksplisit dan berbeda dari body, gunakan nilai yang sama dengan `font_size_body_pt` (bukan null). Null hanya digunakan jika ukuran font body JUGA tidak diketahui.
+- heading_bold: true jika heading/judul BAB dicetak tebal (bold), false jika tidak
+- heading_all_caps: true jika judul BAB ditulis ALL CAPS, false jika tidak (Title Case, Sentence Case, dsb.)
 
 ## Output Fields
 - font_family: nama font utama dokumen (contoh: "Times New Roman")
 - font_size_body_pt: ukuran font body dalam satuan pt sebagai integer (contoh: 12)
-- font_size_heading_pt: ukuran font heading — boleh string jika ada keterangan tambahan
-- heading_style: gaya penulisan heading (contoh: "Bold")
-- heading_capitalization: aturan kapitalisasi judul BAB (contoh: "ALL CAPS untuk judul BAB")
+- font_size_heading_pt: ukuran font heading dalam satuan pt sebagai integer
+- heading_bold: apakah judul BAB dicetak tebal/bold (bool — true/false, bukan string)
+- heading_all_caps: apakah judul BAB ditulis ALL CAPS (bool — true/false, bukan string)

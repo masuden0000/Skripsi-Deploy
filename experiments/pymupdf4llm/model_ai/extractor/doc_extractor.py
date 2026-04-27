@@ -4,7 +4,6 @@ from pathlib import Path
 import time
 from typing import Any, Type
 
-import frontmatter as fm
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_groq import ChatGroq
 from pydantic import BaseModel
@@ -29,9 +28,21 @@ from model_ai.extractor.models import (
     TypographyExtracted,
     TypographyInfo,
 )
+from model_ai.extractor.prompts import (
+    DOCUMENT_STRUCTURE_LAPORAN_AKHIR,
+    DOCUMENT_STRUCTURE_LAPORAN_KEMAJUAN,
+    DOCUMENT_STRUCTURE_PROPOSAL,
+    DOCUMENT_TYPE,
+    FIGURES_AND_TABLES,
+    NUMBERING,
+    PAGE_COUNT_LIMITS,
+    PAGE_LAYOUT,
+    SPACING,
+    TYPOGRAPHY,
+    PromptConfig,
+)
 
 APP_DIR = Path(__file__).resolve().parents[2]
-PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 OUTPUT_PATH = APP_DIR / "data" / "output.json"
 EMBEDDING_DIMENSION = 768
 BATCH_PAUSE_EVERY = 2
@@ -40,16 +51,16 @@ BATCH_PAUSE_SECONDS = 60
 CONFIG = get_config()
 LLM_MODEL = CONFIG.model_name
 
-KEY_REGISTRY: list[tuple[str, Type[BaseModel], Type[BaseModel]]] = [
-    ("typography", TypographyExtracted, TypographyInfo),
-    ("page_layout", PageLayoutExtracted, PageLayoutInfo),
-    ("spacing", SpacingExtracted, SpacingInfo),
-    ("document_structure_proposal", DocumentStructureExtracted, DocumentStructureInfo),
-    ("document_structure_laporan_kemajuan", DocumentStructureExtracted, DocumentStructureInfo),
-    ("document_structure_laporan_akhir", DocumentStructureExtracted, DocumentStructureInfo),
-    ("numbering", NumberingExtracted, NumberingInfo),
-    ("figures_and_tables", FiguresTablesExtracted, FiguresTablesInfo),
-    ("page_count_limits", PageCountExtracted, PageCountInfo),
+KEY_REGISTRY: list[tuple[str, PromptConfig, Type[BaseModel], Type[BaseModel]]] = [
+    ("typography", TYPOGRAPHY, TypographyExtracted, TypographyInfo),
+    ("page_layout", PAGE_LAYOUT, PageLayoutExtracted, PageLayoutInfo),
+    ("spacing", SPACING, SpacingExtracted, SpacingInfo),
+    ("document_structure_proposal", DOCUMENT_STRUCTURE_PROPOSAL, DocumentStructureExtracted, DocumentStructureInfo),
+    ("document_structure_laporan_kemajuan", DOCUMENT_STRUCTURE_LAPORAN_KEMAJUAN, DocumentStructureExtracted, DocumentStructureInfo),
+    ("document_structure_laporan_akhir", DOCUMENT_STRUCTURE_LAPORAN_AKHIR, DocumentStructureExtracted, DocumentStructureInfo),
+    ("numbering", NUMBERING, NumberingExtracted, NumberingInfo),
+    ("figures_and_tables", FIGURES_AND_TABLES, FiguresTablesExtracted, FiguresTablesInfo),
+    ("page_count_limits", PAGE_COUNT_LIMITS, PageCountExtracted, PageCountInfo),
 ]
 
 
@@ -64,29 +75,6 @@ def build_sources(chunks: list[dict]) -> list[Source]:
         )
         for c in chunks
     ]
-
-
-def load_prompt(prompt_path: Path) -> tuple[list[str], str, int]:
-    """Parse frontmatter YAML dari .md file.
-
-    Return (queries, template_body, top_k_override).
-    Supports both `query: "..."` (single) and `queries: [...]` (multiple).
-    top_k_override=0 means use global CONFIG.rag_top_k.
-    """
-    post = fm.load(str(prompt_path))
-    meta = post.metadata
-
-    if "queries" in meta:
-        raw = meta["queries"]
-        queries: list[str] = [raw] if isinstance(raw, str) else list(raw)
-    elif "query" in meta:
-        queries = [str(meta["query"])]
-    else:
-        raise ValueError(f"Prompt {prompt_path.name} wajib punya field 'query' atau 'queries'.")
-
-    top_k_override = int(meta.get("top_k", 0))
-    template: str = post.content
-    return queries, template, top_k_override
 
 
 def render_prompt(template: str, chunks: list[dict]) -> str:
@@ -175,15 +163,14 @@ def _retrieve_chunks_multi(queries: list[str], top_k: int) -> list[dict]:
 
 
 def _extract_key(
-    prompt_path: Path,
+    prompt_cfg: PromptConfig,
     extracted_cls: Type[BaseModel],
     info_cls: Type[BaseModel],
 ) -> Any:
     """Jalankan satu siklus ekstraksi: retrieve → prompt → LLM → merge sources."""
-    queries, template, top_k_override = load_prompt(prompt_path)
-    top_k = top_k_override if top_k_override > 0 else CONFIG.rag_top_k
-    chunks = _retrieve_chunks_multi(queries, top_k)
-    prompt = render_prompt(template, chunks)
+    top_k = prompt_cfg.top_k if prompt_cfg.top_k > 0 else CONFIG.rag_top_k
+    chunks = _retrieve_chunks_multi(prompt_cfg.queries, top_k)
+    prompt = render_prompt(prompt_cfg.template, chunks)
 
     CONFIG.disable_blackhole_proxies()
     llm = ChatGroq(
@@ -231,21 +218,12 @@ def _pause_after_batch(processed_count: int, total_count: int) -> None:
 
 def _extract_document_type() -> str | None:
     """Identifikasi jenis dokumen dari judul/konteks header dokumen."""
-    chunks = _retrieve_chunks_multi(
-        ["jenis dokumen PKM panduan petunjuk teknis judul nama dokumen"],
-        top_k=3,
-    )
+    top_k = DOCUMENT_TYPE.top_k if DOCUMENT_TYPE.top_k > 0 else CONFIG.rag_top_k
+    chunks = _retrieve_chunks_multi(DOCUMENT_TYPE.queries, top_k)
     if not chunks:
         return None
 
-    context = "\n\n---\n\n".join(c["content"] for c in chunks[:3])
-    prompt = (
-        "Dari konteks berikut, identifikasi jenis dokumen PKM ini dalam satu frasa singkat "
-        "(contoh: \"Panduan PKM-KC\", \"Proposal PKM-KC\"). "
-        "Jika tidak dapat ditentukan, jawab null.\n\n"
-        f"Konteks:\n{context}"
-    )
-
+    prompt = render_prompt(DOCUMENT_TYPE.template, chunks)
     CONFIG.disable_blackhole_proxies()
     llm = ChatGroq(model=LLM_MODEL, api_key=CONFIG.groq_api_key.get_secret_value())
     result = llm.invoke(prompt)
@@ -256,9 +234,9 @@ def _extract_document_type() -> str | None:
 def extract_document_metadata() -> DocumentMetadata:
     results: dict[str, Any] = {}
     total_keys = len(KEY_REGISTRY)
-    for index, (key, extracted_cls, info_cls) in enumerate(KEY_REGISTRY, start=1):
+    for index, (key, prompt_cfg, extracted_cls, info_cls) in enumerate(KEY_REGISTRY, start=1):
         print(f"[extract] Memproses: {key} ...")
-        results[key] = _extract_key(PROMPTS_DIR / f"{key}.md", extracted_cls, info_cls)
+        results[key] = _extract_key(prompt_cfg, extracted_cls, info_cls)
         print(f"[extract] Selesai:   {key}")
         _pause_after_batch(index, total_keys)
 

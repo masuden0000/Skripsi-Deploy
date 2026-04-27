@@ -17,14 +17,15 @@ Jika tidak ditemukan dalam konteks, gunakan null (JSON null, BUKAN string "null"
 
 ## Normalization Rules
 - Gunakan JSON null (bukan string "null") untuk nilai yang tidak ditemukan
-- Nilai bool: true atau false (bukan string)
-- Jika format caption tidak konsisten dalam dokumen (misalnya ada "Tabel 1." dan juga "Tabel 4.1"), catat format yang lebih representatif dan tambahkan catatan inkonsistensi, contoh: "Tabel [N]. [Judul] (inkonsisten: kadang Tabel [N.N])"
-- max_width_constraint: cari aturan tentang lebar gambar/tabel tidak boleh melebihi margin atau ukuran tertentu
+- table_caption_position: "ABOVE" jika keterangan di atas tabel, "BELOW" jika di bawah
+- figure_caption_position: "ABOVE" jika keterangan di atas gambar, "BELOW" jika di bawah
+- Untuk template caption, gunakan placeholder {n} untuk nomor urut, {bab} untuk nomor bab, {title} untuk judul, {source} untuk sumber
+- max_width_constraint: "within_margins" jika gambar/tabel tidak boleh melebihi batas margin
 
 ## Output Fields
-- table_caption_position: posisi keterangan tabel (contoh: "Di atas tabel")
-- figure_caption_position: posisi keterangan gambar (contoh: "Di bawah gambar")
-- caption_format_figure: format keterangan gambar (contoh: "Gambar [N]. [Judul Gambar] ([Sumber jika ada])")
-- caption_format_table: format keterangan tabel (contoh: "Tabel [N.N] [Judul Tabel]")
+- table_caption_position: posisi keterangan tabel — "ABOVE" atau "BELOW"
+- figure_caption_position: posisi keterangan gambar — "ABOVE" atau "BELOW"
+- caption_format_figure: template format keterangan gambar (contoh: "Gambar {n}. {title} ({source})")
+- caption_format_table: template format keterangan tabel (contoh: "Tabel {bab}.{n} {title}")
 - source_required_if_not_own: apakah sumber wajib dicantumkan jika bukan karya sendiri (bool)
-- max_width_constraint: batasan lebar gambar/tabel (contoh: "Tidak melebihi batas margin dokumen")
+- max_width_constraint: batasan lebar gambar/tabel (contoh: "within_margins")

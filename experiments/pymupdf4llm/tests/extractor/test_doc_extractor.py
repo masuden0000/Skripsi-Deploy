@@ -68,7 +68,6 @@ def test_render_prompt_with_no_chunks_yields_empty_context():
 def test_typography_extracted_normalizes_legacy_heading_font_size_string():
     extracted = TypographyExtracted(font_size_heading_pt="12pt (sama dengan body, bold untuk BAB)")
     assert extracted.font_size_heading_pt == 12
-    assert extracted.font_size_heading_description == "12pt (sama dengan body, bold untuk BAB)"
 
 
 def test_page_count_extracted_maps_legacy_catatan_key():

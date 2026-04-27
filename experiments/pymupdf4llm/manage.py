@@ -1,5 +1,6 @@
 import argparse
 import sys
+from pathlib import Path
 
 
 def ensure_supported_python() -> None:
@@ -45,6 +46,29 @@ def run_schema_diff_cmd() -> None:
     run_schema_diff()
 
 
+def run_docx(
+    doc_type: str,
+    input_path: str,
+    chunks_path: str,
+    output_path: str,
+    use_llm_normalization: bool,
+) -> None:
+    if doc_type != "proposal":
+        raise SystemExit(
+            f"Tipe dokumen '{doc_type}' belum didukung. Gunakan '--type proposal'."
+        )
+
+    from model_ai.docx.generator import generate_proposal_docx
+
+    generated_path = generate_proposal_docx(
+        metadata_path=Path(input_path),
+        chunks_path=Path(chunks_path),
+        output_path=Path(output_path),
+        use_llm_normalization=use_llm_normalization,
+    )
+    print(f"[docx] Berhasil membuat dokumen: {generated_path}")
+
+
 def main() -> None:
     ensure_supported_python()
 
@@ -81,6 +105,38 @@ def main() -> None:
         ),
     )
 
+    docx_parser = subparsers.add_parser(
+        "docx",
+        help="Generate dokumen DOCX berdasarkan output metadata extractor.",
+    )
+    docx_parser.add_argument(
+        "--type",
+        dest="doc_type",
+        required=True,
+        choices=["proposal"],
+        help="Tipe dokumen yang akan digenerate.",
+    )
+    docx_parser.add_argument(
+        "--input",
+        default="data/output.json",
+        help="Path input metadata JSON (default: data/output.json).",
+    )
+    docx_parser.add_argument(
+        "--chunks",
+        default="data/output_chunks.json",
+        help="Path input chunk JSON (default: data/output_chunks.json).",
+    )
+    docx_parser.add_argument(
+        "--output",
+        default="data/proposal_template.docx",
+        help="Path output DOCX (default: data/proposal_template.docx).",
+    )
+    docx_parser.add_argument(
+        "--no-llm-normalization",
+        action="store_true",
+        help="Nonaktifkan LLM translator untuk normalisasi nilai deskriptif.",
+    )
+
     args = parser.parse_args()
 
     if args.command == "setup":
@@ -98,6 +154,16 @@ def main() -> None:
 
     if args.command == "schema-diff":
         run_schema_diff_cmd()
+        return
+
+    if args.command == "docx":
+        run_docx(
+            doc_type=args.doc_type,
+            input_path=args.input,
+            chunks_path=args.chunks,
+            output_path=args.output,
+            use_llm_normalization=not args.no_llm_normalization,
+        )
         return
 
 

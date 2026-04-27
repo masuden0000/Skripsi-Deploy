@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+import re
+
+from pydantic import BaseModel, model_validator
 
 
 class Source(BaseModel):
@@ -14,9 +16,27 @@ class Source(BaseModel):
 class TypographyExtracted(BaseModel):
     font_family: str | None = None
     font_size_body_pt: int | None = None
-    font_size_heading_pt: str | None = None
-    heading_style: str | None = None
-    heading_capitalization: str | None = None
+    font_size_heading_pt: int | None = None
+    heading_bold: bool | None = True
+    heading_all_caps: bool | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_heading_font_size(cls, data: object) -> object:
+        if not isinstance(data, dict):
+            return data
+        normalized = dict(data)
+        raw_size = normalized.get("font_size_heading_pt")
+        if isinstance(raw_size, str):
+            match = re.search(r"\d+", raw_size)
+            normalized["font_size_heading_pt"] = int(match.group()) if match else None
+        # Fallback: if heading size is null but body size is known, reuse body size
+        if normalized.get("font_size_heading_pt") is None and normalized.get("font_size_body_pt") is not None:
+            normalized["font_size_heading_pt"] = normalized["font_size_body_pt"]
+        # Default heading style: assume bold when the extractor does not provide a value.
+        if normalized.get("heading_bold") is None:
+            normalized["heading_bold"] = True
+        return normalized
 
 
 class TypographyInfo(TypographyExtracted):
@@ -42,10 +62,11 @@ class PageLayoutInfo(PageLayoutExtracted):
 # --- Spacing ---
 
 class SpacingExtracted(BaseModel):
-    line_spacing_body: float | None = None
+    line_spacing: float | None = None
+    line_spacing_rule: str | None = None
     paragraph_alignment: str | None = None
-    paragraph_first_indent: str | None = None
-    hanging_indent_references: str | None = None
+    first_line_indent_cm: float | None = None
+    references_hanging_indent: bool | None = None
 
 
 class SpacingInfo(SpacingExtracted):
@@ -54,22 +75,51 @@ class SpacingInfo(SpacingExtracted):
 
 # --- Document Structure ---
 
-class BabItem(BaseModel):
-    bab_number: str
+_VALID_SECTION_TYPES = frozenset({
+    "daftar_isi", "daftar_gambar", "daftar_tabel", "daftar_lampiran",
+    "daftar_pustaka", "bab", "lampiran",
+})
+
+
+def _normalize_section_type(raw: str) -> str:
+    """Normalize LLM-generated section type to canonical snake_case.
+
+    Handles Title Case ("Daftar Isi"), UPPERCASE ("DAFTAR ISI"),
+    and mixed spacing/underscore variants before matching.
+    """
+    candidate = raw.strip().lower().replace(" ", "_")
+    if candidate in _VALID_SECTION_TYPES:
+        return candidate
+    return raw  # pass through unknown values unchanged
+
+
+class SectionItem(BaseModel):
+    type: str
+    required: bool | None = None
+    number: int | None = None
     title: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_section_type(cls, data: object) -> object:
+        if not isinstance(data, dict):
+            return data
+        raw_type = data.get("type")
+        if not isinstance(raw_type, str):
+            return data
+        normalized = _normalize_section_type(raw_type)
+        if normalized == raw_type:
+            return data
+        result = dict(data)
+        result["type"] = normalized
+        return result
 
 
 class DocumentStructureExtracted(BaseModel):
     halaman_sampul: bool | None = None
     halaman_pengesahan: bool | None = None
     ringkasan: bool | None = None
-    daftar_isi: bool | None = None
-    daftar_gambar: str | None = None
-    daftar_tabel: str | None = None
-    daftar_lampiran: str | None = None
-    bab_list: list[BabItem] = []
-    daftar_pustaka: bool | None = None
-    lampiran: bool | None = None
+    sections: list[SectionItem] = []
     max_halaman_inti: int | None = None
     format_nama_file: str | None = None
 
@@ -80,17 +130,20 @@ class DocumentStructureInfo(DocumentStructureExtracted):
 
 # --- Numbering ---
 
+class PageNumberConfig(BaseModel):
+    format: str | None = None
+    location: str | None = None
+    alignment: str | None = None
+    start_at_section: str | None = None
+
+
 class NumberingExtracted(BaseModel):
-    preliminary_page_format: str | None = None
-    preliminary_page_position: str | None = None
-    preliminary_page_start_from: str | None = None
-    content_page_format: str | None = None
-    content_page_position: str | None = None
-    content_page_start_from: str | None = None
-    chapter_numbering_format: str | None = None
+    preliminary: PageNumberConfig | None = None
+    content: PageNumberConfig | None = None
+    chapter_format: str | None = None
     sub_chapter_format: str | None = None
-    figure_numbering_format: str | None = None
-    table_numbering_format: str | None = None
+    figure_format: str | None = None
+    table_format: str | None = None
 
 
 class NumberingInfo(NumberingExtracted):
@@ -118,7 +171,20 @@ class PageCountExtracted(BaseModel):
     proposal_halaman_inti_maks: int | None = None
     laporan_kemajuan_halaman_inti_maks: int | None = None
     laporan_akhir_halaman_inti_maks: int | None = None
-    catatan: str | None = None
+    definisi_halaman_inti: str | None = None
+    lampiran_excluded: bool | None = None
+    judul_maks_kata: int | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_legacy_keys(cls, data: object) -> object:
+        if not isinstance(data, dict):
+            return data
+        normalized = dict(data)
+        legacy_note = normalized.pop("catatan", None)
+        if legacy_note and "definisi_halaman_inti" not in normalized:
+            normalized["definisi_halaman_inti"] = legacy_note
+        return normalized
 
 
 class PageCountInfo(PageCountExtracted):

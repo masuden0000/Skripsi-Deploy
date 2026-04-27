@@ -15,4 +15,6 @@ Jika tidak ditemukan, gunakan null.
 - proposal_halaman_inti_maks: batas halaman inti untuk proposal (integer)
 - laporan_kemajuan_halaman_inti_maks: batas halaman inti untuk laporan kemajuan (integer)
 - laporan_akhir_halaman_inti_maks: batas halaman inti untuk laporan akhir (integer)
-- catatan: catatan tambahan tentang penghitungan halaman inti
+- definisi_halaman_inti: rentang section yang dihitung sebagai halaman inti, dalam format "section_awal_to_section_akhir" (contoh: "bab_1_to_daftar_pustaka")
+- lampiran_excluded: true jika lampiran tidak dihitung dalam batas halaman inti (bool)
+- judul_maks_kata: jumlah maksimum kata pada judul proposal/laporan jika disebutkan (integer atau null)

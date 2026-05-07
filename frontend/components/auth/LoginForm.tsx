@@ -6,14 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { login } from "@/app/actions/auth"
+
+const ROLES = [
+  { value: "admin",    label: "Admin" },
+  { value: "reviewer", label: "Reviewer" },
+]
 
 export default function LoginForm() {
   const [role, setRole] = useState<string>("")
@@ -73,20 +71,62 @@ export default function LoginForm() {
 
       {/* Form */}
       <form action={handleSubmit} className="flex flex-col gap-5 px-6 py-8">
-        {/* Role dropdown */}
+        {/* Role checkbox */}
         <div className="flex flex-col gap-2">
           <Label className="text-sm font-medium text-pkm-900">
             Masuk sebagai
           </Label>
-          <Select value={role} onValueChange={setRole}>
-            <SelectTrigger className="h-11 rounded-lg border-pkm-400 bg-white text-sm focus:ring-pkm-600">
-              <SelectValue placeholder="Pilih role..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="reviewer">Reviewer</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-3">
+            {ROLES.map((r) => {
+              const active = role === r.value
+              return (
+                <button
+                  key={r.value}
+                  type="button"
+                  onClick={() => setRole(r.value)}
+                  className="flex flex-1 items-center gap-2.5 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors"
+                  style={
+                    active
+                      ? {
+                          borderColor: "#009966",
+                          background: "#ecfdf5",
+                          color: "#004f3b",
+                        }
+                      : {
+                          borderColor: "#a4f4cf",
+                          background: "#fff",
+                          color: "#6b7280",
+                        }
+                  }
+                >
+                  {/* Checkbox indicator */}
+                  <span
+                    className="flex size-4 shrink-0 items-center justify-center rounded border-2 transition-colors"
+                    style={
+                      active
+                        ? { borderColor: "#009966", background: "#009966" }
+                        : { borderColor: "#a4f4cf", background: "#fff" }
+                    }
+                  >
+                    {active && (
+                      <svg
+                        viewBox="0 0 10 8"
+                        className="size-2.5"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M1 4l2.5 2.5L9 1" />
+                      </svg>
+                    )}
+                  </span>
+                  {r.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Email */}

@@ -1,0 +1,1045 @@
+[
+    {
+        "chunk_id":  "property::document.comments::chunk::1",
+        "chunk_parent":  "property::document.comments",
+        "section":  "document",
+        "path":  "document.comments",
+        "text":  "section=document\nkind=property\npath=document.comments\ndescription=Collection of comments in the document"
+    },
+    {
+        "chunk_id":  "property::document.core_properties::chunk::1",
+        "chunk_parent":  "property::document.core_properties",
+        "section":  "document",
+        "path":  "document.core_properties",
+        "text":  "section=document\nkind=property\npath=document.core_properties\ndescription=Provides read/write access to the document’s Dublin Core properties such as author, title, subject, keywords, created/modified dates, etc. Properties like `author`, `title`, `subject`, `keywords`, `created`, and `modified` are exposed as attributes."
+    },
+    {
+        "chunk_id":  "property::document.inline_shapes::chunk::1",
+        "chunk_parent":  "property::document.inline_shapes",
+        "section":  "document",
+        "path":  "document.inline_shapes",
+        "text":  "section=document\nkind=property\npath=document.inline_shapes\ndescription=Collection of inline shapes (e.g. pictures) contained in runs"
+    },
+    {
+        "chunk_id":  "property::document.paragraphs::chunk::1",
+        "chunk_parent":  "property::document.paragraphs",
+        "section":  "document",
+        "path":  "document.paragraphs",
+        "text":  "section=document\nkind=property\npath=document.paragraphs\ndescription=Sequence of all Paragraph objects in document order"
+    },
+    {
+        "chunk_id":  "property::document.sections::chunk::1",
+        "chunk_parent":  "property::document.sections",
+        "section":  "document",
+        "path":  "document.sections",
+        "text":  "section=document\nkind=property\npath=document.sections\ndescription=Collection of Section objects, one for each section of the document"
+    },
+    {
+        "chunk_id":  "property::document.settings::chunk::1",
+        "chunk_parent":  "property::document.settings",
+        "section":  "document",
+        "path":  "document.settings",
+        "text":  "section=document\nkind=property\npath=document.settings\ndescription=Document‑level settings object (page layout defaults, etc.)"
+    },
+    {
+        "chunk_id":  "property::document.styles::chunk::1",
+        "chunk_parent":  "property::document.styles",
+        "section":  "document",
+        "path":  "document.styles",
+        "text":  "section=document\nkind=property\npath=document.styles\ndescription=Styles collection for the document"
+    },
+    {
+        "chunk_id":  "property::document.tables::chunk::1",
+        "chunk_parent":  "property::document.tables",
+        "section":  "document",
+        "path":  "document.tables",
+        "text":  "section=document\nkind=property\npath=document.tables\ndescription=List of top‑level Table objects in document order.  Nested tables (inside cells) do not appear in this list."
+    },
+    {
+        "chunk_id":  "property::document.save::chunk::1",
+        "chunk_parent":  "property::document.save",
+        "section":  "document",
+        "path":  "document.save",
+        "text":  "section=document\nkind=property\npath=document.save\ndescription=Persists the document to a path or file‑like object."
+    },
+    {
+        "chunk_id":  "method::document.add_comment::chunk::1",
+        "chunk_parent":  "method::document.add_comment",
+        "section":  "document",
+        "path":  "document.add_comment",
+        "text":  "section=document\nkind=method\npath=document.add_comment\nsignature=add_comment(runs: Run | Sequence[Run], text: str=\u0027\u0027, author: str=\u0027\u0027, initials: str | None=\u0027\u0027) -\u003e Comment\ndescription=Anchors a comment to one or more runs in the document and returns a `Comment` object."
+    },
+    {
+        "chunk_id":  "method::document.add_heading::chunk::1",
+        "chunk_parent":  "method::document.add_heading",
+        "section":  "document",
+        "path":  "document.add_heading",
+        "text":  "section=document\nkind=method\npath=document.add_heading\nsignature=add_heading(text: str=\u0027\u0027, level: int=1) -\u003e Paragraph\ndescription=Appends a heading paragraph.  The level argument chooses the heading style (Title for level 0, Heading 1 for level 1, etc.)."
+    },
+    {
+        "chunk_id":  "method::document.add_page_break::chunk::1",
+        "chunk_parent":  "method::document.add_page_break",
+        "section":  "document",
+        "path":  "document.add_page_break",
+        "text":  "section=document\nkind=method\npath=document.add_page_break\nsignature=add_page_break() -\u003e Paragraph\ndescription=Appends a paragraph that contains only a page break."
+    },
+    {
+        "chunk_id":  "method::document.add_paragraph::chunk::1",
+        "chunk_parent":  "method::document.add_paragraph",
+        "section":  "document",
+        "path":  "document.add_paragraph",
+        "text":  "section=document\nkind=method\npath=document.add_paragraph\nsignature=add_paragraph(text: str=\u0027\u0027, style: str | ParagraphStyle | None = None) -\u003e Paragraph\ndescription=Appends a paragraph to the document with optional text and paragraph style.  Tab (\\t) and newline (\\n) characters are converted to Word tab and line break elements."
+    },
+    {
+        "chunk_id":  "method::document.add_picture::chunk::1",
+        "chunk_parent":  "method::document.add_picture",
+        "section":  "document",
+        "path":  "document.add_picture",
+        "text":  "section=document\nkind=method\npath=document.add_picture\nsignature=add_picture(image_path_or_stream: str | IO[bytes], width: int | Length | None = None, height: int | Length | None = None) -\u003e InlineShape\ndescription=Inserts an image into its own paragraph.  Width and height may be specified; unspecified dimensions preserve aspect ratio."
+    },
+    {
+        "chunk_id":  "method::document.add_section::chunk::1",
+        "chunk_parent":  "method::document.add_section",
+        "section":  "document",
+        "path":  "document.add_section",
+        "text":  "section=document\nkind=method\npath=document.add_section\nsignature=add_section(start_type: WD_SECTION_START = WD_SECTION_START.NEW_PAGE) -\u003e Section\ndescription=Adds a new section at the end of the document.  The start_type argument determines the type of section break and must be a member of `WD_SECTION_START`."
+    },
+    {
+        "chunk_id":  "method::document.add_table::chunk::1",
+        "chunk_parent":  "method::document.add_table",
+        "section":  "document",
+        "path":  "document.add_table",
+        "text":  "section=document\nkind=method\npath=document.add_table\nsignature=add_table(rows: int, cols: int, style: str | TableStyle | None = None) -\u003e Table\ndescription=Appends a table with the specified number of rows and columns and returns it.  A style may optionally be applied."
+    },
+    {
+        "chunk_id":  "method::document.add_heading_run::chunk::1",
+        "chunk_parent":  "method::document.add_heading_run",
+        "section":  "document",
+        "path":  "document.add_heading_run",
+        "text":  "section=document\nkind=method\npath=document.add_heading_run\nsignature=(via returned Paragraph)\ndescription=Alias for adding a run to a heading; see Paragraph.add_run()."
+    },
+    {
+        "chunk_id":  "property::section.bottom_margin::chunk::1",
+        "chunk_parent":  "property::section.bottom_margin",
+        "section":  "section",
+        "path":  "section.bottom_margin",
+        "text":  "section=section\nkind=property\npath=section.bottom_margin\ntype=Length | None\ndescription=Bottom margin in EMU; `None` inherits margin"
+    },
+    {
+        "chunk_id":  "property::section.top_margin::chunk::1",
+        "chunk_parent":  "property::section.top_margin",
+        "section":  "section",
+        "path":  "section.top_margin",
+        "text":  "section=section\nkind=property\npath=section.top_margin\ntype=Length | None\ndescription=Top margin in EMU"
+    },
+    {
+        "chunk_id":  "property::section.left_margin::chunk::1",
+        "chunk_parent":  "property::section.left_margin",
+        "section":  "section",
+        "path":  "section.left_margin",
+        "text":  "section=section\nkind=property\npath=section.left_margin\ntype=Length | None\ndescription=Left margin in EMU"
+    },
+    {
+        "chunk_id":  "property::section.right_margin::chunk::1",
+        "chunk_parent":  "property::section.right_margin",
+        "section":  "section",
+        "path":  "section.right_margin",
+        "text":  "section=section\nkind=property\npath=section.right_margin\ntype=Length | None\ndescription=Right margin in EMU"
+    },
+    {
+        "chunk_id":  "property::section.page_width::chunk::1",
+        "chunk_parent":  "property::section.page_width",
+        "section":  "section",
+        "path":  "section.page_width",
+        "text":  "section=section\nkind=property\npath=section.page_width\ntype=Length\ndescription=Total page width (including margins)"
+    },
+    {
+        "chunk_id":  "property::section.page_height::chunk::1",
+        "chunk_parent":  "property::section.page_height",
+        "section":  "section",
+        "path":  "section.page_height",
+        "text":  "section=section\nkind=property\npath=section.page_height\ntype=Length\ndescription=Total page height (including margins)"
+    },
+    {
+        "chunk_id":  "property::section.orientation::chunk::1",
+        "chunk_parent":  "property::section.orientation",
+        "section":  "section",
+        "path":  "section.orientation",
+        "text":  "section=section\nkind=property\npath=section.orientation\ntype=enum\nenum=WD_ORIENTATION\nenum_members=PORTRAIT, LANDSCAPE\ndescription=Page orientation for the section.  Values are members of `WD_ORIENTATION` (PORTRAIT, LANDSCAPE)."
+    },
+    {
+        "chunk_id":  "property::section.start_type::chunk::1",
+        "chunk_parent":  "property::section.start_type",
+        "section":  "section",
+        "path":  "section.start_type",
+        "text":  "section=section\nkind=property\npath=section.start_type\ntype=enum\nenum=WD_SECTION_START\nenum_members=CONTINUOUS, NEW_COLUMN, NEW_PAGE, EVEN_PAGE, ODD_PAGE\ndescription=Determines the section break type; a member of `WD_SECTION_START` (CONTINUOUS, NEW_COLUMN, NEW_PAGE, EVEN_PAGE, ODD_PAGE)."
+    },
+    {
+        "chunk_id":  "property::section.gutter::chunk::1",
+        "chunk_parent":  "property::section.gutter",
+        "section":  "section",
+        "path":  "section.gutter",
+        "text":  "section=section\nkind=property\npath=section.gutter\ntype=Length | None\ndescription=Extra spacing added to inner margin for binding"
+    },
+    {
+        "chunk_id":  "property::section.header::chunk::1",
+        "chunk_parent":  "property::section.header",
+        "section":  "section",
+        "path":  "section.header",
+        "text":  "section=section\nkind=property\npath=section.header\ntype=_Header\ndescription=Default page header for the section"
+    },
+    {
+        "chunk_id":  "property::section.footer::chunk::1",
+        "chunk_parent":  "property::section.footer",
+        "section":  "section",
+        "path":  "section.footer",
+        "text":  "section=section\nkind=property\npath=section.footer\ntype=_Footer\ndescription=Default page footer for the section"
+    },
+    {
+        "chunk_id":  "property::section.first_page_header::chunk::1",
+        "chunk_parent":  "property::section.first_page_header",
+        "section":  "section",
+        "path":  "section.first_page_header",
+        "text":  "section=section\nkind=property\npath=section.first_page_header\ntype=_Header\ndescription=Header used on the first page when different_first_page_header_footer is True"
+    },
+    {
+        "chunk_id":  "property::section.first_page_footer::chunk::1",
+        "chunk_parent":  "property::section.first_page_footer",
+        "section":  "section",
+        "path":  "section.first_page_footer",
+        "text":  "section=section\nkind=property\npath=section.first_page_footer\ntype=_Footer\ndescription=Footer used on the first page when different_first_page_header_footer is True"
+    },
+    {
+        "chunk_id":  "property::section.even_page_header::chunk::1",
+        "chunk_parent":  "property::section.even_page_header",
+        "section":  "section",
+        "path":  "section.even_page_header",
+        "text":  "section=section\nkind=property\npath=section.even_page_header\ntype=_Header\ndescription=Header used on even pages when odd/even headers enabled"
+    },
+    {
+        "chunk_id":  "property::section.even_page_footer::chunk::1",
+        "chunk_parent":  "property::section.even_page_footer",
+        "section":  "section",
+        "path":  "section.even_page_footer",
+        "text":  "section=section\nkind=property\npath=section.even_page_footer\ntype=_Footer\ndescription=Footer used on even pages when odd/even footers enabled"
+    },
+    {
+        "chunk_id":  "property::section.different_first_page_header_footer::chunk::1",
+        "chunk_parent":  "property::section.different_first_page_header_footer",
+        "section":  "section",
+        "path":  "section.different_first_page_header_footer",
+        "text":  "section=section\nkind=property\npath=section.different_first_page_header_footer\ntype=boolean\ndescription=True when the first page has a distinct header/footer"
+    },
+    {
+        "chunk_id":  "property::section.header_distance::chunk::1",
+        "chunk_parent":  "property::section.header_distance",
+        "section":  "section",
+        "path":  "section.header_distance",
+        "text":  "section=section\nkind=property\npath=section.header_distance\ntype=Length | None\ndescription=Distance from top of page to header"
+    },
+    {
+        "chunk_id":  "property::section.footer_distance::chunk::1",
+        "chunk_parent":  "property::section.footer_distance",
+        "section":  "section",
+        "path":  "section.footer_distance",
+        "text":  "section=section\nkind=property\npath=section.footer_distance\ntype=Length | None\ndescription=Distance from bottom of page to footer"
+    },
+    {
+        "chunk_id":  "property::section.iter_inner_content::chunk::1",
+        "chunk_parent":  "property::section.iter_inner_content",
+        "section":  "section",
+        "path":  "section.iter_inner_content",
+        "text":  "section=section\nkind=property\npath=section.iter_inner_content\ndescription=Generates Paragraph or Table objects in section order"
+    },
+    {
+        "chunk_id":  "property::header.paragraphs::chunk::1",
+        "chunk_parent":  "property::header.paragraphs",
+        "section":  "header",
+        "path":  "header.paragraphs",
+        "text":  "section=header\nkind=property\npath=header.paragraphs\ndescription=List of paragraphs in header"
+    },
+    {
+        "chunk_id":  "property::header.tables::chunk::1",
+        "chunk_parent":  "property::header.tables",
+        "section":  "header",
+        "path":  "header.tables",
+        "text":  "section=header\nkind=property\npath=header.tables\ndescription=List of tables in header"
+    },
+    {
+        "chunk_id":  "property::header.is_linked_to_previous::chunk::1",
+        "chunk_parent":  "property::header.is_linked_to_previous",
+        "section":  "header",
+        "path":  "header.is_linked_to_previous",
+        "text":  "section=header\nkind=property\npath=header.is_linked_to_previous\ndescription=When True, the header uses the definition from the previous section; when False, the header has its own definition."
+    },
+    {
+        "chunk_id":  "property::header.iter_inner_content::chunk::1",
+        "chunk_parent":  "property::header.iter_inner_content",
+        "section":  "header",
+        "path":  "header.iter_inner_content",
+        "text":  "section=header\nkind=property\npath=header.iter_inner_content\ndescription=Generates Paragraph or Table objects in header order"
+    },
+    {
+        "chunk_id":  "method::header.add_paragraph::chunk::1",
+        "chunk_parent":  "method::header.add_paragraph",
+        "section":  "header",
+        "path":  "header.add_paragraph",
+        "text":  "section=header\nkind=method\npath=header.add_paragraph\nsignature=add_paragraph(text: str=\u0027\u0027, style: str | ParagraphStyle | None = None) -\u003e Paragraph\ndescription=Append a paragraph to the header"
+    },
+    {
+        "chunk_id":  "method::header.add_table::chunk::1",
+        "chunk_parent":  "method::header.add_table",
+        "section":  "header",
+        "path":  "header.add_table",
+        "text":  "section=header\nkind=method\npath=header.add_table\nsignature=add_table(rows: int, cols: int, width: Length) -\u003e Table\ndescription=Append a table of specified rows and columns"
+    },
+    {
+        "chunk_id":  "property::footer.paragraphs::chunk::1",
+        "chunk_parent":  "property::footer.paragraphs",
+        "section":  "footer",
+        "path":  "footer.paragraphs",
+        "text":  "section=footer\nkind=property\npath=footer.paragraphs\ndescription=List of paragraphs in footer"
+    },
+    {
+        "chunk_id":  "property::footer.tables::chunk::1",
+        "chunk_parent":  "property::footer.tables",
+        "section":  "footer",
+        "path":  "footer.tables",
+        "text":  "section=footer\nkind=property\npath=footer.tables\ndescription=List of tables in footer"
+    },
+    {
+        "chunk_id":  "property::footer.is_linked_to_previous::chunk::1",
+        "chunk_parent":  "property::footer.is_linked_to_previous",
+        "section":  "footer",
+        "path":  "footer.is_linked_to_previous",
+        "text":  "section=footer\nkind=property\npath=footer.is_linked_to_previous\ndescription=Inherit footer from prior section when True"
+    },
+    {
+        "chunk_id":  "property::footer.iter_inner_content::chunk::1",
+        "chunk_parent":  "property::footer.iter_inner_content",
+        "section":  "footer",
+        "path":  "footer.iter_inner_content",
+        "text":  "section=footer\nkind=property\npath=footer.iter_inner_content\ndescription=Generates Paragraph or Table objects in footer order"
+    },
+    {
+        "chunk_id":  "method::footer.add_paragraph::chunk::1",
+        "chunk_parent":  "method::footer.add_paragraph",
+        "section":  "footer",
+        "path":  "footer.add_paragraph",
+        "text":  "section=footer\nkind=method\npath=footer.add_paragraph\nsignature=add_paragraph(text: str=\u0027\u0027, style: str | ParagraphStyle | None = None) -\u003e Paragraph\ndescription=Append a paragraph to the footer"
+    },
+    {
+        "chunk_id":  "method::footer.add_table::chunk::1",
+        "chunk_parent":  "method::footer.add_table",
+        "section":  "footer",
+        "path":  "footer.add_table",
+        "text":  "section=footer\nkind=method\npath=footer.add_table\nsignature=add_table(rows: int, cols: int, width: Length) -\u003e Table\ndescription=Append a table of specified rows and columns"
+    },
+    {
+        "chunk_id":  "property::table.rows::chunk::1",
+        "chunk_parent":  "property::table.rows",
+        "section":  "table",
+        "path":  "table.rows",
+        "text":  "section=table\nkind=property\npath=table.rows\ntype=_Rows\ndescription=Sequence of rows in the table"
+    },
+    {
+        "chunk_id":  "property::table.columns::chunk::1",
+        "chunk_parent":  "property::table.columns",
+        "section":  "table",
+        "path":  "table.columns",
+        "text":  "section=table\nkind=property\npath=table.columns\ntype=_Columns\ndescription=Sequence of columns in the table"
+    },
+    {
+        "chunk_id":  "property::table.style::chunk::1",
+        "chunk_parent":  "property::table.style",
+        "section":  "table",
+        "path":  "table.style",
+        "text":  "section=table\nkind=property\npath=table.style\ntype=_TableStyle | str | None\ndescription=Table style applied to this table"
+    },
+    {
+        "chunk_id":  "property::table.alignment::chunk::1",
+        "chunk_parent":  "property::table.alignment",
+        "section":  "table",
+        "path":  "table.alignment",
+        "text":  "section=table\nkind=property\npath=table.alignment\ntype=enum | None\nenum=WD_TABLE_ALIGNMENT\nenum_members=LEFT, CENTER, RIGHT\ndescription=Table justification; member of WD_TABLE_ALIGNMENT or None"
+    },
+    {
+        "chunk_id":  "property::table.autofit::chunk::1",
+        "chunk_parent":  "property::table.autofit",
+        "section":  "table",
+        "path":  "table.autofit",
+        "text":  "section=table\nkind=property\npath=table.autofit\ntype=boolean\ndescription=Whether column widths are automatically adjusted"
+    },
+    {
+        "chunk_id":  "property::table.table_direction::chunk::1",
+        "chunk_parent":  "property::table.table_direction",
+        "section":  "table",
+        "path":  "table.table_direction",
+        "text":  "section=table\nkind=property\npath=table.table_direction\ntype=enum | None\nenum=WD_TABLE_DIRECTION\nenum_members=LTR, RTL\ndescription=Cell ordering direction; member of WD_TABLE_DIRECTION"
+    },
+    {
+        "chunk_id":  "method::table.add_column::chunk::1",
+        "chunk_parent":  "method::table.add_column",
+        "section":  "table",
+        "path":  "table.add_column",
+        "text":  "section=table\nkind=method\npath=table.add_column\nsignature=add_column(width: Length) -\u003e _Column\ndescription=Add a rightmost column of specified width"
+    },
+    {
+        "chunk_id":  "method::table.add_row::chunk::1",
+        "chunk_parent":  "method::table.add_row",
+        "section":  "table",
+        "path":  "table.add_row",
+        "text":  "section=table\nkind=method\npath=table.add_row\nsignature=add_row() -\u003e _Row\ndescription=Append a new row to the bottom of the table"
+    },
+    {
+        "chunk_id":  "method::table.cell::chunk::1",
+        "chunk_parent":  "method::table.cell",
+        "section":  "table",
+        "path":  "table.cell",
+        "text":  "section=table\nkind=method\npath=table.cell\nsignature=cell(row_idx: int, col_idx: int) -\u003e _Cell\ndescription=Return the cell at (row_idx, col_idx)"
+    },
+    {
+        "chunk_id":  "method::table.row_cells::chunk::1",
+        "chunk_parent":  "method::table.row_cells",
+        "section":  "table",
+        "path":  "table.row_cells",
+        "text":  "section=table\nkind=method\npath=table.row_cells\nsignature=(deprecated)\ndescription=Deprecated; use table.rows[row_idx].cells"
+    },
+    {
+        "chunk_id":  "method::table.column_cells::chunk::1",
+        "chunk_parent":  "method::table.column_cells",
+        "section":  "table",
+        "path":  "table.column_cells",
+        "text":  "section=table\nkind=method\npath=table.column_cells\nsignature=column_cells(column_idx: int) -\u003e list[_Cell]\ndescription=Return list of cells in specified column"
+    },
+    {
+        "chunk_id":  "property::row.cells::chunk::1",
+        "chunk_parent":  "property::row.cells",
+        "section":  "row",
+        "path":  "row.cells",
+        "text":  "section=row\nkind=property\npath=row.cells\ntype=list[_Cell]\ndescription=Sequence of cells present in the row"
+    },
+    {
+        "chunk_id":  "property::row.grid_cols_before::chunk::1",
+        "chunk_parent":  "property::row.grid_cols_before",
+        "section":  "row",
+        "path":  "row.grid_cols_before",
+        "text":  "section=row\nkind=property\npath=row.grid_cols_before\ntype=int\ndescription=Count of omitted grid columns before first cell"
+    },
+    {
+        "chunk_id":  "property::row.grid_cols_after::chunk::1",
+        "chunk_parent":  "property::row.grid_cols_after",
+        "section":  "row",
+        "path":  "row.grid_cols_after",
+        "text":  "section=row\nkind=property\npath=row.grid_cols_after\ntype=int\ndescription=Count of omitted grid columns after last cell"
+    },
+    {
+        "chunk_id":  "property::row.height::chunk::1",
+        "chunk_parent":  "property::row.height",
+        "section":  "row",
+        "path":  "row.height",
+        "text":  "section=row\nkind=property\npath=row.height\ntype=Length | None\ndescription=Height of the row in EMU"
+    },
+    {
+        "chunk_id":  "property::row.height_rule::chunk::1",
+        "chunk_parent":  "property::row.height_rule",
+        "section":  "row",
+        "path":  "row.height_rule",
+        "text":  "section=row\nkind=property\npath=row.height_rule\ntype=enum | None\nenum=WD_ROW_HEIGHT_RULE\nenum_members=AUTO, AT_LEAST, EXACTLY\ndescription=Rule for interpreting the row height; member of WD_ROW_HEIGHT_RULE"
+    },
+    {
+        "chunk_id":  "property::row.table::chunk::1",
+        "chunk_parent":  "property::row.table",
+        "section":  "row",
+        "path":  "row.table",
+        "text":  "section=row\nkind=property\npath=row.table\ntype=Table\ndescription=Reference to the parent table"
+    },
+    {
+        "chunk_id":  "property::column.cells::chunk::1",
+        "chunk_parent":  "property::column.cells",
+        "section":  "column",
+        "path":  "column.cells",
+        "text":  "section=column\nkind=property\npath=column.cells\ntype=list[_Cell]\ndescription=Sequence of cells in the column"
+    },
+    {
+        "chunk_id":  "property::column.width::chunk::1",
+        "chunk_parent":  "property::column.width",
+        "section":  "column",
+        "path":  "column.width",
+        "text":  "section=column\nkind=property\npath=column.width\ntype=Length | None\ndescription=Width of the column in EMU"
+    },
+    {
+        "chunk_id":  "property::column.table::chunk::1",
+        "chunk_parent":  "property::column.table",
+        "section":  "column",
+        "path":  "column.table",
+        "text":  "section=column\nkind=property\npath=column.table\ntype=Table\ndescription=Reference to the parent table"
+    },
+    {
+        "chunk_id":  "property::cell.paragraphs::chunk::1",
+        "chunk_parent":  "property::cell.paragraphs",
+        "section":  "cell",
+        "path":  "cell.paragraphs",
+        "text":  "section=cell\nkind=property\npath=cell.paragraphs\ntype=list[Paragraph]\ndescription=Paragraphs contained in the cell"
+    },
+    {
+        "chunk_id":  "property::cell.tables::chunk::1",
+        "chunk_parent":  "property::cell.tables",
+        "section":  "cell",
+        "path":  "cell.tables",
+        "text":  "section=cell\nkind=property\npath=cell.tables\ntype=list[Table]\ndescription=Nested tables contained in the cell"
+    },
+    {
+        "chunk_id":  "property::cell.text::chunk::1",
+        "chunk_parent":  "property::cell.text",
+        "section":  "cell",
+        "path":  "cell.text",
+        "text":  "section=cell\nkind=property\npath=cell.text\ntype=string\ndescription=Entire text content of the cell.  Assigning a string replaces all existing content with a single paragraph containing the assigned text."
+    },
+    {
+        "chunk_id":  "property::cell.vertical_alignment::chunk::1",
+        "chunk_parent":  "property::cell.vertical_alignment",
+        "section":  "cell",
+        "path":  "cell.vertical_alignment",
+        "text":  "section=cell\nkind=property\npath=cell.vertical_alignment\ntype=enum | None\nenum=WD_CELL_VERTICAL_ALIGNMENT\nenum_members=TOP, CENTER, BOTTOM, BOTH\ndescription=Vertical alignment of text within the cell; member of WD_CELL_VERTICAL_ALIGNMENT or None."
+    },
+    {
+        "chunk_id":  "property::cell.width::chunk::1",
+        "chunk_parent":  "property::cell.width",
+        "section":  "cell",
+        "path":  "cell.width",
+        "text":  "section=cell\nkind=property\npath=cell.width\ntype=Length | None\ndescription=Width of the cell in EMU"
+    },
+    {
+        "chunk_id":  "property::cell.grid_span::chunk::1",
+        "chunk_parent":  "property::cell.grid_span",
+        "section":  "cell",
+        "path":  "cell.grid_span",
+        "text":  "section=cell\nkind=property\npath=cell.grid_span\ntype=int\ndescription=Number of layout grid cells spanned horizontally"
+    },
+    {
+        "chunk_id":  "property::cell.iter_inner_content::chunk::1",
+        "chunk_parent":  "property::cell.iter_inner_content",
+        "section":  "cell",
+        "path":  "cell.iter_inner_content",
+        "text":  "section=cell\nkind=property\npath=cell.iter_inner_content\ndescription=Generates Paragraph or Table objects in this cell"
+    },
+    {
+        "chunk_id":  "method::cell.add_paragraph::chunk::1",
+        "chunk_parent":  "method::cell.add_paragraph",
+        "section":  "cell",
+        "path":  "cell.add_paragraph",
+        "text":  "section=cell\nkind=method\npath=cell.add_paragraph\nsignature=add_paragraph(text: str=\u0027\u0027, style: str | ParagraphStyle | None = None) -\u003e Paragraph\ndescription=Add a paragraph to the cell"
+    },
+    {
+        "chunk_id":  "method::cell.add_table::chunk::1",
+        "chunk_parent":  "method::cell.add_table",
+        "section":  "cell",
+        "path":  "cell.add_table",
+        "text":  "section=cell\nkind=method\npath=cell.add_table\nsignature=add_table(rows: int, cols: int) -\u003e Table\ndescription=Add a nested table in the cell"
+    },
+    {
+        "chunk_id":  "method::cell.merge::chunk::1",
+        "chunk_parent":  "method::cell.merge",
+        "section":  "cell",
+        "path":  "cell.merge",
+        "text":  "section=cell\nkind=method\npath=cell.merge\nsignature=merge(other_cell: _Cell) -\u003e _Cell\ndescription=Merge this cell with other_cell to form a rectangular region; raises InvalidSpanError if cells do not define a rectangle."
+    },
+    {
+        "chunk_id":  "property::paragraph.text::chunk::1",
+        "chunk_parent":  "property::paragraph.text",
+        "section":  "paragraph",
+        "path":  "paragraph.text",
+        "text":  "section=paragraph\nkind=property\npath=paragraph.text\ntype=string\ndescription=Text content of the paragraph"
+    },
+    {
+        "chunk_id":  "property::paragraph.runs::chunk::1",
+        "chunk_parent":  "property::paragraph.runs",
+        "section":  "paragraph",
+        "path":  "paragraph.runs",
+        "text":  "section=paragraph\nkind=property\npath=paragraph.runs\ntype=list[Run]\ndescription=List of runs in the paragraph"
+    },
+    {
+        "chunk_id":  "property::paragraph.style::chunk::1",
+        "chunk_parent":  "property::paragraph.style",
+        "section":  "paragraph",
+        "path":  "paragraph.style",
+        "text":  "section=paragraph\nkind=property\npath=paragraph.style\ntype=ParagraphStyle | string | None\ndescription=Paragraph style assigned to this paragraph"
+    },
+    {
+        "chunk_id":  "property::paragraph.alignment::chunk::1",
+        "chunk_parent":  "property::paragraph.alignment",
+        "section":  "paragraph",
+        "path":  "paragraph.alignment",
+        "text":  "section=paragraph\nkind=property\npath=paragraph.alignment\ntype=enum | None\nenum=WD_PARAGRAPH_ALIGNMENT\nenum_members=LEFT, CENTER, RIGHT, JUSTIFY, DISTRIBUTE, JUSTIFY_MED, JUSTIFY_HI, JUSTIFY_LOW, THAI_JUSTIFY\ndescription=Horizontal alignment (justification); member of WD_PARAGRAPH_ALIGNMENT or None."
+    },
+    {
+        "chunk_id":  "property::paragraph.paragraph_format::chunk::1",
+        "chunk_parent":  "property::paragraph.paragraph_format",
+        "section":  "paragraph",
+        "path":  "paragraph.paragraph_format",
+        "text":  "section=paragraph\nkind=property\npath=paragraph.paragraph_format\ntype=ParagraphFormat\ndescription=Formatting properties such as indentation and spacing"
+    },
+    {
+        "chunk_id":  "property::paragraph.hyperlinks::chunk::1",
+        "chunk_parent":  "property::paragraph.hyperlinks",
+        "section":  "paragraph",
+        "path":  "paragraph.hyperlinks",
+        "text":  "section=paragraph\nkind=property\npath=paragraph.hyperlinks\ntype=list[Hyperlink]\ndescription=Hyperlinks in the paragraph"
+    },
+    {
+        "chunk_id":  "method::paragraph.add_run::chunk::1",
+        "chunk_parent":  "method::paragraph.add_run",
+        "section":  "paragraph",
+        "path":  "paragraph.add_run",
+        "text":  "section=paragraph\nkind=method\npath=paragraph.add_run\nsignature=add_run(text: str | None = None, style: str | CharacterStyle | None = None) -\u003e Run\ndescription=Add a run to the paragraph"
+    },
+    {
+        "chunk_id":  "method::paragraph.clear::chunk::1",
+        "chunk_parent":  "method::paragraph.clear",
+        "section":  "paragraph",
+        "path":  "paragraph.clear",
+        "text":  "section=paragraph\nkind=method\npath=paragraph.clear\ndescription=Remove all content in the paragraph but keep formatting"
+    },
+    {
+        "chunk_id":  "method::paragraph.insert_paragraph_before::chunk::1",
+        "chunk_parent":  "method::paragraph.insert_paragraph_before",
+        "section":  "paragraph",
+        "path":  "paragraph.insert_paragraph_before",
+        "text":  "section=paragraph\nkind=method\npath=paragraph.insert_paragraph_before\nsignature=insert_paragraph_before(text: str | None = None, style: str | ParagraphStyle | None = None) -\u003e Paragraph\ndescription=Insert a paragraph before this one"
+    },
+    {
+        "chunk_id":  "method::paragraph.iter_inner_content::chunk::1",
+        "chunk_parent":  "method::paragraph.iter_inner_content",
+        "section":  "paragraph",
+        "path":  "paragraph.iter_inner_content",
+        "text":  "section=paragraph\nkind=method\npath=paragraph.iter_inner_content\ndescription=Iterate over runs and hyperlinks in order"
+    },
+    {
+        "chunk_id":  "method::paragraph.add_comment::chunk::1",
+        "chunk_parent":  "method::paragraph.add_comment",
+        "section":  "paragraph",
+        "path":  "paragraph.add_comment",
+        "text":  "section=paragraph\nkind=method\npath=paragraph.add_comment\nsignature=(see Document.add_comment)\ndescription=Anchor a comment to runs within this paragraph"
+    },
+    {
+        "chunk_id":  "property::paragraph_format.alignment::chunk::1",
+        "chunk_parent":  "property::paragraph_format.alignment",
+        "section":  "paragraph_format",
+        "path":  "paragraph_format.alignment",
+        "text":  "section=paragraph_format\nkind=property\npath=paragraph_format.alignment\ntype=enum | None\nenum=WD_PARAGRAPH_ALIGNMENT\nenum_members=LEFT, CENTER, RIGHT, JUSTIFY, DISTRIBUTE, JUSTIFY_MED, JUSTIFY_HI, JUSTIFY_LOW, THAI_JUSTIFY\ndescription=Paragraph justification (WD_PARAGRAPH_ALIGNMENT)"
+    },
+    {
+        "chunk_id":  "property::paragraph_format.first_line_indent::chunk::1",
+        "chunk_parent":  "property::paragraph_format.first_line_indent",
+        "section":  "paragraph_format",
+        "path":  "paragraph_format.first_line_indent",
+        "text":  "section=paragraph_format\nkind=property\npath=paragraph_format.first_line_indent\ntype=Length | None\ndescription=Relative indentation of first line"
+    },
+    {
+        "chunk_id":  "property::paragraph_format.left_indent::chunk::1",
+        "chunk_parent":  "property::paragraph_format.left_indent",
+        "section":  "paragraph_format",
+        "path":  "paragraph_format.left_indent",
+        "text":  "section=paragraph_format\nkind=property\npath=paragraph_format.left_indent\ntype=Length | None\ndescription=Left indentation"
+    },
+    {
+        "chunk_id":  "property::paragraph_format.right_indent::chunk::1",
+        "chunk_parent":  "property::paragraph_format.right_indent",
+        "section":  "paragraph_format",
+        "path":  "paragraph_format.right_indent",
+        "text":  "section=paragraph_format\nkind=property\npath=paragraph_format.right_indent\ntype=Length | None\ndescription=Right indentation"
+    },
+    {
+        "chunk_id":  "property::paragraph_format.line_spacing::chunk::1",
+        "chunk_parent":  "property::paragraph_format.line_spacing",
+        "section":  "paragraph_format",
+        "path":  "paragraph_format.line_spacing",
+        "text":  "section=paragraph_format\nkind=property\npath=paragraph_format.line_spacing\ntype=Length | float | None\ndescription=Spacing between baselines of successive lines"
+    },
+    {
+        "chunk_id":  "property::paragraph_format.line_spacing_rule::chunk::1",
+        "chunk_parent":  "property::paragraph_format.line_spacing_rule",
+        "section":  "paragraph_format",
+        "path":  "paragraph_format.line_spacing_rule",
+        "text":  "section=paragraph_format\nkind=property\npath=paragraph_format.line_spacing_rule\ntype=enum | None\nenum=WD_LINE_SPACING\nenum_members=SINGLE, ONE_POINT_FIVE, DOUBLE, EXACTLY, MULTIPLE, AT_LEAST\ndescription=Interpretation of line_spacing; member of WD_LINE_SPACING"
+    },
+    {
+        "chunk_id":  "property::paragraph_format.space_before::chunk::1",
+        "chunk_parent":  "property::paragraph_format.space_before",
+        "section":  "paragraph_format",
+        "path":  "paragraph_format.space_before",
+        "text":  "section=paragraph_format\nkind=property\npath=paragraph_format.space_before\ntype=Length | None\ndescription=Space before paragraph"
+    },
+    {
+        "chunk_id":  "property::paragraph_format.space_after::chunk::1",
+        "chunk_parent":  "property::paragraph_format.space_after",
+        "section":  "paragraph_format",
+        "path":  "paragraph_format.space_after",
+        "text":  "section=paragraph_format\nkind=property\npath=paragraph_format.space_after\ntype=Length | None\ndescription=Space after paragraph"
+    },
+    {
+        "chunk_id":  "property::paragraph_format.keep_together::chunk::1",
+        "chunk_parent":  "property::paragraph_format.keep_together",
+        "section":  "paragraph_format",
+        "path":  "paragraph_format.keep_together",
+        "text":  "section=paragraph_format\nkind=property\npath=paragraph_format.keep_together\ntype=boolean | None\ndescription=Prevent paragraph from splitting across pages"
+    },
+    {
+        "chunk_id":  "property::paragraph_format.keep_with_next::chunk::1",
+        "chunk_parent":  "property::paragraph_format.keep_with_next",
+        "section":  "paragraph_format",
+        "path":  "paragraph_format.keep_with_next",
+        "text":  "section=paragraph_format\nkind=property\npath=paragraph_format.keep_with_next\ntype=boolean | None\ndescription=Keep paragraph on same page as next paragraph"
+    },
+    {
+        "chunk_id":  "property::paragraph_format.page_break_before::chunk::1",
+        "chunk_parent":  "property::paragraph_format.page_break_before",
+        "section":  "paragraph_format",
+        "path":  "paragraph_format.page_break_before",
+        "text":  "section=paragraph_format\nkind=property\npath=paragraph_format.page_break_before\ntype=boolean | None\ndescription=Force page break before this paragraph"
+    },
+    {
+        "chunk_id":  "property::paragraph_format.widow_control::chunk::1",
+        "chunk_parent":  "property::paragraph_format.widow_control",
+        "section":  "paragraph_format",
+        "path":  "paragraph_format.widow_control",
+        "text":  "section=paragraph_format\nkind=property\npath=paragraph_format.widow_control\ntype=boolean | None\ndescription=Avoid orphan/widow lines in pagination"
+    },
+    {
+        "chunk_id":  "property::paragraph_format.tab_stops::chunk::1",
+        "chunk_parent":  "property::paragraph_format.tab_stops",
+        "section":  "paragraph_format",
+        "path":  "paragraph_format.tab_stops",
+        "text":  "section=paragraph_format\nkind=property\npath=paragraph_format.tab_stops\ntype=TabStops\ndescription=Collection of tab stops defined for this paragraph"
+    },
+    {
+        "chunk_id":  "property::run.text::chunk::1",
+        "chunk_parent":  "property::run.text",
+        "section":  "run",
+        "path":  "run.text",
+        "text":  "section=run\nkind=property\npath=run.text\ntype=string\ndescription=Text of the run"
+    },
+    {
+        "chunk_id":  "property::run.bold::chunk::1",
+        "chunk_parent":  "property::run.bold",
+        "section":  "run",
+        "path":  "run.bold",
+        "text":  "section=run\nkind=property\npath=run.bold\ntype=boolean | None\ndescription=Tri‑state bold property"
+    },
+    {
+        "chunk_id":  "property::run.italic::chunk::1",
+        "chunk_parent":  "property::run.italic",
+        "section":  "run",
+        "path":  "run.italic",
+        "text":  "section=run\nkind=property\npath=run.italic\ntype=boolean | None\ndescription=Tri‑state italic property"
+    },
+    {
+        "chunk_id":  "property::run.underline::chunk::1",
+        "chunk_parent":  "property::run.underline",
+        "section":  "run",
+        "path":  "run.underline",
+        "text":  "section=run\nkind=property\npath=run.underline\ntype=boolean | None | enum\nenum=WD_UNDERLINE\nenum_members=NONE, SINGLE, WORDS, DOUBLE, DOTTED, THICK, DASH, DOT_DASH, DOT_DOT_DASH, WAVY, DOTTED_HEAVY, DASH_HEAVY, DOT_DASH_HEAVY, DOT_DOT_DASH_HEAVY, WAVY_HEAVY, DASH_LONG, WAVY_DOUBLE, DASH_LONG_HEAVY\ndescription=Underline style; True/False/None or member of WD_UNDERLINE"
+    },
+    {
+        "chunk_id":  "property::run.font::chunk::1",
+        "chunk_parent":  "property::run.font",
+        "section":  "run",
+        "path":  "run.font",
+        "text":  "section=run\nkind=property\npath=run.font\ntype=Font\ndescription=Font object controlling character formatting"
+    },
+    {
+        "chunk_id":  "property::run.style::chunk::1",
+        "chunk_parent":  "property::run.style",
+        "section":  "run",
+        "path":  "run.style",
+        "text":  "section=run\nkind=property\npath=run.style\ntype=CharacterStyle | str | None\ndescription=Character style applied to this run"
+    },
+    {
+        "chunk_id":  "method::run.add_break::chunk::1",
+        "chunk_parent":  "method::run.add_break",
+        "section":  "run",
+        "path":  "run.add_break",
+        "text":  "section=run\nkind=method\npath=run.add_break\ndescription=Insert a break (line, page, etc.)"
+    },
+    {
+        "chunk_id":  "method::run.add_picture::chunk::1",
+        "chunk_parent":  "method::run.add_picture",
+        "section":  "run",
+        "path":  "run.add_picture",
+        "text":  "section=run\nkind=method\npath=run.add_picture\ndescription=Insert a picture in this run"
+    },
+    {
+        "chunk_id":  "method::run.clear::chunk::1",
+        "chunk_parent":  "method::run.clear",
+        "section":  "run",
+        "path":  "run.clear",
+        "text":  "section=run\nkind=method\npath=run.clear\ndescription=Remove all content from the run (formatting preserved)"
+    },
+    {
+        "chunk_id":  "method::run.iter_inner_content::chunk::1",
+        "chunk_parent":  "method::run.iter_inner_content",
+        "section":  "run",
+        "path":  "run.iter_inner_content",
+        "text":  "section=run\nkind=method\npath=run.iter_inner_content\ndescription=Iterate over content items (text, drawings, page breaks)"
+    },
+    {
+        "chunk_id":  "property::font.name::chunk::1",
+        "chunk_parent":  "property::font.name",
+        "section":  "font",
+        "path":  "font.name",
+        "text":  "section=font\nkind=property\npath=font.name\ntype=string | None\ndescription=Typeface name; None indicates inheritance"
+    },
+    {
+        "chunk_id":  "property::font.size::chunk::1",
+        "chunk_parent":  "property::font.size",
+        "section":  "font",
+        "path":  "font.size",
+        "text":  "section=font\nkind=property\npath=font.size\ntype=Length | None\ndescription=Font size in EMU; use Pt() for points"
+    },
+    {
+        "chunk_id":  "property::font.bold::chunk::1",
+        "chunk_parent":  "property::font.bold",
+        "section":  "font",
+        "path":  "font.bold",
+        "text":  "section=font\nkind=property\npath=font.bold\ntype=boolean | None\ndescription=Bold on/off/inherit"
+    },
+    {
+        "chunk_id":  "property::font.italic::chunk::1",
+        "chunk_parent":  "property::font.italic",
+        "section":  "font",
+        "path":  "font.italic",
+        "text":  "section=font\nkind=property\npath=font.italic\ntype=boolean | None\ndescription=Italic on/off/inherit"
+    },
+    {
+        "chunk_id":  "property::font.underline::chunk::1",
+        "chunk_parent":  "property::font.underline",
+        "section":  "font",
+        "path":  "font.underline",
+        "text":  "section=font\nkind=property\npath=font.underline\ntype=boolean | None | enum\nenum=WD_UNDERLINE\nenum_members=NONE, SINGLE, WORDS, DOUBLE, DOTTED, THICK, DASH, DOT_DASH, DOT_DOT_DASH, WAVY, DOTTED_HEAVY, DASH_HEAVY, DOT_DASH_HEAVY, DOT_DOT_DASH_HEAVY, WAVY_HEAVY, DASH_LONG, WAVY_DOUBLE, DASH_LONG_HEAVY\ndescription=Underline style; True/False/None or WD_UNDERLINE member"
+    },
+    {
+        "chunk_id":  "property::font.color::chunk::1",
+        "chunk_parent":  "property::font.color",
+        "section":  "font",
+        "path":  "font.color",
+        "text":  "section=font\nkind=property\npath=font.color\ntype=ColorFormat\ndescription=Color format object with rgb, theme_color, and type"
+    },
+    {
+        "chunk_id":  "property::font.highlight_color::chunk::1",
+        "chunk_parent":  "property::font.highlight_color",
+        "section":  "font",
+        "path":  "font.highlight_color",
+        "text":  "section=font\nkind=property\npath=font.highlight_color\ntype=Color | None\ndescription=Highlight color applied to the text"
+    },
+    {
+        "chunk_id":  "property::font.all_caps::chunk::1",
+        "chunk_parent":  "property::font.all_caps",
+        "section":  "font",
+        "path":  "font.all_caps",
+        "text":  "section=font\nkind=property\npath=font.all_caps\ntype=boolean | None\ndescription=Convert text to all capitals"
+    },
+    {
+        "chunk_id":  "property::font.small_caps::chunk::1",
+        "chunk_parent":  "property::font.small_caps",
+        "section":  "font",
+        "path":  "font.small_caps",
+        "text":  "section=font\nkind=property\npath=font.small_caps\ntype=boolean | None\ndescription=Convert lowercase letters to small capitals"
+    },
+    {
+        "chunk_id":  "property::font.strike::chunk::1",
+        "chunk_parent":  "property::font.strike",
+        "section":  "font",
+        "path":  "font.strike",
+        "text":  "section=font\nkind=property\npath=font.strike\ntype=boolean | None\ndescription=Single strikethrough"
+    },
+    {
+        "chunk_id":  "property::font.double_strike::chunk::1",
+        "chunk_parent":  "property::font.double_strike",
+        "section":  "font",
+        "path":  "font.double_strike",
+        "text":  "section=font\nkind=property\npath=font.double_strike\ntype=boolean | None\ndescription=Double strikethrough"
+    },
+    {
+        "chunk_id":  "property::font.subscript::chunk::1",
+        "chunk_parent":  "property::font.subscript",
+        "section":  "font",
+        "path":  "font.subscript",
+        "text":  "section=font\nkind=property\npath=font.subscript\ntype=boolean | None\ndescription=Subscript characters"
+    },
+    {
+        "chunk_id":  "property::font.superscript::chunk::1",
+        "chunk_parent":  "property::font.superscript",
+        "section":  "font",
+        "path":  "font.superscript",
+        "text":  "section=font\nkind=property\npath=font.superscript\ntype=boolean | None\ndescription=Superscript characters"
+    },
+    {
+        "chunk_id":  "property::font.outline::chunk::1",
+        "chunk_parent":  "property::font.outline",
+        "section":  "font",
+        "path":  "font.outline",
+        "text":  "section=font\nkind=property\npath=font.outline\ntype=boolean | None\ndescription=Draw one‑pixel outline around characters"
+    },
+    {
+        "chunk_id":  "property::font.shadow::chunk::1",
+        "chunk_parent":  "property::font.shadow",
+        "section":  "font",
+        "path":  "font.shadow",
+        "text":  "section=font\nkind=property\npath=font.shadow\ntype=boolean | None\ndescription=Shadow effect behind characters"
+    },
+    {
+        "chunk_id":  "property::font.emboss::chunk::1",
+        "chunk_parent":  "property::font.emboss",
+        "section":  "font",
+        "path":  "font.emboss",
+        "text":  "section=font\nkind=property\npath=font.emboss\ntype=boolean | None\ndescription=Emboss (raised) effect"
+    },
+    {
+        "chunk_id":  "property::font.imprint::chunk::1",
+        "chunk_parent":  "property::font.imprint",
+        "section":  "font",
+        "path":  "font.imprint",
+        "text":  "section=font\nkind=property\npath=font.imprint\ntype=boolean | None\ndescription=Imprint (pressed into page) effect"
+    },
+    {
+        "chunk_id":  "property::font.hidden::chunk::1",
+        "chunk_parent":  "property::font.hidden",
+        "section":  "font",
+        "path":  "font.hidden",
+        "text":  "section=font\nkind=property\npath=font.hidden\ntype=boolean | None\ndescription=Hide text from display"
+    },
+    {
+        "chunk_id":  "property::font.math::chunk::1",
+        "chunk_parent":  "property::font.math",
+        "section":  "font",
+        "path":  "font.math",
+        "text":  "section=font\nkind=property\npath=font.math\ntype=boolean | None\ndescription=Mark run as containing math Office OpenXML"
+    },
+    {
+        "chunk_id":  "property::font.complex_script::chunk::1",
+        "chunk_parent":  "property::font.complex_script",
+        "section":  "font",
+        "path":  "font.complex_script",
+        "text":  "section=font\nkind=property\npath=font.complex_script\ntype=boolean | None\ndescription=Treat characters as complex script"
+    },
+    {
+        "chunk_id":  "property::font.cs_bold::chunk::1",
+        "chunk_parent":  "property::font.cs_bold",
+        "section":  "font",
+        "path":  "font.cs_bold",
+        "text":  "section=font\nkind=property\npath=font.cs_bold\ntype=boolean | None\ndescription=Bold for complex script characters"
+    },
+    {
+        "chunk_id":  "property::font.cs_italic::chunk::1",
+        "chunk_parent":  "property::font.cs_italic",
+        "section":  "font",
+        "path":  "font.cs_italic",
+        "text":  "section=font\nkind=property\npath=font.cs_italic\ntype=boolean | None\ndescription=Italic for complex script characters"
+    },
+    {
+        "chunk_id":  "property::font.no_proof::chunk::1",
+        "chunk_parent":  "property::font.no_proof",
+        "section":  "font",
+        "path":  "font.no_proof",
+        "text":  "section=font\nkind=property\npath=font.no_proof\ntype=boolean | None\ndescription=Disable proofing for this run"
+    },
+    {
+        "chunk_id":  "property::font.rtl::chunk::1",
+        "chunk_parent":  "property::font.rtl",
+        "section":  "font",
+        "path":  "font.rtl",
+        "text":  "section=font\nkind=property\npath=font.rtl\ntype=boolean | None\ndescription=Right‑to‑left characteristics"
+    },
+    {
+        "chunk_id":  "property::font.snap_to_grid::chunk::1",
+        "chunk_parent":  "property::font.snap_to_grid",
+        "section":  "font",
+        "path":  "font.snap_to_grid",
+        "text":  "section=font\nkind=property\npath=font.snap_to_grid\ntype=boolean | None\ndescription=Snap to document grid"
+    },
+    {
+        "chunk_id":  "property::font.spec_vanish::chunk::1",
+        "chunk_parent":  "property::font.spec_vanish",
+        "section":  "font",
+        "path":  "font.spec_vanish",
+        "text":  "section=font\nkind=property\npath=font.spec_vanish\ntype=boolean | None\ndescription=Hide run, even when hidden text is shown"
+    },
+    {
+        "chunk_id":  "property::font.web_hidden::chunk::1",
+        "chunk_parent":  "property::font.web_hidden",
+        "section":  "font",
+        "path":  "font.web_hidden",
+        "text":  "section=font\nkind=property\npath=font.web_hidden\ntype=boolean | None\ndescription=Hide text when viewed in web page view"
+    },
+    {
+        "chunk_id":  "enumeration::WD_PARAGRAPH_ALIGNMENT::chunk::1",
+        "chunk_parent":  "enumeration::WD_PARAGRAPH_ALIGNMENT",
+        "section":  "enumerations",
+        "path":  "enumerations.WD_PARAGRAPH_ALIGNMENT",
+        "text":  "section=enumerations\nkind=enumeration\npath=enumerations.WD_PARAGRAPH_ALIGNMENT\ntype=enum\nenum=WD_PARAGRAPH_ALIGNMENT\nenum_members=LEFT, CENTER, RIGHT, JUSTIFY, DISTRIBUTE, JUSTIFY_MED, JUSTIFY_HI, JUSTIFY_LOW, THAI_JUSTIFY\ndescription=Allowed members for WD_PARAGRAPH_ALIGNMENT."
+    },
+    {
+        "chunk_id":  "enumeration::WD_LINE_SPACING::chunk::1",
+        "chunk_parent":  "enumeration::WD_LINE_SPACING",
+        "section":  "enumerations",
+        "path":  "enumerations.WD_LINE_SPACING",
+        "text":  "section=enumerations\nkind=enumeration\npath=enumerations.WD_LINE_SPACING\ntype=enum\nenum=WD_LINE_SPACING\nenum_members=SINGLE, ONE_POINT_FIVE, DOUBLE, EXACTLY, MULTIPLE, AT_LEAST\ndescription=Allowed members for WD_LINE_SPACING."
+    },
+    {
+        "chunk_id":  "enumeration::WD_UNDERLINE::chunk::1",
+        "chunk_parent":  "enumeration::WD_UNDERLINE",
+        "section":  "enumerations",
+        "path":  "enumerations.WD_UNDERLINE",
+        "text":  "section=enumerations\nkind=enumeration\npath=enumerations.WD_UNDERLINE\ntype=enum\nenum=WD_UNDERLINE\nenum_members=NONE, SINGLE, WORDS, DOUBLE, DOTTED, THICK, DASH, DOT_DASH, DOT_DOT_DASH, WAVY, DOTTED_HEAVY, DASH_HEAVY, DOT_DASH_HEAVY, DOT_DOT_DASH_HEAVY, WAVY_HEAVY, DASH_LONG, WAVY_DOUBLE, DASH_LONG_HEAVY\ndescription=Allowed members for WD_UNDERLINE."
+    },
+    {
+        "chunk_id":  "enumeration::WD_TABLE_ALIGNMENT::chunk::1",
+        "chunk_parent":  "enumeration::WD_TABLE_ALIGNMENT",
+        "section":  "enumerations",
+        "path":  "enumerations.WD_TABLE_ALIGNMENT",
+        "text":  "section=enumerations\nkind=enumeration\npath=enumerations.WD_TABLE_ALIGNMENT\ntype=enum\nenum=WD_TABLE_ALIGNMENT\nenum_members=LEFT, CENTER, RIGHT\ndescription=Allowed members for WD_TABLE_ALIGNMENT."
+    },
+    {
+        "chunk_id":  "enumeration::WD_ROW_HEIGHT_RULE::chunk::1",
+        "chunk_parent":  "enumeration::WD_ROW_HEIGHT_RULE",
+        "section":  "enumerations",
+        "path":  "enumerations.WD_ROW_HEIGHT_RULE",
+        "text":  "section=enumerations\nkind=enumeration\npath=enumerations.WD_ROW_HEIGHT_RULE\ntype=enum\nenum=WD_ROW_HEIGHT_RULE\nenum_members=AUTO, AT_LEAST, EXACTLY\ndescription=Allowed members for WD_ROW_HEIGHT_RULE."
+    },
+    {
+        "chunk_id":  "enumeration::WD_CELL_VERTICAL_ALIGNMENT::chunk::1",
+        "chunk_parent":  "enumeration::WD_CELL_VERTICAL_ALIGNMENT",
+        "section":  "enumerations",
+        "path":  "enumerations.WD_CELL_VERTICAL_ALIGNMENT",
+        "text":  "section=enumerations\nkind=enumeration\npath=enumerations.WD_CELL_VERTICAL_ALIGNMENT\ntype=enum\nenum=WD_CELL_VERTICAL_ALIGNMENT\nenum_members=TOP, CENTER, BOTTOM, BOTH\ndescription=Allowed members for WD_CELL_VERTICAL_ALIGNMENT."
+    },
+    {
+        "chunk_id":  "enumeration::WD_ORIENTATION::chunk::1",
+        "chunk_parent":  "enumeration::WD_ORIENTATION",
+        "section":  "enumerations",
+        "path":  "enumerations.WD_ORIENTATION",
+        "text":  "section=enumerations\nkind=enumeration\npath=enumerations.WD_ORIENTATION\ntype=enum\nenum=WD_ORIENTATION\nenum_members=PORTRAIT, LANDSCAPE\ndescription=Allowed members for WD_ORIENTATION."
+    },
+    {
+        "chunk_id":  "enumeration::WD_SECTION_START::chunk::1",
+        "chunk_parent":  "enumeration::WD_SECTION_START",
+        "section":  "enumerations",
+        "path":  "enumerations.WD_SECTION_START",
+        "text":  "section=enumerations\nkind=enumeration\npath=enumerations.WD_SECTION_START\ntype=enum\nenum=WD_SECTION_START\nenum_members=CONTINUOUS, NEW_COLUMN, NEW_PAGE, EVEN_PAGE, ODD_PAGE\ndescription=Allowed members for WD_SECTION_START."
+    },
+    {
+        "chunk_id":  "enumeration::WD_STYLE_TYPE::chunk::1",
+        "chunk_parent":  "enumeration::WD_STYLE_TYPE",
+        "section":  "enumerations",
+        "path":  "enumerations.WD_STYLE_TYPE",
+        "text":  "section=enumerations\nkind=enumeration\npath=enumerations.WD_STYLE_TYPE\ntype=enum\nenum=WD_STYLE_TYPE\nenum_members=CHARACTER, LIST, PARAGRAPH, TABLE\ndescription=Allowed members for WD_STYLE_TYPE."
+    },
+    {
+        "chunk_id":  "enumeration::WD_TABLE_DIRECTION::chunk::1",
+        "chunk_parent":  "enumeration::WD_TABLE_DIRECTION",
+        "section":  "enumerations",
+        "path":  "enumerations.WD_TABLE_DIRECTION",
+        "text":  "section=enumerations\nkind=enumeration\npath=enumerations.WD_TABLE_DIRECTION\ntype=enum\nenum=WD_TABLE_DIRECTION\nenum_members=LTR, RTL\ndescription=Allowed members for WD_TABLE_DIRECTION."
+    }
+]

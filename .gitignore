@@ -16,4 +16,4 @@ __pycache__/
 **/*.pdf
 
 # App-generated data
-app/data/
+ai/data/

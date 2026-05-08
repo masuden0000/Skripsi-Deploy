@@ -35,7 +35,7 @@
 | `frontend/lib/supabase/server.ts` | Create | Server Supabase client |
 | `frontend/lib/utils.ts` | Create (if missing) | cn() helper |
 | `frontend/middleware.ts` | Create | Route guard berdasarkan role |
-| `supabase/migrations/20260507000000_create_profiles.sql` | Create | Tabel profiles + RLS |
+| `database/supabase/migrations/20260507000000_create_profiles.sql` | Create | Tabel profiles + RLS |
 
 ---
 
@@ -156,11 +156,11 @@ git commit -m "feat: add Figma assets — logo UPNVJ, icon user, icon lock"
 ## Task 3: Supabase migration — tabel profiles
 
 **Files:**
-- Create: `supabase/migrations/20260507000000_create_profiles.sql`
+- Create: `database/supabase/migrations/20260507000000_create_profiles.sql`
 
 - [ ] **Step 1: Tulis migration**
 
-Buat `supabase/migrations/20260507000000_create_profiles.sql`:
+Buat `database/supabase/migrations/20260507000000_create_profiles.sql`:
 ```sql
 create type public.app_role as enum ('admin', 'reviewer');
 
@@ -234,7 +234,7 @@ where email = 'reviewer@test.com';
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/20260507000000_create_profiles.sql
+git add database/supabase/migrations/20260507000000_create_profiles.sql
 git commit -m "feat: add profiles table migration with app_role enum and RLS"
 ```
 

@@ -1,0 +1,1194 @@
+﻿<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Visualisasi Proses Testing Ekstraksi</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #475467;
+      --line: #d0d7e2;
+      --accent: #0b63ce;
+      --accent-soft: #e8f1ff;
+      --ok: #0f9d58;
+      --warn: #b54708;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Calibri", "Arial", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #f9fbff 0%, #f3f6fc 100%);
+      line-height: 1.45;
+    }
+
+    .container {
+      width: min(1120px, 94vw);
+      margin: 28px auto 56px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.2rem, 1.8vw, 1.65rem);
+    }
+
+    .subtitle {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .meta > div {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: .9rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: .82rem;
+      color: #344054;
+    }
+
+    .flow {
+      display: grid;
+      gap: 12px;
+    }
+
+    .overview {
+      margin-bottom: 18px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(11, 99, 206, 0.06), rgba(11, 99, 206, 0.02));
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .overview h2,
+    .phase h2 {
+      margin: 0 0 6px;
+      font-size: 1.02rem;
+    }
+
+    .overview p,
+    .phase > p {
+      margin: 0 0 12px;
+      color: #344054;
+      font-size: .92rem;
+    }
+
+    .flowline {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+      flex-wrap: wrap;
+    }
+
+    .flow-node {
+      flex: 1 1 210px;
+      min-width: 190px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .flow-node strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: .9rem;
+    }
+
+    .flow-node p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .84rem;
+    }
+
+    .flow-arrow {
+      width: 34px;
+      min-width: 34px;
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+
+    .artifact-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .artifact {
+      border: 1px dashed var(--line);
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: .86rem;
+    }
+
+    .phase {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.58);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .phase + .phase {
+      margin-top: 14px;
+    }
+
+    .phase-track {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .phase-tag {
+      background: var(--accent-soft);
+      color: #11417e;
+      border: 1px solid #c7d7f7;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: .78rem;
+      font-weight: 600;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
+    .phase-track .line {
+      flex: 1 1 70px;
+      height: 2px;
+      background: linear-gradient(90deg, #c7d7f7, #0b63ce);
+      min-width: 48px;
+    }
+
+    .step {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-left: 6px solid var(--accent);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .step h2 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+    }
+
+    .desc {
+      margin: 0 0 10px;
+      color: #344054;
+      font-size: .92rem;
+    }
+
+    .task-chain {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+      flex-wrap: wrap;
+      margin: 0 0 14px;
+    }
+
+    .task-node {
+      flex: 1 1 180px;
+      min-width: 180px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .task-node strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: .88rem;
+    }
+
+    .task-node p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .83rem;
+    }
+
+    .handoff {
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fbfcff;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 0 0 12px;
+    }
+
+    .handoff h3 {
+      margin: 0 0 6px;
+      font-size: .82rem;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      color: #344054;
+    }
+
+    .handoff p,
+    .handoff ul {
+      margin: 0;
+      font-size: .86rem;
+      color: #1f2937;
+    }
+
+    .ipo {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .box {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      min-height: 108px;
+      background: #fff;
+    }
+
+    .box h3 {
+      margin: 0 0 8px;
+      font-size: .84rem;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      color: #344054;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: .88rem;
+      color: #1f2937;
+    }
+
+    li + li { margin-top: 4px; }
+
+    .bindings {
+      border-top: 1px dashed var(--line);
+      padding-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .bindings h4 {
+      margin: 0 0 6px;
+      font-size: .82rem;
+      color: #344054;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+
+    code {
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: .84rem;
+      background: #f2f5fa;
+      border: 1px solid #e4e8f0;
+      border-radius: 6px;
+      padding: 1px 5px;
+    }
+
+    .note {
+      margin-top: 18px;
+      border: 1px solid #c7d7f7;
+      background: var(--accent-soft);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: .88rem;
+      color: #1d3557;
+    }
+
+    .status-ok { color: var(--ok); font-weight: 600; }
+    .status-warn { color: var(--warn); font-weight: 600; }
+
+    @media (max-width: 860px) {
+      .ipo { grid-template-columns: 1fr; }
+      .bindings { grid-template-columns: 1fr; }
+      .artifact-row { grid-template-columns: 1fr; }
+      .handoff { grid-template-columns: 1fr; }
+      .flow-arrow {
+        width: 100%;
+        min-width: 100%;
+        height: 20px;
+        transform: rotate(90deg);
+      }
+      .phase-track .line {
+        width: 100%;
+        flex-basis: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>Visualisasi Proses Data - Folder <code>ai/testing ekstraksi</code></h1>
+    <p class="subtitle">
+      Halaman ini menampilkan tiga hal sekaligus: alur utama end-to-end, hubungan antar task di dalam tiap fase, dan rincian Input - Proses - Output per task agar tiap langkah bisa ditelusuri ke file dan fungsi yang menjalankannya.
+    </p>
+
+    <section class="meta">
+      <div><strong>Scope:</strong> Reasoning translation + sandbox DOCX render</div>
+      <div><strong>Input utama:</strong> <code>document_metadata.payload</code>, <code>ai/data/output_chunks.json</code></div>
+      <div><strong>Katalog target:</strong> <code>python_docx_catalog_chunks.json</code></div>
+      <div><strong>Status runtime:</strong> <span class="status-ok">Audit-only, tidak mengubah pipeline utama</span></div>
+    </section>
+
+    <section class="legend">
+      <span class="chip">Entry: <code>run_reasoning_translation.py</code></span>
+      <span class="chip">Entry: <code>run_reasoning_docx_render.py</code></span>
+      <span class="chip">Model: LLM (opsional) + fallback rule-based</span>
+      <span class="chip">Output report: JSON</span>
+      <span class="chip">Output artefak: DOCX sandbox</span>
+    </section>
+
+    <section class="overview">
+      <h2>Alur Utama End-to-End</h2>
+      <p>
+        Cara baca bagian ini: baris atas menunjukkan urutan proses besar. Bagian bawah menunjukkan artefak yang keluar dari reasoning translation dan dipakai lagi oleh sandbox renderer.
+      </p>
+      <div class="flowline">
+        <div class="flow-node">
+          <strong>1. Input Rules</strong>
+          <p><code>document_metadata.payload</code> dibaca dan dipecah menjadi fakta per field.</p>
+        </div>
+        <div class="flow-arrow">â†’</div>
+        <div class="flow-node">
+          <strong>2. Retrieval Katalog</strong>
+          <p>Setiap fakta mencari properti python-docx yang relevan dari <code>python_docx_catalog_chunks.json</code>.</p>
+        </div>
+        <div class="flow-arrow">â†’</div>
+        <div class="flow-node">
+          <strong>3. Candidate Mapping</strong>
+          <p>LLM atau fallback rule-based membentuk kandidat target path, value, dan decision steps.</p>
+        </div>
+        <div class="flow-arrow">â†’</div>
+        <div class="flow-node">
+          <strong>4. Validator Gate</strong>
+          <p>Kandidat dinormalisasi dan diputuskan status final: accepted, rejected, unmapped, atau needs_review.</p>
+        </div>
+        <div class="flow-arrow">â†’</div>
+        <div class="flow-node">
+          <strong>5. Report Mapping</strong>
+          <p><code>reasoning_translation_report.json</code> menjadi jembatan ke proses render DOCX.</p>
+        </div>
+      </div>
+      <div class="artifact-row">
+        <div class="artifact">
+          <strong>Artefak keluaran fase reasoning:</strong>
+          <code>reasoning_translation_report.json</code> dan <code>reasoning_translation_status_summary.json</code>
+        </div>
+        <div class="artifact">
+          <strong>Artefak masukan fase render:</strong>
+          <code>reasoning_translation_report.json</code> + <code>document_metadata.payload</code> + <code>output_chunks.json</code>
+        </div>
+      </div>
+      <div class="flowline" style="margin-top:12px;">
+        <div class="flow-node">
+          <strong>6. Apply Accepted Styles</strong>
+          <p>Sandbox renderer hanya mengambil mapping yang accepted untuk margin, font, spacing, alignment, dan heading.</p>
+        </div>
+        <div class="flow-arrow">â†’</div>
+        <div class="flow-node">
+          <strong>7. Build Structure</strong>
+          <p><code>document_structure_proposal.sections</code> dipakai untuk membangun daftar isi, BAB, dan daftar pustaka.</p>
+        </div>
+        <div class="flow-arrow">â†’</div>
+        <div class="flow-node">
+          <strong>8. Chunk Rewrite Placeholder</strong>
+          <p>Chunk relevan dari <code>output_chunks.json</code> dipilih per bagian lalu diubah menjadi instructional placeholder.</p>
+        </div>
+        <div class="flow-arrow">â†’</div>
+        <div class="flow-node">
+          <strong>9. Output DOCX</strong>
+          <p>Hasil akhir: <code>reasoning_rendered_proposal.docx</code> dan <code>reasoning_docx_render_report.json</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="flow">
+      <section class="phase">
+        <div class="phase-track">
+          <span class="phase-tag">Fase A</span>
+          <div class="line"></div>
+          <span class="phase-tag">Reasoning Translation</span>
+        </div>
+        <h2>Fase A - Dari Rule Metadata ke Report Mapping</h2>
+        <p>
+          Fase ini menjawab pertanyaan: "field di <code>document_metadata.payload</code> seharusnya menuju properti python-docx yang mana, dengan nilai apa, dan apakah mapping itu lolos validasi?"
+        </p>
+        <div class="task-chain">
+          <div class="task-node">
+            <strong>Task 1-2</strong>
+            <p>Konfigurasi run lalu ubah <code>document_metadata.payload</code> menjadi daftar <code>SourceFact</code>.</p>
+          </div>
+          <div class="flow-arrow">â†’</div>
+          <div class="task-node">
+            <strong>Task 3-4</strong>
+            <p>Muat katalog python-docx dan retrieval chunk target yang relevan per fact.</p>
+          </div>
+          <div class="flow-arrow">â†’</div>
+          <div class="task-node">
+            <strong>Task 5-6</strong>
+            <p>Bentuk kandidat mapping lalu putuskan status final lewat validator.</p>
+          </div>
+          <div class="flow-arrow">â†’</div>
+          <div class="task-node">
+            <strong>Task 7</strong>
+            <p>Simpan audit hasil reasoning menjadi report yang siap dipakai fase render.</p>
+          </div>
+        </div>
+
+        <article class="step">
+        <h2>1) Bootstrapping & Config Resolution</h2>
+        <p class="desc">Task awal untuk menyiapkan path input, env, parser argumen, dan mode eksekusi.</p>
+        <div class="handoff">
+          <div>
+            <h3>Menerima Dari</h3>
+            <p>CLI user dan environment runtime.</p>
+          </div>
+          <div>
+            <h3>Yang Diproses</h3>
+            <p>Argumen run, env key, mode retrieval, dan pilihan LLM atau fallback.</p>
+          </div>
+          <div>
+            <h3>Mengirim Ke</h3>
+            <p>Task 2 sebagai konfigurasi run final.</p>
+          </div>
+        </div>
+        <div class="ipo">
+          <div class="box">
+            <h3>Input</h3>
+            <ul>
+              <li>Argumen CLI (<code>--no-llm</code>, <code>--retrieval-mode</code>, <code>--output</code>)</li>
+              <li>Env <code>GROQ_API_KEY</code>, <code>MODEL_NAME</code>, <code>GOOGLE_API_KEY</code></li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Proses</h3>
+            <ul>
+              <li>Load env: <code>load_dotenv()</code></li>
+              <li>Sanitasi proxy: <code>_disable_blackhole_proxies()</code></li>
+              <li>Pilih translator: <code>_build_translator()</code></li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Output</h3>
+            <ul>
+              <li>Konfigurasi run final</li>
+              <li>Status translator: LLM aktif / fallback</li>
+            </ul>
+          </div>
+        </div>
+        <div class="bindings">
+          <div>
+            <h4>File Terkait</h4>
+            <ul>
+              <li><code>run_reasoning_translation.py</code></li>
+              <li><code>reasoning_llm_translator.py</code></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Fungsi Terkait</h4>
+            <ul>
+              <li><code>build_parser()</code>, <code>run_pipeline()</code>, <code>_build_translator()</code></li>
+              <li><code>LLMReasoningTranslator.__init__()</code></li>
+            </ul>
+          </div>
+        </div>
+        </article>
+
+        <article class="step">
+        <h2>2) Ingest Input & Flatten Source Facts</h2>
+        <p class="desc">Task normalisasi metadata dari <code>document_metadata.payload</code> menjadi daftar fakta per field.</p>
+        <div class="handoff">
+          <div>
+            <h3>Menerima Dari</h3>
+            <p>Task 1 dan file <code>document_metadata.payload</code>.</p>
+          </div>
+          <div>
+            <h3>Yang Diproses</h3>
+            <p>Nested JSON menjadi field-level fact yang punya path, value, dan source fact text.</p>
+          </div>
+          <div>
+            <h3>Mengirim Ke</h3>
+            <p>Task 4 sebagai antrian <code>SourceFact</code> per field.</p>
+          </div>
+        </div>
+        <div class="ipo">
+          <div class="box">
+            <h3>Input</h3>
+            <ul>
+              <li><code>document_metadata.payload</code></li>
+              <li>Objek bertingkat: <code>typography</code>, <code>page_layout</code>, <code>spacing</code>, dst</li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Proses</h3>
+            <ul>
+              <li>Load JSON: <code>_load_json()</code></li>
+              <li>Deteksi jenis input: <code>_detect_input_kind()</code></li>
+              <li>Flatten field: <code>_flatten_output_parameters()</code></li>
+              <li>Bentuk fakta natural-language: <code>_output_source_fact()</code></li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Output</h3>
+            <ul>
+              <li>List <code>SourceFact</code> per field</li>
+              <li>Contoh: <code>typography.font_size_body_pt = 12</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="bindings">
+          <div>
+            <h4>File Terkait</h4>
+            <ul>
+              <li><code>run_reasoning_translation.py</code></li>
+              <li><code>reasoning_schema.py</code></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Fungsi Terkait</h4>
+            <ul>
+              <li><code>_build_source_facts()</code>, <code>_output_source_fact()</code></li>
+              <li>Dataclass: <code>SourceFact</code></li>
+            </ul>
+          </div>
+        </div>
+        </article>
+
+        <article class="step">
+        <h2>3) Dictionary Catalog Loading</h2>
+        <p class="desc">Task membangun index properti python-docx dari katalog chunk agar bisa diretrieval dan divalidasi.</p>
+        <div class="handoff">
+          <div>
+            <h3>Menerima Dari</h3>
+            <p><code>python_docx_catalog_chunks.json</code>.</p>
+          </div>
+          <div>
+            <h3>Yang Diproses</h3>
+            <p>Data katalog menjadi <code>CatalogEntry</code>, <code>RetrievedChunk</code>, dan index path.</p>
+          </div>
+          <div>
+            <h3>Mengirim Ke</h3>
+            <p>Task 4 untuk retrieval dan Task 6 untuk validasi target/type.</p>
+          </div>
+        </div>
+        <div class="ipo">
+          <div class="box">
+            <h3>Input</h3>
+            <ul>
+              <li><code>ai/testing ekstraksi/python_docx_catalog_chunks.json</code></li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Proses</h3>
+            <ul>
+              <li>Parse metadata baris: <code>_parse_text_line()</code></li>
+              <li>Bangun objek <code>CatalogEntry</code> + <code>RetrievedChunk</code></li>
+              <li>Index <code>entries_by_path</code></li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Output</h3>
+            <ul>
+              <li>List entry dictionary python-docx</li>
+              <li>List chunk catalog untuk RAG retrieval</li>
+            </ul>
+          </div>
+        </div>
+        <div class="bindings">
+          <div>
+            <h4>File Terkait</h4>
+            <ul>
+              <li><code>run_reasoning_translation.py</code></li>
+              <li><code>python_docx_catalog_chunks.json</code></li>
+              <li><code>reasoning_schema.py</code></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Fungsi Terkait</h4>
+            <ul>
+              <li><code>_load_catalog_entries_and_chunks()</code></li>
+              <li>Dataclass: <code>CatalogEntry</code>, <code>RetrievedChunk</code></li>
+            </ul>
+          </div>
+        </div>
+        </article>
+
+        <article class="step">
+        <h2>4) Retrieval Per Fact (Lexical / Embedding)</h2>
+        <p class="desc">Task pengambilan konteks dictionary yang relevan untuk masing-masing <code>SourceFact</code>.</p>
+        <div class="handoff">
+          <div>
+            <h3>Menerima Dari</h3>
+            <p>Task 2 (<code>SourceFact</code>) dan Task 3 (catalog chunks).</p>
+          </div>
+          <div>
+            <h3>Yang Diproses</h3>
+            <p>Query fakta per field untuk mencari chunk property python-docx yang paling dekat.</p>
+          </div>
+          <div>
+            <h3>Mengirim Ke</h3>
+            <p>Task 5 sebagai retrieval context untuk translation candidate.</p>
+          </div>
+        </div>
+        <div class="ipo">
+          <div class="box">
+            <h3>Input</h3>
+            <ul>
+              <li>1 buah <code>SourceFact</code></li>
+              <li>Catalog chunks</li>
+              <li>Mode retrieval: <code>lexical</code> / <code>embedding</code></li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Proses</h3>
+            <ul>
+              <li>Query facts: <code>_query_for_fact()</code></li>
+              <li>Lexical scoring: <code>_tokenize()</code>, <code>_lexical_score()</code></li>
+              <li>Embedding scoring (opsional): <code>_cosine_similarity()</code></li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Output</h3>
+            <ul>
+              <li><code>RetrievalOutcome(status, chunks, error)</code></li>
+              <li>Top-K chunk kandidat target path</li>
+            </ul>
+          </div>
+        </div>
+        <div class="bindings">
+          <div>
+            <h4>File Terkait</h4>
+            <ul>
+              <li><code>run_reasoning_translation.py</code></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Fungsi Terkait</h4>
+            <ul>
+              <li>Kelas: <code>DictionaryRetriever</code></li>
+              <li><code>retrieve()</code>, <code>_retrieve_lexical()</code>, <code>_retrieve_embedding()</code></li>
+            </ul>
+          </div>
+        </div>
+        </article>
+
+        <article class="step">
+        <h2>5) Translation Candidate (LLM / Rule Fallback)</h2>
+        <p class="desc">Task menerjemahkan fakta ke kandidat mapping python-docx dengan decision steps audit.</p>
+        <div class="handoff">
+          <div>
+            <h3>Menerima Dari</h3>
+            <p>Task 4: <code>SourceFact</code> dan top-k retrieved chunks.</p>
+          </div>
+          <div>
+            <h3>Yang Diproses</h3>
+            <p>Hubungan antara fakta sumber, target path, normalized value, confidence, dan audit reasoning.</p>
+          </div>
+          <div>
+            <h3>Mengirim Ke</h3>
+            <p>Task 6 sebagai <code>ReasoningCandidate</code> yang belum final.</p>
+          </div>
+        </div>
+        <div class="ipo">
+          <div class="box">
+            <h3>Input</h3>
+            <ul>
+              <li><code>SourceFact</code></li>
+              <li>Retrieved dictionary chunks</li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Proses</h3>
+            <ul>
+              <li>LLM path: <code>LLMReasoningTranslator.translate()</code></li>
+              <li>Fallback path: <code>_fallback_candidate()</code></li>
+              <li>Guard error/rate-limit: <code>_safe_error_detail()</code>, <code>_is_rate_limit_error()</code></li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Output</h3>
+            <ul>
+              <li><code>ReasoningCandidate</code> dengan status <code>mapped/unmapped/needs_review</code></li>
+              <li>Target path, normalized value, confidence, reason</li>
+            </ul>
+          </div>
+        </div>
+        <div class="bindings">
+          <div>
+            <h4>File Terkait</h4>
+            <ul>
+              <li><code>reasoning_llm_translator.py</code></li>
+              <li><code>run_reasoning_translation.py</code></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Fungsi Terkait</h4>
+            <ul>
+              <li><code>translate()</code>, <code>_extract_json_object()</code></li>
+              <li><code>_margin_target_path()</code>, <code>_first_available_path()</code></li>
+            </ul>
+          </div>
+        </div>
+        </article>
+
+        <article class="step">
+        <h2>6) Validator Gate & Final Status</h2>
+        <p class="desc">Task memutuskan status final dengan type-check, field-guard, dan confidence gate.</p>
+        <div class="handoff">
+          <div>
+            <h3>Menerima Dari</h3>
+            <p>Task 5, Task 3, dan source value dari Task 2.</p>
+          </div>
+          <div>
+            <h3>Yang Diproses</h3>
+            <p>Kecocokan target path, normalisasi tipe nilai, rule field-aware, dan confidence kandidat.</p>
+          </div>
+          <div>
+            <h3>Mengirim Ke</h3>
+            <p>Task 7 sebagai hasil final per field.</p>
+          </div>
+        </div>
+        <div class="ipo">
+          <div class="box">
+            <h3>Input</h3>
+            <ul>
+              <li><code>ReasoningCandidate</code></li>
+              <li><code>entries_by_path</code> dari dictionary catalog</li>
+              <li><code>SourceFact</code> asli (source of truth)</li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Proses</h3>
+            <ul>
+              <li>Field guard: <code>_allowed_targets_for_field()</code></li>
+              <li>Normalizer typed: <code>_normalize_value_for_declared_type()</code></li>
+              <li>Type-check: <code>_matches_declared_type()</code></li>
+              <li>Final status builder: <code>validate_reasoning_candidate()</code></li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Output</h3>
+            <ul>
+              <li><code>ReasoningValidationResult</code></li>
+              <li>Status final: <code>accepted/rejected/unmapped/needs_review/retrieve_failed</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="bindings">
+          <div>
+            <h4>File Terkait</h4>
+            <ul>
+              <li><code>reasoning_validator.py</code></li>
+              <li><code>reasoning_schema.py</code></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Fungsi Terkait</h4>
+            <ul>
+              <li><code>validate_reasoning_candidate()</code></li>
+              <li><code>_parse_bool_text()</code>, <code>_parse_number_text()</code></li>
+            </ul>
+          </div>
+        </div>
+        </article>
+
+        <article class="step">
+        <h2>7) Report Assembly & Persist</h2>
+        <p class="desc">Task menyusun ringkasan dan menyimpan audit report reasoning ke JSON.</p>
+        <div class="handoff">
+          <div>
+            <h3>Menerima Dari</h3>
+            <p>Seluruh hasil validasi Task 6.</p>
+          </div>
+          <div>
+            <h3>Yang Diproses</h3>
+            <p>Summary count, metadata run, dan daftar hasil mapping per field.</p>
+          </div>
+          <div>
+            <h3>Mengirim Ke</h3>
+            <p>Fase render melalui <code>reasoning_translation_report.json</code>.</p>
+          </div>
+        </div>
+        <div class="ipo">
+          <div class="box">
+            <h3>Input</h3>
+            <ul>
+              <li>List seluruh <code>ReasoningValidationResult</code></li>
+              <li>Metadata input, mode retrieval, status translator</li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Proses</h3>
+            <ul>
+              <li>Hitung summary: accepted/rejected/unmapped/needs_review</li>
+              <li>Bangun objek <code>ReasoningTranslationReport</code></li>
+              <li>Serialize via <code>to_dict()</code> ke file JSON</li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Output</h3>
+            <ul>
+              <li><code>reasoning_translation_report.json</code></li>
+              <li><code>reasoning_translation_status_summary.json</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="bindings">
+          <div>
+            <h4>File Terkait</h4>
+            <ul>
+              <li><code>run_reasoning_translation.py</code></li>
+              <li><code>reasoning_schema.py</code></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Fungsi Terkait</h4>
+            <ul>
+              <li><code>run_pipeline()</code></li>
+              <li><code>ReasoningTranslationReport.to_dict()</code></li>
+            </ul>
+          </div>
+        </div>
+        </article>
+      </section>
+
+      <section class="phase">
+        <div class="phase-track">
+          <span class="phase-tag">Transisi</span>
+          <div class="line"></div>
+          <span class="phase-tag">Report Mapping Menjadi Input Render</span>
+        </div>
+        <h2>Jembatan Antar Fase</h2>
+        <p>
+          Di titik ini, alur tidak lagi bekerja per field seperti fase reasoning. Renderer masuk dengan membaca hasil akhir yang sudah difilter: ia hanya memakai entry yang statusnya <code>accepted</code> dari <code>reasoning_translation_report.json</code>.
+        </p>
+        <div class="handoff">
+          <div>
+            <h3>Menerima Dari</h3>
+            <p>Task 7 pada fase reasoning.</p>
+          </div>
+          <div>
+            <h3>Yang Diproses</h3>
+            <p>Hanya subset accepted. Rejected, unmapped, dan needs_review tidak diterapkan ke DOCX.</p>
+          </div>
+          <div>
+            <h3>Mengirim Ke</h3>
+            <p>Task 8 sebagai baseline style dan page settings untuk render sandbox.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="phase">
+        <div class="phase-track">
+          <span class="phase-tag">Fase B</span>
+          <div class="line"></div>
+          <span class="phase-tag">Sandbox DOCX Render</span>
+        </div>
+        <h2>Fase B - Dari Report Mapping ke Dokumen DOCX</h2>
+        <p>
+          Fase ini menjawab pertanyaan: "mapping yang sudah diterima dipakai bagaimana saat render, chunk mana yang dijadikan bahan placeholder, dan file DOCX akhir terbentuk lewat langkah apa?"
+        </p>
+        <div class="task-chain">
+          <div class="task-node">
+            <strong>Task 8</strong>
+            <p>Terapkan accepted mapping ke style dasar dokumen.</p>
+          </div>
+          <div class="flow-arrow">â†’</div>
+          <div class="task-node">
+            <strong>Task 9</strong>
+            <p>Bangun struktur section, heading, bookmark, dan daftar isi.</p>
+          </div>
+          <div class="flow-arrow">â†’</div>
+          <div class="task-node">
+            <strong>Task 10</strong>
+            <p>Pilih chunk relevan lalu rewrite jadi placeholder instruksional.</p>
+          </div>
+          <div class="flow-arrow">â†’</div>
+          <div class="task-node">
+            <strong>Task 11</strong>
+            <p>Simpan hasil DOCX dan tulis report render.</p>
+          </div>
+        </div>
+
+        <article class="step">
+        <h2>8) Sandbox DOCX Render: Style Apply</h2>
+        <p class="desc">Task menerapkan mapping accepted ke style/config DOCX di renderer sandbox.</p>
+        <div class="handoff">
+          <div>
+            <h3>Menerima Dari</h3>
+            <p>Jembatan antar fase: accepted entries dan <code>document_metadata.payload</code>.</p>
+          </div>
+          <div>
+            <h3>Yang Diproses</h3>
+            <p>Style signals seperti margin, orientation, font, spacing, alignment, dan heading behavior.</p>
+          </div>
+          <div>
+            <h3>Mengirim Ke</h3>
+            <p>Task 9 sebagai baseline style document.</p>
+          </div>
+        </div>
+        <div class="ipo">
+          <div class="box">
+            <h3>Input</h3>
+            <ul>
+              <li><code>document_metadata.payload</code></li>
+              <li><code>reasoning_translation_report.json</code> (accepted entries)</li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Proses</h3>
+            <ul>
+              <li>Filter accepted: <code>_accepted_results()</code></li>
+              <li>Apply margin/orientation: <code>_apply_page_settings()</code></li>
+              <li>Apply typography/spacing: <code>_apply_styles()</code></li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Output</h3>
+            <ul>
+              <li>Document style baseline untuk render struktur</li>
+              <li>Log <code>applied_page_settings</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="bindings">
+          <div>
+            <h4>File Terkait</h4>
+            <ul>
+              <li><code>run_reasoning_docx_render.py</code></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Fungsi Terkait</h4>
+            <ul>
+              <li><code>_value()</code>, <code>_apply_page_settings()</code>, <code>_apply_styles()</code></li>
+              <li><code>_set_font_name()</code>, <code>_set_black_font()</code></li>
+            </ul>
+          </div>
+        </div>
+        </article>
+
+        <article class="step">
+        <h2>9) Sandbox DOCX Render: Section Structure & TOC</h2>
+        <p class="desc">Task membangun halaman per section proposal, bookmark internal, dan daftar isi klikable.</p>
+        <div class="handoff">
+          <div>
+            <h3>Menerima Dari</h3>
+            <p>Task 8 dan <code>document_structure_proposal.sections</code> dari <code>document_metadata.payload</code>.</p>
+          </div>
+          <div>
+            <h3>Yang Diproses</h3>
+            <p>Urutan section, heading text, bookmark, hyperlink TOC, logical page, dan gap setelah BAB.</p>
+          </div>
+          <div>
+            <h3>Mengirim Ke</h3>
+            <p>Task 10 sebagai section aktif yang siap diisi placeholder.</p>
+          </div>
+        </div>
+        <div class="ipo">
+          <div class="box">
+            <h3>Input</h3>
+            <ul>
+              <li><code>document_structure_proposal.sections</code> dari <code>document_metadata.payload</code></li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Proses</h3>
+            <ul>
+              <li>Heading builder: <code>_heading_text()</code>, <code>_add_center_heading()</code></li>
+              <li>Bookmark/hyperlink: <code>_add_bookmark()</code>, <code>_add_internal_hyperlink()</code></li>
+              <li>TOC row: <code>_add_toc_entry()</code>, <code>_render_daftar_isi()</code></li>
+              <li>Gap setelah BAB: paragraf kosong 1x</li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Output</h3>
+            <ul>
+              <li>Section pages: daftar isi, bab 1-4, daftar pustaka</li>
+              <li>TOC dengan dot leader dan navigasi internal</li>
+            </ul>
+          </div>
+        </div>
+        <div class="bindings">
+          <div>
+            <h4>File Terkait</h4>
+            <ul>
+              <li><code>run_reasoning_docx_render.py</code></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Fungsi Terkait</h4>
+            <ul>
+              <li><code>_bookmark_name()</code>, <code>_render_structure()</code>, <code>_render_section_body()</code></li>
+              <li><code>_content_width_cm()</code>, <code>_section_logical_page()</code></li>
+            </ul>
+          </div>
+        </div>
+        </article>
+
+        <article class="step">
+        <h2>10) Instructional Placeholder Rewrite from Chunks</h2>
+        <p class="desc">Task menyusun placeholder per bagian dengan alur chunk context -> rewrite instruksi -> sumber halaman.</p>
+        <div class="handoff">
+          <div>
+            <h3>Menerima Dari</h3>
+            <p>Task 9 dan <code>output_chunks.json</code>.</p>
+          </div>
+          <div>
+            <h3>Yang Diproses</h3>
+            <p>Chunk proposal yang relevan untuk tiap section lalu direwrite menjadi instruksi penulisan yang lebih jelas.</p>
+          </div>
+          <div>
+            <h3>Mengirim Ke</h3>
+            <p>Task 11 sebagai isi body final per section.</p>
+          </div>
+        </div>
+        <div class="ipo">
+          <div class="box">
+            <h3>Input</h3>
+            <ul>
+              <li><code>output_chunks.json</code></li>
+              <li>Section spec aktif (mis. BAB 2)</li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Proses</h3>
+            <ul>
+              <li>Filter proposal chunk: <code>_is_proposal_structure_chunk()</code></li>
+              <li>Score relevansi: <code>_score_chunk_for_section()</code></li>
+              <li>Select top-k: <code>_match_chunks_for_section()</code></li>
+              <li>Rewrite instruksi: <code>_rewrite_chunk_as_instruction()</code></li>
+              <li>Sumber compact: <code>_source_line()</code></li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Output</h3>
+            <ul>
+              <li>Blok placeholder: chunk context + rewrite + sumber</li>
+              <li>Referensi format: <code>Sumber: Hal. x-y | Header: ...</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="bindings">
+          <div>
+            <h4>File Terkait</h4>
+            <ul>
+              <li><code>run_reasoning_docx_render.py</code></li>
+              <li><code>ai/data/output_chunks.json</code></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Fungsi Terkait</h4>
+            <ul>
+              <li><code>_add_instructional_placeholder()</code></li>
+              <li><code>_clean_chunk_snippet()</code>, <code>_sentence_case()</code></li>
+            </ul>
+          </div>
+        </div>
+        </article>
+
+        <article class="step">
+        <h2>11) DOCX Persist & Render Report</h2>
+        <p class="desc">Task finalisasi dokumen sandbox dan output laporan render.</p>
+        <div class="handoff">
+          <div>
+            <h3>Menerima Dari</h3>
+            <p>Task 9 dan Task 10: document object yang sudah punya struktur dan isi.</p>
+          </div>
+          <div>
+            <h3>Yang Diproses</h3>
+            <p>Serialize <code>Document()</code> ke DOCX dan catat statistik render ke report JSON.</p>
+          </div>
+          <div>
+            <h3>Mengirim Ke</h3>
+            <p>Artefak akhir: file <code>.docx</code> dan <code>reasoning_docx_render_report.json</code>.</p>
+          </div>
+        </div>
+        <div class="ipo">
+          <div class="box">
+            <h3>Input</h3>
+            <ul>
+              <li>Objek <code>Document()</code> yang sudah diisi section</li>
+              <li>Path output target</li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Proses</h3>
+            <ul>
+              <li>Simpan DOCX: <code>document.save()</code></li>
+              <li>Fallback jika file lock: pakai nama timestamp</li>
+              <li>Tulis report JSON render</li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>Output</h3>
+            <ul>
+              <li><code>reasoning_rendered_proposal.docx</code></li>
+              <li><code>reasoning_docx_render_report.json</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="bindings">
+          <div>
+            <h4>File Terkait</h4>
+            <ul>
+              <li><code>run_reasoning_docx_render.py</code></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Fungsi Terkait</h4>
+            <ul>
+              <li><code>render_docx()</code>, <code>build_parser()</code>, <code>main()</code></li>
+            </ul>
+          </div>
+        </div>
+        </article>
+      </section>
+    </section>
+
+    <section class="note">
+      <strong>Catatan Boundary:</strong>
+      Alur ini berada di sandbox <code>ai/testing ekstraksi</code>.
+      Artefak yang dihasilkan bersifat <span class="status-warn">audit/testing</span> dan tidak mengubah pipeline utama atau <code>ai/model_ai/docx/docx_renderer.py</code>.
+    </section>
+  </main>
+</body>
+</html>
+

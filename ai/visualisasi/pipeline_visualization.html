@@ -1,0 +1,519 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyMuPDF4LLM - Pipeline Visualization</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121a2d;
+      --panel-2: #17223a;
+      --line: #2a3b63;
+      --text: #e8eefc;
+      --muted: #b6c3e3;
+      --accent: #7cc4ff;
+      --accent-2: #7ff7ca;
+      --warn: #ffd17a;
+      --danger: #ff9ba3;
+      --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      background:
+        radial-gradient(900px 500px at 90% -10%, rgba(124, 196, 255, 0.13), transparent 60%),
+        radial-gradient(900px 600px at -10% 120%, rgba(127, 247, 202, 0.08), transparent 60%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      width: min(1250px, 94vw);
+      margin: 28px auto 48px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(26px, 4vw, 42px);
+      line-height: 1.15;
+      letter-spacing: 0.2px;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 900px;
+    }
+
+    .legend {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      letter-spacing: 0.2px;
+    }
+
+    .section {
+      margin-top: 26px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 40%), var(--panel);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .section h2 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      color: var(--accent);
+    }
+
+    .section p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 10px;
+    }
+
+    .node {
+      flex: 1 1 260px;
+      min-width: 240px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .node .tag {
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #a9b8dd;
+    }
+
+    .node code {
+      display: block;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 8px;
+      padding: 6px 8px;
+      line-height: 1.45;
+      color: #d6e3ff;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .node ul {
+      margin: 2px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .arrow {
+      width: 30px;
+      min-width: 30px;
+      display: grid;
+      place-items: center;
+      color: var(--accent-2);
+      font-weight: 700;
+      font-size: 22px;
+    }
+
+    .data-boxes {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 10px;
+    }
+
+    .data {
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--warn);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 10px 12px;
+    }
+
+    .data h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+      color: var(--warn);
+      letter-spacing: 0.2px;
+    }
+
+    .data p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .map-table {
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+      line-height: 1.45;
+    }
+
+    th {
+      background: rgba(124, 196, 255, 0.09);
+      color: #d8e6ff;
+      font-weight: 600;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .risk {
+      margin-top: 16px;
+      border: 1px solid rgba(255, 155, 163, 0.35);
+      border-radius: 12px;
+      background: rgba(255, 155, 163, 0.08);
+      padding: 10px 12px;
+      color: #ffdce0;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .footer {
+      margin-top: 18px;
+      color: #9eb0d8;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 760px) {
+      .arrow {
+        width: 100%;
+        min-width: 100%;
+        height: 20px;
+        transform: rotate(90deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PyMuPDF4LLM - Diagram Alur File dan Data</h1>
+    <p class="subtitle">
+      Diagram ini memetakan bagaimana file di folder <code>app</code> saling terhubung,
+      dari sumber data awal, proses ingest, retrieval, ekstraksi metadata, schema diff, sampai generate DOCX.
+    </p>
+
+    <div class="legend">
+      <span class="chip">Entry: manage.py</span>
+      <span class="chip">Storage: Supabase (document_chunks, document_metadata)</span>
+      <span class="chip">Embedding: GoogleGenerativeAIEmbeddings (768 dim)</span>
+      <span class="chip">LLM: ChatGroq structured output</span>
+    </div>
+
+    <section class="section">
+      <h2>1) Setup Pipeline (PDF -> Chunk JSON -> Supabase)</h2>
+      <p>Dijalankan oleh command <code>python ai/manage.py setup</code> (opsi <code>--skip-ingest</code> untuk berhenti di JSON).</p>
+      <div class="flow">
+        <article class="node">
+          <span class="tag">Entry</span>
+          <code>manage.py
+run_setup()</code>
+          <ul>
+            <li>Panggil <code>extract_chunks()</code></li>
+            <li>Panggil <code>upsert_embeddings()</code> jika tidak skip</li>
+          </ul>
+        </article>
+        <div class="arrow">-></div>
+        <article class="node">
+          <span class="tag">Loader</span>
+          <code>model_ai/loader/pdf_extractor.py
+get_page_chunks()
+extract_chunks()</code>
+          <ul>
+            <li>Baca <code>file.pdf</code> via <code>pymupdf4llm.to_markdown(page_chunks=True)</code></li>
+            <li>Tulis markdown mentah ke <code>data/output.md</code></li>
+          </ul>
+        </article>
+        <div class="arrow">-></div>
+        <article class="node">
+          <span class="tag">Chunking</span>
+          <code>model_ai/loader/chunk_builder.py
+build_sections()
+build_payload()</code>
+          <ul>
+            <li>Deteksi heading/BAB, filter noise heading</li>
+            <li>Hitung page range tiap chunk</li>
+            <li>Set relasi <code>chunk_prev</code> dan <code>chunk_next</code></li>
+          </ul>
+        </article>
+        <div class="arrow">-></div>
+        <article class="node">
+          <span class="tag">Output Lokal</span>
+          <code>data/output_chunks.json</code>
+          <ul>
+            <li>Payload utama untuk ingest dan debugging</li>
+          </ul>
+        </article>
+        <div class="arrow">-></div>
+        <article class="node">
+          <span class="tag">Ingest DB</span>
+          <code>model_ai/loader/supabase_ingest.py
+upsert_embeddings()</code>
+          <ul>
+            <li>Embed tiap chunk</li>
+            <li>Upsert ke tabel <code>document_chunks</code></li>
+            <li>Key konflik: <code>source_file,chunk_index</code></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>2) Metadata Extraction Pipeline (chunks Supabase -> document_metadata)</h2>
+      <p>Dijalankan oleh command <code>python ai/manage.py extract</code>.</p>
+      <div class="flow">
+        <article class="node">
+          <span class="tag">Prompt Registry</span>
+          <code>model_ai/extractor/prompts.py
+prompts/*.md</code>
+          <ul>
+            <li>Load template + query + top_k</li>
+            <li>Menentukan retrieval query per key metadata</li>
+          </ul>
+        </article>
+        <div class="arrow">-></div>
+        <article class="node">
+          <span class="tag">Extractor Core</span>
+          <code>model_ai/extractor/doc_extractor.py
+extract_document_metadata()</code>
+          <ul>
+            <li>Loop <code>KEY_REGISTRY</code> per kategori (typography, layout, numbering, dst)</li>
+            <li>Retrieve chunks dari Supabase lalu expand per header</li>
+            <li>Invoke Groq structured output</li>
+          </ul>
+        </article>
+        <div class="arrow">-></div>
+        <article class="node">
+          <span class="tag">Schema Types</span>
+          <code>model_ai/extractor/models.py
+DocumentMetadata</code>
+          <ul>
+            <li>Normalisasi field legacy</li>
+            <li>Struktur output metadata final</li>
+          </ul>
+        </article>
+        <div class="arrow">-></div>
+        <article class="node">
+          <span class="tag">Metadata Output</span>
+          <code>document_metadata.payload
+table document_metadata</code>
+          <ul>
+            <li>Bangun payload JSON dari DocumentMetadata</li>
+            <li>Upsert payload metadata ke Supabase</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>3) Schema Diff Pipeline (Baseline document_metadata.payload vs Free Extraction)</h2>
+      <p>Dijalankan oleh command <code>python ai/manage.py schema-diff --source-doc file.pdf</code>.</p>
+      <div class="flow">
+        <article class="node">
+          <span class="tag">Baseline</span>
+          <code>model_ai/extractor/schema_differ.py
+load_old_schema()</code>
+          <ul>
+            <li>Baca dan flatten <code>document_metadata.payload</code></li>
+          </ul>
+        </article>
+        <div class="arrow">-></div>
+        <article class="node">
+          <span class="tag">Broad Retrieval</span>
+          <code>fetch_broad_chunks()</code>
+          <ul>
+            <li>Query luas ke Supabase untuk cakupan aturan dokumen</li>
+          </ul>
+        </article>
+        <div class="arrow">-></div>
+        <article class="node">
+          <span class="tag">Free Extraction</span>
+          <code>free_extract_all_rules()</code>
+          <ul>
+            <li>Prompt bebas dari <code>free_extraction.md</code></li>
+            <li>Output key-value JSON tanpa batasan schema ketat</li>
+          </ul>
+        </article>
+        <div class="arrow">-></div>
+        <article class="node">
+          <span class="tag">Diff Output</span>
+          <code>schema_diff_YYYYMMDD_HHMMSS.json
+schema_diff_YYYYMMDD_HHMMSS.md</code>
+          <ul>
+            <li>Kategori: matched, changed, new_fields, removed</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>4) DOCX Generation Pipeline (document_metadata.payload + output_chunks.json -> .docx)</h2>
+      <p>Dijalankan oleh command <code>python ai/manage.py docx --type proposal --source-doc file.pdf</code>.</p>
+      <div class="flow">
+        <article class="node">
+          <span class="tag">Entry</span>
+          <code>manage.py
+run_docx()</code>
+          <ul>
+            <li>Validasi type proposal</li>
+            <li>Panggil <code>generate_proposal_docx()</code></li>
+          </ul>
+        </article>
+        <div class="arrow">-></div>
+        <article class="node">
+          <span class="tag">Load Inputs</span>
+          <code>model_ai/docx/metadata_loader.py
+model_ai/docx/chunk_loader.py</code>
+          <ul>
+            <li>Load metadata terstruktur</li>
+            <li>Load sumber chunk per bagian</li>
+          </ul>
+        </article>
+        <div class="arrow">-></div>
+        <article class="node">
+          <span class="tag">Style Translation</span>
+          <code>model_ai/docx/style_mapping_pipeline.py
+translate_docx_style_config()</code>
+          <ul>
+            <li>Rule-based map</li>
+            <li>Opsional LLM normalization untuk style config</li>
+          </ul>
+        </article>
+        <div class="arrow">-></div>
+        <article class="node">
+          <span class="tag">Renderer</span>
+          <code>model_ai/docx/docx_renderer.py
+render_proposal_docx()</code>
+          <ul>
+            <li>Set margin/orientation/numbering</li>
+            <li>Render BAB + placeholder + source block</li>
+          </ul>
+        </article>
+        <div class="arrow">-></div>
+        <article class="node">
+          <span class="tag">Output</span>
+          <code>data/proposal_template.docx</code>
+          <ul>
+            <li>Dokumen template siap diedit lanjut</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Data Source dan Storage Map</h2>
+      <div class="data-boxes">
+        <article class="data">
+          <h3>Sumber Utama</h3>
+          <p><code>file.pdf</code> di root repo adalah sumber awal untuk proses chunking/ingest.</p>
+        </article>
+        <article class="data">
+          <h3>Artifact Lokal</h3>
+          <p><code>data/output.md</code>, <code>data/output_chunks.json</code>, dan file <code>schema_diff_*.json/.md</code>. Metadata resmi berada di tabel <code>document_metadata</code>.</p>
+        </article>
+        <article class="data">
+          <h3>Storage Supabase</h3>
+          <p>Tabel <code>document_chunks</code> untuk retrieval RAG, tabel <code>document_metadata</code> untuk hasil ekstraksi terstruktur.</p>
+        </article>
+      </div>
+
+      <div class="map-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Command</th>
+              <th>File yang menjadi entry</th>
+              <th>Output utama</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>manage.py setup</code></td>
+              <td><code>model_ai/loader/pdf_extractor.py</code> + <code>model_ai/loader/supabase_ingest.py</code></td>
+              <td><code>data/output_chunks.json</code> + <code>document_chunks</code></td>
+            </tr>
+            <tr>
+              <td><code>manage.py extract</code></td>
+              <td><code>model_ai/extractor/doc_extractor.py</code></td>
+              <td><code>document_metadata.payload</code> + <code>document_metadata</code></td>
+            </tr>
+            <tr>
+              <td><code>manage.py schema-diff --source-doc file.pdf</code></td>
+              <td><code>model_ai/extractor/schema_differ.py</code></td>
+              <td><code>data/schema_diff_*.json</code> + <code>data/schema_diff_*.md</code></td>
+            </tr>
+            <tr>
+              <td><code>manage.py docx --type proposal --source-doc file.pdf</code></td>
+              <td><code>model_ai/docx/generator.py</code></td>
+              <td><code>data/proposal_template.docx</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="risk">
+        Heads-up penting: ingest memakai key konflik <code>source_file,chunk_index</code>. Jika Anda ingest dokumen lain
+        tapi tetap memakai nama sumber yang sama, row lama bisa ter-overwrite.
+      </div>
+
+      <p class="footer">
+        Referensi schema DB: <code>database/supabase_setup.sql</code> dan <code>database/supabase_metadata.sql</code>.
+      </p>
+    </section>
+  </div>
+</body>
+</html>
+
+

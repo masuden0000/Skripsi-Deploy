@@ -47,7 +47,7 @@ frontend/
 
 ## 2. Database
 
-### Supabase Migration (new file: `supabase/migrations/20260507000000_create_profiles.sql`)
+### Supabase Migration (new file: `database/supabase/migrations/20260507000000_create_profiles.sql`)
 ```sql
 create type public.app_role as enum ('admin', 'reviewer');
 

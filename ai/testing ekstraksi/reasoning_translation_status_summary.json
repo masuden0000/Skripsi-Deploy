@@ -1,0 +1,566 @@
+{
+  "generated_at": "2026-05-05T11:25:21.716497+00:00",
+  "source_report": "C:\\Users\\hudar\\Documents\\[1] Huda Rasyad Wicaksono\\[3] Project\\[1] Project Website\\Skripsi (Dummy)\\Project 1 (AI)\\ai\\testing ekstraksi\\reasoning_translation_report.json",
+  "total_results": 45,
+  "counts": {
+    "unmapped": 32,
+    "accepted": 13
+  },
+  "accepted": [
+    {
+      "source_field": "typography.font_family",
+      "source_value": "Times New Roman",
+      "target_path": "font.name",
+      "target_kind": "property",
+      "normalized_value": "Times New Roman",
+      "python_docx_expression": "'Times New Roman'",
+      "confidence": 0.72,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "target_path ada di dictionary dan nilai lolos validasi tipe dasar. Hasil tetap audit_only karena pipeline ini tidak mengubah docx_renderer."
+    },
+    {
+      "source_field": "typography.font_size_body_pt",
+      "source_value": 12,
+      "target_path": "font.size",
+      "target_kind": "property",
+      "normalized_value": 12,
+      "python_docx_expression": "Pt(12)",
+      "confidence": 0.72,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "target_path ada di dictionary dan nilai lolos validasi tipe dasar. Hasil tetap audit_only karena pipeline ini tidak mengubah docx_renderer."
+    },
+    {
+      "source_field": "typography.font_size_heading_pt",
+      "source_value": 12,
+      "target_path": "font.size",
+      "target_kind": "property",
+      "normalized_value": 12,
+      "python_docx_expression": "Pt(12)",
+      "confidence": 0.72,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "target_path ada di dictionary dan nilai lolos validasi tipe dasar. Hasil tetap audit_only karena pipeline ini tidak mengubah docx_renderer."
+    },
+    {
+      "source_field": "typography.heading_bold",
+      "source_value": true,
+      "target_path": "font.bold",
+      "target_kind": "property",
+      "normalized_value": true,
+      "python_docx_expression": "True",
+      "confidence": 0.64,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "target_path ada di dictionary dan nilai lolos validasi tipe dasar. Hasil tetap audit_only karena pipeline ini tidak mengubah docx_renderer."
+    },
+    {
+      "source_field": "typography.heading_all_caps",
+      "source_value": true,
+      "target_path": "font.all_caps",
+      "target_kind": "property",
+      "normalized_value": true,
+      "python_docx_expression": "True",
+      "confidence": 0.64,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "target_path ada di dictionary dan nilai lolos validasi tipe dasar. Hasil tetap audit_only karena pipeline ini tidak mengubah docx_renderer."
+    },
+    {
+      "source_field": "page_layout.margin_top_cm",
+      "source_value": 3.0,
+      "target_path": "section.top_margin",
+      "target_kind": "property",
+      "normalized_value": 3.0,
+      "python_docx_expression": "Cm(3.0)",
+      "confidence": 0.72,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "target_path ada di dictionary dan nilai lolos validasi tipe dasar. Hasil tetap audit_only karena pipeline ini tidak mengubah docx_renderer."
+    },
+    {
+      "source_field": "page_layout.margin_bottom_cm",
+      "source_value": 3.0,
+      "target_path": "section.bottom_margin",
+      "target_kind": "property",
+      "normalized_value": 3.0,
+      "python_docx_expression": "Cm(3.0)",
+      "confidence": 0.72,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "target_path ada di dictionary dan nilai lolos validasi tipe dasar. Hasil tetap audit_only karena pipeline ini tidak mengubah docx_renderer."
+    },
+    {
+      "source_field": "page_layout.margin_left_cm",
+      "source_value": 4.0,
+      "target_path": "section.left_margin",
+      "target_kind": "property",
+      "normalized_value": 4.0,
+      "python_docx_expression": "Cm(4.0)",
+      "confidence": 0.72,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "target_path ada di dictionary dan nilai lolos validasi tipe dasar. Hasil tetap audit_only karena pipeline ini tidak mengubah docx_renderer."
+    },
+    {
+      "source_field": "page_layout.margin_right_cm",
+      "source_value": 3.0,
+      "target_path": "section.right_margin",
+      "target_kind": "property",
+      "normalized_value": 3.0,
+      "python_docx_expression": "Cm(3.0)",
+      "confidence": 0.72,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "target_path ada di dictionary dan nilai lolos validasi tipe dasar. Hasil tetap audit_only karena pipeline ini tidak mengubah docx_renderer."
+    },
+    {
+      "source_field": "spacing.line_spacing",
+      "source_value": 1.15,
+      "target_path": "paragraph_format.line_spacing",
+      "target_kind": "property",
+      "normalized_value": 1.15,
+      "python_docx_expression": "1.15",
+      "confidence": 0.7,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "target_path ada di dictionary dan nilai lolos validasi tipe dasar. Hasil tetap audit_only karena pipeline ini tidak mengubah docx_renderer."
+    },
+    {
+      "source_field": "spacing.paragraph_alignment",
+      "source_value": "JUSTIFY",
+      "target_path": "paragraph_format.alignment",
+      "target_kind": "property",
+      "normalized_value": "JUSTIFY",
+      "python_docx_expression": "WD_ALIGN_PARAGRAPH.JUSTIFY",
+      "confidence": 0.7,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "target_path ada di dictionary dan nilai lolos validasi tipe dasar. Hasil tetap audit_only karena pipeline ini tidak mengubah docx_renderer."
+    },
+    {
+      "source_field": "numbering.preliminary.alignment",
+      "source_value": "RIGHT",
+      "target_path": "paragraph_format.alignment",
+      "target_kind": "property",
+      "normalized_value": "JUSTIFY",
+      "python_docx_expression": "WD_ALIGN_PARAGRAPH.JUSTIFY",
+      "confidence": 0.7,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "target_path ada di dictionary dan nilai lolos validasi tipe dasar. Hasil tetap audit_only karena pipeline ini tidak mengubah docx_renderer."
+    },
+    {
+      "source_field": "numbering.content.alignment",
+      "source_value": "RIGHT",
+      "target_path": "paragraph_format.alignment",
+      "target_kind": "property",
+      "normalized_value": "JUSTIFY",
+      "python_docx_expression": "WD_ALIGN_PARAGRAPH.JUSTIFY",
+      "confidence": 0.7,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "target_path ada di dictionary dan nilai lolos validasi tipe dasar. Hasil tetap audit_only karena pipeline ini tidak mengubah docx_renderer."
+    }
+  ],
+  "rejected": [],
+  "unmapped": [
+    {
+      "source_field": "document_type",
+      "source_value": "Proposal PKM-KC",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "source_document",
+      "source_value": "file.pdf",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "page_layout.paper_size",
+      "source_value": "A4",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "page_layout.orientation",
+      "source_value": "Portrait",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "page_layout.columns",
+      "source_value": 1,
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "spacing.line_spacing_rule",
+      "source_value": "MULTIPLE",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "spacing.references_hanging_indent",
+      "source_value": true,
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "document_structure_proposal.halaman_sampul",
+      "source_value": false,
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "document_structure_proposal.halaman_pengesahan",
+      "source_value": false,
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "document_structure_proposal.ringkasan",
+      "source_value": false,
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "document_structure_proposal.sections",
+      "source_value": [
+        {
+          "type": "daftar_isi",
+          "required": true,
+          "title": "DAFTAR ISI",
+          "is_major_section": true
+        },
+        {
+          "type": "daftar_gambar",
+          "required": false,
+          "title": "DAFTAR GAMBAR",
+          "is_major_section": true
+        },
+        {
+          "type": "daftar_tabel",
+          "required": false,
+          "title": "DAFTAR TABEL",
+          "is_major_section": true
+        },
+        {
+          "type": "daftar_lampiran",
+          "required": false,
+          "title": "DAFTAR LAMPIRAN",
+          "is_major_section": true
+        },
+        {
+          "type": "bab",
+          "number": 1,
+          "title": "PENDAHULUAN",
+          "is_major_section": true
+        },
+        {
+          "type": "bab",
+          "number": 2,
+          "title": "TINJAUAN PUSTAKA",
+          "is_major_section": true
+        },
+        {
+          "type": "bab",
+          "number": 3,
+          "title": "TAHAP PELAKSANAAN",
+          "is_major_section": true
+        },
+        {
+          "type": "bab",
+          "number": 4,
+          "title": "BIAYA DAN JADWAL KEGIATAN",
+          "is_major_section": true
+        },
+        {
+          "type": "daftar_pustaka",
+          "required": true,
+          "title": "DAFTAR PUSTAKA",
+          "is_major_section": true
+        }
+      ],
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "document_structure_proposal.max_halaman_inti",
+      "source_value": 10,
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "document_structure_proposal.format_nama_file",
+      "source_value": "namaketua_namapt_PKM-KC.pdf",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "numbering.preliminary.format",
+      "source_value": "lowerRoman",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "numbering.preliminary.location",
+      "source_value": "FOOTER",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "numbering.preliminary.start_at_section",
+      "source_value": "DAFTAR ISI",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "numbering.content.format",
+      "source_value": "decimal",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "numbering.content.location",
+      "source_value": "HEADER",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "numbering.content.start_at_section",
+      "source_value": "BAB 1. PENDAHULUAN",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "numbering.chapter_format",
+      "source_value": "BAB {n}",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "figures_and_tables.table_caption_position",
+      "source_value": "ABOVE",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "figures_and_tables.figure_caption_position",
+      "source_value": "ABOVE",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "figures_and_tables.caption_format_figure",
+      "source_value": "Gambar {n}. {title} ({source})",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "figures_and_tables.caption_format_table",
+      "source_value": "Tabel {bab}.{n}. {title}",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "figures_and_tables.source_required_if_not_own",
+      "source_value": true,
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "figures_and_tables.max_width_constraint",
+      "source_value": "within_margins",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "page_count_limits.proposal_halaman_inti_maks",
+      "source_value": 10,
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "page_count_limits.laporan_kemajuan_halaman_inti_maks",
+      "source_value": 10,
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "page_count_limits.laporan_akhir_halaman_inti_maks",
+      "source_value": 10,
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "page_count_limits.definisi_halaman_inti",
+      "source_value": "Bab Pendahuluan_to_Daftar Pustaka",
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "page_count_limits.lampiran_excluded",
+      "source_value": true,
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    },
+    {
+      "source_field": "page_count_limits.judul_maks_kata",
+      "source_value": 20,
+      "target_path": null,
+      "target_kind": null,
+      "normalized_value": null,
+      "python_docx_expression": null,
+      "confidence": 0.0,
+      "decision_source": "rule_based_fallback",
+      "validator_reason": "Tidak ada target python-docx yang cukup jelas untuk fakta ini."
+    }
+  ],
+  "needs_review": [],
+  "retrieve_failed": []
+}

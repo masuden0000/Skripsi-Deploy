@@ -2,9 +2,22 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import {
+  AdminModalShell,
+  AdminPageHeader,
+  AdminSurfaceCard,
+} from "@/components/admin/shared"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  CalendarIcon,
+  ChevronIcon,
+  DetailIcon,
+  EditIcon,
+  PlusIcon,
+  TrashIcon,
+} from "@/components/icons/public-icons"
 import {
   formatTanggal,
   formatTanggalDanWaktu,
@@ -33,65 +46,19 @@ async function readReviewPeriodResponse(response: Response) {
   }
 }
 
-function ChevronIcon({ open }: { open: boolean }) {
-  return (
-    <svg
-      className={`size-4 transition-transform duration-200 flex-none ${open ? "rotate-180" : ""}`}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-    </svg>
-  )
-}
-
-function PlusIcon() {
-  return (
-    <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
-    </svg>
-  )
-}
-
-function CalendarIcon() {
-  return (
-    <svg className="size-3.5 flex-none opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <rect x="3" y="4" width="18" height="18" rx="2" />
-      <path strokeLinecap="round" d="M16 2v4M8 2v4M3 10h18" />
-    </svg>
-  )
-}
-
-function EditIcon() {
-  return (
-    <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 20h9" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
-    </svg>
-  )
-}
-
-function DetailIcon() {
-  return (
-    <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
-    </svg>
-  )
-}
-
 function PeriodeItem({
   periode,
   isExpanded,
   onToggle,
   onEdit,
+  onDelete,
   onViewDetail,
 }: {
   periode: ReviewPeriod
   isExpanded: boolean
   onToggle: () => void
   onEdit: () => void
+  onDelete: () => void
   onViewDetail: () => void
 }) {
   const isOngoingItem = isOngoingReviewPeriod(periode)
@@ -158,16 +125,29 @@ function PeriodeItem({
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onEdit}
-                className="border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
-              >
-                <EditIcon />
-                Edit
-              </Button>
+              {isOngoingItem && (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={onDelete}
+                  className="bg-red-600 text-white hover:bg-red-700 border-0"
+                >
+                  <TrashIcon />
+                  Hapus
+                </Button>
+              )}
+              {isOngoingItem && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onEdit}
+                  className="border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                >
+                  <EditIcon />
+                  Edit
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="outline"
@@ -195,6 +175,7 @@ function PeriodeSection({
   expandedId,
   onToggleItem,
   onEditItem,
+  onDeleteItem,
   onViewDetail,
 }: {
   title: string
@@ -205,12 +186,13 @@ function PeriodeSection({
   expandedId: string | null
   onToggleItem: (id: string) => void
   onEditItem: (periode: ReviewPeriod) => void
+  onDeleteItem: (id: string) => void
   onViewDetail: (id: string) => void
 }) {
   const [open, setOpen] = useState(defaultOpen)
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+    <AdminSurfaceCard>
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
@@ -237,13 +219,14 @@ function PeriodeSection({
                 isExpanded={expandedId === periode.id}
                 onToggle={() => onToggleItem(periode.id)}
                 onEdit={() => onEditItem(periode)}
+                onDelete={() => onDeleteItem(periode.id)}
                 onViewDetail={() => onViewDetail(periode.id)}
               />
             ))
           )}
         </div>
       )}
-    </div>
+    </AdminSurfaceCard>
   )
 }
 
@@ -288,39 +271,15 @@ function TambahPeriodeModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        type="button"
-        aria-label="Tutup modal"
-        className="absolute inset-0 bg-black/25 backdrop-blur-[2px]"
-        onClick={onClose}
-      />
-
-      <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-2xl">
-        <div className="px-6 pt-6 pb-5 border-b border-gray-100">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-base font-semibold text-gray-800">
-                {isEditMode ? "Edit Periode Review" : "Tambah Periode Review"}
-              </h2>
-              <p className="text-xs mt-0.5" style={{ color: "rgba(0,0,0,0.4)" }}>
-                {isEditMode
-                  ? "Perbarui nama dan rentang tanggal periode"
-                  : "Tentukan nama dan rentang tanggal periode"}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="size-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors flex-none"
-            >
-              <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
+    <AdminModalShell
+      title={isEditMode ? "Edit Periode Review" : "Tambah Periode Review"}
+      description={
+        isEditMode
+          ? "Perbarui nama dan rentang tanggal periode"
+          : "Tentukan nama dan rentang tanggal periode"
+      }
+      onClose={onClose}
+    >
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="nama" className="text-xs font-medium text-gray-600">
@@ -385,8 +344,7 @@ function TambahPeriodeModal({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </AdminModalShell>
   )
 }
 
@@ -503,6 +461,27 @@ export default function PeriodeReviewPage() {
     router.push(`/admin/periode/${id}`)
   }
 
+  async function handleDeletePeriode(id: string) {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus periode ini?")) return
+    
+    try {
+      const response = await fetch(`/api/review-periods/${id}`, {
+        method: "DELETE",
+      })
+      
+      if (!response.ok) {
+        const payload = await readReviewPeriodResponse(response)
+        alert(payload.error ?? "Gagal menghapus periode review.")
+        return
+      }
+      
+      await loadReviewPeriods()
+      alert("Periode review berhasil dihapus.")
+    } catch {
+      alert("Tidak bisa terhubung ke server.")
+    }
+  }
+
   return (
     <>
       {(showModal || editingPeriode) && (
@@ -515,19 +494,17 @@ export default function PeriodeReviewPage() {
         />
       )}
 
-      <div className="px-8 py-8 max-w-2xl">
-        <div className="flex items-start justify-between mb-7 gap-4">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-800">Periode Review PKM</h1>
-            <p className="text-sm mt-0.5" style={{ color: "rgba(0,0,0,0.4)" }}>
-              Kelola periode review Program Kreativitas Mahasiswa
-            </p>
-          </div>
-          <Button onClick={handleOpenCreateModal} className="flex items-center gap-2 shrink-0">
-            <PlusIcon />
-            Tambah Periode
-          </Button>
-        </div>
+      <div className="px-8 py-8">
+        <AdminPageHeader
+          title="Periode Review PKM"
+          description="Kelola periode review Program Kreativitas Mahasiswa"
+          action={
+            <Button onClick={handleOpenCreateModal} className="flex items-center gap-2">
+              <PlusIcon />
+              Tambah Periode
+            </Button>
+          }
+        />
 
         {loadError ? (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -555,6 +532,7 @@ export default function PeriodeReviewPage() {
               expandedId={expandedId}
               onToggleItem={handleToggleItem}
               onEditItem={handleEditPeriode}
+              onDeleteItem={handleDeletePeriode}
               onViewDetail={handleViewDetail}
             />
             <PeriodeSection
@@ -566,6 +544,7 @@ export default function PeriodeReviewPage() {
               expandedId={expandedId}
               onToggleItem={handleToggleItem}
               onEditItem={handleEditPeriode}
+              onDeleteItem={handleDeletePeriode}
               onViewDetail={handleViewDetail}
             />
           </div>

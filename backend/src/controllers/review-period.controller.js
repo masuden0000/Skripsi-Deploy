@@ -1,5 +1,6 @@
 import {
   createReviewPeriod,
+  deleteReviewPeriod,
   getReviewPeriodById,
   listReviewPeriods,
   updateReviewPeriod,
@@ -34,5 +35,14 @@ export async function update(req, res) {
 
   res.status(200).json({
     data: period,
+  })
+}
+
+export async function remove(req, res) {
+  const period = await deleteReviewPeriod(req.params.id)
+
+  res.status(200).json({
+    data: period,
+    message: "Periode review berhasil dihapus.",
   })
 }

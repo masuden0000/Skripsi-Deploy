@@ -10,23 +10,6 @@ function buildResponse(backendResponse: Response, responseText: string) {
   })
 }
 
-export async function GET(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  const { id } = await context.params
-  const backendResponse = await fetch(`${getBackendBaseUrl()}/api/review-periods/${id}`, {
-    method: "GET",
-    headers: {
-      cookie: request.headers.get("cookie") ?? "",
-    },
-    cache: "no-store",
-  })
-
-  const responseText = await backendResponse.text()
-  return buildResponse(backendResponse, responseText)
-}
-
 export async function PUT(
   request: Request,
   context: { params: Promise<{ id: string }> }
@@ -34,7 +17,7 @@ export async function PUT(
   const { id } = await context.params
   const body = await request.text()
 
-  const backendResponse = await fetch(`${getBackendBaseUrl()}/api/review-periods/${id}`, {
+  const backendResponse = await fetch(`${getBackendBaseUrl()}/api/reviewers/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -54,7 +37,7 @@ export async function DELETE(
 ) {
   const { id } = await context.params
 
-  const backendResponse = await fetch(`${getBackendBaseUrl()}/api/review-periods/${id}`, {
+  const backendResponse = await fetch(`${getBackendBaseUrl()}/api/reviewers/${id}`, {
     method: "DELETE",
     headers: {
       cookie: request.headers.get("cookie") ?? "",

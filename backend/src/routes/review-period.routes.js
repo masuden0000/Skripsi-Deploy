@@ -12,5 +12,6 @@ router.get("/", asyncHandler(reviewPeriodController.list))
 router.get("/:id", asyncHandler(reviewPeriodController.getById))
 router.post("/", asyncHandler(reviewPeriodController.create))
 router.put("/:id", asyncHandler(reviewPeriodController.update))
+router.delete("/:id", asyncHandler(reviewPeriodController.remove))
 
 export default router

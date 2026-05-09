@@ -1,71 +1,61 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+  AdminMetricCard,
+  AdminModalShell,
+  AdminPageHeader,
+  AdminSurfaceCard,
+} from "@/components/admin/shared"
+import {
+  EditIcon,
+  EmailIcon,
+  GraduationIcon,
+  PlusIcon,
+  TrashIcon,
+  UserIcon,
+} from "@/components/icons/public-icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 type ReviewerStatus = "Aktif" | "Tidak Aktif"
 
 type Reviewer = {
   id: string
   nama: string
-  inisial: string
   email: string
-  bidangKeahlian: string
-  totalReview: number
-  status: ReviewerStatus
+  fakultasId: string
+  fakultas: string
+  isActive: boolean
 }
 
-type ReviewerFormData = Omit<Reviewer, "id" | "inisial">
+type Faculty = {
+  id: string
+  code: string
+  name: string
+}
 
-const REVIEWER_SEED: Reviewer[] = [
-  {
-    id: "rv-1",
-    nama: "Dr. Ahmad Wijaya",
-    inisial: "DA",
-    email: "ahmad.w@university.ac.id",
-    bidangKeahlian: "AI & Machine Learning",
-    totalReview: 15,
-    status: "Aktif",
-  },
-  {
-    id: "rv-2",
-    nama: "Prof. Siti Nurhaliza",
-    inisial: "PS",
-    email: "siti.n@university.ac.id",
-    bidangKeahlian: "Software Engineering",
-    totalReview: 22,
-    status: "Aktif",
-  },
-  {
-    id: "rv-3",
-    nama: "Dr. Budi Santoso",
-    inisial: "DB",
-    email: "budi.s@university.ac.id",
-    bidangKeahlian: "Data Science",
-    totalReview: 18,
-    status: "Aktif",
-  },
-  {
-    id: "rv-4",
-    nama: "Dr. Dewi Lestari",
-    inisial: "DD",
-    email: "dewi.l@university.ac.id",
-    bidangKeahlian: "IoT & Embedded Systems",
-    totalReview: 12,
-    status: "Aktif",
-  },
-  {
-    id: "rv-5",
-    nama: "Prof. Eko Prasetyo",
-    inisial: "PE",
-    email: "eko.p@university.ac.id",
-    bidangKeahlian: "Cybersecurity",
-    totalReview: 20,
-    status: "Tidak Aktif",
-  },
-]
+type ReviewerFormData = {
+  nama: string
+  email: string
+  fakultasId: string
+  isActive: boolean
+  password?: string
+}
+
+type ReviewerApiResponse = {
+  data?: Reviewer | Reviewer[] | Faculty[]
+  error?: string
+  message?: string
+}
 
 function getReviewerInitials(nama: string) {
   return nama
@@ -76,341 +66,309 @@ function getReviewerInitials(nama: string) {
     .join("")
 }
 
-function formatAverage(total: number, count: number) {
-  if (!count) {
-    return "0.0"
+function mapStatusLabel(isActive: boolean): ReviewerStatus {
+  return isActive ? "Aktif" : "Tidak Aktif"
+}
+
+async function readApiResponse(response: Response) {
+  const text = await response.text()
+
+  if (!text) {
+    return {}
   }
 
-  return (total / count).toFixed(1)
-}
-
-function PlusIcon() {
-  return (
-    <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
-    </svg>
-  )
-}
-
-function UserIcon() {
-  return (
-    <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M20 21a8 8 0 0 0-16 0" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  )
-}
-
-function GraduationIcon() {
-  return (
-    <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="m3 8 9-5 9 5-9 5-9-5Z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7 10.5v4.25C7 16.55 9.24 18 12 18s5-1.45 5-3.25V10.5" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 9v5" />
-    </svg>
-  )
-}
-
-function ReviewIcon() {
-  return (
-    <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h18" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7 5V3" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M17 5V3" />
-      <rect x="3" y="5" width="18" height="16" rx="2" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="m9 13 2 2 4-4" />
-    </svg>
-  )
-}
-
-function StarIcon() {
-  return (
-    <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="m12 3 2.8 5.67 6.2.9-4.5 4.38 1.06 6.18L12 17.27l-5.56 2.86 1.06-6.18L3 9.57l6.2-.9L12 3Z" />
-    </svg>
-  )
-}
-
-function EmailIcon() {
-  return (
-    <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <rect x="3" y="5" width="18" height="14" rx="2" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="m3 7 9 6 9-6" />
-    </svg>
-  )
-}
-
-function EditIcon() {
-  return (
-    <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 20h9" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
-    </svg>
-  )
-}
-
-function TrashIcon() {
-  return (
-    <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19 6v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10 11v6M14 11v6" />
-    </svg>
-  )
-}
-
-function StatCard({
-  title,
-  value,
-  accentClass,
-  icon,
-}: {
-  title: string
-  value: string
-  accentClass: string
-  icon: React.ReactNode
-}) {
-  return (
-    <div className="rounded-3xl border border-emerald-100/70 bg-white px-6 py-5 shadow-[0_12px_32px_rgba(15,118,110,0.12)]">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-[15px] font-medium text-slate-500">{title}</p>
-          <p className="mt-1 text-[34px] font-semibold tracking-tight text-emerald-900">{value}</p>
-        </div>
-        <div className={`flex size-15 items-center justify-center rounded-2xl ${accentClass}`}>
-          {icon}
-        </div>
-      </div>
-    </div>
-  )
+  try {
+    return JSON.parse(text) as ReviewerApiResponse
+  } catch {
+    return { error: "Respons server tidak valid." }
+  }
 }
 
 function ReviewerModal({
   reviewer,
+  faculties,
+  isSubmitting,
+  errorMessage,
   onClose,
   onSave,
 }: {
   reviewer: Reviewer | null
+  faculties: Faculty[]
+  isSubmitting: boolean
+  errorMessage: string | null
   onClose: () => void
-  onSave: (data: ReviewerFormData) => void
+  onSave: (data: ReviewerFormData) => Promise<void>
 }) {
   const [nama, setNama] = useState(reviewer?.nama ?? "")
   const [email, setEmail] = useState(reviewer?.email ?? "")
-  const [bidangKeahlian, setBidangKeahlian] = useState(reviewer?.bidangKeahlian ?? "")
-  const [totalReview, setTotalReview] = useState(String(reviewer?.totalReview ?? 0))
-  const [status, setStatus] = useState<ReviewerStatus>(reviewer?.status ?? "Aktif")
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [fakultasId, setFakultasId] = useState(reviewer?.fakultasId ?? "")
+  const [status, setStatus] = useState<ReviewerStatus>(mapStatusLabel(reviewer?.isActive ?? true))
+  const [password, setPassword] = useState("")
+  const [localError, setLocalError] = useState<string | null>(null)
   const isEditMode = Boolean(reviewer)
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const totalReviewNumber = Number(totalReview)
-    if (!nama.trim() || !email.trim() || !bidangKeahlian.trim()) {
-      setErrorMessage("Semua field wajib diisi.")
+    if (!nama.trim() || !email.trim() || !fakultasId) {
+      setLocalError("Semua field wajib diisi.")
       return
     }
 
-    if (!Number.isFinite(totalReviewNumber) || totalReviewNumber < 0) {
-      setErrorMessage("Total review harus berupa angka nol atau lebih.")
+    if (!isEditMode && password.length < 8) {
+      setLocalError("Password reviewer minimal 8 karakter.")
       return
     }
 
-    setErrorMessage(null)
-    onSave({
+    setLocalError(null)
+    await onSave({
       nama: nama.trim(),
       email: email.trim(),
-      bidangKeahlian: bidangKeahlian.trim(),
-      totalReview: totalReviewNumber,
-      status,
+      fakultasId,
+      isActive: status === "Aktif",
+      password: isEditMode ? undefined : password,
     })
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        type="button"
-        aria-label="Tutup modal"
-        className="absolute inset-0 bg-slate-950/25 backdrop-blur-[2px]"
-        onClick={onClose}
-      />
-
-      <div className="relative z-10 w-full max-w-lg rounded-[28px] border border-emerald-100 bg-white shadow-[0_24px_70px_rgba(15,118,110,0.2)]">
-        <div className="border-b border-emerald-100 px-6 py-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold text-emerald-950">
-                {isEditMode ? "Edit Reviewer" : "Tambah Reviewer"}
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                {isEditMode
-                  ? "Perbarui data reviewer dan bidang keahliannya."
-                  : "Tambahkan reviewer baru untuk kebutuhan distribusi review."}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex size-9 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-            >
-              <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+    <AdminModalShell
+      title={isEditMode ? "Edit Reviewer" : "Tambah Reviewer"}
+      description={
+        isEditMode
+          ? "Perbarui data reviewer dan fakultas asalnya."
+          : "Tambahkan reviewer baru beserta akun login dan fakultas asalnya."
+      }
+      onClose={onClose}
+      maxWidthClassName="max-w-lg"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
+        <div className="space-y-1.5">
+          <Label htmlFor="nama-reviewer" className="text-xs font-medium text-gray-600">
+            Nama Reviewer
+          </Label>
+          <Input
+            id="nama-reviewer"
+            value={nama}
+            onChange={(event) => setNama(event.target.value)}
+            placeholder="cth. Dr. Ahmad Wijaya"
+            disabled={isSubmitting}
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
+        <div className="space-y-1.5">
+          <Label htmlFor="email-reviewer" className="text-xs font-medium text-gray-600">
+            Email
+          </Label>
+          <Input
+            id="email-reviewer"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="cth. ahmad.w@university.ac.id"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        {!isEditMode ? (
           <div className="space-y-1.5">
-            <Label htmlFor="nama-reviewer" className="text-xs font-medium text-slate-600">
-              Nama Reviewer
+            <Label htmlFor="password-reviewer" className="text-xs font-medium text-gray-600">
+              Password Awal
             </Label>
             <Input
-              id="nama-reviewer"
-              value={nama}
-              onChange={(event) => setNama(event.target.value)}
-              placeholder="cth. Dr. Ahmad Wijaya"
+              id="password-reviewer"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Minimal 8 karakter"
+              disabled={isSubmitting}
             />
           </div>
+        ) : null}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="email-reviewer" className="text-xs font-medium text-slate-600">
-              Email
-            </Label>
-            <Input
-              id="email-reviewer"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="cth. ahmad.w@university.ac.id"
-            />
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600">Fakultas</Label>
+          <Select value={fakultasId || undefined} onValueChange={setFakultasId} disabled={isSubmitting}>
+            <SelectTrigger>
+              <SelectValue placeholder="Pilih fakultas" />
+            </SelectTrigger>
+            <SelectContent>
+              {faculties.map((faculty) => (
+                <SelectItem key={faculty.id} value={faculty.id}>
+                  {faculty.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600">Status</Label>
+          <Select value={status} onValueChange={(value) => setStatus(value as ReviewerStatus)} disabled={isSubmitting}>
+            <SelectTrigger>
+              <SelectValue placeholder="Pilih status reviewer" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Aktif">Aktif</SelectItem>
+              <SelectItem value="Tidak Aktif">Tidak Aktif</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {localError || errorMessage ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            {localError || errorMessage}
           </div>
+        ) : null}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="bidang-reviewer" className="text-xs font-medium text-slate-600">
-              Bidang Keahlian
-            </Label>
-            <Input
-              id="bidang-reviewer"
-              value={bidangKeahlian}
-              onChange={(event) => setBidangKeahlian(event.target.value)}
-              placeholder="cth. AI & Machine Learning"
-            />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="total-review" className="text-xs font-medium text-slate-600">
-                Total Review
-              </Label>
-              <Input
-                id="total-review"
-                type="number"
-                min="0"
-                value={totalReview}
-                onChange={(event) => setTotalReview(event.target.value)}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="status-reviewer" className="text-xs font-medium text-slate-600">
-                Status
-              </Label>
-              <select
-                id="status-reviewer"
-                value={status}
-                onChange={(event) => setStatus(event.target.value as ReviewerStatus)}
-                className="flex h-8 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-emerald-400 focus:ring-3 focus:ring-emerald-100"
-              >
-                <option value="Aktif">Aktif</option>
-                <option value="Tidak Aktif">Tidak Aktif</option>
-              </select>
-            </div>
-          </div>
-
-          {errorMessage ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-              {errorMessage}
-            </div>
-          ) : null}
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Batal
-            </Button>
-            <Button type="submit">
-              {isEditMode ? "Simpan Perubahan" : "Tambah Reviewer"}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+            Batal
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Menyimpan..." : isEditMode ? "Simpan Perubahan" : "Tambah Reviewer"}
+          </Button>
+        </div>
+      </form>
+    </AdminModalShell>
   )
 }
 
 export default function ReviewerManagementPage() {
-  const [reviewers, setReviewers] = useState<Reviewer[]>(REVIEWER_SEED)
+  const [reviewers, setReviewers] = useState<Reviewer[]>([])
+  const [faculties, setFaculties] = useState<Faculty[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingReviewer, setEditingReviewer] = useState<Reviewer | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const totalReview = useMemo(
-    () => reviewers.reduce((sum, reviewer) => sum + reviewer.totalReview, 0),
-    [reviewers]
-  )
   const totalAktif = useMemo(
-    () => reviewers.filter((reviewer) => reviewer.status === "Aktif").length,
+    () => reviewers.filter((reviewer) => reviewer.isActive).length,
     [reviewers]
   )
-  const averageReview = useMemo(
-    () => formatAverage(totalReview, reviewers.length),
-    [reviewers.length, totalReview]
-  )
+
+  const loadReviewerDependencies = useCallback(async () => {
+    setIsLoading(true)
+    setLoadError(null)
+
+    try {
+      const [reviewerResponse, facultyResponse] = await Promise.all([
+        fetch("/api/reviewers", {
+          method: "GET",
+          cache: "no-store",
+        }),
+        fetch("/api/faculties", {
+          method: "GET",
+          cache: "no-store",
+        }),
+      ])
+
+      const reviewerPayload = await readApiResponse(reviewerResponse)
+      const facultyPayload = await readApiResponse(facultyResponse)
+
+      if (!reviewerResponse.ok) {
+        setLoadError(reviewerPayload.error ?? "Gagal memuat data reviewer.")
+        setReviewers([])
+        setFaculties([])
+        return
+      }
+
+      if (!facultyResponse.ok) {
+        setLoadError(facultyPayload.error ?? "Gagal memuat data fakultas.")
+        setReviewers([])
+        setFaculties([])
+        return
+      }
+
+      setReviewers(Array.isArray(reviewerPayload.data) ? (reviewerPayload.data as Reviewer[]) : [])
+      setFaculties(Array.isArray(facultyPayload.data) ? (facultyPayload.data as Faculty[]) : [])
+    } catch {
+      setLoadError("Tidak bisa terhubung ke server.")
+      setReviewers([])
+      setFaculties([])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadReviewerDependencies()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [loadReviewerDependencies])
 
   function handleOpenCreateModal() {
     setEditingReviewer(null)
+    setFormError(null)
     setIsModalOpen(true)
   }
 
   function handleCloseModal() {
     setIsModalOpen(false)
     setEditingReviewer(null)
+    setFormError(null)
   }
 
   function handleEditReviewer(reviewer: Reviewer) {
     setEditingReviewer(reviewer)
+    setFormError(null)
     setIsModalOpen(true)
   }
 
-  function handleDeleteReviewer(id: string) {
-    setReviewers((current) => current.filter((reviewer) => reviewer.id !== id))
+  async function handleDeleteReviewer(id: string) {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus reviewer ini?")) return
+
+    try {
+      const response = await fetch(`/api/reviewers/${id}`, {
+        method: "DELETE",
+      })
+      const payload = await readApiResponse(response)
+
+      if (!response.ok) {
+        alert(payload.error ?? "Gagal menghapus reviewer.")
+        return
+      }
+
+      await loadReviewerDependencies()
+      alert(payload.message ?? "Reviewer berhasil dihapus.")
+    } catch {
+      alert("Tidak bisa terhubung ke server.")
+    }
   }
 
-  function handleSaveReviewer(data: ReviewerFormData) {
-    if (editingReviewer) {
-      setReviewers((current) =>
-        current.map((reviewer) =>
-          reviewer.id === editingReviewer.id
-            ? {
-                ...reviewer,
-                ...data,
-                inisial: getReviewerInitials(data.nama),
-              }
-            : reviewer
-        )
+  async function handleSaveReviewer(data: ReviewerFormData) {
+    setIsSubmitting(true)
+    setFormError(null)
+
+    try {
+      const isEditMode = Boolean(editingReviewer)
+      const response = await fetch(
+        isEditMode ? `/api/reviewers/${editingReviewer!.id}` : "/api/reviewers",
+        {
+          method: isEditMode ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }
       )
+      const payload = await readApiResponse(response)
+
+      if (!response.ok) {
+        setFormError(payload.error ?? "Gagal menyimpan reviewer.")
+        return
+      }
+
+      await loadReviewerDependencies()
       handleCloseModal()
-      return
+    } catch {
+      setFormError("Tidak bisa terhubung ke server.")
+    } finally {
+      setIsSubmitting(false)
     }
-
-    const nextReviewer: Reviewer = {
-      id: `rv-${Date.now()}`,
-      ...data,
-      inisial: getReviewerInitials(data.nama),
-    }
-
-    setReviewers((current) => [nextReviewer, ...current])
-    handleCloseModal()
   }
 
   return (
@@ -418,143 +376,150 @@ export default function ReviewerManagementPage() {
       {isModalOpen ? (
         <ReviewerModal
           reviewer={editingReviewer}
+          faculties={faculties}
+          isSubmitting={isSubmitting}
+          errorMessage={formError}
           onClose={handleCloseModal}
           onSave={handleSaveReviewer}
         />
       ) : null}
 
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.08),_transparent_28%),linear-gradient(180deg,rgba(240,253,250,0.85)_0%,rgba(255,255,255,1)_42%)] px-8 py-8">
-        <div className="mx-auto max-w-[1500px]">
-          <div className="mb-8 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-            <div>
-              <h1 className="text-[42px] font-semibold tracking-[-0.03em] text-emerald-950">
-                Manajemen Reviewer
-              </h1>
-              <p className="mt-2 text-xl text-slate-500">
-                Kelola akun reviewer dan informasi terkait
-              </p>
-            </div>
-
-            <Button
-              onClick={handleOpenCreateModal}
-              className="h-12 rounded-2xl px-6 text-base shadow-[0_10px_28px_rgba(16,185,129,0.28)]"
-            >
+      <div className="px-8 py-8">
+        <AdminPageHeader
+          title="Kelola Reviewer"
+          description="Kelola akun reviewer dan informasi terkait"
+          action={
+            <Button onClick={handleOpenCreateModal} className="flex items-center gap-2">
               <PlusIcon />
               Tambah Reviewer
             </Button>
-          </div>
+          }
+        />
 
-          <div className="grid gap-5 xl:grid-cols-4">
-            <StatCard
-              title="Total Reviewer"
-              value={String(reviewers.length)}
-              accentClass="bg-emerald-50 text-emerald-600"
-              icon={<UserIcon />}
-            />
-            <StatCard
-              title="Aktif"
-              value={String(totalAktif)}
-              accentClass="bg-emerald-50 text-emerald-500"
-              icon={<GraduationIcon />}
-            />
-            <StatCard
-              title="Total Review"
-              value={String(totalReview)}
-              accentClass="bg-blue-50 text-blue-600"
-              icon={<ReviewIcon />}
-            />
-            <StatCard
-              title="Rata-rata Review"
-              value={averageReview}
-              accentClass="bg-violet-50 text-violet-600"
-              icon={<StarIcon />}
-            />
-          </div>
-
-          <section className="mt-8 overflow-hidden rounded-[30px] border border-emerald-100/80 bg-white shadow-[0_18px_54px_rgba(15,118,110,0.12)]">
-            <div className="border-b border-emerald-100/80 bg-emerald-50/45 px-8 py-7">
-              <h2 className="text-[34px] font-semibold tracking-[-0.03em] text-emerald-950">
-                Daftar Reviewer
-              </h2>
-              <p className="mt-2 text-xl text-slate-500">
-                Kelola dan pantau reviewer yang terdaftar
-              </p>
+        {loadError ? (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="flex items-center justify-between gap-3">
+              <span>{loadError}</span>
+              <Button type="button" variant="outline" size="sm" onClick={() => void loadReviewerDependencies()}>
+                Coba Lagi
+              </Button>
             </div>
+          </div>
+        ) : null}
 
-            <div className="overflow-x-auto px-8 py-7">
-              <table className="min-w-[980px] w-full border-separate border-spacing-0">
+        <div className="grid gap-4 md:grid-cols-2">
+          <AdminMetricCard
+            title="Total Reviewer"
+            value={String(reviewers.length)}
+            accentClassName="bg-pkm-100 text-pkm-700"
+            icon={<UserIcon />}
+          />
+          <AdminMetricCard
+            title="Aktif"
+            value={String(totalAktif)}
+            accentClassName="bg-pkm-100 text-pkm-700"
+            icon={<GraduationIcon />}
+          />
+        </div>
+
+        <AdminSurfaceCard className="mt-4">
+          <div className="border-b border-gray-100 px-5 py-4">
+            <h2 className="text-sm font-semibold text-gray-700">Daftar Reviewer</h2>
+            <p className="mt-0.5 text-xs text-[rgba(0,0,0,0.4)]">
+              Kelola dan pantau reviewer yang terdaftar
+            </p>
+          </div>
+
+          <div className="overflow-x-auto px-5 py-4">
+            {isLoading ? (
+              <div className="py-8 text-center text-sm text-gray-500">Memuat reviewer...</div>
+            ) : reviewers.length === 0 ? (
+              <div className="py-8 text-center text-sm text-gray-500">Belum ada reviewer.</div>
+            ) : (
+              <table className="w-full min-w-[920px] border-separate border-spacing-0">
                 <thead>
                   <tr className="text-left">
-                    <th className="border-b border-slate-200 pb-4 pr-4 text-[15px] font-semibold text-slate-900">Reviewer</th>
-                    <th className="border-b border-slate-200 pb-4 pr-4 text-[15px] font-semibold text-slate-900">Email</th>
-                    <th className="border-b border-slate-200 pb-4 pr-4 text-[15px] font-semibold text-slate-900">Bidang Keahlian</th>
-                    <th className="border-b border-slate-200 pb-4 pr-4 text-[15px] font-semibold text-slate-900">Total Review</th>
-                    <th className="border-b border-slate-200 pb-4 pr-4 text-[15px] font-semibold text-slate-900">Status</th>
-                    <th className="border-b border-slate-200 pb-4 text-right text-[15px] font-semibold text-slate-900">Aksi</th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-xs font-semibold text-gray-700">
+                      Reviewer
+                    </th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-xs font-semibold text-gray-700">
+                      Email
+                    </th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-xs font-semibold text-gray-700">
+                      Fakultas
+                    </th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-xs font-semibold text-gray-700">
+                      Status
+                    </th>
+                    <th className="border-b border-gray-100 pb-3 text-right text-xs font-semibold text-gray-700">
+                      Aksi
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {reviewers.map((reviewer) => (
                     <tr key={reviewer.id}>
-                      <td className="border-b border-slate-100 py-4 pr-4">
+                      <td className="border-b border-gray-50 py-4 pr-4">
                         <div className="flex items-center gap-4">
-                          <div className="flex size-14 items-center justify-center rounded-full bg-emerald-100 text-lg font-semibold text-emerald-700">
-                            {reviewer.inisial}
+                          <div className="flex size-12 items-center justify-center rounded-full bg-pkm-100 text-sm font-semibold text-pkm-700">
+                            {getReviewerInitials(reviewer.nama)}
                           </div>
-                          <span className="text-[17px] font-medium text-slate-900">{reviewer.nama}</span>
+                          <span className="text-sm font-medium text-gray-800">{reviewer.nama}</span>
                         </div>
                       </td>
-                      <td className="border-b border-slate-100 py-4 pr-4">
-                        <div className="flex items-center gap-3 text-[15px] text-slate-500">
-                          <EmailIcon />
+                      <td className="border-b border-gray-50 py-4 pr-4">
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <EmailIcon className="text-gray-400" />
                           <span>{reviewer.email}</span>
                         </div>
                       </td>
-                      <td className="border-b border-slate-100 py-4 pr-4">
-                        <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50/60 px-3 py-1 text-[15px] font-medium text-emerald-700">
-                          {reviewer.bidangKeahlian}
+                      <td className="border-b border-gray-50 py-4 pr-4">
+                        <span className="inline-flex rounded-full border border-pkm-200 bg-pkm-50 px-3 py-1 text-xs font-medium text-pkm-700">
+                          {reviewer.fakultas}
                         </span>
                       </td>
-                      <td className="border-b border-slate-100 py-4 pr-4 text-[17px] text-slate-700">
-                        {reviewer.totalReview} proposal
-                      </td>
-                      <td className="border-b border-slate-100 py-4 pr-4">
+                      <td className="border-b border-gray-50 py-4 pr-4">
                         <span
                           className={[
-                            "inline-flex rounded-full px-3 py-1 text-[15px] font-semibold",
-                            reviewer.status === "Aktif"
-                              ? "bg-emerald-600 text-white"
-                              : "bg-slate-200 text-slate-700",
+                            "inline-flex rounded-full px-3 py-1 text-xs font-medium",
+                            reviewer.isActive
+                              ? "bg-pkm-100 text-pkm-700"
+                              : "bg-gray-100 text-gray-500",
                           ].join(" ")}
                         >
-                          {reviewer.status}
+                          {mapStatusLabel(reviewer.isActive)}
                         </span>
                       </td>
-                      <td className="border-b border-slate-100 py-4 text-right">
-                        <div className="flex items-center justify-end gap-3">
-                          <button
+                      <td className="border-b border-gray-50 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
                             type="button"
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleEditReviewer(reviewer)}
-                            className="flex size-12 items-center justify-center rounded-2xl border border-emerald-200 text-emerald-600 transition-colors hover:bg-emerald-50"
+                            className="border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
                           >
                             <EditIcon />
-                          </button>
-                          <button
+                            Edit
+                          </Button>
+                          <Button
                             type="button"
-                            onClick={() => handleDeleteReviewer(reviewer.id)}
-                            className="flex size-12 items-center justify-center rounded-2xl border border-rose-200 text-rose-500 transition-colors hover:bg-rose-50"
+                            size="sm"
+                            onClick={() => void handleDeleteReviewer(reviewer.id)}
+                            className="border-0 bg-red-600 text-white hover:bg-red-700"
                           >
                             <TrashIcon />
-                          </button>
+                            Hapus
+                          </Button>
                         </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-          </section>
-        </div>
+            )}
+          </div>
+        </AdminSurfaceCard>
       </div>
     </>
   )

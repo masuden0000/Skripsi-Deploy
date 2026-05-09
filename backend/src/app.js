@@ -3,7 +3,9 @@ import cors from "cors"
 import express from "express"
 import { env } from "./config/env.js"
 import authRoutes from "./routes/auth.routes.js"
+import facultyRoutes from "./routes/faculty.routes.js"
 import reviewPeriodRoutes from "./routes/review-period.routes.js"
+import reviewerRoutes from "./routes/reviewer.routes.js"
 import { errorHandler, notFoundHandler } from "./middlewares/error-handler.js"
 
 const app = express()
@@ -42,7 +44,9 @@ app.get("/api/health", (_req, res) => {
 })
 
 app.use("/api/auth", authRoutes)
+app.use("/api/faculties", facultyRoutes)
 app.use("/api/review-periods", reviewPeriodRoutes)
+app.use("/api/reviewers", reviewerRoutes)
 
 app.use(notFoundHandler)
 app.use(errorHandler)

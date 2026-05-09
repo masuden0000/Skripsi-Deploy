@@ -2,6 +2,7 @@ import { createAuthClient } from "../config/supabase.js"
 import { ROLE_ROUTES, VALID_ROLES } from "../constants/roles.js"
 import { AppError } from "../utils/app-error.js"
 import { getProfileByUserId } from "./profile.service.js"
+import { getReviewerAccessByUserId } from "./reviewer.service.js"
 import { createSessionToken } from "./session.service.js"
 
 export async function loginWithPassword({ email, password, role }) {
@@ -30,6 +31,10 @@ export async function loginWithPassword({ email, password, role }) {
       `Akun ini terdaftar sebagai ${profile.role}, bukan ${role}. Pilih role yang sesuai.`,
       403
     )
+  }
+
+  if (profile.role === "reviewer") {
+    await getReviewerAccessByUserId(data.user.id)
   }
 
   const destination = ROLE_ROUTES[profile.role]

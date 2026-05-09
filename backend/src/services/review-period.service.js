@@ -125,3 +125,18 @@ export async function updateReviewPeriod(id, payload) {
 
   return mapReviewPeriod(data)
 }
+
+export async function deleteReviewPeriod(id) {
+  validateReviewPeriodId(id)
+
+  const { data, error } = await adminClient
+    .from(REVIEW_PERIOD_TABLE)
+    .delete()
+    .eq("id", id)
+    .select("id, nama, tanggal_mulai, tanggal_selesai, created_at, updated_at")
+    .single()
+
+  handleDatabaseError(error, "Gagal menghapus periode review.")
+
+  return mapReviewPeriod(data)
+}

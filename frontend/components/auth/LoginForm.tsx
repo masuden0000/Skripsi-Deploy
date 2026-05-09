@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { login } from "@/app/actions/auth"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const ROLES = [
   { value: "admin",    label: "Admin" },
@@ -24,11 +30,32 @@ export default function LoginForm() {
     e.preventDefault()
     setError("")
     const formData = new FormData(e.currentTarget)
-    formData.set("role", role)
+
     startTransition(async () => {
-      const result = await login(formData)
-      if (result?.error) {
-        setError(result.error)
+      try {
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            email: formData.get("email"),
+            password: formData.get("password"),
+            role,
+          }),
+        })
+
+        const payload = await response.json().catch(() => null)
+
+        if (!response.ok) {
+          setError(payload?.error || "Login gagal. Coba lagi.")
+          return
+        }
+
+        window.location.assign(payload?.destination || "/login")
+      } catch {
+        setError("Backend tidak dapat dijangkau. Pastikan server Express berjalan.")
       }
     })
   }
@@ -73,62 +100,26 @@ export default function LoginForm() {
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-5 px-6 py-8">
-        {/* Role checkbox */}
+        {/* Role selector */}
         <div className="flex flex-col gap-2">
           <Label className="text-sm font-medium text-pkm-900">
             Masuk sebagai
           </Label>
-          <div className="flex gap-3">
-            {ROLES.map((r) => {
-              const active = role === r.value
-              return (
-                <button
-                  key={r.value}
-                  type="button"
-                  onClick={() => setRole(r.value)}
-                  className="flex flex-1 items-center gap-2.5 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors"
-                  style={
-                    active
-                      ? {
-                          borderColor: "#009966",
-                          background: "#ecfdf5",
-                          color: "#004f3b",
-                        }
-                      : {
-                          borderColor: "#a4f4cf",
-                          background: "#fff",
-                          color: "#6b7280",
-                        }
-                  }
-                >
-                  {/* Checkbox indicator */}
-                  <span
-                    className="flex size-4 shrink-0 items-center justify-center rounded border-2 transition-colors"
-                    style={
-                      active
-                        ? { borderColor: "#009966", background: "#009966" }
-                        : { borderColor: "#a4f4cf", background: "#fff" }
-                    }
-                  >
-                    {active && (
-                      <svg
-                        viewBox="0 0 10 8"
-                        className="size-2.5"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M1 4l2.5 2.5L9 1" />
-                      </svg>
-                    )}
-                  </span>
+          <Select
+            value={role || undefined}
+            onValueChange={setRole}
+          >
+            <SelectTrigger className="h-11 rounded-lg border-pkm-400 text-sm focus:ring-pkm-600">
+              <SelectValue placeholder="Pilih role akun" />
+            </SelectTrigger>
+            <SelectContent>
+              {ROLES.map((r) => (
+                <SelectItem key={r.value} value={r.value}>
                   {r.label}
-                </button>
-              )
-            })}
-          </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Email */}

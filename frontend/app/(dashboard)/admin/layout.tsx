@@ -1,5 +1,6 @@
 import Image from "next/image"
 import AdminNav from "@/components/layout/AdminNav"
+import LogoutButton from "@/components/auth/LogoutButton"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -39,10 +40,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Sidebar footer */}
         <div
-          className="px-5 py-4 border-t text-xs"
-          style={{ borderColor: "rgba(0,153,102,0.12)", color: "rgba(0,0,0,0.3)" }}
+          className="px-5 py-4 border-t"
+          style={{ borderColor: "rgba(0,153,102,0.12)" }}
         >
-          Admin Panel
+          <p className="text-xs" style={{ color: "rgba(0,0,0,0.3)" }}>
+            Admin Panel
+          </p>
+
+          <div className="mt-3">
+            <LogoutButton />
+          </div>
         </div>
       </aside>
 

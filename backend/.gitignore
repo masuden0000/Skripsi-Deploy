@@ -1,16 +1,15 @@
-# Python cache and virtualenv
-__pycache__/
-*.py[cod]
-.venv/
-venv/
+# Node modules and logs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # Environment files
 .env
 .env.*
 !.env.example
 
-# Tool caches
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-
+# Build / cache
+dist/
+.turbo/

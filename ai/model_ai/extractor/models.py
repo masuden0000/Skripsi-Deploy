@@ -288,8 +288,6 @@ class FiguresTablesInfo(FiguresTablesExtracted):
 # ---------------------------------------------------------------------------
 class PageCountExtracted(BaseModel):
     proposal_halaman_inti_maks: int | None = None
-    laporan_kemajuan_halaman_inti_maks: int | None = None
-    laporan_akhir_halaman_inti_maks: int | None = None
     definisi_halaman_inti: str | None = None
     lampiran_excluded: bool | None = None
     judul_maks_kata: int | None = None

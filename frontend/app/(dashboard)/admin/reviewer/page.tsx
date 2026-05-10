@@ -6,6 +6,8 @@ import {
   AdminModalShell,
   AdminPageHeader,
   AdminSurfaceCard,
+  PasswordInput,
+  SearchInput,
 } from "@/components/admin/shared"
 import {
   EditIcon,
@@ -174,9 +176,9 @@ function ReviewerModal({
             <Label htmlFor="password-reviewer" className="text-xs font-medium text-gray-600">
               Password Awal
             </Label>
-            <Input
+            <PasswordInput
               id="password-reviewer"
-              type="password"
+              name="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Minimal 8 karakter"
@@ -242,11 +244,23 @@ export default function ReviewerManagementPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
 
   const totalAktif = useMemo(
     () => reviewers.filter((reviewer) => reviewer.isActive).length,
     [reviewers]
   )
+
+  const filteredReviewers = useMemo(() => {
+    if (!searchQuery.trim()) return reviewers
+    const query = searchQuery.toLowerCase()
+    return reviewers.filter(
+      (reviewer) =>
+        reviewer.nama.toLowerCase().includes(query) ||
+        reviewer.email.toLowerCase().includes(query) ||
+        reviewer.fakultas.toLowerCase().includes(query)
+    )
+  }, [reviewers, searchQuery])
 
   const loadReviewerDependencies = useCallback(async () => {
     setIsLoading(true)
@@ -423,18 +437,32 @@ export default function ReviewerManagementPage() {
         </div>
 
         <AdminSurfaceCard className="mt-4">
-          <div className="border-b border-gray-100 px-5 py-4">
-            <h2 className="text-sm font-semibold text-gray-700">Daftar Reviewer</h2>
-            <p className="mt-0.5 text-xs text-[rgba(0,0,0,0.4)]">
-              Kelola dan pantau reviewer yang terdaftar
-            </p>
+          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-700">Daftar Reviewer</h2>
+              <p className="mt-0.5 text-xs text-[rgba(0,0,0,0.4)]">
+                Kelola dan pantau reviewer yang terdaftar
+              </p>
+            </div>
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Cari reviewer..."
+              className="w-64"
+            />
           </div>
 
           <div className="overflow-x-auto px-5 py-4">
             {isLoading ? (
               <div className="py-8 text-center text-sm text-gray-500">Memuat reviewer...</div>
-            ) : reviewers.length === 0 ? (
-              <div className="py-8 text-center text-sm text-gray-500">Belum ada reviewer.</div>
+            ) : filteredReviewers.length === 0 ? (
+              searchQuery.trim() ? (
+                <div className="py-8 text-center text-sm text-gray-500">
+                  Tidak ada reviewer yang cocok dengan "{searchQuery}"
+                </div>
+              ) : (
+                <div className="py-8 text-center text-sm text-gray-500">Belum ada reviewer.</div>
+              )
             ) : (
               <table className="w-full min-w-[920px] border-separate border-spacing-0">
                 <thead>
@@ -457,7 +485,7 @@ export default function ReviewerManagementPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {reviewers.map((reviewer) => (
+                  {filteredReviewers.map((reviewer) => (
                     <tr key={reviewer.id}>
                       <td className="border-b border-gray-50 py-4 pr-4">
                         <div className="flex items-center gap-4">

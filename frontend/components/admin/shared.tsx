@@ -1,6 +1,8 @@
 import type { ReactNode } from "react"
 import { CloseIcon } from "@/components/icons/public-icons"
 import { cn } from "@/lib/utils"
+export { SearchInput } from "./SearchInput"
+export { PasswordInput } from "./PasswordInput"
 
 export function AdminPageHeader({
   title,

@@ -2,6 +2,7 @@ import cookieParser from "cookie-parser"
 import cors from "cors"
 import express from "express"
 import { env } from "./config/env.js"
+import assignmentsRoutes from "./routes/assignments.routes.js"
 import authRoutes from "./routes/auth.routes.js"
 import facultyRoutes from "./routes/faculty.routes.js"
 import reviewPeriodRoutes from "./routes/review-period.routes.js"
@@ -14,7 +15,7 @@ const allowedOrigins = new Set(env.FRONTEND_URLS)
 app.use(
   cors({
     origin(origin, callback) {
-      // Browser requests carry an Origin header; health checks and server-to-server calls often do not.
+      // Request dari browser membawa header Origin; health check dan server-to-server biasanya tidak.
       if (!origin || allowedOrigins.has(origin)) {
         callback(null, true)
         return
@@ -43,6 +44,7 @@ app.get("/api/health", (_req, res) => {
   })
 })
 
+app.use("/api/assignments", assignmentsRoutes)
 app.use("/api/auth", authRoutes)
 app.use("/api/faculties", facultyRoutes)
 app.use("/api/review-periods", reviewPeriodRoutes)

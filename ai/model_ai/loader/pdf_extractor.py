@@ -7,6 +7,7 @@ Tujuan: Menyediakan data dasar dokumen dari PDF untuk pipeline ingest.
 """
 import json
 from pathlib import Path
+from typing import Optional
 
 import pymupdf4llm
 from langchain_text_splitters import MarkdownTextSplitter
@@ -36,8 +37,7 @@ PROJECT_DIR = APP_DIR.parent
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `get_page_chunks` sebagai bagian alur `pdf_extractor`.
 # ---------------------------------------------------------------------------
-def get_page_chunks() -> list[dict]:
-    pdf_path = PROJECT_DIR / "file.pdf"
+def get_page_chunks(pdf_path: Path) -> list[dict]:
     page_chunks_result = pymupdf4llm.to_markdown(str(pdf_path), page_chunks=True)
     if isinstance(page_chunks_result, str):
         raise TypeError(
@@ -50,17 +50,40 @@ def get_page_chunks() -> list[dict]:
 # Digunakan oleh: manage.py
 # Menjalankan fungsi `extract_chunks` sebagai bagian alur `pdf_extractor`.
 # ---------------------------------------------------------------------------
-def extract_chunks() -> tuple[int, Path]:
-    # Menentukan lokasi PDF sumber dan file output.
+def extract_chunks(
+    project_id: Optional[str] = None,
+    pdf_path: Optional[Path] = None,
+) -> tuple[int, Path]:
+    # Tentukan lokasi PDF sumber dan file output.
     # Blok ini menjadi titik awal dan titik akhir alur kerja extractor.
-    pdf_path = PROJECT_DIR / "file.pdf"
-    output_path = APP_DIR / "data" / "output_chunks.json"
-    markdown_output_path = APP_DIR / "data" / "output.md"
+
+    project_data_dir: Optional[Path] = None
+
+    # Tentukan path source PDF
+    if pdf_path:
+        source_pdf = pdf_path
+    elif project_id:
+        project_data_dir = APP_DIR / "data" / project_id
+        project_data_dir.mkdir(parents=True, exist_ok=True)
+        source_pdf = project_data_dir / "source.pdf"
+    else:
+        source_pdf = PROJECT_DIR / "file.pdf"
+
+    # Tentukan output paths
+    if project_id and project_data_dir:
+        output_path = project_data_dir / "output_chunks.json"
+        markdown_output_path = project_data_dir / "output.md"
+    else:
+        output_path = APP_DIR / "data" / "output_chunks.json"
+        markdown_output_path = APP_DIR / "data" / "output.md"
+
+    if not source_pdf.exists():
+        raise FileNotFoundError(f"File PDF tidak ditemukan: {source_pdf}")
 
     # Mengekstrak PDF ke markdown per halaman.
     # Output per halaman diperlukan oleh `build_sections()` agar kita bisa
     # mempertahankan informasi BAB dan nomor halaman saat masuk ke proses chunking.
-    page_chunks = get_page_chunks()
+    page_chunks = get_page_chunks(source_pdf)
 
     # Menyimpan hasil markdown mentah pada file terpisah agar mudah dibaca
     # dan berada di folder data yang sama dengan output JSON.

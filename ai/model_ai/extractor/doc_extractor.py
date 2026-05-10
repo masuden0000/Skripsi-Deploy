@@ -395,8 +395,8 @@ def extract_document_metadata() -> DocumentMetadata:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `save_to_supabase` sebagai bagian alur `doc_extractor`.
 # ---------------------------------------------------------------------------
-def save_to_supabase(metadata: DocumentMetadata) -> None:
-    source_doc = upsert_document_metadata(metadata)
+def save_to_supabase(metadata: DocumentMetadata, project_id: str | None = None) -> None:
+    source_doc = upsert_document_metadata(metadata, project_id)
     print(f"[extract] Supabase upsert: source_doc={source_doc}")
 
 
@@ -404,7 +404,7 @@ def save_to_supabase(metadata: DocumentMetadata) -> None:
 # Digunakan oleh: manage.py
 # Menjalankan fungsi `run_extraction` sebagai bagian alur `doc_extractor`.
 # ---------------------------------------------------------------------------
-def run_extraction() -> None:
+def run_extraction(project_id: str | None = None) -> None:
     metadata = extract_document_metadata()
     output_path = APP_DIR / "data" / "output.json"
     output_path.write_text(
@@ -412,4 +412,4 @@ def run_extraction() -> None:
         encoding="utf-8",
     )
     print(f"[extract] Output lokal: {output_path}")
-    save_to_supabase(metadata)
+    save_to_supabase(metadata, project_id)

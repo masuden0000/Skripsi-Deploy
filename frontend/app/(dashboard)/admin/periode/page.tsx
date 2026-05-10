@@ -23,28 +23,14 @@ import {
   formatTanggalDanWaktu,
   hasReviewPeriodBeenUpdated,
   isOngoingReviewPeriod,
-  type ReviewPeriod,
-  type ReviewPeriodFormData,
 } from "@/lib/review-periods"
-
-type ReviewPeriodApiResponse = {
-  data?: ReviewPeriod | ReviewPeriod[]
-  error?: string
-}
-
-async function readReviewPeriodResponse(response: Response) {
-  const text = await response.text()
-
-  if (!text) {
-    return {}
-  }
-
-  try {
-    return JSON.parse(text) as ReviewPeriodApiResponse
-  } catch {
-    return { error: "Respons server tidak valid." }
-  }
-}
+import {
+  getReviewPeriods,
+  createReviewPeriod,
+  updateReviewPeriod,
+  deleteReviewPeriod,
+} from "@/lib/api"
+import type { ReviewPeriod, ReviewPeriodFormData } from "@/lib/schemas"
 
 function PeriodeItem({
   periode,
@@ -363,26 +349,16 @@ export default function PeriodeReviewPage() {
     setIsLoading(true)
     setLoadError(null)
 
-    try {
-      const response = await fetch("/api/review-periods", {
-        method: "GET",
-        cache: "no-store",
-      })
-      const payload = await readReviewPeriodResponse(response)
+    const { data, error: fetchError } = await getReviewPeriods()
 
-      if (!response.ok) {
-        setLoadError(payload.error ?? "Gagal memuat data periode review.")
-        setPeriodes([])
-        return
-      }
-
-      setPeriodes(Array.isArray(payload.data) ? payload.data : [])
-    } catch {
-      setLoadError("Tidak bisa terhubung ke server.")
+    if (fetchError) {
+      setLoadError(fetchError)
       setPeriodes([])
-    } finally {
-      setIsLoading(false)
+    } else {
+      setPeriodes(data ?? [])
     }
+
+    setIsLoading(false)
   }, [])
 
   useEffect(() => {
@@ -428,33 +404,22 @@ export default function PeriodeReviewPage() {
     setIsSubmitting(true)
     setFormError(null)
 
-    try {
-      const isEditMode = Boolean(editingPeriode)
-      const response = await fetch(
-        isEditMode ? `/api/review-periods/${editingPeriode!.id}` : "/api/review-periods",
-        {
-          method: isEditMode ? "PUT" : "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        }
-      )
+    const isEditMode = Boolean(editingPeriode)
+    const apiCall = isEditMode
+      ? updateReviewPeriod(editingPeriode!.id, data)
+      : createReviewPeriod(data)
 
-      const payload = await readReviewPeriodResponse(response)
+    const { error: saveError } = await apiCall
 
-      if (!response.ok) {
-        setFormError(payload.error ?? "Gagal menyimpan periode review.")
-        return
-      }
-
-      await loadReviewPeriods()
-      handleCloseModal()
-    } catch {
-      setFormError("Tidak bisa terhubung ke server.")
-    } finally {
+    if (saveError) {
+      setFormError(saveError)
       setIsSubmitting(false)
+      return
     }
+
+    await loadReviewPeriods()
+    handleCloseModal()
+    setIsSubmitting(false)
   }
 
   function handleViewDetail(id: string) {
@@ -463,23 +428,16 @@ export default function PeriodeReviewPage() {
 
   async function handleDeletePeriode(id: string) {
     if (!window.confirm("Apakah Anda yakin ingin menghapus periode ini?")) return
-    
-    try {
-      const response = await fetch(`/api/review-periods/${id}`, {
-        method: "DELETE",
-      })
-      
-      if (!response.ok) {
-        const payload = await readReviewPeriodResponse(response)
-        alert(payload.error ?? "Gagal menghapus periode review.")
-        return
-      }
-      
-      await loadReviewPeriods()
-      alert("Periode review berhasil dihapus.")
-    } catch {
-      alert("Tidak bisa terhubung ke server.")
+
+    const { error: deleteError } = await deleteReviewPeriod(id)
+
+    if (deleteError) {
+      alert(deleteError)
+      return
     }
+
+    await loadReviewPeriods()
+    alert("Periode review berhasil dihapus.")
   }
 
   return (

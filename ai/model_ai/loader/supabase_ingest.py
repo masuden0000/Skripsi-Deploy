@@ -7,6 +7,7 @@ Tujuan: Menyimpan hasil preprocessing ke storage terpusat yang dipakai query RAG
 """
 import json
 from pathlib import Path
+from typing import Optional
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from pydantic import BaseModel
@@ -19,11 +20,6 @@ from model_ai.config import get_config
 # Blok konstanta `APP_DIR` untuk menyimpan konfigurasi/registry yang dipakai berulang.
 # ---------------------------------------------------------------------------
 APP_DIR = Path(__file__).resolve().parents[2]
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `CHUNKS_FILE` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
-CHUNKS_FILE = APP_DIR / "data" / "output_chunks.json"
 # ---------------------------------------------------------------------------
 # Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
 # Blok konstanta `CONFIG` untuk menyimpan konfigurasi/registry yang dipakai berulang.
@@ -44,6 +40,13 @@ EMBEDDING_DIMENSION = 768
 # Blok konstanta `BATCH_SIZE` untuk menyimpan konfigurasi/registry yang dipakai berulang.
 # ---------------------------------------------------------------------------
 BATCH_SIZE = 20
+
+
+def get_chunks_file(project_id: Optional[str] = None) -> Path:
+    """Get chunks file path based on project_id."""
+    if project_id:
+        return APP_DIR / "data" / project_id / "output_chunks.json"
+    return APP_DIR / "data" / "output_chunks.json"
 
 
 # ---------------------------------------------------------------------------
@@ -127,8 +130,7 @@ def batched(items: list[ChunkRecord], size: int) -> list[list[ChunkRecord]]:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `build_rows` sebagai bagian alur `supabase_ingest`.
 # ---------------------------------------------------------------------------
-def build_rows(chunks: list[ChunkRecord], embeddings: list[list[float]]) -> list[dict]:
-    source_file = CHUNKS_FILE.name
+def build_rows(chunks: list[ChunkRecord], embeddings: list[list[float]], source_file: str) -> list[dict]:
     rows: list[dict] = []
 
     for chunk, embedding in zip(chunks, embeddings, strict=True):
@@ -153,8 +155,9 @@ def build_rows(chunks: list[ChunkRecord], embeddings: list[list[float]]) -> list
 # Digunakan oleh: manage.py
 # Menjalankan fungsi `upsert_embeddings` sebagai bagian alur `supabase_ingest`.
 # ---------------------------------------------------------------------------
-def upsert_embeddings() -> int:
-    chunks = load_chunks(CHUNKS_FILE)
+def upsert_embeddings(project_id: Optional[str] = None) -> int:
+    chunks_file = get_chunks_file(project_id)
+    chunks = load_chunks(chunks_file)
     if not chunks:
         return 0
 
@@ -162,13 +165,14 @@ def upsert_embeddings() -> int:
     embedder = build_embedder()
 
     total_rows = 0
+    source_file = chunks_file.name
     for chunk_batch in batched(chunks, BATCH_SIZE):
         contents = [chunk.content for chunk in chunk_batch]
         embeddings = embedder.embed_documents(
             contents,
             output_dimensionality=EMBEDDING_DIMENSION,
         )
-        rows = build_rows(chunk_batch, embeddings)
+        rows = build_rows(chunk_batch, embeddings, source_file)
         client.table("document_chunks").upsert(
             rows,
             on_conflict="source_file,chunk_index",

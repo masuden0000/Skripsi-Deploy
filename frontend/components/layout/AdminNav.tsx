@@ -5,6 +5,18 @@ import { usePathname } from "next/navigation"
 
 const navItems = [
   {
+    label: "Kelola Fakultas",
+    href: "/admin/fakultas",
+    exact: false,
+    icon: (
+      <svg className="size-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 20h16" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 20V8l6-4 6 4v12" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h.01M15 12h.01M9 16h.01M15 16h.01" />
+      </svg>
+    ),
+  },
+  {
     label: "Kelola Reviewer",
     href: "/admin/reviewer",
     exact: false,
@@ -25,6 +37,29 @@ const navItems = [
       <svg className="size-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
         <rect x="3" y="4" width="18" height="18" rx="2" />
         <path strokeLinecap="round" d="M16 2v4M8 2v4M3 10h18" />
+      </svg>
+    ),
+  },
+  {
+    label: "Kelola Tugas",
+    href: "/admin/tugas",
+    exact: false,
+    icon: (
+      <svg className="size-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7Z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Buat Dokumen Proposal",
+    href: "/admin/proposal",
+    exact: false,
+    icon: (
+      <svg className="size-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="16" x2="8" y1="13" y2="13" />
+        <line x1="16" x2="8" y1="17" y2="17" />
       </svg>
     ),
   },

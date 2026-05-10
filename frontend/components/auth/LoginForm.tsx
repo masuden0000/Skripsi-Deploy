@@ -13,6 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { PasswordInput } from "@/components/admin/shared"
+import { login } from "@/lib/api"
+import type { AuthLoginInput } from "@/lib/schemas"
 
 const ROLES = [
   { value: "admin",    label: "Admin" },
@@ -31,31 +34,24 @@ export default function LoginForm() {
     setError("")
     const formData = new FormData(e.currentTarget)
 
+    const credentials: AuthLoginInput = {
+      email: formData.get("email") as string,
+      password: formData.get("password") as string,
+      role: role as "admin" | "reviewer",
+    }
+
     startTransition(async () => {
-      try {
-        const response = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            email: formData.get("email"),
-            password: formData.get("password"),
-            role,
-          }),
-        })
+      const { data, error: loginError } = await login(credentials)
 
-        const payload = await response.json().catch(() => null)
+      if (loginError) {
+        setError(loginError)
+        return
+      }
 
-        if (!response.ok) {
-          setError(payload?.error || "Login gagal. Coba lagi.")
-          return
-        }
-
-        window.location.assign(payload?.destination || "/login")
-      } catch {
-        setError("Backend tidak dapat dijangkau. Pastikan server Express berjalan.")
+      if (data?.destination) {
+        window.location.assign(data.destination)
+      } else {
+        window.location.assign("/login")
       }
     })
   }
@@ -155,24 +151,13 @@ export default function LoginForm() {
           >
             Password
           </Label>
-          <div className="relative">
-            <Image
-              src="/icon-lock.svg"
-              alt=""
-              width={20}
-              height={20}
-              aria-hidden
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
-            />
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="Masukkan password"
-              required
-              className="h-11 rounded-lg border-pkm-400 pl-10 text-sm placeholder:text-gray-400 focus-visible:ring-pkm-600"
-            />
-          </div>
+          <PasswordInput
+            id="password"
+            name="password"
+            placeholder="Masukkan password"
+            required
+            showLockIcon
+          />
         </div>
 
         {/* Error alert */}

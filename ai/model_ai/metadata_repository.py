@@ -105,16 +105,23 @@ def load_document_metadata(source_doc: str) -> DocumentMetadata:
 # Digunakan oleh: model_ai/extractor/doc_extractor.py
 # Upsert metadata hasil extract ke Supabase dan kembalikan source_doc yang dipakai.
 # ---------------------------------------------------------------------------
-def upsert_document_metadata(metadata: DocumentMetadata) -> str:
+def upsert_document_metadata(metadata: DocumentMetadata, project_id: str | None = None) -> str:
     payload = metadata.model_dump(exclude_none=True)
     source_doc = str(payload.get("source_document") or "").strip() or "unknown"
     client = build_metadata_supabase_client()
+
+    insert_data = {
+        "source_doc": source_doc,
+        "payload": payload,
+        "extracted_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    # Add project_id if provided (for multi-project isolation)
+    if project_id:
+        insert_data["project_id"] = project_id
+
     client.table("document_metadata").upsert(
-        {
-            "source_doc": source_doc,
-            "payload": payload,
-            "extracted_at": datetime.now(timezone.utc).isoformat(),
-        },
+        insert_data,
         on_conflict="source_doc",
     ).execute()
     return source_doc

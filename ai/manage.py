@@ -50,18 +50,18 @@ def ensure_supported_python() -> None:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `run_setup` sebagai bagian alur `manage`.
 # ---------------------------------------------------------------------------
-def run_setup(skip_ingest: bool = False) -> None:
+def run_setup(project_id: str | None = None, skip_ingest: bool = False) -> None:
     from model_ai.loader.pdf_extractor import extract_chunks
     from model_ai.loader.supabase_ingest import upsert_embeddings
 
-    total_chunks, output_path = extract_chunks()
+    total_chunks, output_path = extract_chunks(project_id=project_id)
     print(f"[setup] Berhasil membuat {total_chunks} chunk: {output_path}")
 
     if skip_ingest:
         print("[setup] Ingest ke Supabase dilewati.")
         return
 
-    total_rows = upsert_embeddings()
+    total_rows = upsert_embeddings(project_id=project_id)
     print(f"[setup] Berhasil upsert {total_rows} chunk ke Supabase.")
 
 
@@ -69,10 +69,10 @@ def run_setup(skip_ingest: bool = False) -> None:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `run_extract` sebagai bagian alur `manage`.
 # ---------------------------------------------------------------------------
-def run_extract() -> None:
+def run_extract(project_id: str | None = None) -> None:
     from model_ai.extractor.doc_extractor import run_extraction
 
-    run_extraction()
+    run_extraction(project_id)
 
 
 # ---------------------------------------------------------------------------
@@ -81,11 +81,11 @@ def run_extract() -> None:
 # ---------------------------------------------------------------------------
 def run_docx(
     doc_type: str,
-    source_doc: str,
+    project_id: str | None,
+    output_json: str,
     chunks_path: str,
     output_path: str,
-    use_llm_normalization: bool,
-) -> None:
+) -> str | None:
     if doc_type != "proposal":
         raise SystemExit(
             f"Tipe dokumen '{doc_type}' belum didukung. Gunakan '--type proposal'."
@@ -93,13 +93,23 @@ def run_docx(
 
     from model_ai.docx.generator import generate_proposal_docx
 
+    # Build project-specific paths if project_id is provided
+    output_json_path = resolve_ai_path(output_json)
+    chunks_path_resolved = resolve_ai_path(chunks_path)
+    output_path_resolved = resolve_ai_path(output_path)
+
+    if project_id:
+        output_json_path = AI_DIR / "data" / project_id / "output.json"
+        chunks_path_resolved = AI_DIR / "data" / project_id / "output_chunks.json"
+        output_path_resolved = AI_DIR / "data" / project_id / "proposal_output.docx"
+
     generated_path = generate_proposal_docx(
-        source_doc=source_doc,
-        chunks_path=resolve_ai_path(chunks_path),
-        output_path=resolve_ai_path(output_path),
-        use_llm_normalization=use_llm_normalization,
+        output_json_path=output_json_path,
+        chunks_path=chunks_path_resolved,
+        output_path=output_path_resolved,
     )
     print(f"[docx] Berhasil membuat dokumen: {generated_path}")
+    return str(generated_path)
 
 
 # ---------------------------------------------------------------------------
@@ -150,14 +160,22 @@ def main() -> None:
         help="Jalankan extractor/chunking lalu ingest ke Supabase.",
     )
     setup_parser.add_argument(
+        "--project-id",
+        help="Project ID untuk isolate output per-project.",
+    )
+    setup_parser.add_argument(
         "--skip-ingest",
         action="store_true",
         help="Hanya buat output_chunks.json tanpa mengirim embedding ke Supabase.",
     )
 
-    subparsers.add_parser(
+    extract_parser = subparsers.add_parser(
         "extract",
         help="Ekstrak metadata terstruktur dari chunks Supabase dan simpan ke document_metadata.",
+    )
+    extract_parser.add_argument(
+        "--project-id",
+        help="Project ID untuk isolate extraction per-project.",
     )
 
     schema_diff_parser = subparsers.add_parser(
@@ -175,7 +193,7 @@ def main() -> None:
 
     docx_parser = subparsers.add_parser(
         "docx",
-        help="Generate dokumen DOCX berdasarkan metadata document_metadata di Supabase.",
+        help="Generate dokumen DOCX berdasarkan output.json hasil ekstraksi.",
     )
     docx_parser.add_argument(
         "--type",
@@ -185,9 +203,13 @@ def main() -> None:
         help="Tipe dokumen yang akan digenerate.",
     )
     docx_parser.add_argument(
-        "--source-doc",
-        required=True,
-        help="Nama file PDF sumber yang dipakai sebagai selector document_metadata.",
+        "--project-id",
+        help="Project ID untuk isolate output per-project (default: gunakan path default).",
+    )
+    docx_parser.add_argument(
+        "--output-json",
+        default="data/output.json",
+        help="Path file output.json hasil ekstraksi (default: data/output.json).",
     )
     docx_parser.add_argument(
         "--chunks",
@@ -198,11 +220,6 @@ def main() -> None:
         "--output",
         default="data/proposal_template.docx",
         help="Path output DOCX (default: data/proposal_template.docx).",
-    )
-    docx_parser.add_argument(
-        "--no-llm-normalization",
-        action="store_true",
-        help="Nonaktifkan mapper LLM+embedding dan pakai translasi style deterministik.",
     )
 
     map_parser = subparsers.add_parser(
@@ -236,11 +253,11 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.command == "setup":
-        run_setup(skip_ingest=args.skip_ingest)
+        run_setup(project_id=getattr(args, "project_id", None), skip_ingest=args.skip_ingest)
         return
 
     if args.command == "extract":
-        run_extract()
+        run_extract(project_id=args.project_id)
         return
 
     if args.command == "schema-diff":
@@ -250,10 +267,10 @@ def main() -> None:
     if args.command == "docx":
         run_docx(
             doc_type=args.doc_type,
-            source_doc=args.source_doc,
+            project_id=args.project_id,
+            output_json=args.output_json,
             chunks_path=args.chunks,
             output_path=args.output,
-            use_llm_normalization=not args.no_llm_normalization,
         )
         return
 

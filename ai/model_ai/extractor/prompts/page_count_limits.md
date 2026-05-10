@@ -12,9 +12,12 @@ Ekstrak batas maksimum halaman untuk setiap jenis dokumen PKM dari konteks di at
 Jika tidak ditemukan, gunakan null.
 
 ## Output Fields
-- proposal_halaman_inti_maks: batas halaman inti untuk proposal (integer)
-- laporan_kemajuan_halaman_inti_maks: batas halaman inti untuk laporan kemajuan (integer)
-- laporan_akhir_halaman_inti_maks: batas halaman inti untuk laporan akhir (integer)
+- proposal_halaman_inti_maks: batas halaman inti proposal yang benar-benar disebut eksplisit di konteks (integer)
 - definisi_halaman_inti: rentang section yang dihitung sebagai halaman inti, dalam format "section_awal_to_section_akhir" (contoh: "bab_1_to_daftar_pustaka")
 - lampiran_excluded: true jika lampiran tidak dihitung dalam batas halaman inti (bool)
 - judul_maks_kata: jumlah maksimum kata pada judul proposal/laporan jika disebutkan (integer atau null)
+
+Catatan penting:
+- Jangan keluarkan field khusus `laporan_kemajuan_halaman_inti_maks`.
+- Jangan keluarkan field khusus `laporan_akhir_halaman_inti_maks`.
+- Jika konteks hanya memberi satu batas umum yang dipakai lintas dokumen, simpan hanya ke `proposal_halaman_inti_maks` bila memang konteks mengaitkannya ke proposal; selain itu biarkan null.

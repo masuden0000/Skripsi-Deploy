@@ -22,3 +22,20 @@ export async function GET(request: Request) {
   const responseText = await backendResponse.text()
   return buildResponse(backendResponse, responseText)
 }
+
+export async function POST(request: Request) {
+  const body = await request.text()
+
+  const backendResponse = await fetch(`${getBackendBaseUrl()}/api/faculties`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      cookie: request.headers.get("cookie") ?? "",
+    },
+    body,
+    cache: "no-store",
+  })
+
+  const responseText = await backendResponse.text()
+  return buildResponse(backendResponse, responseText)
+}

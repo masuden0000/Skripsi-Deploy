@@ -80,8 +80,6 @@ SAMPLE_PAYLOAD = {
         "lampiran_excluded": True,
         "definisi_halaman_inti": "Bab Pendahuluan_to_Daftar Pustaka",
         "proposal_halaman_inti_maks": 10,
-        "laporan_akhir_halaman_inti_maks": 10,
-        "laporan_kemajuan_halaman_inti_maks": 10,
     },
     "document_structure_proposal": {
         "sources": [],
@@ -187,6 +185,19 @@ class MetadataRepositoryTests(unittest.TestCase):
         self.assertEqual(metadata.source_document, "file.pdf")
         self.assertEqual(metadata.typography.font_family, "Times New Roman")
         self.assertEqual(metadata.page_layout.margin_left_cm, 4)
+
+    def test_coerce_document_metadata_defaults_heading_all_caps_to_true_when_missing(self):
+        payload = {
+            **SAMPLE_PAYLOAD,
+            "typography": {
+                **SAMPLE_PAYLOAD["typography"],
+            },
+        }
+        payload["typography"].pop("heading_all_caps")
+
+        metadata = coerce_document_metadata(payload)
+
+        self.assertTrue(metadata.typography.heading_all_caps)
 
 
 if __name__ == "__main__":

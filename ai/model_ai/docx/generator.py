@@ -32,6 +32,12 @@ def generate_proposal_docx(
     # metadata masih dibutuhkan oleh build_instructional_placeholder_map
     metadata = coerce_document_metadata(output_data)
 
+    # Override output filename dengan format_nama_file dari database jika ada
+    doc_structure = output_data.get("document_structure_proposal", {})
+    format_nama_file = doc_structure.get("format_nama_file")
+    if format_nama_file:
+        output_path = output_path.parent / f"{format_nama_file}.docx"
+
     chunks = load_chunk_sources(chunks_path)
     instructional_placeholders = build_instructional_placeholder_map(
         metadata=metadata,

@@ -119,7 +119,7 @@ class SpacingInfo(SpacingExtracted):
 # ---------------------------------------------------------------------------
 _VALID_SECTION_TYPES = frozenset({
     "daftar_isi", "daftar_gambar", "daftar_tabel", "daftar_lampiran",
-    "daftar_pustaka", "bab", "lampiran",
+    "daftar_pustaka", "bab", "sub_bab", "lampiran", "item_lampiran",
 })
 # ---------------------------------------------------------------------------
 # Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
@@ -132,6 +132,7 @@ _MAJOR_SECTION_TYPES = frozenset({
     "daftar_lampiran",
     "daftar_pustaka",
     "bab",
+    "sub_bab",
     "lampiran",
 })
 # ---------------------------------------------------------------------------
@@ -172,7 +173,9 @@ class SectionItem(BaseModel):
     type: str
     required: bool | None = None
     number: int | None = None
+    sub_number: str | None = None
     title: str | None = None
+    lampiran_number: str | None = None
     is_major_section: bool = False
 
     @model_validator(mode="before")
@@ -270,6 +273,24 @@ class FiguresTablesExtracted(BaseModel):
     caption_format_table: str | None = None
     source_required_if_not_own: bool | None = None
     max_width_constraint: str | None = None
+    budget_format_rules: "BudgetFormatRules | None" = None
+
+
+# ---------------------------------------------------------------------------
+# Budget Format Rules for extracting percentage-based budget constraints
+# ---------------------------------------------------------------------------
+class BudgetItem(BaseModel):
+    """Single budget item with percentage rules."""
+    jenis_pengeluaran: str
+    persentase_maksimum: float | None = None
+    contoh: str | None = None
+
+
+class BudgetFormatRules(BaseModel):
+    """Rules for budget table extraction from document chunks via LLM."""
+    budget_items: list[BudgetItem] = []
+    sumber_dana_options: list[str] = []
+    additional_rules: str | None = None
 
 
 # ---------------------------------------------------------------------------

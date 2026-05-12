@@ -14,6 +14,8 @@ function mapAssignmentRow(row, reviewerEmail) {
     reviewer: row.reviewer?.profiles?.full_name ?? "",
     reviewerEmail: reviewerEmail ?? "",
     period: row.period?.nama ?? "",
+    periodMulai: row.period?.tanggal_mulai ?? "",
+    periodSelesai: row.period?.tanggal_selesai ?? "",
     fakultasId: row.reviewer?.faculties?.id ?? "",
     fakultas: row.reviewer?.faculties?.name ?? "",
     fakultasKode: row.reviewer?.faculties?.code ?? "",
@@ -191,4 +193,83 @@ export async function deleteAssignment(id) {
   if (error) {
     throw new AppError(error.message || "Gagal menghapus tugas.", 500)
   }
+}
+
+// ============================================================================
+// Reviewer-specific queries
+// ============================================================================
+export async function getAssignmentsByReviewerId(reviewerId) {
+  const { data, error } = await adminClient
+    .from("assignments")
+    .select(`
+      id,
+      period_id,
+      reviewer_id,
+      proposal_link,
+      assessment_link,
+      is_completed,
+      created_at,
+      updated_at,
+      period:pkm_review_periods!inner(id, nama, tanggal_mulai, tanggal_selesai),
+      reviewer:reviewer_profiles!inner(
+        id,
+        profiles!inner(full_name),
+        faculties!inner(id, name, code)
+      )
+    `)
+    .eq("reviewer_id", reviewerId)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    throw new AppError("Gagal mengambil penugasan reviewer.", 500)
+  }
+
+  const rows = data ?? []
+  const emailById = await buildEmailMap([reviewerId])
+
+  return rows.map((row) => mapAssignmentRow(row, emailById.get(row.reviewer_id)))
+}
+
+export async function getActiveAssignmentsByReviewerId(reviewerId) {
+  // PostgREST doesn't support filtering on nested relations, so we:
+  // 1. Get all assignments for this reviewer
+  // 2. Filter in JS to only include active periods
+  const { data, error } = await adminClient
+    .from("assignments")
+    .select(`
+      id,
+      period_id,
+      reviewer_id,
+      proposal_link,
+      assessment_link,
+      is_completed,
+      created_at,
+      updated_at,
+      period:pkm_review_periods!inner(id, nama, tanggal_mulai, tanggal_selesai),
+      reviewer:reviewer_profiles!inner(
+        id,
+        profiles!inner(full_name),
+        faculties!inner(id, name, code)
+      )
+    `)
+    .eq("reviewer_id", reviewerId)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    throw new AppError("Gagal mengambil penugasan aktif.", 500)
+  }
+
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+  // Filter to only active periods (today is between tanggal_mulai and tanggal_selesai)
+  const activeRows = (data ?? []).filter((row) => {
+    const mulai = new Date(row.period.tanggal_mulai)
+    const selesai = new Date(row.period.tanggal_selesai)
+    return today >= mulai && today <= selesai
+  })
+
+  const emailById = await buildEmailMap([reviewerId])
+
+  return activeRows.map((row) => mapAssignmentRow(row, emailById.get(row.reviewer_id)))
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-const AI_BACKEND_URL = process.env.AI_BACKEND_URL || "http://127.0.0.1:8000"
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -18,7 +18,7 @@ function buildResponse(backendResponse: Response, responseText: string) {
 export async function GET(request: Request, context: RouteContext) {
   const { id } = await context.params
 
-  const backendResponse = await fetch(`${AI_BACKEND_URL}/api/projects/${id}`, {
+  const backendResponse = await fetch(`${BACKEND_URL}/api/projects/${id}`, {
     method: "GET",
     headers: {
       "content-type": "application/json",
@@ -33,7 +33,7 @@ export async function GET(request: Request, context: RouteContext) {
 export async function DELETE(request: Request, context: RouteContext) {
   const { id } = await context.params
 
-  const backendResponse = await fetch(`${AI_BACKEND_URL}/api/projects/${id}`, {
+  const backendResponse = await fetch(`${BACKEND_URL}/api/projects/${id}`, {
     method: "DELETE",
     headers: {
       "content-type": "application/json",

@@ -42,11 +42,29 @@ Susun `sections` dengan urutan munculnya section dalam dokumen.
 ## Format sections
 Setiap entry di `sections` adalah objek dengan fields berikut:
 - type: nama section — gunakan TEPAT salah satu dari nilai berikut (lowercase snake_case, BUKAN Title Case atau UPPERCASE):
-  `"daftar_isi"`, `"daftar_gambar"`, `"daftar_tabel"`, `"daftar_lampiran"`, `"bab"`, `"daftar_pustaka"`, `"lampiran"`
+  `"daftar_isi"`, `"daftar_gambar"`, `"daftar_tabel"`, `"daftar_lampiran"`, `"bab"`, `"sub_bab"`, `"daftar_pustaka"`, `"lampiran"`, `"item_lampiran"`
   **PENTING**: Jangan gunakan "Daftar Isi", "Daftar Gambar", "DAFTAR ISI", atau variasi lain. Gunakan TEPAT nilai di atas.
 - required: true jika wajib ada, false jika opsional — hanya untuk non-bab sections
 - number: nomor BAB (integer) — hanya untuk type "bab"
-- title: judul BAB dalam ALL CAPS (string) — hanya untuk type "bab"
+- sub_number: nomor sub-BAB seperti "4.1" (string) — hanya untuk type "sub_bab"
+- title: judul dalam ALL CAPS (string) — untuk type "bab", "sub_bab", dan "lampiran"
+- lampiran_number: nomor lampiran seperti "Lampiran 1" (string) — hanya untuk type "lampiran" atau "item_lampiran"
+
+## Aturan Sub-BAB
+- **WAJIB ekstrak SEMUA sub-BAB** yang disebutkan dalam dokumen sumber (misal: "4.1 Anggaran Biaya", "4.2 Jadwal Kegiatan")
+- Sub-BAB muncul setelah BAB atasannya dalam sections
+- Format: `{"type": "sub_bab", "sub_number": "4.1", "title": "ANGGARAN BIAYA"}`
+
+## Aturan LAMPIRAN
+- **WAJIB ekstrak SEMUA lampiran** yang disebutkan dalam dokumen sumber
+- Proposal PKM-KC WAJIB memiliki minimal 5 lampiran:
+  - Lampiran 1: Biodata Ketua dan Anggota, serta Dosen Pendamping
+  - Lampiran 2: Justifikasi Anggaran Kegiatan
+  - Lampiran 3: Susunan Tim Pengusul dan Pembagian Tugas
+  - Lampiran 4: Surat Pernyataan Ketua Tim Pengusul
+  - Lampiran 5: Gambaran Teknologi yang akan Dikembangkan
+- Jika dokumen sumber menyebutkan lampiran lain, WAJIB sertakan juga
+- Format item lampiran: `{"type": "item_lampiran", "lampiran_number": "Lampiran 1", "title": "BIODATA KETUA DAN ANGGOTA, SERTA DOSEN PENDAMPING"}`
 
 ## Aturan Kelengkapan BAB
 - **WAJIB sertakan SEMUA BAB** yang disebutkan dalam dokumen sumber. Jangan lewatkan satu pun BAB.
@@ -69,7 +87,14 @@ Contoh sections untuk proposal:
   {"type": "bab", "number": 2, "title": "TINJAUAN PUSTAKA"},
   {"type": "bab", "number": 3, "title": "TAHAP PELAKSANAAN"},
   {"type": "bab", "number": 4, "title": "BIAYA DAN JADWAL KEGIATAN"},
+  {"type": "sub_bab", "sub_number": "4.1", "title": "ANGGARAN BIAYA"},
+  {"type": "sub_bab", "sub_number": "4.2", "title": "JADWAL KEGIATAN"},
   {"type": "daftar_pustaka", "required": true},
-  {"type": "lampiran", "required": true}
+  {"type": "lampiran", "title": "LAMPIRAN"},
+  {"type": "item_lampiran", "lampiran_number": "Lampiran 1", "title": "BIODATA KETUA DAN ANGGOTA, SERTA DOSEN PENDAMPING"},
+  {"type": "item_lampiran", "lampiran_number": "Lampiran 2", "title": "JUSTIFIKASI ANGGARAN KEGIATAN"},
+  {"type": "item_lampiran", "lampiran_number": "Lampiran 3", "title": "SUSUNAN TIM PENGUSUL DAN PEMBAGIAN TUGAS"},
+  {"type": "item_lampiran", "lampiran_number": "Lampiran 4", "title": "SURAT PERNYATAAN KETUA TIM PENGUSUL"},
+  {"type": "item_lampiran", "lampiran_number": "Lampiran 5", "title": "GAMBARAN TEKNOLOGI YANG AKAN DIKEMBANGKAN"}
 ]
 ```

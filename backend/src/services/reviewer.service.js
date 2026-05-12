@@ -9,6 +9,7 @@ function mapReviewerRow(row, emailById) {
     email: emailById.get(row.id) ?? "",
     fakultasId: row.faculties?.id ?? "",
     fakultas: row.faculties?.name ?? "",
+    fakultasKode: row.faculties?.code ?? "",
     isActive: Boolean(row.is_active),
   }
 }

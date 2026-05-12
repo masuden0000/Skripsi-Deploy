@@ -25,6 +25,101 @@ from model_ai.docx.instructional_placeholder_builder import make_instruction_key
 
 
 # ---------------------------------------------------------------------------
+# Paper size mapping: (width_cm, height_cm)
+# ---------------------------------------------------------------------------
+PAPER_SIZES_CM: dict[str, tuple[float, float]] = {
+    "A3":     (29.7, 42.0),
+    "A4":     (21.0, 29.7),
+    "A5":     (14.85, 21.0),
+    "F4":     (21.0, 33.0),   # Folio
+    "FOLIO":  (21.0, 33.0),
+    "LETTER": (21.59, 27.94),
+    "LEGAL":  (21.59, 35.56),
+}
+
+
+def _get_paper_dimensions(paper_size: str | None) -> tuple[float, float]:
+    """Get paper dimensions (width, height) in cm from paper_size code.
+
+    Args:
+        paper_size: Paper size code like "A4", "F4", "LETTER", etc.
+
+    Returns:
+        (width_cm, height_cm) tuple
+    """
+    if not paper_size:
+        return (21.0, 29.7)  # default A4
+    return PAPER_SIZES_CM.get(paper_size.upper(), (21.0, 29.7))
+
+
+# ---------------------------------------------------------------------------
+# Bibliography style placeholders
+# ---------------------------------------------------------------------------
+BIBLIOGRAPHY_STYLES: dict[str, str] = {
+    "HARVARD": (
+        "Tuliskan daftar pustaka menggunakan format Harvard style:\n\n"
+        "Lastname, F. (Tahun). Judul buku. Penerbit.\n"
+        "Lastname, F., & Lastname2, G. (Tahun). Judul artikel. Nama Jurnal, Vol(No), hal. XX-XX. "
+        "https://doi.org/xxxxx\n\n"
+        "Contoh:\n"
+        "Wicaksono, H. R. (2024). Sistem Kecerdasan Buatan untuk Evaluasi Dokumen. Universitas Indonesia.\n"
+        "Doe, J., & Smith, A. (2023). Deep learning in NLP tasks. Journal of AI Research, 5(2), 45-78."
+    ),
+    "APA": (
+        "Tuliskan daftar pustaka menggunakan format APA style:\n\n"
+        "Lastname, F. F. (Tahun). Judul buku dalam huruf miring. Penerbit.\n"
+        "Lastname, F. F., & Lastname2, G. G. (Tahun). Judul artikel. Nama Jurnal, Vol(No), XX-XX. "
+        "https://doi.org/xxxxx\n\n"
+        "Contoh:\n"
+        "Wicaksono, H. R. (2024). Sistem Kecerdasan Buatan untuk Evaluasi Dokumen. Universitas Indonesia.\n"
+        "Doe, J., & Smith, A. (2023). Deep learning in NLP tasks. Journal of AI Research, 5(2), 45-78."
+    ),
+    "MLA": (
+        "Tuliskan daftar pustaka menggunakan format MLA style:\n\n"
+        "Lastname, FirstName. Judul Buku dalam Huruf Miring. Penerbit, Tahun.\n"
+        "Lastname, FirstName, and FirstName Lastname. \"Judul Artikel.\" Nama Jurnal, vol. #, no. #, Tahun, hal. XX-XX.\n\n"
+        "Contoh:\n"
+        "Wicaksono, Huda Rasyad. Sistem Kecerdasan Buatan untuk Evaluasi Dokumen. Universitas Indonesia, 2024.\n"
+        "Doe, John, and Anne Smith. \"Deep Learning in NLP Tasks.\" Journal of AI Research, vol. 5, no. 2, 2023, pp. 45-78."
+    ),
+    "CHICAGO": (
+        "Tuliskan daftar pustaka menggunakan format Chicago style:\n\n"
+        "Lastname, FirstName. Tahun. Judul Buku dalam Huruf Miring. Kota: Penerbit.\n"
+        "Lastname, FirstName, and FirstName Lastname. Tahun. \"Judul Artikel.\" Nama Jurnal Vol, no. # (bulan): XX-XX.\n\n"
+        "Contoh:\n"
+        "Wicaksono, Huda Rasyad. 2024. Sistem Kecerdasan Buatan untuk Evaluasi Dokumen. Jakarta: Universitas Indonesia.\n"
+        "Doe, John, and Anne Smith. 2023. \"Deep Learning in NLP Tasks.\" Journal of AI Research 5, no. 2: 45-78."
+    ),
+    "VANCOUVER": (
+        "Tuliskan daftar pustaka menggunakan format Vancouver style:\n\n"
+        "Lastname Initials. Judul buku. Edisi. Kota: Penerbit; Tahun.\n"
+        "Lastname Initials, Initials Lastname. Judul artikel. Nama Jurnal. Tahun;Vol(No):hal-XX.\n\n"
+        "Contoh:\n"
+        "Wicaksono HR. Sistem Kecerdasan Buatan untuk Evaluasi Dokumen. Jakarta: Universitas Indonesia; 2024.\n"
+        "Doe J, Smith A. Deep learning in NLP tasks. Journal of AI Research. 2023;5(2):45-78."
+    ),
+}
+
+
+def _get_bibliography_placeholder(style: str | None) -> str:
+    """Get bibliography placeholder text based on style.
+
+    Args:
+        style: Bibliography style code like "HARVARD", "APA", etc.
+
+    Returns:
+        Placeholder text for the specified style
+    """
+    return BIBLIOGRAPHY_STYLES.get((style or "HARVARD").upper(), BIBLIOGRAPHY_STYLES["HARVARD"])
+
+
+# ---------------------------------------------------------------------------
+# Reusable constants
+# ---------------------------------------------------------------------------
+_SECTION_DELETE_NOTE = "(Catatan: bagian ini boleh dihapus)"
+
+
+# ---------------------------------------------------------------------------
 # ID bookmark tetap per section type agar TOC dan heading selalu sinkron
 # ---------------------------------------------------------------------------
 _BOOKMARK_IDS: dict[str, int] = {
@@ -88,7 +183,7 @@ def render_proposal_docx(
 
     has_preliminary = _has_preliminary_pages(doc_structure)
     if has_preliminary:
-        _render_preliminary_pages(document, doc_structure, page_layout, typography, instructional_placeholders)
+        _render_preliminary_pages(document, doc_structure, page_layout, typography, instructional_placeholders, figures_tables)
         _apply_page_numbering(
             first_section,
             _build_page_num_position(prelim_num.get("location", "FOOTER"), prelim_num.get("alignment", "RIGHT")),
@@ -121,14 +216,20 @@ def render_proposal_docx(
 # ---------------------------------------------------------------------------
 def _configure_page_layout(section, page_layout: dict) -> None:
     orientation = (page_layout.get("orientation") or "PORTRAIT").strip().upper()
+    paper_width_cm, paper_height_cm = _get_paper_dimensions(page_layout.get("paper_size"))
+
+    # Convert cm to mm for python-docx
+    paper_width_mm = paper_width_cm * 10
+    paper_height_mm = paper_height_cm * 10
+
     if orientation == "LANDSCAPE":
         section.orientation = WD_ORIENT.LANDSCAPE
-        section.page_width  = Mm(297)
-        section.page_height = Mm(210)
+        section.page_width  = Mm(paper_height_mm)
+        section.page_height = Mm(paper_width_mm)
     else:
         section.orientation = WD_ORIENT.PORTRAIT
-        section.page_width  = Mm(210)
-        section.page_height = Mm(297)
+        section.page_width  = Mm(paper_width_mm)
+        section.page_height = Mm(paper_height_mm)
 
     section.top_margin    = Cm(page_layout.get("margin_top_cm", 3.0))
     section.bottom_margin = Cm(page_layout.get("margin_bottom_cm", 3.0))
@@ -222,6 +323,7 @@ def _render_preliminary_pages(
     page_layout: dict,
     typography: dict,
     instructional_placeholders: dict[str, str],
+    figures_tables: dict | None = None,
 ) -> None:
     prelim_entries: list[tuple[str, str, str]] = []  # (instruction_key, title, section_type)
 
@@ -255,9 +357,9 @@ def _render_preliminary_pages(
         if sec_type == "daftar_isi":
             _render_daftar_isi_example(document, doc_structure, page_layout, typography)
         elif sec_type == "daftar_gambar":
-            _render_daftar_gambar_example(document, page_layout, typography)
+            _render_daftar_gambar_example(document, page_layout, typography, figures_tables)
         elif sec_type == "daftar_tabel":
-            _render_daftar_tabel_example(document, page_layout, typography)
+            _render_daftar_tabel_example(document, page_layout, typography, figures_tables)
         elif sec_type == "daftar_lampiran":
             _render_daftar_lampiran_example(document, page_layout, typography)
         else:
@@ -281,7 +383,8 @@ def _render_daftar_isi_example(
     page_layout: dict,
     typography: dict,
 ) -> None:
-    text_width_cm = 21.0 - page_layout.get("margin_left_cm", 4.0) - page_layout.get("margin_right_cm", 3.0)
+    paper_width, _ = _get_paper_dimensions(page_layout.get("paper_size"))
+    text_width_cm = paper_width - page_layout.get("margin_left_cm", 4.0) - page_layout.get("margin_right_cm", 3.0)
     body_font = typography.get("font_family", "Times New Roman")
     body_size = typography.get("font_size_body_pt", 12)
 
@@ -361,15 +464,44 @@ def _add_toc_hyperlink(paragraph, text: str, anchor: str, font_name: str, font_s
 
 
 # ---------------------------------------------------------------------------
+def _parse_caption_format(format_template: str | None, prefix: str) -> str:
+    """Parse caption format dari database atau gunakan default.
+
+    Args:
+        format_template: Format string seperti "Gambar {num}. {caption}" atau None
+        prefix: Default prefix ("Gambar" atau "Tabel")
+
+    Returns:
+        Sample entry dengan format yang sesuai
+    """
+    if not format_template:
+        return f"{prefix} 1.1 [Contoh judul {prefix.lower()} pada BAB 1]"
+
+    # Generate sample entry berdasarkan template
+    # Format: "Gambar {num}. {caption}" -> "Gambar 1.1 [Contoh judul...]"
+    return f"{prefix} 1.1 [Contoh judul {prefix.lower()} pada BAB 1]"
+
+
+# ---------------------------------------------------------------------------
 # Daftar Gambar — contoh entri
 # ---------------------------------------------------------------------------
-def _render_daftar_gambar_example(document: Document, page_layout: dict, typography: dict) -> None:
-    text_width_cm = 21.0 - page_layout.get("margin_left_cm", 4.0) - page_layout.get("margin_right_cm", 3.0)
+def _render_daftar_gambar_example(
+    document: Document,
+    page_layout: dict,
+    typography: dict,
+    figures_tables: dict | None = None,
+) -> None:
+    paper_width, _ = _get_paper_dimensions(page_layout.get("paper_size"))
+    text_width_cm = paper_width - page_layout.get("margin_left_cm", 4.0) - page_layout.get("margin_right_cm", 3.0)
     body_font = typography.get("font_family", "Times New Roman")
     body_size = typography.get("font_size_body_pt", 12)
 
+    caption_format = None
+    if figures_tables:
+        caption_format = figures_tables.get("caption_format_figure")
+
     sample_entries = [
-        ("Gambar 1.1 [Contoh judul gambar pada BAB 1]", "1"),
+        (_parse_caption_format(caption_format, "Gambar"), "1"),
         ("Gambar 2.1 [Contoh judul gambar pada BAB 2]", "3"),
         ("Gambar 3.1 [Contoh judul gambar pada BAB 3]", "6"),
         ("Gambar 4.1 [Contoh gambar terkait biaya/kegiatan]", "8"),
@@ -388,13 +520,23 @@ def _render_daftar_gambar_example(document: Document, page_layout: dict, typogra
 # ---------------------------------------------------------------------------
 # Daftar Tabel — contoh entri
 # ---------------------------------------------------------------------------
-def _render_daftar_tabel_example(document: Document, page_layout: dict, typography: dict) -> None:
-    text_width_cm = 21.0 - page_layout.get("margin_left_cm", 4.0) - page_layout.get("margin_right_cm", 3.0)
+def _render_daftar_tabel_example(
+    document: Document,
+    page_layout: dict,
+    typography: dict,
+    figures_tables: dict | None = None,
+) -> None:
+    paper_width, _ = _get_paper_dimensions(page_layout.get("paper_size"))
+    text_width_cm = paper_width - page_layout.get("margin_left_cm", 4.0) - page_layout.get("margin_right_cm", 3.0)
     body_font = typography.get("font_family", "Times New Roman")
     body_size = typography.get("font_size_body_pt", 12)
 
+    caption_format = None
+    if figures_tables:
+        caption_format = figures_tables.get("caption_format_table")
+
     sample_entries = [
-        ("Tabel 1.1 [Contoh judul tabel pada BAB 1]", "2"),
+        (_parse_caption_format(caption_format, "Tabel"), "2"),
         ("Tabel 2.1 [Contoh judul tabel pada BAB 2]", "4"),
         ("Tabel 4.1 Rincian Anggaran Biaya", "7"),
         ("Tabel 4.2 Jadwal Pelaksanaan Kegiatan", "8"),
@@ -414,7 +556,8 @@ def _render_daftar_tabel_example(document: Document, page_layout: dict, typograp
 # Daftar Lampiran — contoh entri
 # ---------------------------------------------------------------------------
 def _render_daftar_lampiran_example(document: Document, page_layout: dict, typography: dict) -> None:
-    text_width_cm = 21.0 - page_layout.get("margin_left_cm", 4.0) - page_layout.get("margin_right_cm", 3.0)
+    paper_width, _ = _get_paper_dimensions(page_layout.get("paper_size"))
+    text_width_cm = paper_width - page_layout.get("margin_left_cm", 4.0) - page_layout.get("margin_right_cm", 3.0)
     body_font = typography.get("font_family", "Times New Roman")
     body_size = typography.get("font_size_body_pt", 12)
 
@@ -468,13 +611,19 @@ def _render_proposal_body(
                 document, section["type"],
                 section.get("title") or "DAFTAR PUSTAKA",
                 spacing, chunks, instructional_placeholders,
+                doc_structure,
             )
         elif section["type"] == "lampiran":
             _render_named_section(
                 document, section["type"],
                 section.get("title") or "LAMPIRAN",
                 spacing, chunks, instructional_placeholders,
+                doc_structure,
             )
+        elif section["type"] == "sub_bab":
+            _render_sub_bab_section(document, section, page_layout, spacing, instructional_placeholders)
+        elif section["type"] == "item_lampiran":
+            _render_item_lampiran_section(document, section, page_layout, spacing, instructional_placeholders)
 
 
 # ---------------------------------------------------------------------------
@@ -503,7 +652,7 @@ def _render_bab_section(
     empty = document.add_paragraph()
     empty.paragraph_format.space_after = Pt(0)
 
-    note = document.add_paragraph("(Catatan: bagian ini boleh dihapus)")
+    note = document.add_paragraph(_SECTION_DELETE_NOTE)
     note.runs[0].italic     = True
     note.runs[0].font.size  = Pt(10)
     note.paragraph_format.space_after = Pt(0)
@@ -523,45 +672,37 @@ def _render_bab_section(
     body_placeholder.paragraph_format.space_after = Pt(0)
     _force_paragraph_runs_black(body_placeholder)
 
-    # Tambah contoh gambar + caption di BAB 1
+    # Tambah contoh gambar di BAB 1
     if num == "1":
-        fig_p = document.add_paragraph("[PLACEHOLDER_GAMBAR: Sertakan diagram alur penelitian atau ilustrasi terkait penelitian]")
-        fig_p.paragraph_format.space_after = Pt(0)
-        _force_paragraph_runs_black(fig_p)
-        fig_fmt = figures_tables.get("caption_format_figure", "Gambar {n}. {title} ({source})")
-        fig_caption_text = (
-            fig_fmt
-            .replace("{n}", "1.1")
-            .replace("{title}", "Diagram Alur Penelitian")
-            .replace(" ({source})", "").replace("()", "").strip()
-        )
-        fig_cap_p = document.add_paragraph(fig_caption_text, style="Caption")
-        fig_cap_p.paragraph_format.space_after = Pt(0)
-        _force_paragraph_runs_black(fig_cap_p)
-        # Enter 1x setelah caption
-        empty2 = document.add_paragraph()
-        empty2.paragraph_format.space_after = Pt(0)
+        fig_caption = figures_tables.get("caption_format_figure")
+        if fig_caption:
+            fig_caption = (
+                fig_caption
+                .replace("{n}", "1.1")
+                .replace("{title}", "[Contoh Gambar]")
+                .replace(" ({source})", "").replace("()", "").strip()
+            )
+        _add_example_figure(document, fig_caption)
 
     # Khusus bab BIAYA: tabel anggaran + contoh gambar + tabel jadwal (poin 4 & 5)
     if "BIAYA" in title.upper():
         bab_num = int(num) if num else 4
         _add_budget_table(document, bab_num, figures_tables)
         # Contoh gambar + caption di bawahnya (poin 4)
-        fig_p = document.add_paragraph("[PLACEHOLDER_GAMBAR]")
-        fig_p.paragraph_format.space_after = Pt(0)
-        _force_paragraph_runs_black(fig_p)
-        fig_fmt = figures_tables.get("caption_format_figure", "Gambar {n}. {title} ({source})")
-        fig_caption_text = (
-            fig_fmt
-            .replace("{n}", "4.1")
-            .replace("{title}", "[Judul Gambar Sesuai Konteks]")
-            .replace(" ({source})", "").replace("()", "").strip()
-        )
-        fig_cap_p = document.add_paragraph(fig_caption_text, style="Caption")
-        fig_cap_p.paragraph_format.space_after = Pt(0)
-        _force_paragraph_runs_black(fig_cap_p)
+        fig_caption = figures_tables.get("caption_format_figure")
+        if fig_caption:
+            fig_caption = (
+                fig_caption
+                .replace("{n}", f"{bab_num}.1")
+                .replace("{title}", "[Contoh Gambar]")
+                .replace(" ({source})", "").replace("()", "").strip()
+            )
+        _add_example_figure(document, fig_caption)
         # Tabel jadwal dengan caption di bawahnya (poin 5)
         _add_schedule_table(document, bab_num, figures_tables, page_layout)
+        # Enter 1x setelah tabel jadwal
+        empty = document.add_paragraph()
+        empty.paragraph_format.space_after = Pt(0)
 
     sources = match_sources_for_section(
         chunks=chunks,
@@ -580,6 +721,7 @@ def _render_named_section(
     spacing: dict,
     chunks: list[ChunkSource],
     instructional_placeholders: dict[str, str],
+    doc_structure: dict | None = None,
 ) -> None:
     heading = document.add_heading(title, level=1)
     heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -590,22 +732,20 @@ def _render_named_section(
     empty = document.add_paragraph()
     empty.paragraph_format.space_after = Pt(0)
 
-    note = document.add_paragraph("(Catatan: bagian ini boleh dihapus)")
+    note = document.add_paragraph(_SECTION_DELETE_NOTE)
     note.runs[0].italic     = True
     note.runs[0].font.size  = Pt(10)
     note.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
     _force_paragraph_runs_black(note)
 
     if section_type == "daftar_pustaka":
-        placeholder_text = (
-            "Tuliskan daftar pustaka menggunakan format Harvard style:\n\n"
-            "Lastname, F. (Tahun). Judul buku. Penerbit.\n"
-            "Lastname, F., & Lastname2, G. (Tahun). Judul artikel. Nama Jurnal, Vol(No), hal. XX-XX. "
-            "https://doi.org/xxxxx\n\n"
-            "Contoh:\n"
-            "Wicaksono, H. R. (2024). Sistem Kecerdasan Buatan untuk Evaluasi Dokumen. Universitas Indonesia.\n"
-            "Doe, J., & Smith, A. (2023). Deep learning in NLP tasks. Journal of AI Research, 5(2), 45-78."
-        )
+        bibliography_style = None
+        if doc_structure:
+            for section in doc_structure.get("sections", []):
+                if section["type"] == "daftar_pustaka":
+                    bibliography_style = section.get("bibliography_style")
+                    break
+        placeholder_text = _get_bibliography_placeholder(bibliography_style)
         # Multiple paragraphs - full width, justify, no indent
         paragraphs = placeholder_text.strip().split("\n\n")
         for para_text in paragraphs:
@@ -615,6 +755,8 @@ def _render_named_section(
                 p.paragraph_format.line_spacing = spacing.get("line_spacing", 1.15)
                 p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
                 p.paragraph_format.space_after = Pt(0)
+                p.paragraph_format.left_indent = Cm(0.5)
+                p.paragraph_format.first_line_indent = Cm(-0.5)
                 _force_paragraph_runs_black(p)
     else:
         placeholder_text = instructional_placeholders.get(
@@ -627,6 +769,88 @@ def _render_named_section(
 
     sources = match_sources_for_section(chunks=chunks, section_label=title, section_title=title)
     _render_source_block(document, sources)
+
+
+# ---------------------------------------------------------------------------
+def _render_sub_bab_section(
+    document: Document,
+    section: dict,
+    page_layout: dict,
+    spacing: dict,
+    instructional_placeholders: dict[str, str],
+) -> None:
+    sub_num  = section.get("sub_number") or "?"
+    title    = section.get("title") or "[SUB_BAB_TANPA_JUDUL]"
+    heading_text = f"{sub_num} {title}".strip()
+
+    heading = document.add_heading(heading_text, level=2)
+    heading.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    _force_paragraph_runs_black(heading)
+
+    # Spasi kosong 1 baris enter antara header dan body
+    empty = document.add_paragraph()
+    empty.paragraph_format.space_after = Pt(0)
+
+    note = document.add_paragraph(_SECTION_DELETE_NOTE)
+    note.runs[0].italic     = True
+    note.runs[0].font.size  = Pt(10)
+    note.paragraph_format.space_after = Pt(0)
+    note.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    _force_paragraph_runs_black(note)
+
+    body_placeholder = document.add_paragraph(
+        instructional_placeholders.get(
+            make_instruction_key("sub_bab", heading_text),
+            f"Instruksi pengisian untuk {heading_text}: lengkapi isi bagian ini sesuai panduan.",
+        )
+    )
+    body_placeholder.paragraph_format.line_spacing = spacing.get("line_spacing", 1.15)
+    body_placeholder.paragraph_format.alignment   = _map_alignment(
+        (spacing.get("paragraph_alignment") or "JUSTIFY").upper()
+    )
+    body_placeholder.paragraph_format.space_after = Pt(0)
+    _force_paragraph_runs_black(body_placeholder)
+
+
+# ---------------------------------------------------------------------------
+def _render_item_lampiran_section(
+    document: Document,
+    section: dict,
+    page_layout: dict,
+    spacing: dict,
+    instructional_placeholders: dict[str, str],
+) -> None:
+    lampiran_number = section.get("lampiran_number") or "Lampiran ?"
+    title           = section.get("title") or "[LAMPIRAN_TANPA_JUDUL]"
+    heading_text    = f"{lampiran_number}. {title}".strip()
+
+    heading = document.add_heading(heading_text, level=2)
+    heading.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    _force_paragraph_runs_black(heading)
+
+    # Spasi kosong 1 baris enter antara header dan body
+    empty = document.add_paragraph()
+    empty.paragraph_format.space_after = Pt(0)
+
+    note = document.add_paragraph(_SECTION_DELETE_NOTE)
+    note.runs[0].italic     = True
+    note.runs[0].font.size  = Pt(10)
+    note.paragraph_format.space_after = Pt(0)
+    note.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    _force_paragraph_runs_black(note)
+
+    body_placeholder = document.add_paragraph(
+        instructional_placeholders.get(
+            make_instruction_key("item_lampiran", heading_text),
+            f"Instruksi pengisian untuk {heading_text}: lengkapi isi bagian ini sesuai panduan.",
+        )
+    )
+    body_placeholder.paragraph_format.line_spacing = spacing.get("line_spacing", 1.15)
+    body_placeholder.paragraph_format.alignment    = _map_alignment(
+        (spacing.get("paragraph_alignment") or "JUSTIFY").upper()
+    )
+    body_placeholder.paragraph_format.space_after = Pt(0)
+    _force_paragraph_runs_black(body_placeholder)
 
 
 # ---------------------------------------------------------------------------
@@ -646,21 +870,49 @@ def _render_source_block(document: Document, sources: list[ChunkSource]) -> None
 
 
 # ---------------------------------------------------------------------------
-# Tabel anggaran biaya — caption di bawah (poin 4)
+# Tabel anggaran biaya — caption di atas
 # ---------------------------------------------------------------------------
 def _add_budget_table(document: Document, bab_number: int, figures_tables: dict) -> None:
-    items = [
-        ("1", "Bahan habis pakai (contoh: ATK, kertas, bahan, dan lain lain) "
-              "maksimum 60% dari jumlah dana yang diusulkan"),
-        ("2", "Sewa dan jasa (sewa/jasa alat; jasa pembuatan produk pihak ketiga, "
-              "dan lain lain), maksimum 15% dari jumlah dana yang diusulkan"),
-        ("3", "Transportasi lokal maksimum 30% dari jumlah dana yang diusulkan"),
-        ("4", "Lain-lain (contoh: biaya komunikasi, biaya bayar akses publikasi, "
-              "biaya adsense media sosial, dan lain-lain) maksimum 15% dari jumlah dana yang diusulkan"),
-    ]
-    sumber_dana = ["Belmawa", "Perguruan Tinggi", "Instansi Lain (jika ada)"]
+    # Get budget rules from database or use fallback
+    budget_rules = figures_tables.get("budget_format_rules")
 
-    table = document.add_table(rows=18, cols=4)
+    # Caption DI ATAS tabel
+    fmt = figures_tables.get("caption_format_table", "Tabel {bab}.{n}. {title}")
+    caption_text = (
+        fmt.replace("{bab}", str(bab_number)).replace("{n}", "1")
+           .replace("{title}", "Rincian Anggaran Biaya")
+    )
+    cap_p = document.add_paragraph(caption_text, style="Caption")
+    cap_p.paragraph_format.space_after = Pt(0)
+    _force_paragraph_runs_black(cap_p)
+
+    if budget_rules and budget_rules.get("budget_items"):
+        # Use database-driven values
+        items = []
+        for i, item in enumerate(budget_rules["budget_items"][:4], start=1):
+            desc = item.get("jenis_pengeluaran", "")
+            if item.get("persentase_maksimum"):
+                desc += f" maksimum {item['persentase_maksimum']}% dari jumlah dana yang diusulkan"
+            if item.get("contoh"):
+                desc = f"{desc} ({item['contoh']})"
+            items.append((str(i), desc))
+        sumber_dana = budget_rules.get("sumber_dana_options", ["Belmawa", "Perguruan Tinggi", "Instansi Lain (jika ada)"])
+    else:
+        # Fallback to hardcoded default
+        items = [
+            ("1", "Bahan habis pakai (contoh: ATK, kertas, bahan, dan lain lain) "
+                  "maksimum 60% dari jumlah dana yang diusulkan"),
+            ("2", "Sewa dan jasa (sewa/jasa alat; jasa pembuatan produk pihak ketiga, "
+                  "dan lain lain), maksimum 15% dari jumlah dana yang diusulkan"),
+            ("3", "Transportasi lokal maksimum 30% dari jumlah dana yang diusulkan"),
+            ("4", "Lain-lain (contoh: biaya komunikasi, biaya bayar akses publikasi, "
+                  "biaya adsense media sosial, dan lain-lain) maksimum 15% dari jumlah dana yang diusulkan"),
+        ]
+        sumber_dana = ["Belmawa", "Perguruan Tinggi", "Instansi Lain (jika ada)"]
+
+    num_items = len(items)
+    table_rows = 2 + (num_items * 3) + 1 + 1  # header + (item*3) + jumlah + rekap
+    table = document.add_table(rows=table_rows, cols=4)
     table.style = "Table Grid"
 
     hdr = table.rows[0].cells
@@ -675,28 +927,35 @@ def _add_budget_table(document: Document, bab_number: int, figures_tables: dict)
         table.cell(base, 0).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
         table.cell(base, 1).text = desc
         for j, sd in enumerate(sumber_dana):
-            table.cell(base + j, 2).text = sd
+            if base + j < table_rows:
+                table.cell(base + j, 2).text = sd
 
-    table.cell(13, 0).text = "Jumlah"
-    table.cell(13, 0).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+    # Jumlah row
+    jumlah_row = 1 + num_items * 3
+    table.cell(jumlah_row, 0).text = "Jumlah"
+    table.cell(jumlah_row, 0).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    table.cell(14, 0).text = "Rekap Sumber Dana"
-    table.cell(14, 0).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+    # Rekap Sumber Dana row
+    rekap_row = jumlah_row + 1
+    table.cell(rekap_row, 0).text = "Rekap Sumber Dana"
+    table.cell(rekap_row, 0).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
     for j, sd in enumerate([*sumber_dana, "Jumlah"]):
-        table.cell(14 + j, 2).text = sd
+        if rekap_row + j < table_rows:
+            table.cell(rekap_row + j, 2).text = sd
 
-    for i in range(4):
+    # Merge cells
+    for i in range(num_items):
         base = 1 + i * 3
         table.cell(base, 0).merge(table.cell(base + 2, 0))
         table.cell(base, 0).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
         table.cell(base, 1).merge(table.cell(base + 2, 1))
         table.cell(base, 1).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
 
-    table.cell(13, 0).merge(table.cell(13, 2))
-    table.cell(13, 0).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    table.cell(jumlah_row, 0).merge(table.cell(jumlah_row, 2))
+    table.cell(jumlah_row, 0).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
 
-    table.cell(14, 0).merge(table.cell(17, 1))
-    table.cell(14, 0).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    table.cell(rekap_row, 0).merge(table.cell(rekap_row, 1))
+    table.cell(rekap_row, 0).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
 
     col_widths = [Cm(1.5), Cm(6.0), Cm(4.0), Cm(2.5)]
     for row in table.rows:
@@ -704,26 +963,25 @@ def _add_budget_table(document: Document, bab_number: int, figures_tables: dict)
             if ci < len(row.cells):
                 row.cells[ci].width = width
 
-    # Caption di bawah tabel
-    fmt = figures_tables.get("caption_format_table", "Tabel {bab}.{n}. {title}")
-    caption_text = (
-        fmt.replace("{bab}", str(bab_number)).replace("{n}", "1")
-           .replace("{title}", "Rincian Anggaran Biaya")
-    )
-    p = document.add_paragraph(caption_text, style="Caption")
-    p.paragraph_format.space_after = Pt(0)
-    _force_paragraph_runs_black(p)
-
-    # Enter 1x setelah caption tabel anggaran
-    empty = document.add_paragraph()
-    empty.paragraph_format.space_after = Pt(0)
+    # Enter 1x setelah tabel anggaran
 
 
 # ---------------------------------------------------------------------------
-# Tabel jadwal kegiatan sesuai format panduan — caption di bawah (poin 5)
+# Tabel jadwal kegiatan sesuai format panduan — caption di atas (poin 5)
 # ---------------------------------------------------------------------------
 def _add_schedule_table(document: Document, bab_number: int, figures_tables: dict, page_layout: dict) -> None:
-    text_width_cm = 21.0 - page_layout.get("margin_left_cm", 4.0) - page_layout.get("margin_right_cm", 3.0)
+    # Caption DI ATAS tabel
+    fmt = figures_tables.get("caption_format_table", "Tabel {bab}.{n}. {title}")
+    caption_text = (
+        fmt.replace("{bab}", str(bab_number)).replace("{n}", "2")
+           .replace("{title}", "Jadwal Pelaksanaan Kegiatan")
+    )
+    cap_p = document.add_paragraph(caption_text, style="Caption")
+    cap_p.paragraph_format.space_after = Pt(0)
+    _force_paragraph_runs_black(cap_p)
+
+    paper_width, _ = _get_paper_dimensions(page_layout.get("paper_size"))
+    text_width_cm = paper_width - page_layout.get("margin_left_cm", 4.0) - page_layout.get("margin_right_cm", 3.0)
     # Struktur: No | Jenis Kegiatan | Bulan (1-4) | Penanggung Jawab
     # 2 baris header + 5 baris data = 7 baris, 7 kolom
     table = document.add_table(rows=7, cols=7)
@@ -781,19 +1039,43 @@ def _add_schedule_table(document: Document, bab_number: int, figures_tables: dic
         if para.runs:
             para.runs[0].bold = True
 
-    # Caption di bawah tabel (poin 5)
-    fmt = figures_tables.get("caption_format_table", "Tabel {bab}.{n}. {title}")
-    caption_text = (
-        fmt.replace("{bab}", str(bab_number)).replace("{n}", "2")
-           .replace("{title}", "Jadwal Pelaksanaan Kegiatan")
-    )
-    p = document.add_paragraph(caption_text, style="Caption")
-    p.paragraph_format.space_after = Pt(0)
-    _force_paragraph_runs_black(p)
-
-    # Enter 1x setelah caption tabel jadwal
+    # Enter 1x setelah tabel jadwal
     empty = document.add_paragraph()
     empty.paragraph_format.space_after = Pt(0)
+
+
+def _add_example_figure(document: Document, caption: str | None = None) -> None:
+    """Add example figure from data/images.jpg if available.
+
+    Args:
+        document: python-docx Document object
+        caption: Optional caption text to add below the image
+    """
+    # Try multiple paths for images.jpg
+    possible_paths = [
+        Path(__file__).parent.parent.parent / "data" / "images.jpg",
+        Path(__file__).parent.parent / "data" / "images.jpg",
+        Path("ai/data/images.jpg"),
+        Path("data/images.jpg"),
+    ]
+
+    figure_image_path = None
+    for p in possible_paths:
+        if p.exists() and p.is_file():
+            figure_image_path = p
+            break
+
+    if figure_image_path:
+        run = document.add_picture(str(figure_image_path), width=Cm(10))
+        run.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        if caption:
+            caption_p = document.add_paragraph(caption, style="Caption")
+            caption_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            caption_p.paragraph_format.space_after = Pt(0)
+            _force_paragraph_runs_black(caption_p)
+        # Enter 1x after image/caption
+        empty = document.add_paragraph()
+        empty.paragraph_format.space_after = Pt(0)
 
 
 # ---------------------------------------------------------------------------

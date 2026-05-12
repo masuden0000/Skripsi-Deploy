@@ -1,12 +1,18 @@
-export default function ReviewerDashboard() {
+"use client"
+
+import { AssignmentsList } from "@/components/reviewer/AssignmentsList"
+
+export default function ReviewerAssignmentsPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-pkm-50">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold text-pkm-900">Dashboard Reviewer</h1>
-        <p className="mt-2 text-sm" style={{ color: "rgba(0,153,102,0.8)" }}>
-          Selamat datang, Reviewer.
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Daftar Penugasan</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Daftar periode review yang telah ditugaskan kepada Anda
         </p>
       </div>
-    </main>
+
+      <AssignmentsList />
+    </div>
   )
 }

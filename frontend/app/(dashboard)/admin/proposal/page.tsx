@@ -169,49 +169,71 @@ export default function ProposalDocumentPage() {
     setUploadProgress(0)
     setResult(null)
 
-    // Simulate initial progress
-    setUploadProgress(10)
-
     try {
-      // Create FormData for API call
+      // Step 1: Create project and get signed upload URL
+      setUploadProgress(10)
       const formData = new FormData()
       formData.append("skema", skema)
       formData.append("tahun", tahun)
       formData.append("judul", title.trim())
-      formData.append("file", selectedFile)
+      formData.append("file_name", selectedFile.name)
 
-      // Call API to create project
-      setUploadProgress(30)
       const response = await fetch("/api/projects", {
-        method: "POST",
-        body: formData,
+        method: "PUT",
+        body: JSON.stringify({
+          bucket: "ai-source-files",
+          projectId: "new",
+          fileName: selectedFile.name,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
       })
 
-      setUploadProgress(50)
+      setUploadProgress(20)
 
       if (!response.ok) {
         const errorText = await response.text()
         throw new Error(errorText || "Gagal membuat project")
       }
 
-      const data: ProjectResponse = await response.json()
-      const project = data.data
+      const data = await response.json()
+      const { project_id, signed_url } = data.data
 
-      // Set project ID for status polling
-      setCurrentProjectId(project.id)
+      if (!signed_url) {
+        throw new Error("Tidak dapat membuat signed URL")
+      }
+
+      // Step 2: Upload file directly to Supabase Storage using signed URL
+      setUploadProgress(40)
+
+      const uploadResponse = await fetch(signed_url, {
+        method: "PUT",
+        body: selectedFile,
+        headers: {
+          "Content-Type": selectedFile.type || "application/octet-stream",
+        },
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error("Gagal upload file ke Supabase Storage")
+      }
+
+      setUploadProgress(80)
 
       // Initialize result state
+      setCurrentProjectId(project_id)
       setResult({
-        projectId: project.id,
+        projectId: project_id,
         fileName: selectedFile.name,
         title: title.trim(),
         skema: PKM_SCHEMES.find(s => s.value === skema)?.label ?? skema,
         tahun: tahun,
-        sourceUrl: project.source_url,
-        resultUrl: project.result_url,
-        status: project.status,
-        errorMessage: project.error_message,
-        createdAt: project.created_at,
+        sourceUrl: null,
+        resultUrl: null,
+        status: "pending",
+        errorMessage: null,
+        createdAt: new Date().toISOString(),
       })
 
       setUploadProgress(100)

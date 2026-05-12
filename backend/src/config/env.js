@@ -40,4 +40,5 @@ export const env = {
   SESSION_SECRET: requireEnv("SESSION_SECRET"),
   SESSION_COOKIE_NAME: process.env.SESSION_COOKIE_NAME ?? "app_session",
   SESSION_MAX_AGE_SECONDS: toNumber(process.env.SESSION_MAX_AGE_SECONDS, 60 * 60 * 24),
+  AI_BACKEND_URL: process.env.AI_BACKEND_URL ?? "http://127.0.0.1:8000",
 }

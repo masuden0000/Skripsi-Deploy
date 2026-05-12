@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-const AI_BACKEND_URL = process.env.AI_BACKEND_URL || "http://127.0.0.1:8000"
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"
 
 function buildResponse(backendResponse: Response, responseText: string) {
   return new NextResponse(responseText, {
@@ -12,7 +12,7 @@ function buildResponse(backendResponse: Response, responseText: string) {
 }
 
 export async function GET(request: Request) {
-  const backendResponse = await fetch(`${AI_BACKEND_URL}/api/projects`, {
+  const backendResponse = await fetch(`${BACKEND_URL}/api/projects`, {
     method: "GET",
     headers: {
       "content-type": "application/json",
@@ -27,7 +27,27 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const formData = await request.formData()
 
-  const backendResponse = await fetch(`${AI_BACKEND_URL}/api/projects`, {
+  const backendResponse = await fetch(`${BACKEND_URL}/api/projects`, {
+    method: "POST",
+    body: formData,
+    cache: "no-store",
+  })
+
+  const responseText = await backendResponse.text()
+  return buildResponse(backendResponse, responseText)
+}
+
+// PUT - Generate signed upload URL for direct upload to Supabase
+export async function PUT(request: Request) {
+  const { bucket, projectId, fileName } = await request.json()
+
+  const formData = new FormData()
+  formData.append("skema", "")
+  formData.append("tahun", "")
+  formData.append("judul", "")
+  formData.append("file_name", fileName)
+
+  const backendResponse = await fetch(`${BACKEND_URL}/api/projects/upload-url`, {
     method: "POST",
     body: formData,
     cache: "no-store",

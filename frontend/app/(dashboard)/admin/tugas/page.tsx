@@ -44,6 +44,15 @@ type Reviewer = {
 type Period = {
   id: string
   nama: string
+  tanggalMulai: string
+  tanggalSelesai: string
+}
+
+function isPeriodActive(period: Period): boolean {
+  const now = new Date()
+  const mulai = new Date(period.tanggalMulai)
+  const selesai = new Date(period.tanggalSelesai)
+  return now >= mulai && now <= selesai
 }
 
 type AssignmentFormData = {
@@ -60,7 +69,7 @@ type ApiResponse = {
 }
 
 type DropdownResponse = {
-  data?: Array<{ id: string; nama: string; email?: string }>
+  data?: Array<{ id: string; nama: string; email?: string; fakultas?: string; fakultasKode?: string }>
   error?: string
 }
 
@@ -223,6 +232,7 @@ export default function AssignmentManagementPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [reviewers, setReviewers] = useState<Reviewer[]>([])
   const [periods, setPeriods] = useState<Period[]>([])
+  const [activePeriods, setActivePeriods] = useState<Period[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -277,9 +287,10 @@ export default function AssignmentManagementPage() {
         )
       }
 
-      const periodData = periodPayload as { data?: Array<{ id: string; nama: string }> }
+      const periodData = periodPayload as { data?: Array<{ id: string; nama: string; tanggalMulai: string; tanggalSelesai: string }> }
       if (Array.isArray(periodData.data)) {
         setPeriods(periodData.data)
+        setActivePeriods(periodData.data.filter(isPeriodActive))
       }
     } catch {
       setLoadError("Tidak bisa terhubung ke server.")
@@ -370,7 +381,7 @@ export default function AssignmentManagementPage() {
       {isModalOpen ? (
         <AssignmentModal
           assignment={editingAssignment}
-          periods={periods}
+          periods={editingAssignment ? periods : activePeriods}
           reviewers={reviewers}
           isSubmitting={isSubmitting}
           errorMessage={formError}

@@ -135,8 +135,11 @@ def _extract_typography(doc: Document) -> dict:
                 run_count += 1
                 if run.font.name and run.font.name != font_family:
                     fonts_found.add(run.font.name)
-                if run.font.size:
-                    sizes_found.add(int(run.font.size.pt))
+                try:
+                    if run.font.size:
+                        sizes_found.add(int(run.font.size.pt))
+                except (ValueError, TypeError):
+                    pass
 
     return {
         "font_family": font_family,
@@ -151,26 +154,48 @@ def _extract_typography(doc: Document) -> dict:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Mendefinisikan fungsi `_extract_page_layout" untuk kebutuhan modul `docx_property_extractor`.
 # ---------------------------------------------------------------------------
+def _twips_to_cm(value_str: str | None) -> float | None:
+    """Convert twips string (may be float) to cm. 1 inch = 1440 twips = 2.54 cm."""
+    if value_str is None:
+        return None
+    try:
+        return float(value_str) / 1440 * 2.54
+    except (ValueError, TypeError):
+        return None
+
+
 def _extract_page_layout(doc: Document) -> dict:
     """Extract page layout properties from first section."""
     section = doc.sections[0]
 
-    # Margins in cm
-    margin_top = section.top_margin.cm if section.top_margin else None
-    margin_bottom = section.bottom_margin.cm if section.bottom_margin else None
-    margin_left = section.left_margin.cm if section.left_margin else None
-    margin_right = section.right_margin.cm if section.right_margin else None
+    # Read margins directly from XML to avoid python-docx int() cast on float strings
+    pgMar = section._sectPr.find(qn("w:pgMar"))
+    if pgMar is not None:
+        margin_top    = _twips_to_cm(pgMar.get(qn("w:top")))
+        margin_bottom = _twips_to_cm(pgMar.get(qn("w:bottom")))
+        margin_left   = _twips_to_cm(pgMar.get(qn("w:left")))
+        margin_right  = _twips_to_cm(pgMar.get(qn("w:right")))
+    else:
+        margin_top = margin_bottom = margin_left = margin_right = None
 
-    # Paper size
-    page_width_cm = section.page_width.cm if section.page_width else None
-    page_height_cm = section.page_height.cm if section.page_height else None
+    # Paper size — read from XML for same reason
+    pgSz = section._sectPr.find(qn("w:pgSz"))
+    if pgSz is not None:
+        page_width_cm  = _twips_to_cm(pgSz.get(qn("w:w")))
+        page_height_cm = _twips_to_cm(pgSz.get(qn("w:h")))
+    else:
+        page_width_cm = page_height_cm = None
 
     paper_size = None
     if page_width_cm and page_height_cm:
         paper_size = _get_paper_size(page_width_cm, page_height_cm)
 
-    # Orientation
-    orientation = _get_orientation_string(section.orientation)
+    # Orientation — read from XML to avoid python-docx enum parse issues
+    orient_attr = pgSz.get(qn("w:orient")) if pgSz is not None else None
+    if orient_attr == "landscape":
+        orientation = "landscape"
+    else:
+        orientation = "portrait"
 
     return {
         "margin_top_cm": round(margin_top, 2) if margin_top else None,

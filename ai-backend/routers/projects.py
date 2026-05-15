@@ -28,7 +28,6 @@ def map_project_row(row: dict[str, Any]) -> Project:
         id=row.get("id", ""),
         skema=row.get("skema", ""),
         tahun=row.get("tahun", ""),
-        judul=row.get("judul", ""),
         source_file=row.get("source_file"),
         source_url=row.get("source_url"),
         status=status,
@@ -44,7 +43,6 @@ async def create_project(
     background_tasks: BackgroundTasks,
     skema: str = Form(...),
     tahun: str = Form(...),
-    judul: str = Form(...),
     file: Optional[UploadFile] = File(None),
 ):
     """
@@ -54,9 +52,9 @@ async def create_project(
     supabase = get_supabase()
 
     project_data = {
+        "judul": f"Proposal {skema.upper()} {tahun}",
         "skema": skema,
         "tahun": tahun,
-        "judul": judul,
         "status": "pending",
     }
 
@@ -95,7 +93,7 @@ async def create_project(
 
     # Start background pipeline
     if source_url:
-        background_tasks.add_task(run_pipeline, project_id, source_url)
+        background_tasks.add_task(run_pipeline, project_id, source_url, source_file)
 
     updated_result = supabase.table("projects").select("*").eq("id", project_id).execute()
     updated_project = map_project_row(updated_result.data[0]) if updated_result.data else map_project_row(project)
@@ -114,7 +112,6 @@ async def create_project(
 async def create_project_with_upload_url(
     skema: str = Form(...),
     tahun: str = Form(...),
-    judul: str = Form(...),
     file_name: str = Form(...),
 ):
     """
@@ -125,9 +122,9 @@ async def create_project_with_upload_url(
 
     # Create project with pending_upload status
     project_data = {
+        "judul": f"Proposal {skema.upper()} {tahun}",
         "skema": skema,
         "tahun": tahun,
-        "judul": judul,
         "status": "pending_upload",
     }
 
@@ -203,7 +200,7 @@ async def confirm_upload(
     }).eq("id", project_id).execute()
 
     # Start background pipeline
-    background_tasks.add_task(run_pipeline, project_id, public_url)
+    background_tasks.add_task(run_pipeline, project_id, public_url, file_name)
 
     updated_result = supabase.table("projects").select("*").eq("id", project_id).execute()
     updated_project = map_project_row(updated_result.data[0]) if updated_result.data else map_project_row(project)
@@ -302,9 +299,7 @@ async def delete_project(project_id: str):
         await delete_file(BUCKET_SOURCE, source_path)
 
     if project.get("result_url"):
-        result_url_str = project.get("result_url")
-        if result_url_str:
-            await delete_file(BUCKET_OUTPUT, str(result_url_str))
+        await delete_file(BUCKET_OUTPUT, f"{project_id}/proposal_output.docx")
 
     supabase.table("projects").delete().eq("id", project_id).execute()
 

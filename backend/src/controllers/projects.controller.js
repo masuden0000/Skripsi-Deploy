@@ -9,16 +9,16 @@ async function createProject(req, res, next) {
     const { skema, tahun, judul } = req.body
     const file = req.file
 
-    if (!skema || !tahun || !judul) {
+    if (!skema || !tahun) {
       res.status(400).json({
         success: false,
-        error: "Missing required fields: skema, tahun, judul",
+        error: "Missing required fields: skema, tahun",
       })
       return
     }
 
     const result = await projectsService.createProject(
-      { skema, tahun, judul },
+      { skema, tahun, judul: judul || null },
       file
     )
 

@@ -41,45 +41,12 @@ def build_instructional_placeholder_map(
     placeholders: dict[str, str] = {}
     structure = metadata.document_structure_proposal
 
-    if structure.halaman_sampul:
-        title = "HALAMAN SAMPUL"
-        key = make_instruction_key("halaman_sampul", title)
-        placeholders[key] = _build_instruction_text(
-            display_title=title,
-            sources=[],
-            use_llm=False,
-            fallback_hint=(
-                "cantumkan judul proposal, identitas tim, institusi, dan informasi dokumen "
-                "secara ringkas sesuai format sampul panduan"
-            ),
-        )
-    if structure.halaman_pengesahan:
-        title = "HALAMAN PENGESAHAN"
-        key = make_instruction_key("halaman_pengesahan", title)
-        placeholders[key] = _build_instruction_text(
-            display_title=title,
-            sources=[],
-            use_llm=False,
-            fallback_hint=(
-                "cantumkan identitas proposal, pihak yang mengesahkan, serta ruang tanda "
-                "tangan sesuai ketentuan panduan"
-            ),
-        )
-    if structure.ringkasan:
-        title = "RINGKASAN"
-        key = make_instruction_key("ringkasan", title)
-        sources = _match_named_section_sources(chunks, title)
-        placeholders[key] = _build_instruction_text(
-            display_title=title,
-            sources=sources,
-            use_llm=use_llm,
-            fallback_hint="ringkas inti masalah, solusi/prototipe, dan manfaat utama program",
-        )
+    chapter_fmt = metadata.numbering.chapter_format or "BAB {n}"
 
     for section in structure.sections:
         if section.type == "bab":
             title = section.title or "[JUDUL_BAB_BELUM_TERDETEKSI]"
-            heading_text = _make_bab_heading(section)
+            heading_text = _make_bab_heading(section, chapter_fmt)
             key = make_instruction_key("bab", heading_text, number=section.number)
             sources = match_sources_for_section(
                 chunks=chunks,
@@ -102,6 +69,45 @@ def build_instructional_placeholder_map(
                 use_llm=use_llm,
                 fallback_hint=f"isi bagian {title.lower()} sesuai fungsi dan urutan yang diwajibkan panduan",
             )
+        elif section.type == "sub_bab":
+            sub_num = section.sub_number or "?"
+            title = section.title or "[SUB_BAB_TANPA_JUDUL]"
+            heading_text = f"{sub_num} {title}".strip()
+            key = make_instruction_key("sub_bab", heading_text)
+            # Cari chunk dari judul sub_bab; jika tidak ada, perluas ke BAB induk
+            sources = _match_named_section_sources(chunks, title)
+            if not sources:
+                bab_num = str(sub_num).split(".")[0] if "." in str(sub_num) else str(sub_num)
+                sources = match_sources_for_section(
+                    chunks=chunks,
+                    section_label=f"BAB {bab_num}",
+                    section_title=title,
+                )
+            placeholders[key] = _build_instruction_text(
+                display_title=heading_text,
+                sources=sources,
+                use_llm=use_llm,
+                fallback_hint=(
+                    f"uraikan secara detail isi {heading_text.lower()} — jelaskan konten yang harus ada, "
+                    "format yang digunakan, batasan yang berlaku, dan contoh relevan sesuai panduan"
+                ),
+            )
+        elif section.type == "item_lampiran":
+            lampiran_number = section.lampiran_number or "Lampiran ?"
+            title = section.title or "[LAMPIRAN_TANPA_JUDUL]"
+            heading_text = f"{lampiran_number}. {title}".strip()
+            key = make_instruction_key("item_lampiran", heading_text)
+            # Cari chunk relevan dari judul lampiran, fallback ke nomor lampiran
+            sources = _match_named_section_sources(chunks, title)
+            if not sources:
+                sources = _match_named_section_sources(chunks, lampiran_number)
+            fallback_hint = _get_lampiran_fallback_hint(title, lampiran_number)
+            placeholders[key] = _build_instruction_text(
+                display_title=heading_text,
+                sources=sources,
+                use_llm=use_llm,
+                fallback_hint=fallback_hint,
+            )
 
     return placeholders
 
@@ -110,10 +116,13 @@ def build_instructional_placeholder_map(
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `_make_bab_heading` sebagai bagian alur `instructional_placeholder_builder`.
 # ---------------------------------------------------------------------------
-def _make_bab_heading(section: SectionItem) -> str:
+def _make_bab_heading(section: SectionItem, chapter_fmt: str = "BAB {n}") -> str:
     title = section.title or "[JUDUL_BAB_BELUM_TERDETEKSI]"
-    bab_number = f"BAB {section.number}" if section.number else "BAB"
-    return f"{bab_number} {title}".strip()
+    if section.number:
+        bab_label = chapter_fmt.replace("{n}", str(section.number))
+    else:
+        bab_label = "BAB"
+    return f"{bab_label} {title}".strip()
 
 
 # ---------------------------------------------------------------------------
@@ -129,6 +138,48 @@ def _match_named_section_sources(chunks: list[ChunkSource], title: str) -> list[
 
 
 # ---------------------------------------------------------------------------
+# Digunakan oleh: build_instructional_placeholder_map
+# Menjalankan fungsi `_get_lampiran_fallback_hint` sebagai bagian alur `instructional_placeholder_builder`.
+# ---------------------------------------------------------------------------
+def _get_lampiran_fallback_hint(title: str, lampiran_number: str) -> str:
+    """Kembalikan hint fallback kontekstual berdasarkan judul lampiran."""
+    t = title.upper()
+    if "BIODATA" in t:
+        return (
+            "cantumkan biodata lengkap ketua tim, setiap anggota, dan dosen pendamping meliputi "
+            "nama lengkap, NIM/NIP, program studi, perguruan tinggi, nomor telepon, email, "
+            "dan tanda tangan asli (basah)"
+        )
+    if "JUSTIFIKASI" in t and "ANGGARAN" in t:
+        return (
+            "rincikan setiap pos pengeluaran beserta volume, harga satuan, dan total biaya "
+            "dalam format tabel; pastikan subtotal tiap jenis pengeluaran tidak melebihi "
+            "persentase maksimum yang ditetapkan panduan"
+        )
+    if "SUSUNAN TIM" in t or "PEMBAGIAN TUGAS" in t:
+        return (
+            "cantumkan nama, NIM, program studi, bidang ilmu, alokasi waktu dalam jam per minggu, "
+            "dan uraian tugas spesifik masing-masing anggota tim pengusul"
+        )
+    if "SURAT PERNYATAAN" in t:
+        return (
+            "isi surat pernyataan ketua tim yang menyatakan keaslian karya, bebas plagiarisme, "
+            "dan kesanggupan menyelesaikan program; sertakan tanda tangan asli dan materai sesuai ketentuan"
+        )
+    if "GAMBARAN TEKNOLOGI" in t or ("TEKNOLOGI" in t and "KEMBANG" in t):
+        return (
+            "uraikan spesifikasi teknis, prinsip kerja, keunggulan, dan perbedaan teknologi yang "
+            "dikembangkan dibandingkan produk atau solusi yang sudah ada sebelumnya; "
+            "sertakan gambar skema atau diagram jika diperlukan"
+        )
+    # Generic fallback kontekstual
+    return (
+        f"lengkapi isi {lampiran_number} sesuai ketentuan panduan; "
+        "pastikan format, kelengkapan data, dan urutan dokumen memenuhi syarat yang ditetapkan"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `_build_instruction_text` sebagai bagian alur `instructional_placeholder_builder`.
 # ---------------------------------------------------------------------------
@@ -139,10 +190,11 @@ def _build_instruction_text(
     fallback_hint: str,
 ) -> str:
     if use_llm and sources:
-        llm_text = _build_instruction_text_with_llm(display_title, sources)
-        if llm_text:
-            return llm_text
-    return _build_instruction_text_fallback(display_title, sources, fallback_hint)
+        result = _build_instruction_text_with_llm(display_title, sources)
+        if result:
+            return result
+    # Kembalikan fallback_hint mentah — tanpa pemrosesan regex tambahan
+    return fallback_hint
 
 
 # ---------------------------------------------------------------------------
@@ -152,6 +204,7 @@ def _build_instruction_text(
 def _build_instruction_text_with_llm(display_title: str, sources: list[ChunkSource]) -> str | None:
     try:
         # Lazy import supaya mode fallback tetap jalan walau dependency LLM tidak terpasang.
+        from langchain_core.messages import HumanMessage, SystemMessage
         from langchain_groq import ChatGroq
 
         config = get_config()
@@ -165,25 +218,58 @@ def _build_instruction_text_with_llm(display_title: str, sources: list[ChunkSour
             f"Header: {source.chunk_parent}\nHalaman: {source.page_start}-{source.page_end}\nIsi:\n{_clean_source_text(source.content)}"
             for source in sources[:6]
         )
-        prompt = (
-            "Anda menyusun instructional placeholder untuk template proposal.\n"
+
+        system_prompt = (
+            "Anda adalah asisten penyusun instructional placeholder untuk template "
+            "proposal akademik PKM.\n\n"
+            "ATURAN PERMANEN:\n"
+            "- Gunakan hanya informasi dari sumber yang diberikan.\n"
+            "- Jangan tambah informasi baru di luar sumber.\n"
+            "- Kalimat tentang margin, font, ukuran huruf, spasi baris, nomor halaman "
+            "DILARANG muncul di instruksi akhir.\n"
+            "- Jangan gunakan bullet list di instruksi akhir.\n"
+            "- Output instruksi adalah plain text saja, tanpa markdown."
+        )
+
+        human_prompt = (
             f"Section target: {display_title}\n\n"
-            "Tulis 2 sampai 4 kalimat instruksi dalam Bahasa Indonesia.\n"
+            "Ikuti langkah-langkah berikut secara berurutan sebelum menulis output akhir.\n\n"
+            "LANGKAH 1 — KLASIFIKASI SUMBER\n"
+            "Baca setiap kalimat penting dari sumber. Tandai masing-masing sebagai:\n"
+            "  [KONTEN] → aturan atau panduan yang spesifik untuk section ini\n"
+            "             (apa yang harus ditulis, batasan isi, struktur argumen)\n"
+            "  [FORMAT GLOBAL] → aturan yang berlaku untuk seluruh dokumen\n"
+            "                    (margin, font, ukuran huruf, spasi baris, nomor halaman)\n"
+            "  [TIDAK RELEVAN] → informasi yang tidak berkaitan dengan section ini\n\n"
+            "LANGKAH 2 — FILTER\n"
+            "Buang semua kalimat berlabel [FORMAT GLOBAL] dan [TIDAK RELEVAN].\n"
+            "Lanjutkan hanya dengan kalimat berlabel [KONTEN].\n\n"
+            "LANGKAH 3 — TULIS INSTRUKSI\n"
+            "Dari hasil filter, tulis 4 sampai 6 kalimat instruksi dalam Bahasa Indonesia.\n"
             "Wajib memuat:\n"
-            "1. tujuan atau fokus isi bagian ini,\n"
-            "2. aturan khusus yang benar-benar disebut pada sumber jika ada,\n"
-            "3. arahan singkat tentang apa yang harus diisi penulis.\n\n"
-            "Aturan keras:\n"
-            "- Gunakan hanya informasi dari sumber.\n"
-            "- Jangan menambah informasi baru di luar sumber.\n"
-            "- Jangan gunakan bullet list.\n"
-            "- Keluarkan plain text saja.\n\n"
+            "  1. Tujuan utama section ini.\n"
+            "  2. Konten spesifik yang wajib ada.\n"
+            "  3. Batasan atau aturan isi yang relevan (bukan format dokumen).\n"
+            "  4. Arahan konkret kepada penulis tentang cara menyusun isi.\n\n"
+            "FORMAT OUTPUT (wajib diikuti):\n"
+            "<analisis>\n"
+            "[hasil LANGKAH 1 dan 2]\n"
+            "</analisis>\n"
+            "<instruksi>\n"
+            "[hasil LANGKAH 3 — plain text saja]\n"
+            "</instruksi>\n\n"
             f"Sumber:\n{context}"
         )
-        result = llm.invoke(prompt)
-        text = " ".join(str(result.content).split())
-        return text or None
-    except Exception:
+
+        result = llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=human_prompt)])
+        text = str(result.content)
+
+        match = re.search(r"<instruksi>(.*?)</instruksi>", text, re.DOTALL)
+        if match:
+            return " ".join(match.group(1).strip().split())
+        return " ".join(text.split()) or None
+    except Exception as exc:
+        print(f"[instructional_placeholder] LLM gagal untuk '{display_title}': {type(exc).__name__}: {exc}")
         return None
 
 

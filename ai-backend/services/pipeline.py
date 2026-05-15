@@ -1,6 +1,11 @@
-import subprocess
+import asyncio
 import os
+import sys
+from pathlib import Path
+from typing import Sequence
+
 from .database import get_supabase
+from .storage import download_file, upload_file
 
 BUCKET_SOURCE = "ai-source-files"
 BUCKET_OUTPUT = "ai-output-files"
@@ -9,317 +14,338 @@ BUCKET_OUTPUT = "ai-output-files"
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 # AI directory (where manage.py lives)
 AI_DIR = os.path.join(PROJECT_ROOT, "ai")
+AI_PATH = Path(AI_DIR)
+
+PROJECT_LOGS_ENABLED = True
 
 
-def log_console(step: str, message: str):
-    """Print log message to console."""
-    print(f"[{step.upper()}] {message}")
+def log_console(step: str, message: str) -> None:
+    """Print log message to console immediately."""
+    print(f"[{step.upper()}] {message}", flush=True)
 
 
-async def download_source_file(source_url: str, project_id: str) -> str:
+def persist_project_log(project_id: str, step: str, message: str) -> None:
+    """Persist log lines so the frontend SSE log panel can stream them."""
+    global PROJECT_LOGS_ENABLED
+
+    if not PROJECT_LOGS_ENABLED:
+        return
+
+    try:
+        supabase = get_supabase()
+        supabase.table("project_logs").insert({
+            "project_id": project_id,
+            "step": step,
+            "message": message,
+        }).execute()
+    except Exception as exc:
+        PROJECT_LOGS_ENABLED = False
+        log_console("log", f"Warning: gagal simpan project log, streaming frontend dimatikan: {exc}")
+
+
+def log_event(step: str, message: str, project_id: str | None = None) -> None:
+    """Write the same log line to terminal and optional project log storage."""
+    cleaned_message = message.strip()
+    if not cleaned_message:
+        return
+
+    log_console(step, cleaned_message)
+    if project_id:
+        persist_project_log(project_id, step, cleaned_message)
+
+
+async def stream_manage_command(
+    step: str,
+    command: Sequence[str],
+    project_id: str,
+    timeout_seconds: int,
+) -> tuple[bool, str]:
+    """Run manage.py and stream stdout/stderr live to terminal and project_logs."""
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+
+    process = await asyncio.create_subprocess_exec(
+        *command,
+        cwd=AI_DIR,
+        env=env,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+
+    stdout_lines: list[str] = []
+    stderr_lines: list[str] = []
+
+    async def read_stream(
+        stream: asyncio.StreamReader | None,
+        is_stderr: bool = False,
+    ) -> None:
+        if stream is None:
+            return
+
+        while True:
+            raw_line = await stream.readline()
+            if not raw_line:
+                break
+
+            line = raw_line.decode(errors="replace").rstrip()
+            if not line:
+                continue
+
+            if is_stderr:
+                stderr_lines.append(line)
+                log_event(step, f"[stderr] {line}", project_id)
+            else:
+                stdout_lines.append(line)
+                log_event(step, line, project_id)
+
+    stdout_task = asyncio.create_task(read_stream(process.stdout))
+    stderr_task = asyncio.create_task(read_stream(process.stderr, is_stderr=True))
+
+    try:
+        return_code = await asyncio.wait_for(process.wait(), timeout=timeout_seconds)
+    except asyncio.TimeoutError:
+        process.kill()
+        await process.wait()
+        await asyncio.gather(stdout_task, stderr_task, return_exceptions=True)
+        return False, f"Timeout setelah {timeout_seconds} detik"
+
+    await asyncio.gather(stdout_task, stderr_task)
+
+    if return_code != 0:
+        error_output = stderr_lines[-1] if stderr_lines else ""
+        if not error_output and stdout_lines:
+            error_output = stdout_lines[-1]
+        if not error_output:
+            error_output = f"Command exited with code {return_code}"
+        return False, error_output
+
+    return True, ""
+
+
+async def download_source_file(source_url: str, project_id: str, source_file: str) -> str:
     """
-    Download the source file from Supabase Storage to local project directory.
-    Returns the local file path.
+    Download the source file from Supabase Storage to the local ai/data/{project_id} directory.
+    The downloaded file is normalized to source.pdf so the downstream AI pipeline keeps working.
     """
-    from .storage import download_file
+    project_dir = AI_PATH / "data" / project_id
+    project_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create project directory in ai/data/
-    project_dir = os.path.join(AI_DIR, "data", project_id)
-    os.makedirs(project_dir, exist_ok=True)
+    local_path = project_dir / "source.pdf"
+    storage_path = f"{project_id}/{source_file}"
 
-    # Extract file path from URL
-    # URL format: https://xxx.supabase.co/storage/v1/object/public/bucket/path
-    local_path = os.path.join(project_dir, "source.pdf")
+    log_event("download", f"Mendownload file dari storage: {source_url}", project_id)
+    file_content = await download_file(BUCKET_SOURCE, storage_path)
+    local_path.write_bytes(file_content)
 
-    # Download the file
-    log_console("download", f"Mendownload file dari storage: {source_url}")
-    file_content = await download_file(BUCKET_SOURCE, f"{project_id}/source.pdf")
-    with open(local_path, "wb") as f:
-        f.write(file_content)
-
-    log_console("download", f"File disimpan ke: {local_path}")
-    return local_path
+    log_event("download", f"File disimpan ke: {local_path}", project_id)
+    return str(local_path)
 
 
 async def run_setup(project_id: str) -> bool:
     """
     Run the setup pipeline (extract chunks + ingest to Supabase).
     """
-    log_console("setup", "Memulai setup pipeline...")
+    log_event("setup", "Memulai setup pipeline...", project_id)
 
     try:
         supabase = get_supabase()
-        supabase.table("projects").update({"status": "uploading"}).eq("id", project_id).execute()
-    except Exception as e:
-        log_console("setup", f"Warning: Gagal update status: {e}")
+        supabase.table("projects").update({
+            "status": "uploading",
+            "error_message": None,
+        }).eq("id", project_id).execute()
+    except Exception as exc:
+        log_event("setup", f"Warning: Gagal update status: {exc}", project_id)
 
-    try:
-        log_console("setup", f"Menjalankan: python manage.py setup --project-id {project_id}")
-        result = subprocess.run(
-            [
-                "python", "manage.py",
-                "setup",
-                "--project-id", project_id,
-            ],
-            cwd=AI_DIR,  # Run from ai/ directory so imports work
-            capture_output=True,
-            text=True,
-            timeout=300,  # 5 minute timeout
-        )
+    command = [sys.executable, "manage.py", "setup", "--project-id", project_id]
+    log_event("setup", f"Menjalankan: {' '.join(command)}", project_id)
 
-        # Print all output to console
-        if result.stdout:
-            for line in result.stdout.strip().split("\n"):
-                if line.strip():
-                    print(f"  [setup] {line}")
-        if result.stderr:
-            for line in result.stderr.strip().split("\n"):
-                if line.strip():
-                    print(f"  [setup:stderr] {line}")
+    success, error_message = await stream_manage_command(
+        step="setup",
+        command=command,
+        project_id=project_id,
+        timeout_seconds=300,
+    )
 
-        if result.returncode != 0:
-            log_console("setup", f"ERROR: Setup gagal dengan exit code {result.returncode}")
-            try:
-                supabase = get_supabase()
-                supabase.table("projects").update({
-                    "status": "failed",
-                    "error_message": f"Setup failed: {result.stderr[:200]}"
-                }).eq("id", project_id).execute()
-            except Exception:
-                pass
-            return False
-
-        log_console("setup", "Setup selesai.")
-        return True
-    except subprocess.TimeoutExpired:
-        log_console("setup", "ERROR: Setup timeout (>5 menit)")
+    if not success:
+        log_event("setup", f"ERROR: Setup gagal - {error_message}", project_id)
         try:
             supabase = get_supabase()
             supabase.table("projects").update({
                 "status": "failed",
-                "error_message": "Setup timeout"
-            }).eq("id", project_id).execute()
-        except Exception:
-            pass
-        return False
-    except Exception as e:
-        log_console("setup", f"ERROR: Exception: {str(e)}")
-        try:
-            supabase = get_supabase()
-            supabase.table("projects").update({
-                "status": "failed",
-                "error_message": str(e)
+                "error_message": f"Setup failed: {error_message[:200]}",
             }).eq("id", project_id).execute()
         except Exception:
             pass
         return False
 
+    log_event("setup", "Setup selesai.", project_id)
+    return True
 
-async def run_extraction(project_id: str, source_url: str):
+
+async def run_extraction(project_id: str) -> bool:
     """
     Run the AI extraction pipeline (extract metadata from chunks).
     """
-    log_console("extraction", "Memulai ekstraksi metadata...")
+    log_event("extraction", "Memulai ekstraksi metadata...", project_id)
 
     try:
         supabase = get_supabase()
-        supabase.table("projects").update({"status": "extracting"}).eq("id", project_id).execute()
-    except Exception as e:
-        log_console("extraction", f"Warning: Gagal update status: {e}")
+        supabase.table("projects").update({
+            "status": "extracting",
+            "error_message": None,
+        }).eq("id", project_id).execute()
+    except Exception as exc:
+        log_event("extraction", f"Warning: Gagal update status: {exc}", project_id)
 
-    try:
-        log_console("extraction", f"Menjalankan: python manage.py extract --project-id {project_id}")
-        result = subprocess.run(
-            [
-                "python", "manage.py",
-                "extract",
-                "--project-id", project_id,
-            ],
-            cwd=AI_DIR,  # Run from ai/ directory so imports work
-            capture_output=True,
-            text=True,
-            timeout=600,  # 10 minute timeout
-        )
+    command = [sys.executable, "manage.py", "extract", "--project-id", project_id]
+    log_event("extraction", f"Menjalankan: {' '.join(command)}", project_id)
 
-        # Print all output to console
-        if result.stdout:
-            for line in result.stdout.strip().split("\n"):
-                if line.strip():
-                    print(f"  [extract] {line}")
-        if result.stderr:
-            for line in result.stderr.strip().split("\n"):
-                if line.strip():
-                    print(f"  [extract:stderr] {line}")
+    success, error_message = await stream_manage_command(
+        step="extraction",
+        command=command,
+        project_id=project_id,
+        timeout_seconds=600,
+    )
 
-        if result.returncode != 0:
-            log_console("extraction", f"ERROR: Ekstraksi gagal dengan exit code {result.returncode}")
-            try:
-                supabase = get_supabase()
-                supabase.table("projects").update({
-                    "status": "failed",
-                    "error_message": f"Extraction failed: {result.stderr[:200]}"
-                }).eq("id", project_id).execute()
-            except Exception:
-                pass
-            return False
-
-        log_console("extraction", "Ekstraksi selesai.")
-        return True
-    except subprocess.TimeoutExpired:
-        log_console("extraction", "ERROR: Ekstraksi timeout (>10 menit)")
+    if not success:
+        log_event("extraction", f"ERROR: Ekstraksi gagal - {error_message}", project_id)
         try:
             supabase = get_supabase()
             supabase.table("projects").update({
                 "status": "failed",
-                "error_message": "Extraction timeout"
-            }).eq("id", project_id).execute()
-        except Exception:
-            pass
-        return False
-    except Exception as e:
-        log_console("extraction", f"ERROR: Exception: {str(e)}")
-        try:
-            supabase = get_supabase()
-            supabase.table("projects").update({
-                "status": "failed",
-                "error_message": str(e)
+                "error_message": f"Extraction failed: {error_message[:200]}",
             }).eq("id", project_id).execute()
         except Exception:
             pass
         return False
 
+    log_event("extraction", "Ekstraksi selesai.", project_id)
+    return True
 
-async def run_docx_generation(project_id: str):
+
+async def run_docx_generation(project_id: str) -> bool:
     """
-    Run the DOCX generation pipeline.
+    Run the DOCX generation pipeline and upload the result to Supabase Storage.
     """
-    log_console("docx", "Memulai generate DOCX...")
+    log_event("docx", "Memulai generate DOCX...", project_id)
 
     try:
         supabase = get_supabase()
-        supabase.table("projects").update({"status": "generating"}).eq("id", project_id).execute()
-    except Exception as e:
-        log_console("docx", f"Warning: Gagal update status: {e}")
+        supabase.table("projects").update({
+            "status": "generating",
+            "error_message": None,
+        }).eq("id", project_id).execute()
+    except Exception as exc:
+        log_event("docx", f"Warning: Gagal update status: {exc}", project_id)
+
+    command = [
+        sys.executable,
+        "manage.py",
+        "docx",
+        "--type",
+        "proposal",
+        "--project-id",
+        project_id,
+    ]
+    log_event("docx", f"Menjalankan: {' '.join(command)}", project_id)
+
+    success, error_message = await stream_manage_command(
+        step="docx",
+        command=command,
+        project_id=project_id,
+        timeout_seconds=600,
+    )
+
+    if not success:
+        log_event("docx", f"ERROR: DOCX generation gagal - {error_message}", project_id)
+        try:
+            supabase = get_supabase()
+            supabase.table("projects").update({
+                "status": "failed",
+                "error_message": f"DOCX generation failed: {error_message[:200]}",
+            }).eq("id", project_id).execute()
+        except Exception:
+            pass
+        return False
+
+    output_path = AI_PATH / "data" / project_id / "proposal_output.docx"
+    if not output_path.exists():
+        missing_output_message = f"File output DOCX tidak ditemukan: {output_path}"
+        log_event("docx", f"ERROR: {missing_output_message}", project_id)
+        try:
+            supabase = get_supabase()
+            supabase.table("projects").update({
+                "status": "failed",
+                "error_message": missing_output_message[:200],
+            }).eq("id", project_id).execute()
+        except Exception:
+            pass
+        return False
+
+    result_url = await upload_file(
+        BUCKET_OUTPUT,
+        output_path.read_bytes(),
+        output_path.name,
+        project_id,
+    )
+
+    log_event("docx", f"Output uploaded ke storage: {result_url}", project_id)
 
     try:
-        log_console("docx", f"Menjalankan: python manage.py docx --type proposal --project-id {project_id}")
-        result = subprocess.run(
-            [
-                "python", "manage.py",
-                "docx",
-                "--type", "proposal",
-                "--project-id", project_id
-            ],
-            cwd=AI_DIR,  # Run from ai/ directory so imports work
-            capture_output=True,
-            text=True,
-            timeout=600,  # 10 minute timeout
-        )
+        supabase = get_supabase()
+        supabase.table("projects").update({
+            "status": "completed",
+            "result_url": result_url,
+        }).eq("id", project_id).execute()
+    except Exception:
+        pass
 
-        # Print all output to console
-        if result.stdout:
-            for line in result.stdout.strip().split("\n"):
-                if line.strip():
-                    print(f"  [docx] {line}")
-        if result.stderr:
-            for line in result.stderr.strip().split("\n"):
-                if line.strip():
-                    print(f"  [docx:stderr] {line}")
-
-        if result.returncode != 0:
-            log_console("docx", f"ERROR: DOCX generation gagal dengan exit code {result.returncode}")
-            try:
-                supabase = get_supabase()
-                supabase.table("projects").update({
-                    "status": "failed",
-                    "error_message": f"DOCX generation failed: {result.stderr[:200]}"
-                }).eq("id", project_id).execute()
-            except Exception:
-                pass
-            return False
-
-        log_console("docx", "DOCX generation selesai.")
-
-        # Update status to completed
-        result_url = f"ai-output-files/{project_id}/proposal_output.docx"
-        log_console("docx", f"Output: {result_url}")
-
-        try:
-            supabase = get_supabase()
-            supabase.table("projects").update({
-                "status": "completed",
-                "result_url": result_url
-            }).eq("id", project_id).execute()
-        except Exception:
-            pass
-
-        return True
-    except subprocess.TimeoutExpired:
-        log_console("docx", "ERROR: DOCX generation timeout (>10 menit)")
-        try:
-            supabase = get_supabase()
-            supabase.table("projects").update({
-                "status": "failed",
-                "error_message": "DOCX generation timeout"
-            }).eq("id", project_id).execute()
-        except Exception:
-            pass
-        return False
-    except Exception as e:
-        log_console("docx", f"ERROR: Exception: {str(e)}")
-        try:
-            supabase = get_supabase()
-            supabase.table("projects").update({
-                "status": "failed",
-                "error_message": str(e)
-            }).eq("id", project_id).execute()
-        except Exception:
-            pass
-        return False
+    log_event("docx", "DOCX generation selesai.", project_id)
+    return True
 
 
-async def run_pipeline(project_id: str, source_url: str):
+async def run_pipeline(project_id: str, source_url: str, source_file: str) -> bool:
     """
     Run the complete pipeline: download -> setup -> extraction -> DOCX generation.
     """
-    log_console("pipeline", "=" * 60)
-    log_console("pipeline", f"MULAI PIPELINE untuk project: {project_id}")
-    log_console("pipeline", "=" * 60)
+    log_event("pipeline", "=" * 60, project_id)
+    log_event("pipeline", f"MULAI PIPELINE untuk project: {project_id}", project_id)
+    log_event("pipeline", "=" * 60, project_id)
 
     # Step 1: Download source file from storage
     try:
-        log_console("pipeline", "Step 1/4: Download file dari Supabase Storage...")
-        await download_source_file(source_url, project_id)
-        log_console("pipeline", "Step 1/4: Download selesai.")
-    except Exception as e:
-        log_console("pipeline", f"ERROR Step 1: Download gagal - {str(e)}")
+        log_event("pipeline", "Step 1/4: Download file dari Supabase Storage...", project_id)
+        await download_source_file(source_url, project_id, source_file)
+        log_event("pipeline", "Step 1/4: Download selesai.", project_id)
+    except Exception as exc:
+        log_event("pipeline", f"ERROR Step 1: Download gagal - {exc}", project_id)
         try:
             supabase = get_supabase()
             supabase.table("projects").update({
                 "status": "failed",
-                "error_message": f"Download failed: {str(e)}"
+                "error_message": f"Download failed: {str(exc)[:200]}",
             }).eq("id", project_id).execute()
         except Exception:
             pass
         return False
 
     # Step 2: Run setup (extract chunks + ingest)
-    log_console("pipeline", "Step 2/4: Setup (chunk extraction + ingest)...")
+    log_event("pipeline", "Step 2/4: Setup (chunk extraction + ingest)...", project_id)
     setup_success = await run_setup(project_id)
     if not setup_success:
-        log_console("pipeline", "Pipeline berhenti karena setup gagal.")
+        log_event("pipeline", "Pipeline berhenti karena setup gagal.", project_id)
         return False
-    log_console("pipeline", "Step 2/4: Setup selesai.")
+    log_event("pipeline", "Step 2/4: Setup selesai.", project_id)
 
     # Step 3: Run extraction
-    log_console("pipeline", "Step 3/4: Ekstraksi metadata (RAG + LLM)...")
-    extraction_success = await run_extraction(project_id, source_url)
+    log_event("pipeline", "Step 3/4: Ekstraksi metadata (RAG + LLM)...", project_id)
+    extraction_success = await run_extraction(project_id)
     if not extraction_success:
-        log_console("pipeline", "Pipeline berhenti karena ekstraksi gagal.")
+        log_event("pipeline", "Pipeline berhenti karena ekstraksi gagal.", project_id)
         return False
-    log_console("pipeline", "Step 3/4: Ekstraksi selesai.")
+    log_event("pipeline", "Step 3/4: Ekstraksi selesai.", project_id)
 
-    # Update status to extracted
+    # Update status to extracted before DOCX generation
     try:
         supabase = get_supabase()
         supabase.table("projects").update({"status": "extracted"}).eq("id", project_id).execute()
@@ -327,13 +353,13 @@ async def run_pipeline(project_id: str, source_url: str):
         pass
 
     # Step 4: Run DOCX generation
-    log_console("pipeline", "Step 4/4: Generate DOCX...")
+    log_event("pipeline", "Step 4/4: Generate DOCX...", project_id)
     docx_success = await run_docx_generation(project_id)
     if docx_success:
-        log_console("pipeline", "=" * 60)
-        log_console("pipeline", "PIPELINE SELESAI BERHASIL!")
-        log_console("pipeline", "=" * 60)
+        log_event("pipeline", "=" * 60, project_id)
+        log_event("pipeline", "PIPELINE SELESAI BERHASIL!", project_id)
+        log_event("pipeline", "=" * 60, project_id)
     else:
-        log_console("pipeline", "Pipeline berhenti karena DOCX generation gagal.")
+        log_event("pipeline", "Pipeline berhenti karena DOCX generation gagal.", project_id)
 
     return docx_success

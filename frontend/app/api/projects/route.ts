@@ -11,7 +11,7 @@ function buildResponse(backendResponse: Response, responseText: string) {
   })
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   const backendResponse = await fetch(`${BACKEND_URL}/api/projects`, {
     method: "GET",
     headers: {
@@ -39,13 +39,18 @@ export async function POST(request: Request) {
 
 // PUT - Generate signed upload URL for direct upload to Supabase
 export async function PUT(request: Request) {
-  const { bucket, projectId, fileName } = await request.json()
+  const contentType = request.headers.get("content-type") ?? ""
+  let formData: FormData
 
-  const formData = new FormData()
-  formData.append("skema", "")
-  formData.append("tahun", "")
-  formData.append("judul", "")
-  formData.append("file_name", fileName)
+  if (contentType.includes("multipart/form-data")) {
+    formData = await request.formData()
+  } else {
+    const payload = await request.json()
+    formData = new FormData()
+    formData.append("skema", payload.skema ?? "")
+    formData.append("tahun", payload.tahun ?? "")
+    formData.append("file_name", payload.file_name ?? payload.fileName ?? "")
+  }
 
   const backendResponse = await fetch(`${BACKEND_URL}/api/projects/upload-url`, {
     method: "POST",

@@ -16,14 +16,12 @@ export enum ProjectStatus {
 export interface ProjectCreateRequest {
   skema: string
   tahun: string
-  judul: string
 }
 
 export interface Project {
   id: string
   skema: string
   tahun: string
-  judul: string
   source_file: string | null
   source_url: string | null
   status: ProjectStatus
@@ -37,7 +35,6 @@ export interface ProjectCreateResponse {
   id: string
   skema: string
   tahun: string
-  judul: string
   source_file: string | null
   source_url: string | null
   status: ProjectStatus

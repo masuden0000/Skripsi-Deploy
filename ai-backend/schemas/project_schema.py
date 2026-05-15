@@ -22,14 +22,12 @@ class ProjectStatus(str, Enum):
 class ProjectCreateRequest(BaseModel):
     skema: str
     tahun: str
-    judul: str
 
 
 class Project(BaseModel):
     id: str
     skema: str
     tahun: str
-    judul: str
     source_file: Optional[str] = None
     source_url: Optional[str] = None
     status: ProjectStatus = ProjectStatus.PENDING

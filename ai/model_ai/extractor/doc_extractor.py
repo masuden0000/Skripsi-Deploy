@@ -204,7 +204,7 @@ def _apply_typography_caps_heuristic(payload: dict[str, Any], chunks: list[dict]
     # Contoh: "BAB 1. PENDAHULUAN", "**BAB 2. TINJAUAN PUSTAKA**", "BAB 3.TAHAP PELAKSANAAN"
     import re
     caps_pattern = re.compile(
-        r"(^|\s)BAB\s+[\dIVX]+\.?\s+[A-Z]{2,}",
+        r"(?:^|\s|\*+)BAB\s+[\dIVX]+\.?\s+[A-Z]{2,}",
         re.MULTILINE
     )
     for chunk in chunks:
@@ -438,7 +438,13 @@ def save_to_supabase(metadata: DocumentMetadata, project_id: str | None = None) 
 # ---------------------------------------------------------------------------
 def run_extraction(project_id: str | None = None) -> None:
     metadata = extract_document_metadata()
-    output_path = APP_DIR / "data" / "output.json"
+    if project_id:
+        project_dir = APP_DIR / "data" / project_id
+        project_dir.mkdir(parents=True, exist_ok=True)
+        output_path = project_dir / "output.json"
+    else:
+        output_path = APP_DIR / "data" / "output.json"
+
     output_path.write_text(
         json.dumps(metadata.model_dump(exclude_none=True), ensure_ascii=False, indent=2),
         encoding="utf-8",

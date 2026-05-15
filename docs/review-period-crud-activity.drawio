@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-05-15T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="review-period-crud-activity" name="Activity Diagram CRUD Periode Review">
+    <mxGraphModel dx="1680" dy="980" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="&lt;b&gt;Activity Diagram CRUD Periode Review PKM&lt;/b&gt;&lt;br&gt;Sumber alur: frontend page, Next API proxy, backend Express, service Supabase" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="620" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane_admin" value="Admin" style="swimlane;html=1;rounded=0;whiteSpace=wrap;horizontal=0;startSize=28;fillColor=#fef3c7;strokeColor=#d97706;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="220" height="1400" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_frontend" value="Frontend Dashboard" style="swimlane;html=1;rounded=0;whiteSpace=wrap;horizontal=0;startSize=28;fillColor=#dcfce7;strokeColor=#16a34a;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="80" width="320" height="1400" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_next" value="Next.js API Route" style="swimlane;html=1;rounded=0;whiteSpace=wrap;horizontal=0;startSize=28;fillColor=#dbeafe;strokeColor=#2563eb;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="80" width="260" height="1400" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_backend" value="Backend Express" style="swimlane;html=1;rounded=0;whiteSpace=wrap;horizontal=0;startSize=28;fillColor=#ede9fe;strokeColor=#7c3aed;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="840" y="80" width="340" height="1400" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_db" value="Supabase / DB" style="swimlane;html=1;rounded=0;whiteSpace=wrap;horizontal=0;startSize=28;fillColor=#f3f4f6;strokeColor=#4b5563;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="80" width="300" height="1400" as="geometry" />
+        </mxCell>
+
+        <mxCell id="start" value="" style="ellipse;html=1;aspect=fixed;fillColor=#111827;strokeColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="130" y="130" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="open_page" value="Admin membuka halaman&#xa;`/admin/periode`" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d97706;" vertex="1" parent="1">
+          <mxGeometry x="80" y="175" width="140" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="load_list" value="`useEffect` panggil&#xa;`getReviewPeriods()`" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+          <mxGeometry x="320" y="175" width="180" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="next_get_list" value="Proxy `GET /api/review-periods`&#xa;teruskan cookie session" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;" vertex="1" parent="1">
+          <mxGeometry x="620" y="175" width="180" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="backend_list" value="`authenticateSession` +&#xa;`requireRole(&quot;admin&quot;)` + list service" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7c3aed;" vertex="1" parent="1">
+          <mxGeometry x="900" y="175" width="210" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="db_select" value="Select `pkm_review_periods`&#xa;order by `tanggal_mulai desc`" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
+          <mxGeometry x="1245" y="168" width="150" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="show_list" value="Tampilkan daftar periode&#xa;(berlangsung / telah lewat)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+          <mxGeometry x="320" y="275" width="180" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="choose_action" value="Pilih aksi?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="118" y="300" width="60" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="create_action" value="Klik&#xa;Tambah Periode" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d97706;" vertex="1" parent="1">
+          <mxGeometry x="70" y="420" width="160" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="open_modal" value="Buka modal form kosong" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+          <mxGeometry x="320" y="420" width="180" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="client_validate" value="Validasi frontend:&#xa;semua field wajib,&#xa;`tanggalSelesai &gt;= tanggalMulai`" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+          <mxGeometry x="320" y="500" width="180" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="next_post" value="Proxy `POST /api/review-periods`" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;" vertex="1" parent="1">
+          <mxGeometry x="620" y="510" width="180" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="backend_create" value="Cek session + role admin&#xa;lalu `createReviewPeriod()`" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7c3aed;" vertex="1" parent="1">
+          <mxGeometry x="900" y="510" width="210" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="service_validate_create" value="Validasi backend: nama wajib,&#xa;format tanggal valid, rentang tanggal valid" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7c3aed;" vertex="1" parent="1">
+          <mxGeometry x="900" y="590" width="210" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="db_insert" value="Insert ke `pkm_review_periods`" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
+          <mxGeometry x="1245" y="593" width="150" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="create_result" value="Sukses: reload list lalu&#xa;tutup modal&#xa;Gagal: tampilkan error form" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+          <mxGeometry x="320" y="610" width="180" height="76" as="geometry" />
+        </mxCell>
+
+        <mxCell id="detail_action" value="Klik&#xa;Lihat Detail" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d97706;" vertex="1" parent="1">
+          <mxGeometry x="70" y="735" width="160" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="push_detail" value="`router.push(/admin/periode/[id])`" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+          <mxGeometry x="300" y="735" width="220" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="next_get_detail" value="Proxy `GET /api/review-periods/:id`" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;" vertex="1" parent="1">
+          <mxGeometry x="620" y="735" width="180" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="backend_detail" value="Cek session + role admin&#xa;ambil detail by id" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7c3aed;" vertex="1" parent="1">
+          <mxGeometry x="900" y="735" width="210" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="db_detail" value="Select satu row by `id`" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
+          <mxGeometry x="1245" y="728" width="150" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="detail_result" value="Tampilkan detail periode&#xa;dan daftar tugas terkait" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+          <mxGeometry x="300" y="825" width="220" height="56" as="geometry" />
+        </mxCell>
+
+        <mxCell id="update_delete_action" value="Klik Edit / Hapus&#xa;(hanya item yang tampil&#xa;sebagai berlangsung di UI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d97706;" vertex="1" parent="1">
+          <mxGeometry x="60" y="905" width="180" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="ud_choice" value="Edit atau Hapus?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="118" y="1000" width="60" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edit_modal" value="Edit: buka modal&#xa;isi data existing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+          <mxGeometry x="300" y="930" width="220" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="edit_validate" value="Submit + validasi frontend" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+          <mxGeometry x="300" y="1005" width="220" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="next_put" value="Proxy `PUT /api/review-periods/:id`" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;" vertex="1" parent="1">
+          <mxGeometry x="620" y="945" width="180" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="backend_put" value="Cek session + role admin&#xa;validasi id dan payload" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7c3aed;" vertex="1" parent="1">
+          <mxGeometry x="900" y="945" width="210" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="db_update" value="Update row by `id`&#xa;trigger `updated_at`" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
+          <mxGeometry x="1245" y="938" width="150" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="edit_result" value="Reload list + tutup modal&#xa;atau tampilkan error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+          <mxGeometry x="300" y="1080" width="220" height="56" as="geometry" />
+        </mxCell>
+
+        <mxCell id="delete_confirm" value="Hapus: tampilkan&#xa;`window.confirm()`" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+          <mxGeometry x="300" y="1160" width="220" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="confirm_choice" value="Konfirmasi?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="380" y="1245" width="60" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="next_delete" value="Proxy `DELETE /api/review-periods/:id`" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;" vertex="1" parent="1">
+          <mxGeometry x="620" y="1170" width="180" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="backend_delete" value="Cek session + role admin&#xa;validasi UUID id" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7c3aed;" vertex="1" parent="1">
+          <mxGeometry x="900" y="1170" width="210" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="db_delete" value="Delete row by `id`" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
+          <mxGeometry x="1245" y="1163" width="150" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="delete_result" value="Sukses: reload list + alert berhasil&#xa;Gagal: alert error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+          <mxGeometry x="300" y="1320" width="220" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="finish" value="" style="ellipse;html=1;aspect=fixed;fillColor=#111827;strokeColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="130" y="1415" width="24" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="start" target="open_page" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="open_page" target="load_list" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="load_list" target="next_get_list" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="next_get_list" target="backend_list" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="backend_list" target="db_select" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="db_select" target="show_list" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1320" y="275" />
+              <mxPoint x="410" y="275" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="show_list" target="choose_action" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e8" value="Create" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;fontSize=10;" edge="1" source="choose_action" target="create_action" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="create_action" target="open_modal" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="open_modal" target="client_validate" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="client_validate" target="next_post" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="next_post" target="backend_create" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="backend_create" target="service_validate_create" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="service_validate_create" target="db_insert" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="db_insert" target="create_result" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1320" y="700" />
+              <mxPoint x="410" y="700" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e16" value="Read" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;fontSize=10;" edge="1" source="choose_action" target="detail_action" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="detail_action" target="push_detail" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="push_detail" target="next_get_detail" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="next_get_detail" target="backend_detail" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="backend_detail" target="db_detail" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="db_detail" target="detail_result" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1320" y="855" />
+              <mxPoint x="410" y="855" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e22" value="Update / Delete" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;fontSize=10;" edge="1" source="choose_action" target="update_delete_action" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="update_delete_action" target="ud_choice" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e24" value="Edit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;fontSize=10;" edge="1" source="ud_choice" target="edit_modal" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="edit_modal" target="edit_validate" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e26" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="edit_validate" target="next_put" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="next_put" target="backend_put" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="backend_put" target="db_update" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="db_update" target="edit_result" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1320" y="1108" />
+              <mxPoint x="410" y="1108" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e30" value="Hapus" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;fontSize=10;" edge="1" source="ud_choice" target="delete_confirm" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="delete_confirm" target="confirm_choice" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e32" value="Ya" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;fontSize=10;" edge="1" source="confirm_choice" target="next_delete" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e33" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="next_delete" target="backend_delete" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e34" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="backend_delete" target="db_delete" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e35" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="db_delete" target="delete_result" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1320" y="1358" />
+              <mxPoint x="410" y="1358" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e36" value="Tidak" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;fontSize=10;" edge="1" source="confirm_choice" target="finish" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="200" y="1275" />
+              <mxPoint x="200" y="1427" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="create_result" target="finish" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="200" y="648" />
+              <mxPoint x="200" y="1427" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e38" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="detail_result" target="finish" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="200" y="853" />
+              <mxPoint x="200" y="1427" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e39" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="edit_result" target="finish" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="200" y="1108" />
+              <mxPoint x="200" y="1427" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e40" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" source="delete_result" target="finish" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="200" y="1358" />
+              <mxPoint x="200" y="1427" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

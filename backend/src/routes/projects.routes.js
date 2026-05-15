@@ -58,6 +58,31 @@ router.post("/upload-url", async (req, res, next) => {
   }
 })
 
+// POST /confirm-upload - Confirm uploaded file and start pipeline
+router.post("/confirm-upload", async (req, res, next) => {
+  try {
+    const rawBody = req.body // Buffer from express.raw()
+    const contentType = req.headers["content-type"] || ""
+
+    const aiResponse = await fetch(`${projectsService.AI_BACKEND_URL}/api/projects/confirm-upload`, {
+      method: "POST",
+      body: rawBody,
+      headers: {
+        "Content-Type": contentType,
+      },
+    })
+
+    const data = await aiResponse.json()
+    res.status(aiResponse.status).json(data)
+  } catch (error) {
+    console.error("[ProjectsRoute] Error proxying to AI Backend:", error)
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to connect to AI backend",
+    })
+  }
+})
+
 router.get("/", async (req, res, next) => {
   try {
     const result = await projectsService.listProjects()

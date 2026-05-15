@@ -48,14 +48,7 @@
       "Bash(curl -s 'https://qssegiguipgqjpaumgye.supabase.co/rest/v1/document_metadata?select=id,source_doc,extracted_at' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzc2VnaWd1aXBncWpwYXVtZ3llIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjAxNDE1MywiZXhwIjoyMDkxNTkwMTUzfQ.Jb1lkCq3yHncTLtLSqLstld0G2vFN-GJMCUVu0vYD7A' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzc2VnaWd1aXBncWpwYXVtZ3llIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjAxNDE1MywiZXhwIjoyMDkxNTkwMTUzfQ.Jb1lkCq3yHncTLtLSqLstld0G2vFN-GJMCUVu0vYD7A')",
       "Bash(curl -s 'https://qssegiguipgqjpaumgye.supabase.co/rest/v1/document_metadata?select=source_doc,extracted_at,payload' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzc2VnaWd1aXBncWpwYXVtZ3llIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjAxNDE1MywiZXhwIjoyMDkxNTkwMTUzfQ.Jb1lkCq3yHncTLtLSqLstld0G2vFN-GJMCUVu0vYD7A' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzc2VnaWd1aXBncWpwYXVtZ3llIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjAxNDE1MywiZXhwIjoyMDkxNTkwMTUzfQ.Jb1lkCq3yHncTLtLSqLstld0G2vFN-GJMCUVu0vYD7A')",
       "Bash(python -m json.tool)",
-      "mcp__plugin_desktop-commander_desktop-commander__get_file_info",
-      "mcp__plugin_desktop-commander_desktop-commander__start_search",
-      "mcp__plugin_desktop-commander_desktop-commander__list_directory",
-      "mcp__plugin_desktop-commander_desktop-commander__interact_with_process",
-      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\ai\\\\model_ai\" -Recurse -Filter \"*.py\")",
-      "Bash(Select-Object FullName, Length)",
-      "Bash(Format-Table -AutoSize)",
-      "Read(//c/Users/hudar/Documents/**)"
+      "mcp__plugin_claude-mem_mcp-search__search"
     ],
     "additionalDirectories": [
       "C:\\Users\\hudar\\.config\\superpowers\\worktrees\\Project 1 (AI)\\docx-pipeline\\experiments\\pymupdf4llm\\tests\\docx",
@@ -68,6 +61,6 @@
     ]
   },
   "enabledPlugins": {
-    "chrome-devtools-mcp@claude-plugins-official": false
+    "chrome-devtools-mcp@claude-plugins-official": true
   }
 }

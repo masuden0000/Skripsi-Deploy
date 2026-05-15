@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   AdminPageHeader,
   AdminSurfaceCard,
 } from "@/components/admin/shared"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -25,7 +25,6 @@ type ProjectResponse = {
     id: string
     skema: string
     tahun: string
-    judul: string
     source_file: string | null
     source_url: string | null
     status: ProjectStatus
@@ -40,7 +39,6 @@ type ProjectResponse = {
 type DocumentResult = {
   projectId: string
   fileName: string
-  title: string
   skema: string
   tahun: string
   sourceUrl: string | null
@@ -58,13 +56,19 @@ type LogEntry = {
   timestamp: string
 }
 
+const ACTIVE_PROJECT_KEY = "proposal_active_project_id"
+
 const PKM_SCHEMES = [
-  { value: "pkm-volid", label: "PKM Vokasi" },
-  { value: "pkm-kc", label: "PKM Karsa Ceatera (KC)" },
-  { value: "pkm-penelitian", label: "PKM Penelitian" },
-  { value: "pkm-artikel", label: "PKM Artikel Ilmiah" },
-  { value: "pkm-gtk", label: "PKM Griefing dan Teknologi Tepat Guna" },
-  { value: "pkm-mbkm", label: "PKM MBKM" },
+  { value: "pkm-re", label: "PKM-RE: Riset Eksakta" },
+  { value: "pkm-rsh", label: "PKM-RSH: Riset Sosial Humaniora" },
+  { value: "pkm-k", label: "PKM-K: Kewirausahaan" },
+  { value: "pkm-pm", label: "PKM-PM: Pengabdian Kepada Masyarakat" },
+  { value: "pkm-pi", label: "PKM-PI: Penerapan Iptek" },
+  { value: "pkm-kc", label: "PKM-KC: Karsa Cipta" },
+  { value: "pkm-ki", label: "PKM-KI: Karya Inovatif" },
+  { value: "pkm-vgk", label: "PKM-VGK: Video Gagasan Konstruktif" },
+  { value: "pkm-ai", label: "PKM-AI: Artikel Ilmiah" },
+  { value: "pkm-gft", label: "PKM-GFT: Gagasan Futuristik Tertulis" },
 ]
 
 const YEARS = Array.from({ length: 5 }, (_, i) => {
@@ -72,8 +76,11 @@ const YEARS = Array.from({ length: 5 }, (_, i) => {
   return { value: String(year), label: String(year) }
 })
 
+function isPdfFile(file: File): boolean {
+  return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+}
+
 export default function ProposalDocumentPage() {
-  const [title, setTitle] = useState("")
   const [skema, setSkema] = useState("")
   const [tahun, setTahun] = useState("")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -83,8 +90,57 @@ export default function ProposalDocumentPage() {
   const [result, setResult] = useState<DocumentResult | null>(null)
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null)
   const [logs, setLogs] = useState<LogEntry[]>([])
+  const [isRestoring, setIsRestoring] = useState(true)
   const logsEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const resultStatus = result?.status
+
+  // Restore in-progress project on page load
+  useEffect(() => {
+    const savedId = localStorage.getItem(ACTIVE_PROJECT_KEY)
+    if (!savedId) {
+      setIsRestoring(false)
+      return
+    }
+
+    fetch(`/api/projects/${savedId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const project = data?.data
+        if (!project) {
+          localStorage.removeItem(ACTIVE_PROJECT_KEY)
+          return
+        }
+
+        const status: ProjectStatus = project.status
+        if (status === "completed" || status === "failed") {
+          localStorage.removeItem(ACTIVE_PROJECT_KEY)
+        }
+
+        setCurrentProjectId(savedId)
+        setResult({
+          projectId: savedId,
+          fileName: project.source_file ?? "",
+          skema: PKM_SCHEMES.find((s) => s.value === project.skema)?.label ?? project.skema,
+          tahun: project.tahun,
+          sourceUrl: project.source_url,
+          resultUrl: project.result_url,
+          status,
+          errorMessage: project.error_message,
+          createdAt: project.created_at,
+        })
+
+        if (status !== "completed" && status !== "failed") {
+          setIsUploading(true)
+        }
+      })
+      .catch(() => {
+        localStorage.removeItem(ACTIVE_PROJECT_KEY)
+      })
+      .finally(() => {
+        setIsRestoring(false)
+      })
+  }, [])
 
   // Auto-scroll logs when new entries are added
   useEffect(() => {
@@ -93,45 +149,59 @@ export default function ProposalDocumentPage() {
     }
   }, [logs])
 
-  // Status polling effect
+  // Supabase Realtime — subscribe to project status changes
   useEffect(() => {
     if (!currentProjectId) return
-    if (result && result.status === "completed") return
-    if (result && result.status === "failed") return
+    if (resultStatus === "completed" || resultStatus === "failed") return
 
-    const pollStatus = async () => {
-      try {
-        const response = await fetch(`/api/projects/${currentProjectId}`)
-        if (!response.ok) return
+    const supabase = getSupabaseBrowserClient()
 
-        const data: ProjectResponse = await response.json()
-        const project = data.data
+    const channel = supabase
+      .channel(`project-status-${currentProjectId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "projects",
+          filter: `id=eq.${currentProjectId}`,
+        },
+        (payload) => {
+          const project = payload.new as {
+            status: ProjectStatus
+            result_url: string | null
+            error_message: string | null
+          }
 
-        setResult((prev) => prev ? {
-          ...prev,
-          status: project.status,
-          resultUrl: project.result_url,
-          errorMessage: project.error_message,
-        } : null)
+          setResult((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: project.status,
+                  resultUrl: project.result_url,
+                  errorMessage: project.error_message,
+                }
+              : null
+          )
 
-        // Stop polling if completed or failed
-        if (project.status === "completed" || project.status === "failed") {
-          setIsUploading(false)
+          if (project.status === "completed" || project.status === "failed") {
+            setIsUploading(false)
+            localStorage.removeItem(ACTIVE_PROJECT_KEY)
+          }
         }
-      } catch (error) {
-        console.error("Error polling status:", error)
-      }
-    }
+      )
+      .subscribe()
 
-    // Poll every 3 seconds
-    const interval = setInterval(pollStatus, 3000)
-    return () => clearInterval(interval)
-  }, [currentProjectId, result?.status])
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [currentProjectId, resultStatus])
+
 
   // SSE log streaming effect
   useEffect(() => {
     if (!currentProjectId) return
-    if (result && (result.status === "completed" || result.status === "failed")) return
+    if (resultStatus === "completed" || resultStatus === "failed") return
 
     let eventSource: EventSource | null = null
     let lastLogId = 0
@@ -165,24 +235,29 @@ export default function ProposalDocumentPage() {
     return () => {
       eventSource?.close()
     }
-  }, [currentProjectId, result?.status])
+  }, [currentProjectId, resultStatus])
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
-    if (file) {
+    if (file && isPdfFile(file)) {
       setSelectedFile(file)
       setUploadError(null)
+      return
+    }
+
+    if (file) {
+      setUploadError("Hanya file PDF yang diizinkan.")
     }
   }
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault()
     const file = event.dataTransfer.files?.[0]
-    if (file && (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || file.type === "application/pdf")) {
+    if (file && isPdfFile(file)) {
       setSelectedFile(file)
       setUploadError(null)
     } else {
-      setUploadError("Hanya file DOCX dan PDF yang diizinkan.")
+      setUploadError("Hanya file PDF yang diizinkan.")
     }
   }
 
@@ -199,11 +274,6 @@ export default function ProposalDocumentPage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-
-    if (!title.trim()) {
-      setUploadError("Judul proposal wajib diisi.")
-      return
-    }
 
     if (!skema) {
       setUploadError("Skema PKM wajib dipilih.")
@@ -224,6 +294,8 @@ export default function ProposalDocumentPage() {
     setUploadError(null)
     setUploadProgress(0)
     setResult(null)
+    setCurrentProjectId(null)
+    setLogs([])
 
     try {
       // Step 1: Create project and get signed upload URL
@@ -231,19 +303,11 @@ export default function ProposalDocumentPage() {
       const formData = new FormData()
       formData.append("skema", skema)
       formData.append("tahun", tahun)
-      formData.append("judul", title.trim())
       formData.append("file_name", selectedFile.name)
 
       const response = await fetch("/api/projects", {
         method: "PUT",
-        body: JSON.stringify({
-          bucket: "ai-source-files",
-          projectId: "new",
-          fileName: selectedFile.name,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        body: formData,
       })
 
       setUploadProgress(20)
@@ -275,21 +339,41 @@ export default function ProposalDocumentPage() {
         throw new Error("Gagal upload file ke Supabase Storage")
       }
 
-      setUploadProgress(80)
+      setUploadProgress(75)
+
+      // Step 3: Confirm upload so AI backend starts the pipeline
+      const confirmFormData = new FormData()
+      confirmFormData.append("project_id", project_id)
+      confirmFormData.append("file_name", selectedFile.name)
+
+      const confirmResponse = await fetch("/api/projects/confirm-upload", {
+        method: "POST",
+        body: confirmFormData,
+      })
+
+      setUploadProgress(90)
+
+      if (!confirmResponse.ok) {
+        const errorText = await confirmResponse.text()
+        throw new Error(errorText || "Gagal mengonfirmasi upload file")
+      }
+
+      const confirmData: ProjectResponse = await confirmResponse.json()
+      const confirmedProject = confirmData.data
 
       // Initialize result state
+      localStorage.setItem(ACTIVE_PROJECT_KEY, project_id)
       setCurrentProjectId(project_id)
       setResult({
         projectId: project_id,
-        fileName: selectedFile.name,
-        title: title.trim(),
-        skema: PKM_SCHEMES.find(s => s.value === skema)?.label ?? skema,
-        tahun: tahun,
-        sourceUrl: null,
-        resultUrl: null,
-        status: "pending",
-        errorMessage: null,
-        createdAt: new Date().toISOString(),
+        fileName: confirmedProject.source_file ?? selectedFile.name,
+        skema: PKM_SCHEMES.find((scheme) => scheme.value === confirmedProject.skema)?.label ?? confirmedProject.skema,
+        tahun: confirmedProject.tahun,
+        sourceUrl: confirmedProject.source_url,
+        resultUrl: confirmedProject.result_url,
+        status: confirmedProject.status,
+        errorMessage: confirmedProject.error_message,
+        createdAt: confirmedProject.created_at,
       })
 
       setUploadProgress(100)
@@ -302,14 +386,16 @@ export default function ProposalDocumentPage() {
   }
 
   function handleReset() {
-    setTitle("")
+    localStorage.removeItem(ACTIVE_PROJECT_KEY)
     setSkema("")
     setTahun("")
     setSelectedFile(null)
     setResult(null)
     setCurrentProjectId(null)
+    setIsUploading(false)
     setUploadProgress(0)
     setUploadError(null)
+    setLogs([])
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -345,15 +431,18 @@ export default function ProposalDocumentPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
-  function formatDateTime(isoString: string): string {
-    const date = new Date(isoString)
-    return date.toLocaleString("id-ID", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+  if (isRestoring) {
+    return (
+      <div className="px-8 py-8">
+        <AdminPageHeader
+          title="Buat Dokumen Proposal"
+          description="Upload dokumen proposal PKM untuk diproses dan divisualisasikan"
+        />
+        <div className="flex items-center justify-center py-24">
+          <Loader2Icon className="size-6 animate-spin text-gray-400" />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -364,12 +453,12 @@ export default function ProposalDocumentPage() {
       />
 
       {!result ? (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6">
           <AdminSurfaceCard>
             <div className="border-b border-gray-100 px-5 py-4">
               <h2 className="text-sm font-semibold text-gray-700">Form Upload</h2>
               <p className="mt-0.5 text-xs text-[rgba(0,0,0,0.4)]">
-                Masukkan judul dan upload file proposal
+                Upload file proposal untuk diproses
               </p>
             </div>
 
@@ -412,21 +501,7 @@ export default function ProposalDocumentPage() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="proposal-title" className="text-xs font-medium text-gray-600">
-                  Judul Proposal
-                </Label>
-                <Input
-                  id="proposal-title"
-                  value={title}
-                  onChange={(event) => setTitle(event.target.value)}
-                  placeholder="cth. Analisis Perbandingan Algoritma Sorting"
-                  disabled={isUploading}
-                />
-                <p className="text-xs text-gray-400">Masukkan judul proposal yang akan diproses</p>
-              </div>
-
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 full-width">
                 <Label className="text-xs font-medium text-gray-600">Buku Panduan PKM (sesuai skema yang dipilih)</Label>
 
                 {!selectedFile ? (
@@ -439,13 +514,13 @@ export default function ProposalDocumentPage() {
                         : "cursor-pointer border-gray-200 bg-gray-50/50 hover:border-pkm-200 hover:bg-pkm-50/30"
                     }`}
                   >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".docx,.pdf"
-                      onChange={handleFileChange}
-                      disabled={isUploading}
-                      className="absolute inset-0 cursor-pointer opacity-0"
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf"
+                        onChange={handleFileChange}
+                        disabled={isUploading}
+                        className="absolute inset-0 cursor-pointer opacity-0"
                     />
                     <div className="flex size-12 items-center justify-center rounded-full bg-pkm-100">
                       <UploadIcon className="size-5 text-pkm-700" />
@@ -453,9 +528,9 @@ export default function ProposalDocumentPage() {
                     <p className="mt-3 text-sm font-medium text-gray-700">
                       Drop file di sini atau klik untuk upload
                     </p>
-                    <p className="mt-1 text-xs text-gray-400">
-                      Mendukung file DOCX dan PDF
-                    </p>
+                     <p className="mt-1 text-xs text-gray-400">
+                       Mendukung file PDF
+                     </p>
                   </div>
                 ) : (
                   <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
@@ -487,49 +562,20 @@ export default function ProposalDocumentPage() {
                 </div>
               ) : null}
 
-              {isUploading && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500">Mengupload dan memproses...</span>
-                    <span className="font-medium text-pkm-700">{uploadProgress}%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-                    <div
-                      className="h-full rounded-full bg-pkm-500 transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
               <div className="flex justify-end gap-3 pt-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleReset}
-                  disabled={isUploading || (!title && !selectedFile && !skema && !tahun)}
+                  disabled={isUploading || (!selectedFile && !skema && !tahun)}
                 >
                   Reset
                 </Button>
-                <Button type="submit" disabled={isUploading || !title || !selectedFile || !skema || !tahun}>
+                <Button type="submit" disabled={isUploading || !selectedFile || !skema || !tahun}>
                   {isUploading ? "Memproses..." : "Buat Dokumen"}
                 </Button>
               </div>
             </form>
-          </AdminSurfaceCard>
-
-          <AdminSurfaceCard>
-            <div className="flex h-full items-center justify-center px-5 py-12">
-              <div className="text-center">
-                <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-gray-100">
-                  <DocumentIcon className="size-8 text-gray-400" />
-                </div>
-                <h3 className="mt-4 text-sm font-medium text-gray-700">Preview Dokumen</h3>
-                <p className="mt-1 text-xs text-gray-400">
-                  Dokumen yang sudah diproses akan muncul di sini
-                </p>
-              </div>
-            </div>
           </AdminSurfaceCard>
         </div>
       ) : (
@@ -561,7 +607,7 @@ export default function ProposalDocumentPage() {
                 </h2>
                 <p className="mt-0.5 text-sm text-gray-500">
                   {result.status === "completed"
-                    ? `Proposal "${result.title}" telah berhasil diproses`
+                    ? "Dokumen berhasil diproses"
                     : result.status === "failed"
                       ? result.errorMessage || "Terjadi kesalahan saat memproses dokumen"
                       : getStatusLabel(result.status)}
@@ -570,7 +616,7 @@ export default function ProposalDocumentPage() {
             </div>
 
             <div className="px-5 py-5">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Skema</p>
                   <p className="mt-1 text-sm font-medium text-gray-800">{result.skema}</p>
@@ -579,15 +625,10 @@ export default function ProposalDocumentPage() {
                   <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Tahun</p>
                   <p className="mt-1 text-sm font-medium text-gray-800">{result.tahun}</p>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4 sm:col-span-2">
-                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Judul</p>
-                  <p className="mt-1 text-sm font-medium text-gray-800">{result.title}</p>
+                <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Nama File</p>
+                  <p className="mt-1 text-sm font-medium text-gray-800">{result.fileName}</p>
                 </div>
-              </div>
-
-              <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50/50 p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Nama File</p>
-                <p className="mt-1 text-sm font-medium text-gray-800">{result.fileName}</p>
               </div>
 
               <div className={`mt-4 flex items-center justify-between rounded-xl border px-4 py-3 ${getStatusColor(result.status)}`}>

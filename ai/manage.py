@@ -144,6 +144,38 @@ def run_schema_diff_cmd(source_doc: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
+# Menjalankan fungsi `run_validate` sebagai bagian alur `manage`.
+# ---------------------------------------------------------------------------
+def run_validate(project_id: str | None = None, source_doc: str | None = None) -> None:
+    from model_ai.metadata_repository import load_document_metadata_payload
+    from model_ai.validation.validator import validate_and_print
+
+    # Resolve paths
+    if project_id:
+        docx_path = AI_DIR / "data" / project_id / "file_target.docx"
+    else:
+        docx_path = AI_DIR / "data" / "file_target.docx"
+
+    if not docx_path.exists():
+        raise SystemExit(f"File tidak ditemukan: {docx_path}")
+
+    # Load metadata from Supabase
+    if source_doc is None:
+        # Default: gunakan nama file DOCX sebagai source_doc
+        source_doc = docx_path.name
+
+    payload = load_document_metadata_payload(source_doc)
+    print(f"[validate] Loaded metadata untuk source_doc: {source_doc}")
+
+    # Run validation
+    result = validate_and_print(str(docx_path), payload)
+
+    if result.status != "pass":
+        raise SystemExit(1)
+
+
+# ---------------------------------------------------------------------------
 # Digunakan oleh: model_ai/loader/pdf_extractor.py; model_ai/loader/supabase_ingest.py
 # Menjalankan fungsi `main` sebagai bagian alur `manage`.
 # ---------------------------------------------------------------------------
@@ -250,6 +282,19 @@ def main() -> None:
         help="Gunakan mapper rule-based sederhana tanpa LLM.",
     )
 
+    validate_parser = subparsers.add_parser(
+        "validate",
+        help="Validasi format dokumen DOCX terhadap rules di document_metadata.",
+    )
+    validate_parser.add_argument(
+        "--project-id",
+        help="Project ID untuk isolate output per-project (default: data/file_target.docx).",
+    )
+    validate_parser.add_argument(
+        "--source-doc",
+        help="Nama file PDF sumber sebagai selector document_metadata (default: nama file DOCX).",
+    )
+
     args = parser.parse_args()
 
     if args.command == "setup":
@@ -280,6 +325,13 @@ def main() -> None:
             dictionary_path=args.dictionary,
             with_embeddings=not args.no_embeddings,
             use_llm_mapper=not args.no_llm_mapper,
+        )
+        return
+
+    if args.command == "validate":
+        run_validate(
+            project_id=getattr(args, "project_id", None),
+            source_doc=getattr(args, "source_doc", None),
         )
         return
 

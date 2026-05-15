@@ -10,6 +10,11 @@ __pycache__/
 **/.env
 **/.env.*
 !.env.example
+!**/.env.example
+
+# Local agent/app state
+.claude/settings.local.json*
+.claude/worktrees/
 
 # PDF documents
 *.pdf

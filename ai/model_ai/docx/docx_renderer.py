@@ -216,7 +216,19 @@ def render_proposal_docx(
     _render_proposal_body(document, doc_structure, page_layout, spacing, numbering, figures_tables, chunks, instructional_placeholders)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    document.save(str(output_path))
+    try:
+        document.save(str(output_path))
+    except PermissionError:
+        # File sedang terbuka di aplikasi lain (misal Word) — simpan dengan nama bertimestamp
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        alt_path = output_path.parent / f"{output_path.stem}_{timestamp}{output_path.suffix}"
+        document.save(str(alt_path))
+        print(
+            f"[docx] Peringatan: '{output_path.name}' sedang terbuka di aplikasi lain.\n"
+            f"[docx] Dokumen disimpan sebagai: '{alt_path.name}'"
+        )
+        return alt_path
     return output_path
 
 
@@ -689,7 +701,7 @@ def _render_bab_section(
     _force_paragraph_runs_black(body_placeholder)
 
     # Tambah contoh gambar di BAB 1 (setelah instructional placeholder)
-    if num == "1":
+    if str(num) == "1":
         # Enter 1x sebelum gambar
         empty = document.add_paragraph()
         empty.paragraph_format.space_after = Pt(0)
@@ -868,18 +880,22 @@ def _render_sub_bab_section(
         empty = document.add_paragraph()
         empty.paragraph_format.space_after = Pt(0)
 
-    body_placeholder = document.add_paragraph(
-        instructional_placeholders.get(
-            make_instruction_key("sub_bab", heading_text),
-            f"Instruksi pengisian untuk {heading_text}: lengkapi isi bagian ini sesuai panduan.",
+    # Untuk sub_bab yang sudah memiliki tabel (4.1 Anggaran Biaya, 4.2 Jadwal Kegiatan),
+    # tidak perlu instructional placeholder tambahan di bawah tabel.
+    is_table_sub_bab = sub_num and (str(sub_num).endswith(".1") or str(sub_num).endswith(".2"))
+    if not is_table_sub_bab:
+        body_placeholder = document.add_paragraph(
+            instructional_placeholders.get(
+                make_instruction_key("sub_bab", heading_text),
+                f"Instruksi pengisian untuk {heading_text}: lengkapi isi bagian ini sesuai panduan.",
+            )
         )
-    )
-    body_placeholder.paragraph_format.line_spacing = spacing.get("line_spacing", 1.15)
-    body_placeholder.paragraph_format.alignment   = _map_alignment(
-        (spacing.get("paragraph_alignment") or "JUSTIFY").upper()
-    )
-    body_placeholder.paragraph_format.space_after = Pt(0)
-    _force_paragraph_runs_black(body_placeholder)
+        body_placeholder.paragraph_format.line_spacing = spacing.get("line_spacing", 1.15)
+        body_placeholder.paragraph_format.alignment   = _map_alignment(
+            (spacing.get("paragraph_alignment") or "JUSTIFY").upper()
+        )
+        body_placeholder.paragraph_format.space_after = Pt(0)
+        _force_paragraph_runs_black(body_placeholder)
 
 
 # ---------------------------------------------------------------------------
@@ -950,16 +966,7 @@ def _add_budget_table(document: Document, bab_number: int, figures_tables: dict)
     # Get budget rules from database or use fallback
     budget_rules = figures_tables.get("budget_format_rules")
 
-    # Caption DI ATAS tabel
-    fmt = figures_tables.get("caption_format_table", "Tabel {bab}.{n}. {title}")
-    caption_text = (
-        fmt.replace("{bab}", str(bab_number)).replace("{n}", "1")
-           .replace("{title}", "Rincian Anggaran Biaya")
-    )
-    cap_p = document.add_paragraph(caption_text, style="Caption")
-    cap_p.paragraph_format.space_after = Pt(0)
-    _force_paragraph_runs_black(cap_p)
-
+    # Caption sudah ditambahkan oleh pemanggil (_render_sub_bab_section) sebelum memanggil fungsi ini.
     if budget_rules and budget_rules.get("budget_items"):
         # Use database-driven values
         items = []
@@ -1044,16 +1051,7 @@ def _add_budget_table(document: Document, bab_number: int, figures_tables: dict)
 # Tabel jadwal kegiatan sesuai format panduan — caption di atas (poin 5)
 # ---------------------------------------------------------------------------
 def _add_schedule_table(document: Document, bab_number: int, figures_tables: dict, page_layout: dict) -> None:
-    # Caption DI ATAS tabel
-    fmt = figures_tables.get("caption_format_table", "Tabel {bab}.{n}. {title}")
-    caption_text = (
-        fmt.replace("{bab}", str(bab_number)).replace("{n}", "2")
-           .replace("{title}", "Jadwal Pelaksanaan Kegiatan")
-    )
-    cap_p = document.add_paragraph(caption_text, style="Caption")
-    cap_p.paragraph_format.space_after = Pt(0)
-    _force_paragraph_runs_black(cap_p)
-
+    # Caption sudah ditambahkan oleh pemanggil (_render_sub_bab_section) sebelum memanggil fungsi ini.
     paper_width, _ = _get_paper_dimensions(page_layout.get("paper_size"))
     text_width_cm = paper_width - page_layout.get("margin_left_cm", 4.0) - page_layout.get("margin_right_cm", 3.0)
     # Struktur: No | Jenis Kegiatan | Bulan (1-4) | Penanggung Jawab
@@ -1140,16 +1138,24 @@ def _add_example_figure(document: Document, caption: str | None = None) -> None:
             break
 
     if figure_image_path:
-        run = document.add_picture(str(figure_image_path), width=Cm(10))
-        run.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        if caption:
-            caption_p = document.add_paragraph(caption, style="Caption")
-            caption_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            caption_p.paragraph_format.space_after = Pt(0)
-            _force_paragraph_runs_black(caption_p)
-        # Enter 1x after image/caption
-        empty = document.add_paragraph()
-        empty.paragraph_format.space_after = Pt(0)
+        document.add_picture(str(figure_image_path), width=Cm(10))
+        # Akses paragraph terakhir untuk di-center (add_picture mengembalikan InlineShape, bukan Paragraph)
+        document.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
+    else:
+        # Fallback placeholder jika file gambar tidak ditemukan
+        placeholder_p = document.add_paragraph("[Gambar: sisipkan gambar yang relevan di sini]")
+        placeholder_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        placeholder_p.runs[0].italic = True
+        _force_paragraph_runs_black(placeholder_p)
+
+    if caption:
+        caption_p = document.add_paragraph(caption, style="Caption")
+        caption_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        caption_p.paragraph_format.space_after = Pt(0)
+        _force_paragraph_runs_black(caption_p)
+    # Enter 1x after image/caption
+    empty = document.add_paragraph()
+    empty.paragraph_format.space_after = Pt(0)
 
 
 # ---------------------------------------------------------------------------

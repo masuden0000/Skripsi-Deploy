@@ -728,7 +728,7 @@ export default function ProposalDocumentPage() {
                     className="inline-flex items-center justify-center gap-2 rounded-md border border-input background-border bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 flex-1"
                   >
                     <DocumentIcon className="size-4" />
-                    Lihat Dokumen Proposal
+                    Download Template Proposal
                   </a>
                   <Button variant="outline" className="flex-1 gap-2">
                     <FileTextIcon className="size-4" />

@@ -275,8 +275,8 @@ async def run_docx_generation(project_id: str) -> bool:
     # Parse RESULT_URL from manage.py stdout
     result_url = None
     for line in error_message.splitlines():
-        if line.startswith("RESULT_URL="):
-            result_url = line.split("=", 1)[1].strip()
+        if "RESULT_URL=" in line:
+            result_url = line.split("RESULT_URL=", 1)[1].strip()
             break
 
     if not result_url:

@@ -50,7 +50,7 @@ def ensure_supported_python() -> None:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `run_setup` sebagai bagian alur `manage`.
 # ---------------------------------------------------------------------------
-def run_setup(project_id: str | None = None, skip_ingest: bool = False) -> None:
+def run_setup(project_id: str, skip_ingest: bool = False) -> None:
     from model_ai.loader.pdf_extractor import extract_chunks
     from model_ai.loader.supabase_ingest import upsert_embeddings
 
@@ -69,10 +69,10 @@ def run_setup(project_id: str | None = None, skip_ingest: bool = False) -> None:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `run_extract` sebagai bagian alur `manage`.
 # ---------------------------------------------------------------------------
-def run_extract(project_id: str | None = None, source_file: str | None = None) -> None:
+def run_extract(project_id: str | None = None) -> None:
     from model_ai.extractor.doc_extractor import run_extraction
 
-    run_extraction(project_id=project_id, source_file=source_file)
+    run_extraction(project_id=project_id)
 
 
 # ---------------------------------------------------------------------------
@@ -83,11 +83,8 @@ def run_docx(project_id: str) -> str | None:
     from model_ai.docx.generator import generate_proposal_docx_bytes
     from model_ai.storage import upload_docx_to_storage
 
-    source_doc = f"{project_id}/source.pdf"
-
     doc_bytes, file_name = generate_proposal_docx_bytes(
         project_id=project_id,
-        source_doc=source_doc,
     )
 
     result_url = upload_docx_to_storage(doc_bytes, file_name, project_id)
@@ -101,7 +98,7 @@ def run_docx(project_id: str) -> str | None:
 # Menjalankan fungsi `run_docx_style_map` sebagai bagian alur `manage`.
 # ---------------------------------------------------------------------------
 def run_docx_style_map(
-    source_doc: str,
+    project_id: str,
     dictionary_path: str,
     with_embeddings: bool,
     use_llm_mapper: bool,
@@ -111,7 +108,7 @@ def run_docx_style_map(
 
     run_docx_style_mapping_pipeline(
         dictionary_path=resolve_ai_path(dictionary_path),
-        extracted_payload=load_document_metadata_payload(source_doc),
+        extracted_payload=load_document_metadata_payload(project_id),
         with_embeddings=with_embeddings,
         use_llm_mapper=use_llm_mapper,
     )
@@ -121,10 +118,10 @@ def run_docx_style_map(
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `run_schema_diff_cmd` sebagai bagian alur `manage`.
 # ---------------------------------------------------------------------------
-def run_schema_diff_cmd(source_doc: str) -> None:
+def run_schema_diff_cmd(project_id: str) -> None:
     from model_ai.extractor.schema_differ import run_schema_diff
 
-    run_schema_diff(source_doc)
+    run_schema_diff(project_id)
 
 
 # ---------------------------------------------------------------------------
@@ -189,6 +186,7 @@ def main() -> None:
     )
     setup_parser.add_argument(
         "--project-id",
+        required=True,
         help="Project ID untuk isolate output per-project.",
     )
     setup_parser.add_argument(
@@ -205,10 +203,6 @@ def main() -> None:
         "--project-id",
         help="Project ID untuk isolate extraction per-project.",
     )
-    extract_parser.add_argument(
-        "--source-file",
-        help="Nama file sumber (misal 'data/{project_id}/source.pdf').",
-    )
 
     schema_diff_parser = subparsers.add_parser(
         "schema-diff",
@@ -218,9 +212,9 @@ def main() -> None:
         ),
     )
     schema_diff_parser.add_argument(
-        "--source-doc",
+        "--project-id",
         required=True,
-        help="Nama file PDF sumber yang dipakai sebagai selector document_metadata.",
+        help="Project ID sebagai selector document_metadata.",
     )
 
     docx_parser = subparsers.add_parser(
@@ -267,9 +261,9 @@ def main() -> None:
         help="Path dictionary python-docx YAML.",
     )
     map_parser.add_argument(
-        "--source-doc",
+        "--project-id",
         required=True,
-        help="Nama file PDF sumber yang dipakai sebagai selector document_metadata.",
+        help="Project ID sebagai selector document_metadata.",
     )
     map_parser.add_argument(
         "--no-embeddings",
@@ -298,15 +292,15 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.command == "setup":
-        run_setup(project_id=getattr(args, "project_id", None), skip_ingest=args.skip_ingest)
+        run_setup(project_id=args.project_id, skip_ingest=args.skip_ingest)
         return
 
     if args.command == "extract":
-        run_extract(project_id=args.project_id, source_file=args.source_file)
+        run_extract(project_id=args.project_id)
         return
 
     if args.command == "schema-diff":
-        run_schema_diff_cmd(source_doc=args.source_doc)
+        run_schema_diff_cmd(project_id=args.project_id)
         return
 
     if args.command == "docx":
@@ -319,7 +313,7 @@ def main() -> None:
 
     if args.command == "docx-style-map":
         run_docx_style_map(
-            source_doc=args.source_doc,
+            project_id=args.project_id,
             dictionary_path=args.dictionary,
             with_embeddings=not args.no_embeddings,
             use_llm_mapper=not args.no_llm_mapper,

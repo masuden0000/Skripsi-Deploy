@@ -3,7 +3,7 @@ FastAPI Router for Projects
 Dipakai oleh: Express Backend (sebagai internal API)
 Semua HTTP communication masuk melalui Express, FastAPI hanya untuk AI pipeline
 """
-from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, Query
 from fastapi.responses import JSONResponse
 from typing import Optional, Any
 from services.database import get_supabase
@@ -46,28 +46,50 @@ async def create_project(
     file: Optional[UploadFile] = File(None),
 ):
     """
-    Create a new project.
+    Create or update a project.
+    If a project with the same skema and tahun already exists, update it instead.
     Called by Express Backend only - not directly from frontend.
     """
     supabase = get_supabase()
 
-    project_data = {
-        "judul": f"Proposal {skema.upper()} {tahun}",
-        "skema": skema,
-        "tahun": tahun,
-        "status": "pending",
-    }
+    # Check if project with same skema and tahun already exists
+    existing = supabase.table("projects").select("id, status").eq("skema", skema).eq("tahun", tahun).execute()
 
-    result = supabase.table("projects").insert(project_data).execute()
+    project_id: str
+    is_update = False
 
-    if not result.data:
-        return JSONResponse(
-            status_code=500,
-            content={"success": False, "error": "Failed to create project"}
-        )
+    if existing.data:
+        # Update existing project
+        is_update = True
+        project_id = existing.data[0]["id"]
 
-    project = result.data[0]
-    project_id = project["id"]
+        # Reset status to pending if it's completed or failed (allow re-run)
+        current_status = existing.data[0].get("status", "")
+        if current_status in ("completed", "failed", "completed_with_errors"):
+            supabase.table("projects").update({
+                "status": "pending",
+                "error_message": None,
+                "result_url": None,
+            }).eq("id", project_id).execute()
+
+    else:
+        # Create new project
+        project_data = {
+            "judul": f"Proposal {skema.upper()} {tahun}",
+            "skema": skema,
+            "tahun": tahun,
+            "status": "pending",
+        }
+
+        result = supabase.table("projects").insert(project_data).execute()
+
+        if not result.data:
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "error": "Failed to create project"}
+            )
+
+        project_id = result.data[0]["id"]
 
     source_url = None
     source_file = None
@@ -79,7 +101,8 @@ async def create_project(
         try:
             source_url = await upload_file(BUCKET_SOURCE, file_content, source_file, project_id)
         except Exception as e:
-            supabase.table("projects").delete().eq("id", project_id).execute()
+            if not is_update:
+                supabase.table("projects").delete().eq("id", project_id).execute()
             return JSONResponse(
                 status_code=500,
                 content={"success": False, "error": f"Failed to upload file: {str(e)}"}
@@ -92,18 +115,24 @@ async def create_project(
         }).eq("id", project_id).execute()
 
     # Start background pipeline
-    if source_url:
+    if source_url and source_file:
         background_tasks.add_task(run_pipeline, project_id, source_url, source_file)
 
     updated_result = supabase.table("projects").select("*").eq("id", project_id).execute()
-    updated_project = map_project_row(updated_result.data[0]) if updated_result.data else map_project_row(project)
+    updated_project = map_project_row(updated_result.data[0]) if updated_result.data else None
+
+    if not updated_project:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": "Failed to retrieve updated project"}
+        )
 
     return JSONResponse(
-        status_code=201,
+        status_code=201 if not is_update else 200,
         content={
             "success": True,
             "data": updated_project.model_dump(mode="json"),
-            "message": "Project created successfully"
+            "message": "Project created successfully" if not is_update else "Project updated successfully"
         }
     )
 
@@ -115,33 +144,59 @@ async def create_project_with_upload_url(
     file_name: str = Form(...),
 ):
     """
-    Create a new project and return signed URL for direct upload to Supabase Storage.
+    Create or update a project and return signed URL for direct upload to Supabase Storage.
+    If a project with the same skema and tahun already exists, return its project_id.
     Frontend uploads file directly to Supabase, then calls /confirm-upload to trigger pipeline.
     """
     supabase = get_supabase()
 
-    # Create project with pending_upload status
-    project_data = {
-        "judul": f"Proposal {skema.upper()} {tahun}",
-        "skema": skema,
-        "tahun": tahun,
-        "status": "pending_upload",
-    }
+    # Check if project with same skema and tahun already exists
+    existing = supabase.table("projects").select("id, source_file").eq("skema", skema).eq("tahun", tahun).execute()
 
-    result = supabase.table("projects").insert(project_data).execute()
+    is_update = bool(existing.data)
 
-    if not result.data:
+    if is_update:
+        project_id = existing.data[0]["id"]
+        # Hapus file lama dari storage agar signed URL bisa dibuat tanpa error Duplicate
+        old_source_file = existing.data[0].get("source_file")
+        if old_source_file:
+            try:
+                await delete_file(BUCKET_SOURCE, f"{project_id}/{old_source_file}")
+            except Exception:
+                pass
+        # Reset status agar pipeline bisa dijalankan ulang
+        supabase.table("projects").update({
+            "status": "pending_upload",
+            "error_message": None,
+            "result_url": None,
+        }).eq("id", project_id).execute()
+    else:
+        # Create new project with pending_upload status
+        project_data = {
+            "judul": f"Proposal {skema.upper()} {tahun}",
+            "skema": skema,
+            "tahun": tahun,
+            "status": "pending_upload",
+        }
+        result = supabase.table("projects").insert(project_data).execute()
+        if not result.data:
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "error": "Failed to create project"}
+            )
+        project_id = result.data[0]["id"]
+
+    # Generate signed upload URL (berlaku untuk create maupun update)
+    storage_path = f"{project_id}/{file_name}"
+    try:
+        signed_url_data = await create_signed_upload_url(BUCKET_SOURCE, storage_path)
+    except Exception as e:
+        if not is_update:
+            supabase.table("projects").delete().eq("id", project_id).execute()
         return JSONResponse(
             status_code=500,
-            content={"success": False, "error": "Failed to create project"}
+            content={"success": False, "error": f"Gagal membuat signed URL: {str(e)}"}
         )
-
-    project = result.data[0]
-    project_id = project["id"]
-
-    # Generate signed upload URL
-    storage_path = f"{project_id}/{file_name}"
-    signed_url_data = await create_signed_upload_url(BUCKET_SOURCE, storage_path)
 
     return JSONResponse(
         status_code=200,
@@ -149,11 +204,12 @@ async def create_project_with_upload_url(
             "success": True,
             "data": {
                 "project_id": project_id,
+                "is_update": is_update,
                 "signed_url": signed_url_data.get("signed_url") or signed_url_data.get("url"),
                 "token": signed_url_data.get("token"),
                 "storage_path": storage_path,
             },
-            "message": "Use signed URL to upload file directly to Supabase Storage"
+            "message": "Project updated, upload file baru" if is_update else "Use signed URL to upload file directly to Supabase Storage"
         }
     )
 
@@ -254,9 +310,10 @@ async def get_project(project_id: str):
 
 
 @router.get("/{project_id}/logs")
-async def get_project_logs(project_id: str):
+async def get_project_logs(project_id: str, since_id: int = Query(0, ge=0)):
     """
-    Get all log entries for a project (for real-time log streaming via polling).
+    Get log entries for a project.
+    Pass since_id to return only logs with id > since_id (for current-run filtering).
     """
     supabase = get_supabase()
 
@@ -268,8 +325,11 @@ async def get_project_logs(project_id: str):
             content={"success": False, "error": "Project not found"}
         )
 
-    # Get logs ordered by timestamp
-    result = supabase.table("project_logs").select("*").eq("project_id", project_id).order("timestamp", desc=False).execute()
+    # Get logs ordered by timestamp, optionally filtered by since_id
+    query = supabase.table("project_logs").select("*").eq("project_id", project_id)
+    if since_id > 0:
+        query = query.gt("id", since_id)
+    result = query.order("timestamp", desc=False).execute()
 
     return {
         "success": True,

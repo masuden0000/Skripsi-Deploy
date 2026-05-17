@@ -8,7 +8,6 @@ Tujuan: Menyediakan alur end-to-end agar perintah docx menghasilkan file final k
 Input: output.json (dari extract), chunks (dari Supabase)
 Output: bytes DOCX — tidak disimpan ke filesystem lokal.
 """
-from io import BytesIO
 from pathlib import Path
 
 from model_ai.docx.chunk_loader import load_chunk_sources
@@ -21,14 +20,13 @@ from model_ai.metadata_repository import load_document_metadata
 
 def generate_proposal_docx_bytes(
     project_id: str,
-    source_doc: str,
     use_llm_instructional_placeholders: bool = True,
 ) -> tuple[bytes, str]:
     """
     Load metadata dari Supabase, chunks dari Supabase, generate DOCX bytes.
     Tidak ada file yang disimpan ke filesystem lokal.
     """
-    metadata = load_document_metadata(source_doc)
+    metadata = load_document_metadata(project_id)
 
     file_name = f"{metadata.document_structure_proposal.format_nama_file or project_id}.docx"
     if metadata.document_structure_proposal.format_nama_file:

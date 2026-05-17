@@ -56,7 +56,7 @@ export default function ProfilReviewerPage() {
         description="Kelola password akun Anda"
       />
 
-      <div className="max-w-lg">
+      <div className="width-full">
         <AdminSurfaceCard>
           <div className="px-6 py-5 border-b border-gray-100">
             <h2 className="text-base font-semibold text-gray-800">Ubah Password</h2>

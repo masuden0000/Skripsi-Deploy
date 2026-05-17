@@ -85,9 +85,9 @@ export default function ProfilPage() {
         description="Kelola email dan password akun Anda"
       />
 
-      <div className="flex flex-col gap-6 max-w-lg">
+      <div className="flex flex-row gap-6">
         {/* Email */}
-        <AdminSurfaceCard>
+        <AdminSurfaceCard className="w-full">
           <div className="px-6 py-5 border-b border-gray-100">
             <h2 className="text-base font-semibold text-gray-800">Ubah Email</h2>
             <p className="mt-0.5 text-xs text-[rgba(0,0,0,0.4)]">
@@ -153,7 +153,7 @@ export default function ProfilPage() {
         </AdminSurfaceCard>
 
         {/* Password */}
-        <AdminSurfaceCard>
+        <AdminSurfaceCard className="w-full">
           <div className="px-6 py-5 border-b border-gray-100">
             <h2 className="text-base font-semibold text-gray-800">Ubah Password</h2>
             <p className="mt-0.5 text-xs text-[rgba(0,0,0,0.4)]">

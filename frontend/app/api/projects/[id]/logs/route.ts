@@ -9,10 +9,12 @@ type RouteContext = {
 export async function GET(request: Request, context: RouteContext) {
   const { id } = await context.params
   const acceptsSSE = request.headers.get("accept")?.includes("text/event-stream")
+  const sinceId = new URL(request.url).searchParams.get("since_id") || "0"
+  const sinceParam = sinceId !== "0" ? `?since_id=${sinceId}` : ""
 
   if (!acceptsSSE) {
     // JSON snapshot — untuk memuat log historis saat restore halaman
-    const response = await fetch(`${BACKEND_URL}/api/projects/${id}/logs`, {
+    const response = await fetch(`${BACKEND_URL}/api/projects/${id}/logs${sinceParam}`, {
       headers: { accept: "application/json" },
       cache: "no-store",
     })
@@ -21,7 +23,7 @@ export async function GET(request: Request, context: RouteContext) {
   }
 
   // SSE streaming — untuk real-time log saat proses berjalan
-  const response = await fetch(`${BACKEND_URL}/api/projects/${id}/logs`, {
+  const response = await fetch(`${BACKEND_URL}/api/projects/${id}/logs${sinceParam}`, {
     headers: {
       "accept": "text/event-stream",
       "cache-control": "no-cache",

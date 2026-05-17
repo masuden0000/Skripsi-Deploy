@@ -119,7 +119,7 @@ async def stream_manage_command(
             error_output = f"Command exited with code {return_code}"
         return False, error_output
 
-    return True, ""
+    return True, "\n".join(stdout_lines)
 
 
 async def download_source_file(source_url: str, project_id: str, source_file: str) -> str:
@@ -197,12 +197,9 @@ async def run_extraction(project_id: str) -> bool:
     except Exception as exc:
         log_event("extraction", f"Warning: Gagal update status: {exc}", project_id)
 
-    # File selalu dinormalisasi ke source.pdf saat download, konsisten dengan run_docx
-    source_doc = f"{project_id}/source.pdf"
     command = [
         sys.executable, "manage.py", "extract",
         "--project-id", project_id,
-        "--source-file", source_doc,
     ]
     log_event("extraction", f"Menjalankan: {' '.join(command)}", project_id)
 
@@ -210,7 +207,7 @@ async def run_extraction(project_id: str) -> bool:
         step="extraction",
         command=command,
         project_id=project_id,
-        timeout_seconds=600,
+        timeout_seconds=1800,
     )
 
     if not success:

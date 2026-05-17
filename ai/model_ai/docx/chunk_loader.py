@@ -35,7 +35,7 @@ def load_chunk_sources(project_id: str) -> list[ChunkSource]:
 
     result = client.table("document_chunks").select(
         "chunk_parent, page_start, page_end, content"
-    ).eq("source_file", f"{project_id}/source.pdf").execute()
+    ).eq("project_id", project_id).execute()
 
     if not result.data:
         raise FileNotFoundError(

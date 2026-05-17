@@ -29,57 +29,42 @@ def build_metadata_supabase_client() -> Client:
 
 
 # ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menormalkan selector source_doc agar semua consumer memakai nilai yang eksplisit.
-# ---------------------------------------------------------------------------
-def _normalize_source_doc(source_doc: str) -> str:
-    normalized = source_doc.strip()
-    if not normalized:
-        raise ValueError(
-            "source_doc wajib diisi untuk membaca metadata dari tabel document_metadata."
-        )
-    return normalized
-
-
-# ---------------------------------------------------------------------------
 # Digunakan oleh: load_document_metadata_payload()
-# Mengambil satu row metadata dari Supabase berdasarkan source_doc.
+# Mengambil satu row metadata dari Supabase berdasarkan project_id.
 # ---------------------------------------------------------------------------
-def get_document_metadata_row(source_doc: str) -> dict[str, Any]:
-    normalized = _normalize_source_doc(source_doc)
+def get_document_metadata_row(project_id: str) -> dict[str, Any]:
     client = build_metadata_supabase_client()
     result = (
         client.table("document_metadata")
-        .select("source_doc, payload, extracted_at")
-        .eq("source_doc", normalized)
+        .select("project_id, payload, extracted_at")
+        .eq("project_id", project_id)
         .limit(1)
         .execute()
     )
     rows = result.data or []
     if not rows:
         raise LookupError(
-            f"Metadata untuk source_doc '{normalized}' tidak ditemukan di tabel document_metadata."
+            f"Metadata untuk project_id '{project_id}' tidak ditemukan di tabel document_metadata."
         )
 
     row = rows[0]
     if not isinstance(row, dict):
         raise TypeError(
-            f"Row metadata untuk source_doc '{normalized}' di document_metadata tidak valid."
+            f"Row metadata untuk project_id '{project_id}' di document_metadata tidak valid."
         )
     return row
 
 
 # ---------------------------------------------------------------------------
 # Digunakan oleh: model_ai/docx/metadata_loader.py; schema_differ; testing ekstraksi.
-# Mengambil raw payload JSON metadata berdasarkan source_doc.
+# Mengambil raw payload JSON metadata berdasarkan project_id.
 # ---------------------------------------------------------------------------
-def load_document_metadata_payload(source_doc: str) -> dict[str, Any]:
-    normalized = _normalize_source_doc(source_doc)
-    row = get_document_metadata_row(normalized)
+def load_document_metadata_payload(project_id: str) -> dict[str, Any]:
+    row = get_document_metadata_row(project_id)
     payload = row.get("payload")
     if not isinstance(payload, dict):
         raise TypeError(
-            f"Kolom payload di document_metadata untuk source_doc '{normalized}' bukan JSON object."
+            f"Kolom payload di document_metadata untuk project_id '{project_id}' bukan JSON object."
         )
     return payload
 
@@ -96,22 +81,20 @@ def validate_document_metadata_payload(payload: dict[str, Any]) -> DocumentMetad
 # Digunakan oleh: model_ai/docx/metadata_loader.py
 # Shortcut untuk memuat sekaligus memvalidasi metadata dari Supabase.
 # ---------------------------------------------------------------------------
-def load_document_metadata(source_doc: str) -> DocumentMetadata:
-    payload = load_document_metadata_payload(source_doc)
+def load_document_metadata(project_id: str) -> DocumentMetadata:
+    payload = load_document_metadata_payload(project_id)
     return validate_document_metadata_payload(payload)
 
 
 # ---------------------------------------------------------------------------
 # Digunakan oleh: model_ai/extractor/doc_extractor.py
-# Upsert metadata hasil extract ke Supabase dan kembalikan source_doc yang dipakai.
+# Upsert metadata hasil extract ke Supabase dan kembalikan project_id yang dipakai.
 # ---------------------------------------------------------------------------
 def upsert_document_metadata(metadata: DocumentMetadata, project_id: str | None = None) -> str:
     payload = metadata.model_dump(exclude_none=True)
-    source_doc = str(payload.get("source_document") or "").strip() or "unknown"
     client = build_metadata_supabase_client()
 
     insert_data = {
-        "source_doc": source_doc,
         "payload": payload,
         "extracted_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -121,6 +104,6 @@ def upsert_document_metadata(metadata: DocumentMetadata, project_id: str | None 
 
     client.table("document_metadata").upsert(
         insert_data,
-        on_conflict="source_doc",
+        on_conflict="project_id",
     ).execute()
-    return source_doc
+    return project_id or "unknown"

@@ -117,9 +117,9 @@ def diff_schemas(old: dict[str, Any], new: dict[str, Any]) -> SchemaDiff:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `load_old_schema` sebagai bagian alur `schema_differ`.
 # ---------------------------------------------------------------------------
-def load_old_schema(source_doc: str) -> dict[str, Any]:
+def load_old_schema(project_id: str) -> dict[str, Any]:
     """Load and flatten the existing extraction payload from document_metadata."""
-    data = load_document_metadata_payload(source_doc)
+    data = load_document_metadata_payload(project_id)
     return flatten_schema(data)
 
 
@@ -212,9 +212,8 @@ def save_diff(diff: SchemaDiff, report: str) -> None:
 # LLM + Supabase functions — imported lazily to avoid circular deps
 # ---------------------------------------------------------------------------
 
-def fetch_broad_chunks(source_doc: str) -> list[dict]:
-    """Retrieve representative chunks via broad RAG queries for one source document."""
-    from model_ai.config import get_config
+def fetch_broad_chunks(project_id: str) -> list[dict]:
+    """Retrieve representative chunks via broad RAG queries for one project."""
     from model_ai.extractor.doc_extractor import (
         _build_embedder,
         _build_supabase,
@@ -223,7 +222,6 @@ def fetch_broad_chunks(source_doc: str) -> list[dict]:
     )
     from model_ai.extractor.prompts import FREE_EXTRACTION
 
-    CONFIG = get_config()
     EMBEDDING_DIMENSION = 768
     _BROAD_QUERIES = [
         "aturan format penulisan dokumen PKM tipografi huruf",
@@ -245,7 +243,7 @@ def fetch_broad_chunks(source_doc: str) -> list[dict]:
             {"query_embedding": formatted, "match_count": FREE_EXTRACTION.top_k or 10},
         ).execute()
         for chunk in (result.data or []):
-            if str(chunk.get("source_file") or "") != source_doc:
+            if chunk.get("project_id") != project_id:
                 continue
             idx = int(chunk["chunk_index"])
             if idx not in seen:
@@ -288,16 +286,16 @@ def free_extract_all_rules(chunks: list[dict]) -> dict[str, Any]:
 # Digunakan oleh: manage.py
 # Menjalankan fungsi `run_schema_diff` sebagai bagian alur `schema_differ`.
 # ---------------------------------------------------------------------------
-def run_schema_diff(source_doc: str) -> SchemaDiff:
+def run_schema_diff(project_id: str) -> SchemaDiff:
     """Orchestrate the full schema diff pipeline."""
     print(
-        f"[schema-diff] Memuat schema lama dari document_metadata untuk source_doc={source_doc}..."
+        f"[schema-diff] Memuat schema lama dari document_metadata untuk project_id={project_id}..."
     )
-    old = load_old_schema(source_doc)
+    old = load_old_schema(project_id)
     print(f"[schema-diff] {len(old)} field ditemukan di schema lama.")
 
     print("[schema-diff] Mengambil chunks dari Supabase...")
-    chunks = fetch_broad_chunks(source_doc)
+    chunks = fetch_broad_chunks(project_id)
     print(f"[schema-diff] {len(chunks)} chunk ditemukan.")
 
     print("[schema-diff] Menjalankan free extraction via LLM...")

@@ -155,9 +155,9 @@ class MetadataRepositoryTests(unittest.TestCase):
             return_value=fake_client,
         ):
             with self.assertRaises(LookupError) as ctx:
-                get_document_metadata_row("file.pdf")
+                get_document_metadata_row("00000000-0000-0000-0000-000000000000")
 
-        self.assertIn("file.pdf", str(ctx.exception))
+        self.assertIn("00000000-0000-0000-0000-000000000000", str(ctx.exception))
         self.assertIn("document_metadata", str(ctx.exception))
         self.assertEqual(fake_client.requested_table, "document_metadata")
 
@@ -165,7 +165,7 @@ class MetadataRepositoryTests(unittest.TestCase):
     def test_load_document_metadata_payload_returns_dict_payload(self, mock_get_row):
         mock_get_row.return_value = {"payload": SAMPLE_PAYLOAD}
 
-        payload = load_document_metadata_payload("file.pdf")
+        payload = load_document_metadata_payload("00000000-0000-0000-0000-000000000000")
 
         self.assertEqual(payload["source_document"], "file.pdf")
         self.assertEqual(payload["document_type"], "Proposal PKM-KC")
@@ -175,9 +175,9 @@ class MetadataRepositoryTests(unittest.TestCase):
         mock_get_row.return_value = {"payload": "not-a-json-object"}
 
         with self.assertRaises(TypeError) as ctx:
-            load_document_metadata_payload("file.pdf")
+            load_document_metadata_payload("00000000-0000-0000-0000-000000000000")
 
-        self.assertIn("source_doc 'file.pdf'", str(ctx.exception))
+        self.assertIn("project_id '00000000-0000-0000-0000-000000000000'", str(ctx.exception))
 
     def test_coerce_document_metadata_validates_payload(self):
         metadata = coerce_document_metadata(SAMPLE_PAYLOAD)

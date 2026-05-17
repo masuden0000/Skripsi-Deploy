@@ -7,7 +7,7 @@ Tujuan: Menyediakan data dasar dokumen dari PDF untuk pipeline ingest.
 """
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Optional  # dipakai untuk pdf_path
 
 import pymupdf4llm
 from langchain_text_splitters import MarkdownTextSplitter
@@ -51,31 +51,15 @@ def get_page_chunks(pdf_path: Path) -> list[dict]:
 # Menjalankan fungsi `extract_chunks` sebagai bagian alur `pdf_extractor`.
 # ---------------------------------------------------------------------------
 def extract_chunks(
-    project_id: Optional[str] = None,
+    project_id: str,
     pdf_path: Optional[Path] = None,
 ) -> tuple[int, Path]:
-    # Tentukan lokasi PDF sumber dan file output.
-    # Blok ini menjadi titik awal dan titik akhir alur kerja extractor.
+    project_data_dir = APP_DIR / "data" / project_id
+    project_data_dir.mkdir(parents=True, exist_ok=True)
 
-    project_data_dir: Optional[Path] = None
-
-    # Tentukan path source PDF
-    if pdf_path:
-        source_pdf = pdf_path
-    elif project_id:
-        project_data_dir = APP_DIR / "data" / project_id
-        project_data_dir.mkdir(parents=True, exist_ok=True)
-        source_pdf = project_data_dir / "source.pdf"
-    else:
-        source_pdf = PROJECT_DIR / "file.pdf"
-
-    # Tentukan output paths
-    if project_id and project_data_dir:
-        output_path = project_data_dir / "output_chunks.json"
-        markdown_output_path = project_data_dir / "output.md"
-    else:
-        output_path = APP_DIR / "data" / "output_chunks.json"
-        markdown_output_path = APP_DIR / "data" / "output.md"
+    source_pdf = pdf_path or (project_data_dir / "source.pdf")
+    output_path = project_data_dir / "output_chunks.json"
+    markdown_output_path = project_data_dir / "output.md"
 
     if not source_pdf.exists():
         raise FileNotFoundError(f"File PDF tidak ditemukan: {source_pdf}")

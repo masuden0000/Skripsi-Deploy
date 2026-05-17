@@ -68,7 +68,10 @@ BATCH_PAUSE_EVERY = 2
 # Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
 # Blok konstanta `BATCH_PAUSE_SECONDS` untuk menyimpan konfigurasi/registry yang dipakai berulang.
 # ---------------------------------------------------------------------------
-BATCH_PAUSE_SECONDS = 60
+BATCH_PAUSE_SECONDS = 30
+
+# Batas atas waktu tunggu rate limit per percobaan — mencegah sleep > pipeline timeout
+MAX_RATE_LIMIT_WAIT = 120
 
 # ---------------------------------------------------------------------------
 # Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
@@ -281,14 +284,14 @@ def _expand_to_full_headers(seed_chunks: list[dict], client: Client) -> list[dic
         return seed_chunks
 
     headers: list[str] = list({str(c["chunk_parent"]) for c in seed_chunks})
-    source_file: str | None = seed_chunks[0].get("source_file")  # type: ignore[assignment]
+    project_id: str | None = seed_chunks[0].get("project_id")  # type: ignore[assignment]
 
     query = client.table("document_chunks").select(
         "chunk_index, content, chunk_parent, chunk_prev, chunk_next, page_start, page_end"
     ).in_("chunk_parent", headers)
 
-    if source_file:
-        query = query.eq("source_file", source_file)
+    if project_id:
+        query = query.eq("project_id", project_id)
 
     expanded = query.execute().data or []
 
@@ -305,7 +308,7 @@ def _expand_to_full_headers(seed_chunks: list[dict], client: Client) -> list[dic
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `_retrieve_chunks_multi` sebagai bagian alur `doc_extractor`.
 # ---------------------------------------------------------------------------
-def _retrieve_chunks_multi(queries: list[str], top_k: int, source_file: str | None = None) -> list[dict]:
+def _retrieve_chunks_multi(queries: list[str], top_k: int, project_id: str | None = None) -> list[dict]:
     """Embed setiap query, retrieve top-K chunks dari Supabase, lalu expand per header.
 
     Alur:
@@ -318,8 +321,8 @@ def _retrieve_chunks_multi(queries: list[str], top_k: int, source_file: str | No
     client = _build_supabase()
 
     rpc_params: dict = {"query_embedding": None, "match_count": top_k}
-    if source_file:
-        rpc_params["filter_source_file"] = source_file
+    if project_id:
+        rpc_params["filter_project_id"] = project_id
 
     seen: dict[int, dict] = {}
     for query in queries:
@@ -346,11 +349,11 @@ def _extract_key(
     prompt_cfg: PromptConfig,
     extracted_cls: Type[BaseModel],
     info_cls: Type[BaseModel],
-    source_file: str | None = None,
+    project_id: str | None = None,
 ) -> Any:
     """Jalankan satu siklus ekstraksi: retrieve → prompt → LLM → merge sources."""
     top_k = prompt_cfg.top_k if prompt_cfg.top_k > 0 else CONFIG.rag_top_k
-    chunks = _retrieve_chunks_multi(prompt_cfg.queries, top_k, source_file=source_file)
+    chunks = _retrieve_chunks_multi(prompt_cfg.queries, top_k, project_id=project_id)
     prompt = render_prompt(prompt_cfg.template, chunks)
 
     CONFIG.disable_blackhole_proxies()
@@ -371,8 +374,25 @@ def _extract_key(
                     wait_secs = int(wait_match.group(1)) * 60 + float(wait_match.group(2)) + 5
                 else:
                     wait_secs = 60 * (2 ** attempt)
-                print(f"[extract] Rate limit hit. Menunggu {wait_secs:.0f} detik (percobaan {attempt + 1}/{max_retries})...")
-                time.sleep(wait_secs)
+                wait_secs = min(wait_secs, MAX_RATE_LIMIT_WAIT)
+
+                # Rotate ke Groq key berikutnya atau switch ke Gemini sebelum retry
+                if not CONFIG._groq_exhausted:
+                    if len(CONFIG.groq_api_keys) > 1:
+                        CONFIG.rotate_groq_key()
+                        print(f"[extract] Rate limit hit. Rotasi ke Groq key berikutnya (percobaan {attempt + 1}/{max_retries})...")
+                    else:
+                        CONFIG._groq_exhausted = True
+                        print(f"[extract] Rate limit hit. Semua Groq key exhausted, switch ke Gemini (percobaan {attempt + 1}/{max_retries})...")
+                else:
+                    if len(CONFIG.google_api_keys) > 1:
+                        CONFIG.rotate_google_key()
+                    print(f"[extract] Rate limit hit pada Gemini. Menunggu {wait_secs:.0f} detik (percobaan {attempt + 1}/{max_retries})...")
+                    time.sleep(wait_secs)
+
+                # Rebuild LLM dengan key/provider yang baru
+                llm = _build_llm()
+                chain = llm.with_structured_output(extracted_cls)
             else:
                 raise
     else:
@@ -407,10 +427,10 @@ def _pause_after_batch(processed_count: int, total_count: int) -> None:
 # Digunakan oleh: model_ai/extractor/prompts.py
 # Menjalankan fungsi `_extract_document_type` sebagai bagian alur `doc_extractor`.
 # ---------------------------------------------------------------------------
-def _extract_document_type(source_file: str | None = None) -> str | None:
+def _extract_document_type(project_id: str | None = None) -> str | None:
     """Identifikasi jenis dokumen dari judul/konteks header dokumen."""
     top_k = DOCUMENT_TYPE.top_k if DOCUMENT_TYPE.top_k > 0 else CONFIG.rag_top_k
-    chunks = _retrieve_chunks_multi(DOCUMENT_TYPE.queries, top_k, source_file=source_file)
+    chunks = _retrieve_chunks_multi(DOCUMENT_TYPE.queries, top_k, project_id=project_id)
     if not chunks:
         return None
 
@@ -426,20 +446,20 @@ def _extract_document_type(source_file: str | None = None) -> str | None:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `extract_document_metadata` sebagai bagian alur `doc_extractor`.
 # ---------------------------------------------------------------------------
-def extract_document_metadata(source_file: str | None = None) -> DocumentMetadata:
+def extract_document_metadata(project_id: str | None = None) -> DocumentMetadata:
     results: dict[str, Any] = {}
     total_keys = len(KEY_REGISTRY)
     for index, (key, prompt_cfg, extracted_cls, info_cls) in enumerate(KEY_REGISTRY, start=1):
         print(f"[extract] Memproses: {key} ...")
-        results[key] = _extract_key(prompt_cfg, extracted_cls, info_cls, source_file=source_file)
+        results[key] = _extract_key(prompt_cfg, extracted_cls, info_cls, project_id=project_id)
         print(f"[extract] Selesai:   {key}")
         _pause_after_batch(index, total_keys)
 
     print("[extract] Memproses: document_type ...")
-    results["document_type"] = _extract_document_type(source_file=source_file)
+    results["document_type"] = _extract_document_type(project_id=project_id)
     print(f"[extract] Selesai:   document_type -> {results['document_type']}")
 
-    results["source_document"] = source_file or (Path(APP_DIR.parent / "file.pdf").name)
+    results["source_document"] = f"{project_id}/source.pdf" if project_id else None
     return DocumentMetadata(**results)
 
 
@@ -448,14 +468,14 @@ def extract_document_metadata(source_file: str | None = None) -> DocumentMetadat
 # Menjalankan fungsi `save_to_supabase` sebagai bagian alur `doc_extractor`.
 # ---------------------------------------------------------------------------
 def save_to_supabase(metadata: DocumentMetadata, project_id: str | None = None) -> None:
-    source_doc = upsert_document_metadata(metadata, project_id)
-    print(f"[extract] Supabase upsert: source_doc={source_doc}")
+    result = upsert_document_metadata(metadata, project_id)
+    print(f"[extract] Supabase upsert: project_id={result}")
 
 
 # ---------------------------------------------------------------------------
 # Digunakan oleh: manage.py
 # Menjalankan fungsi `run_extraction` sebagai bagian alur `doc_extractor`.
 # ---------------------------------------------------------------------------
-def run_extraction(project_id: str | None = None, source_file: str | None = None) -> None:
-    metadata = extract_document_metadata(source_file=source_file)
+def run_extraction(project_id: str | None = None) -> None:
+    metadata = extract_document_metadata(project_id=project_id)
     save_to_supabase(metadata, project_id)

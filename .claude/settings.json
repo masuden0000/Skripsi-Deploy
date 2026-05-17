@@ -68,7 +68,11 @@
       "Bash(head -n 160 \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\frontend\\\\components\\\\auth\\\\LoginForm.tsx\" | tail -n 30)",
       "Read(//c/Users/hudar/Documents/**)",
       "Bash(Get-Content -Path \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\ai\\\\manage.py\" -Raw)",
-      "Bash(Get-Content \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\ai\\\\manage.py\")"
+      "Bash(Get-Content \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\ai\\\\manage.py\")",
+      "Bash(Get-Content \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\ai\\\\model_ai\\\\loader\\\\supabase_ingest.py\")",
+      "Bash(Select-Object -Skip 0)",
+      "Bash(Get-Content \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\ai\\\\manage.py\" -TotalCount 150)",
+      "Bash(python -m py_compile routers/projects.py)"
     ],
     "additionalDirectories": [
       "C:\\Users\\hudar\\.config\\superpowers\\worktrees\\Project 1 (AI)\\docx-pipeline\\experiments\\pymupdf4llm\\tests\\docx",

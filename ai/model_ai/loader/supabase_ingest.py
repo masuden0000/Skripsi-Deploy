@@ -7,7 +7,6 @@ Tujuan: Menyimpan hasil preprocessing ke storage terpusat yang dipakai query RAG
 """
 import json
 from pathlib import Path
-from typing import Optional
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from pydantic import BaseModel
@@ -42,11 +41,8 @@ EMBEDDING_DIMENSION = 768
 BATCH_SIZE = 20
 
 
-def get_chunks_file(project_id: Optional[str] = None) -> Path:
-    """Get chunks file path based on project_id."""
-    if project_id:
-        return APP_DIR / "data" / project_id / "output_chunks.json"
-    return APP_DIR / "data" / "output_chunks.json"
+def get_chunks_file(project_id: str) -> Path:
+    return APP_DIR / "data" / project_id / "output_chunks.json"
 
 
 # ---------------------------------------------------------------------------
@@ -134,12 +130,13 @@ def build_rows(
     chunks: list[ChunkRecord],
     embeddings: list[list[float]],
     source_file: str,
-    project_id: str | None = None,
+    project_id: str,
 ) -> list[dict]:
     rows: list[dict] = []
 
     for chunk, embedding in zip(chunks, embeddings, strict=True):
         row = {
+            "project_id": project_id,
             "source_file": source_file,
             "chunk_index": chunk.chunk_index,
             "content": chunk.content,
@@ -150,8 +147,6 @@ def build_rows(
             "page_end": chunk.page.end,
             "embedding": format_vector(embedding),
         }
-        if project_id:
-            row["project_id"] = project_id
         rows.append(row)
 
     return rows
@@ -161,7 +156,7 @@ def build_rows(
 # Digunakan oleh: manage.py
 # Menjalankan fungsi `upsert_embeddings` sebagai bagian alur `supabase_ingest`.
 # ---------------------------------------------------------------------------
-def upsert_embeddings(project_id: Optional[str] = None) -> int:
+def upsert_embeddings(project_id: str) -> int:
     chunks_file = get_chunks_file(project_id)
     chunks = load_chunks(chunks_file)
     if not chunks:
@@ -170,11 +165,7 @@ def upsert_embeddings(project_id: Optional[str] = None) -> int:
     client = build_supabase_client()
     embedder = build_embedder()
 
-    # source_file konsisten = "{project_id}/{source_file asli}" agar match dengan metadata
-    if project_id:
-        source_file = f"{project_id}/source.pdf"  # nama方案方案 tetap, project_id sebagai prefix
-    else:
-        source_file = chunks_file.name
+    source_file = f"{project_id}/source.pdf"
 
     total_rows = 0
     for chunk_batch in batched(chunks, BATCH_SIZE):
@@ -186,7 +177,7 @@ def upsert_embeddings(project_id: Optional[str] = None) -> int:
         rows = build_rows(chunk_batch, embeddings, source_file, project_id)
         client.table("document_chunks").upsert(
             rows,
-            on_conflict="source_file,chunk_index",
+            on_conflict="project_id,chunk_index",
         ).execute()
         total_rows += len(rows)
 

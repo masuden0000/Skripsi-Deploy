@@ -7,6 +7,15 @@ import * as projectsService from "../services/projects.service.js"
 
 const router = Router()
 
+async function parseAiResponse(aiResponse) {
+  const text = await aiResponse.text()
+  try {
+    return { ok: true, data: JSON.parse(text), status: aiResponse.status }
+  } catch {
+    return { ok: false, data: { success: false, error: text || "AI backend returned non-JSON response" }, status: aiResponse.status || 502 }
+  }
+}
+
 // POST - Forward directly to AI Backend as multipart
 // Use express.raw() to get the raw body buffer
 router.post("/", async (req, res, next) => {
@@ -22,8 +31,8 @@ router.post("/", async (req, res, next) => {
       },
     })
 
-    const data = await aiResponse.json()
-    res.status(aiResponse.status).json(data)
+    const { data, status } = await parseAiResponse(aiResponse)
+    res.status(status).json(data)
   } catch (error) {
     console.error("[ProjectsRoute] Error proxying to AI Backend:", error)
     res.status(500).json({
@@ -47,8 +56,8 @@ router.post("/upload-url", async (req, res, next) => {
       },
     })
 
-    const data = await aiResponse.json()
-    res.status(aiResponse.status).json(data)
+    const { data, status } = await parseAiResponse(aiResponse)
+    res.status(status).json(data)
   } catch (error) {
     console.error("[ProjectsRoute] Error proxying to AI Backend:", error)
     res.status(500).json({
@@ -72,8 +81,8 @@ router.post("/confirm-upload", async (req, res, next) => {
       },
     })
 
-    const data = await aiResponse.json()
-    res.status(aiResponse.status).json(data)
+    const { data, status } = await parseAiResponse(aiResponse)
+    res.status(status).json(data)
   } catch (error) {
     console.error("[ProjectsRoute] Error proxying to AI Backend:", error)
     res.status(500).json({
@@ -114,10 +123,12 @@ router.get("/:id", async (req, res, next) => {
 router.get("/:id/logs", async (req, res, next) => {
   try {
     const { id } = req.params
+    const sinceId = parseInt(req.query.since_id) || 0
+    const sinceParam = sinceId > 0 ? `?since_id=${sinceId}` : ""
 
     // JSON fallback — digunakan saat halaman di-restore untuk memuat log historis
     if (!req.headers.accept?.includes("text/event-stream")) {
-      const response = await fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}/logs`)
+      const response = await fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}/logs${sinceParam}`)
       const data = await response.json()
       return res.json(data)
     }
@@ -132,13 +143,14 @@ router.get("/:id/logs", async (req, res, next) => {
     res.write("event: connected\ndata: {\"status\":\"connected\"}\n\n")
 
     // Track last log ID and last known status to detect changes
-    let lastLogId = 0
+    // Initialize lastLogId from sinceId so SSE only streams logs from the current run
+    let lastLogId = sinceId
     let lastStatus = null
 
     const fetchLogs = async () => {
       try {
         const [logsResponse, statusResponse] = await Promise.all([
-          fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}/logs`),
+          fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}/logs${sinceParam}`),
           fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}`),
         ])
 

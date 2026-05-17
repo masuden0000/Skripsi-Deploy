@@ -88,7 +88,15 @@ async def create_signed_upload_url(bucket_name: str, file_path: str) -> dict:
     """
     client = get_supabase_client()
     ensure_bucket_exists_and_public(bucket_name)
-    result = client.storage.from_(bucket_name).create_signed_upload_url(file_path)
+    try:
+        result = client.storage.from_(bucket_name).create_signed_upload_url(file_path)
+    except Exception as e:
+        # Jika file sudah ada (Duplicate), hapus lalu coba lagi
+        if "Duplicate" in str(e) or "already exists" in str(e):
+            client.storage.from_(bucket_name).remove([file_path])
+            result = client.storage.from_(bucket_name).create_signed_upload_url(file_path)
+        else:
+            raise
     # TypedDict uses bracket notation - convert to regular dict
     return dict(result)
 

@@ -57,6 +57,7 @@ type LogEntry = {
 }
 
 const ACTIVE_PROJECT_KEY = "proposal_active_project_id"
+const RUN_SINCE_KEY = "proposal_run_since_id"
 
 const PKM_SCHEMES = [
   { value: "pkm-re", label: "PKM-RE: Riset Eksakta" },
@@ -93,6 +94,7 @@ export default function ProposalDocumentPage() {
   const [isRestoring, setIsRestoring] = useState(true)
   const logsEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const maxLogIdRef = useRef<number>(0)
   const resultStatus = result?.status
 
   const applyStatusUpdate = useCallback((status: ProjectStatus, resultUrl: string | null, errorMessage: string | null) => {
@@ -102,6 +104,8 @@ export default function ProposalDocumentPage() {
     if (status === "completed" || status === "failed") {
       setIsUploading(false)
       localStorage.removeItem(ACTIVE_PROJECT_KEY)
+      // Persist max log ID so next run starts filtering from here
+      localStorage.setItem(RUN_SINCE_KEY, String(maxLogIdRef.current))
     }
   }, [])
 
@@ -144,13 +148,17 @@ export default function ProposalDocumentPage() {
           setIsUploading(true)
         }
 
-        // Muat log historis agar tidak hilang saat navigasi pergi-kembali
-        fetch(`/api/projects/${savedId}/logs`, {
+        // Muat log dari run saat ini saja (filter by since_id)
+        const sinceId = parseInt(localStorage.getItem(RUN_SINCE_KEY) || "0") || 0
+        const sinceParam = sinceId > 0 ? `?since_id=${sinceId}` : ""
+        fetch(`/api/projects/${savedId}/logs${sinceParam}`, {
           headers: { accept: "application/json" },
         })
           .then((r) => r.json())
           .then((logData) => {
             if (Array.isArray(logData?.data) && logData.data.length > 0) {
+              const maxId = Math.max(...logData.data.map((l: LogEntry) => l.id))
+              maxLogIdRef.current = maxId
               setLogs(logData.data)
             }
           })
@@ -225,11 +233,16 @@ export default function ProposalDocumentPage() {
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
     const connectSSE = () => {
-      eventSource = new EventSource(`/api/projects/${currentProjectId}/logs`)
+      const since = parseInt(localStorage.getItem(RUN_SINCE_KEY) || "0") || 0
+      const sinceParam = since > 0 ? `?since_id=${since}` : ""
+      eventSource = new EventSource(`/api/projects/${currentProjectId}/logs${sinceParam}`)
 
       eventSource.addEventListener("log", (event) => {
         try {
           const logEntry: LogEntry = JSON.parse(event.data)
+          if (logEntry.id > maxLogIdRef.current) {
+            maxLogIdRef.current = logEntry.id
+          }
           setLogs((prev) => {
             // Dedup by ID — mencegah duplikat antara log historis (preload) dan SSE
             if (prev.some((l) => l.id === logEntry.id)) return prev
@@ -316,6 +329,11 @@ export default function ProposalDocumentPage() {
       return
     }
 
+    // Capture max log ID before clearing — used to filter old logs on next run
+    const prevSinceId = parseInt(localStorage.getItem(RUN_SINCE_KEY) || "0") || 0
+    const currentMaxId = logs.length > 0 ? Math.max(...logs.map(l => l.id)) : 0
+    const runSinceId = Math.max(prevSinceId, currentMaxId)
+
     setIsUploading(true)
     setUploadError(null)
     setUploadProgress(0)
@@ -387,7 +405,9 @@ export default function ProposalDocumentPage() {
       const confirmData: ProjectResponse = await confirmResponse.json()
       const confirmedProject = confirmData.data
 
-      // Initialize result state
+      // Initialize result state — store since_id so SSE & restore only show this run's logs
+      localStorage.setItem(RUN_SINCE_KEY, String(runSinceId))
+      maxLogIdRef.current = runSinceId
       localStorage.setItem(ACTIVE_PROJECT_KEY, project_id)
       setCurrentProjectId(project_id)
       setResult({

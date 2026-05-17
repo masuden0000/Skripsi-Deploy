@@ -1,5 +1,6 @@
 import asyncio
 import os
+import shutil
 import sys
 from pathlib import Path
 from typing import Sequence
@@ -364,4 +365,15 @@ async def run_pipeline(project_id: str, source_url: str, source_file: str) -> bo
     else:
         log_event("pipeline", "Pipeline berhenti karena DOCX generation gagal.", project_id)
 
+    _cleanup_project_data(project_id)
     return docx_success
+
+
+def _cleanup_project_data(project_id: str) -> None:
+    project_dir = AI_PATH / "data" / project_id
+    if project_dir.exists():
+        try:
+            shutil.rmtree(project_dir)
+            log_event("cleanup", f"Folder lokal dihapus: {project_dir}", project_id)
+        except Exception as exc:
+            log_event("cleanup", f"Warning: Gagal hapus folder lokal - {exc}", project_id)

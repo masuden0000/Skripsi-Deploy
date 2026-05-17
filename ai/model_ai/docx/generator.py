@@ -4,51 +4,46 @@ Fungsi: Orkestrator utama pembuatan DOCX proposal dari output.json, chunk, dan i
 Digunakan oleh: manage.py; tests/docx/test_docx_generator.py
 
 Tujuan: Menyediakan alur end-to-end agar perintah docx menghasilkan file final konsisten.
+
+Input: output.json (dari extract), chunks (dari Supabase)
+Output: bytes DOCX — tidak disimpan ke filesystem lokal.
 """
-import json
+from io import BytesIO
 from pathlib import Path
 
 from model_ai.docx.chunk_loader import load_chunk_sources
-from model_ai.docx.docx_renderer import render_proposal_docx
+from model_ai.docx.docx_renderer import render_proposal_docx_bytes
 from model_ai.docx.instructional_placeholder_builder import (
     build_instructional_placeholder_map,
 )
-from model_ai.docx.metadata_loader import coerce_document_metadata
+from model_ai.metadata_repository import load_document_metadata
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: manage.py
-# Menjalankan fungsi `generate_proposal_docx` sebagai bagian alur `generator`.
-# ---------------------------------------------------------------------------
-def generate_proposal_docx(
-    output_json_path: Path,
-    chunks_path: Path,
-    output_path: Path,
+def generate_proposal_docx_bytes(
+    project_id: str,
+    source_doc: str,
     use_llm_instructional_placeholders: bool = True,
-) -> Path:
-    with open(output_json_path, encoding="utf-8") as f:
-        output_data = json.load(f)
+) -> tuple[bytes, str]:
+    """
+    Load metadata dari Supabase, chunks dari Supabase, generate DOCX bytes.
+    Tidak ada file yang disimpan ke filesystem lokal.
+    """
+    metadata = load_document_metadata(source_doc)
 
-    # metadata masih dibutuhkan oleh build_instructional_placeholder_map
-    metadata = coerce_document_metadata(output_data)
+    file_name = f"{metadata.document_structure_proposal.format_nama_file or project_id}.docx"
+    if metadata.document_structure_proposal.format_nama_file:
+        file_name = f"{Path(metadata.document_structure_proposal.format_nama_file).stem}.docx"
 
-    # Override output filename dengan format_nama_file dari database jika ada.
-    # Gunakan Path.stem untuk membuang ekstensi lama (misal ".pdf") sebelum tambahkan ".docx".
-    doc_structure = output_data.get("document_structure_proposal", {})
-    format_nama_file = doc_structure.get("format_nama_file")
-    if format_nama_file:
-        stem = Path(format_nama_file).stem  # "namaketua_namapt_PKM-KC.pdf" → "namaketua_namapt_PKM-KC"
-        output_path = output_path.parent / f"{stem}.docx"
-
-    chunks = load_chunk_sources(chunks_path)
+    chunks = load_chunk_sources(project_id)
     instructional_placeholders = build_instructional_placeholder_map(
         metadata=metadata,
         chunks=chunks,
         use_llm=use_llm_instructional_placeholders,
     )
-    return render_proposal_docx(
-        output_data=output_data,
+
+    doc_bytes = render_proposal_docx_bytes(
+        output_data=metadata.model_dump(),
         chunks=chunks,
         instructional_placeholders=instructional_placeholders,
-        output_path=output_path,
     )
+    return doc_bytes, file_name

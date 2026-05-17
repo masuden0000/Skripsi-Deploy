@@ -12,9 +12,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from langchain_groq import ChatGroq
+from langchain_groq import ChatGroq  # kept for potential direct use
 from model_ai.config import get_config
-from model_ai.extractor.doc_extractor import render_prompt
+from model_ai.extractor.doc_extractor import render_prompt, _build_llm
 from model_ai.metadata_repository import load_document_metadata_payload
 
 # ---------------------------------------------------------------------------
@@ -269,10 +269,7 @@ def free_extract_all_rules(chunks: list[dict]) -> dict[str, Any]:
     config = get_config()
     prompt = render_prompt(FREE_EXTRACTION.template, chunks)
     config.disable_blackhole_proxies()
-    llm = ChatGroq(
-        model=config.model_name,
-        api_key=config.groq_api_key.get_secret_value(),
-    )
+    llm = _build_llm()
     result = llm.invoke(prompt)
     raw = str(result.content).strip()
 

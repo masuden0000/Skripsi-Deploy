@@ -106,7 +106,7 @@ def build_supabase_client() -> Client:
 def build_embedder() -> GoogleGenerativeAIEmbeddings:
     return GoogleGenerativeAIEmbeddings(
         model=EMBEDDING_MODEL_NAME,
-        google_api_key=CONFIG.google_api_key.get_secret_value(),
+        google_api_key=CONFIG.get_google_key(),
     )
 
 
@@ -130,23 +130,29 @@ def batched(items: list[ChunkRecord], size: int) -> list[list[ChunkRecord]]:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `build_rows` sebagai bagian alur `supabase_ingest`.
 # ---------------------------------------------------------------------------
-def build_rows(chunks: list[ChunkRecord], embeddings: list[list[float]], source_file: str) -> list[dict]:
+def build_rows(
+    chunks: list[ChunkRecord],
+    embeddings: list[list[float]],
+    source_file: str,
+    project_id: str | None = None,
+) -> list[dict]:
     rows: list[dict] = []
 
     for chunk, embedding in zip(chunks, embeddings, strict=True):
-        rows.append(
-            {
-                "source_file": source_file,
-                "chunk_index": chunk.chunk_index,
-                "content": chunk.content,
-                "chunk_parent": chunk.chunk_parent,
-                "chunk_prev": chunk.chunk_prev,
-                "chunk_next": chunk.chunk_next,
-                "page_start": chunk.page.start,
-                "page_end": chunk.page.end,
-                "embedding": format_vector(embedding),
-            }
-        )
+        row = {
+            "source_file": source_file,
+            "chunk_index": chunk.chunk_index,
+            "content": chunk.content,
+            "chunk_parent": chunk.chunk_parent,
+            "chunk_prev": chunk.chunk_prev,
+            "chunk_next": chunk.chunk_next,
+            "page_start": chunk.page.start,
+            "page_end": chunk.page.end,
+            "embedding": format_vector(embedding),
+        }
+        if project_id:
+            row["project_id"] = project_id
+        rows.append(row)
 
     return rows
 
@@ -164,15 +170,20 @@ def upsert_embeddings(project_id: Optional[str] = None) -> int:
     client = build_supabase_client()
     embedder = build_embedder()
 
+    # source_file konsisten = "{project_id}/{source_file asli}" agar match dengan metadata
+    if project_id:
+        source_file = f"{project_id}/source.pdf"  # nama方案方案 tetap, project_id sebagai prefix
+    else:
+        source_file = chunks_file.name
+
     total_rows = 0
-    source_file = chunks_file.name
     for chunk_batch in batched(chunks, BATCH_SIZE):
         contents = [chunk.content for chunk in chunk_batch]
         embeddings = embedder.embed_documents(
             contents,
             output_dimensionality=EMBEDDING_DIMENSION,
         )
-        rows = build_rows(chunk_batch, embeddings, source_file)
+        rows = build_rows(chunk_batch, embeddings, source_file, project_id)
         client.table("document_chunks").upsert(
             rows,
             on_conflict="source_file,chunk_index",

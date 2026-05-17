@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Sequence
 
 from .database import get_supabase
-from .storage import download_file, upload_file
+from .storage import download_file
 
 BUCKET_SOURCE = "ai-source-files"
 BUCKET_OUTPUT = "ai-output-files"
@@ -188,8 +188,8 @@ async def run_extraction(project_id: str) -> bool:
     """
     log_event("extraction", "Memulai ekstraksi metadata...", project_id)
 
+    supabase = get_supabase()
     try:
-        supabase = get_supabase()
         supabase.table("projects").update({
             "status": "extracting",
             "error_message": None,
@@ -197,7 +197,13 @@ async def run_extraction(project_id: str) -> bool:
     except Exception as exc:
         log_event("extraction", f"Warning: Gagal update status: {exc}", project_id)
 
-    command = [sys.executable, "manage.py", "extract", "--project-id", project_id]
+    # File selalu dinormalisasi ke source.pdf saat download, konsisten dengan run_docx
+    source_doc = f"{project_id}/source.pdf"
+    command = [
+        sys.executable, "manage.py", "extract",
+        "--project-id", project_id,
+        "--source-file", source_doc,
+    ]
     log_event("extraction", f"Menjalankan: {' '.join(command)}", project_id)
 
     success, error_message = await stream_manage_command(
@@ -225,7 +231,8 @@ async def run_extraction(project_id: str) -> bool:
 
 async def run_docx_generation(project_id: str) -> bool:
     """
-    Run the DOCX generation pipeline and upload the result to Supabase Storage.
+    Run DOCX generation. manage.py handles upload ke Supabase Storage langsung.
+    Pipeline backend hanya perlu parse RESULT_URL dari stdout.
     """
     log_event("docx", "Memulai generate DOCX...", project_id)
 
@@ -268,26 +275,24 @@ async def run_docx_generation(project_id: str) -> bool:
             pass
         return False
 
-    output_path = AI_PATH / "data" / project_id / "proposal_output.docx"
-    if not output_path.exists():
-        missing_output_message = f"File output DOCX tidak ditemukan: {output_path}"
-        log_event("docx", f"ERROR: {missing_output_message}", project_id)
+    # Parse RESULT_URL from manage.py stdout
+    result_url = None
+    for line in error_message.splitlines():
+        if line.startswith("RESULT_URL="):
+            result_url = line.split("=", 1)[1].strip()
+            break
+
+    if not result_url:
+        log_event("docx", "ERROR: RESULT_URL tidak ditemukan di output manage.py", project_id)
         try:
             supabase = get_supabase()
             supabase.table("projects").update({
                 "status": "failed",
-                "error_message": missing_output_message[:200],
+                "error_message": "RESULT_URL tidak ditemukan di output.",
             }).eq("id", project_id).execute()
         except Exception:
             pass
         return False
-
-    result_url = await upload_file(
-        BUCKET_OUTPUT,
-        output_path.read_bytes(),
-        output_path.name,
-        project_id,
-    )
 
     log_event("docx", f"Output uploaded ke storage: {result_url}", project_id)
 

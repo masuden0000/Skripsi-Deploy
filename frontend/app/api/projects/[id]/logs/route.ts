@@ -8,8 +8,19 @@ type RouteContext = {
 
 export async function GET(request: Request, context: RouteContext) {
   const { id } = await context.params
+  const acceptsSSE = request.headers.get("accept")?.includes("text/event-stream")
 
-  // Proxy SSE stream from Express backend to browser
+  if (!acceptsSSE) {
+    // JSON snapshot — untuk memuat log historis saat restore halaman
+    const response = await fetch(`${BACKEND_URL}/api/projects/${id}/logs`, {
+      headers: { accept: "application/json" },
+      cache: "no-store",
+    })
+    const data = await response.json()
+    return NextResponse.json(data, { status: response.status })
+  }
+
+  // SSE streaming — untuk real-time log saat proses berjalan
   const response = await fetch(`${BACKEND_URL}/api/projects/${id}/logs`, {
     headers: {
       "accept": "text/event-stream",
@@ -21,7 +32,6 @@ export async function GET(request: Request, context: RouteContext) {
     return new NextResponse("Failed to connect to log stream", { status: 502 })
   }
 
-  // Stream the SSE response to the browser
   const stream = response.body
   if (!stream) {
     return new NextResponse("No stream available", { status: 500 })

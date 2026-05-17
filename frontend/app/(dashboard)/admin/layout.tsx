@@ -1,13 +1,14 @@
-import Image from "next/image"
+import BrandLogo from "@/components/BrandLogo"
 import AdminNav from "@/components/layout/AdminNav"
 import LogoutButton from "@/components/auth/LogoutButton"
+import { AdminProfileLink } from "@/components/layout/AdminProfileLink"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <aside
-        className="w-60 flex-none flex flex-col bg-white border-r"
+        className="w-60 flex-none flex flex-col bg-white border-r h-screen sticky top-0 overflow-y-auto"
         style={{ borderColor: "rgba(0,153,102,0.12)" }}
       >
         {/* Brand */}
@@ -19,13 +20,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             className="size-9 rounded-xl flex items-center justify-center flex-none overflow-hidden"
             style={{ background: "linear-gradient(135deg, #009966 0%, #007a55 100%)" }}
           >
-            <Image
-              src="/logo-upnvj.png"
-              alt="UPNVJ"
-              width={26}
-              height={26}
-              className="object-contain brightness-0 invert"
-            />
+            <BrandLogo size={26} invert />
           </div>
           <div>
             <p className="text-sm font-semibold text-pkm-900 leading-tight">Sistem Review</p>
@@ -47,7 +42,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             Admin Panel
           </p>
 
-          <div className="mt-3">
+          <div className="mt-3 flex flex-col gap-1">
+            <AdminProfileLink />
             <LogoutButton />
           </div>
         </div>

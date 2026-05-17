@@ -14,7 +14,90 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt
 
-from model_ai.validation.models import DocxProperties
+import re as _re
+
+from model_ai.validation.models import DocxProperties, HeadingCapsAnomaly, SpacingAnomaly
+
+
+# ---------------------------------------------------------------------------
+# Konstanta dan helper untuk aturan kapitalisasi
+# ---------------------------------------------------------------------------
+INDONESIAN_CONJUNCTIONS = {
+    "di", "ke", "dari", "dan", "atau", "yang", "untuk", "dengan",
+    "pada", "serta", "oleh", "dalam", "akan", "agar", "bagi",
+    "sebagai", "tentang", "hingga", "namun", "tetapi", "maupun",
+    "atas", "antara", "bahwa", "karena", "jika", "maka",
+}
+
+# Style prefix yang TIDAK dianggap sebagai paragraf body (dilewati saat cek spacing)
+SKIP_SPACING_STYLES = ("TOC", "Caption", "Header", "Footer", "Footnote", "Table")
+
+# Maksimum anomali spacing yang dilaporkan (hindari noise pada dokumen panjang)
+MAX_SPACING_ANOMALIES = 50
+
+
+def _is_all_caps(text: str) -> bool:
+    """Cek apakah teks sepenuhnya huruf kapital (abaikan angka dan tanda baca)."""
+    alpha = [c for c in text if c.isalpha()]
+    return bool(alpha) and all(c.isupper() for c in alpha)
+
+
+def _is_indonesian_title_case(text: str) -> bool:
+    """Cek apakah teks mengikuti title case versi Bahasa Indonesia.
+
+    Aturan:
+    - Kata pertama SELALU kapital meski kata sambung
+    - Kata sambung/preposisi di tengah → huruf kecil
+    - Semua kata lain → kapital di huruf pertama
+    - Awalan angka / "BAB N" diabaikan sebelum cek
+    """
+    clean = _re.sub(
+        r'^(BAB\s+\S+|[\d]+(?:\.[\d]+)*\.?)\s*',
+        '',
+        text.strip(),
+        flags=_re.IGNORECASE,
+    ).strip()
+    words = clean.split()
+    if not words:
+        return True
+    for i, w in enumerate(words):
+        core = w.strip("()[].,:;\"'")
+        if not core or not core[0].isalpha():
+            continue
+        if i == 0:
+            # Kata pertama: harus kapital
+            if not core[0].isupper():
+                return False
+        elif core.lower() in INDONESIAN_CONJUNCTIONS:
+            # Kata sambung: harus lowercase (warning jika kapital)
+            if core[0].isupper():
+                return False
+        else:
+            # Kata biasa: harus kapital di huruf pertama
+            if not core[0].isupper():
+                return False
+    return True
+
+
+def _to_indonesian_title_case(text: str) -> str:
+    """Konversi teks ke title case Bahasa Indonesia."""
+    prefix_match = _re.match(
+        r'^(BAB\s+\S+|[\d]+(?:\.[\d]+)*\.?)\s*',
+        text.strip(),
+        flags=_re.IGNORECASE,
+    )
+    prefix = prefix_match.group(0) if prefix_match else ""
+    rest = text.strip()[len(prefix):].strip()
+    words = rest.split()
+    result = []
+    for i, w in enumerate(words):
+        if i == 0:
+            result.append(w[0].upper() + w[1:] if w else w)
+        elif w.lower() in INDONESIAN_CONJUNCTIONS:
+            result.append(w.lower())
+        else:
+            result.append(w[0].upper() + w[1:] if w else w)
+    return (prefix + " ".join(result)).strip()
 
 
 # ---------------------------------------------------------------------------
@@ -95,56 +178,106 @@ def _get_line_spacing_rule(line_spacing) -> str:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Mendefinisikan fungsi `_extract_typography" untuk kebutuhan modul `docx_property_extractor`.
 # ---------------------------------------------------------------------------
+def _resolve_font_size(run, para_style, doc: Document) -> int | None:
+    """Resolve effective font size dengan menelusuri style hierarchy."""
+    # 1. Nilai eksplisit di run
+    if run.font.size is not None:
+        return int(run.font.size.pt)
+    # 2. Style paragraf langsung
+    style = para_style
+    while style is not None:
+        if style.font.size is not None:
+            return int(style.font.size.pt)
+        style = getattr(style, "base_style", None)
+    # 3. Fallback ke Normal style
+    try:
+        normal = doc.styles["Normal"]
+        if normal.font.size is not None:
+            return int(normal.font.size.pt)
+    except KeyError:
+        pass
+    return None
+
+
+def _resolve_font_name(run, para_style, doc: Document) -> str | None:
+    """Resolve effective font name dengan menelusuri style hierarchy."""
+    if run.font.name is not None:
+        return run.font.name
+    style = para_style
+    while style is not None:
+        if style.font.name is not None:
+            return style.font.name
+        style = getattr(style, "base_style", None)
+    try:
+        normal = doc.styles["Normal"]
+        if normal.font.name is not None:
+            return normal.font.name
+    except KeyError:
+        pass
+    return None
+
+
 def _extract_typography(doc: Document) -> dict:
-    """Extract typography properties from document."""
-    # Get default font from Normal style
-    normal_style = doc.styles["Normal"]
-    font_family = normal_style.font.name
-    if font_family is None:
-        font_family = "Unknown"
+    """Extract typography properties dari actual paragraphs dan runs."""
+    from collections import Counter
 
-    font_size_pt = None
-    if normal_style.font.size:
-        font_size_pt = int(normal_style.font.size.pt)
-
-    # Check heading styles
-    heading_bold = None
-    heading_all_caps = None
-    heading_font_size = None
-
-    for style_name in ("Heading 1", "Heading 2", "Heading 3"):
-        try:
-            style = doc.styles[style_name]
-            if heading_font_size is None and style.font.size:
-                heading_font_size = int(style.font.size.pt)
-            if heading_bold is None and style.font.bold:
-                heading_bold = style.font.bold
-            if heading_all_caps is None and style.font.all_caps:
-                heading_all_caps = style.font.all_caps
-        except KeyError:
-            continue
-
-    # Sample runs from document to get average font info
-    run_count = 0
-    fonts_found: set[str] = set()
-    sizes_found: set[int] = set()
+    body_sizes: Counter[int] = Counter()
+    body_fonts: Counter[str] = Counter()
+    heading_sizes: Counter[int] = Counter()
+    heading_bold_votes: list[bool] = []
+    heading_caps_votes: list[bool] = []
 
     for para in doc.paragraphs:
+        if not para.text.strip():
+            continue
+
+        is_heading = para.style.name.startswith("Heading")
+
         for run in para.runs:
-            if run.text.strip():
-                run_count += 1
-                if run.font.name and run.font.name != font_family:
-                    fonts_found.add(run.font.name)
-                try:
-                    if run.font.size:
-                        sizes_found.add(int(run.font.size.pt))
-                except (ValueError, TypeError):
-                    pass
+            if not run.text.strip():
+                continue
+
+            size = _resolve_font_size(run, para.style, doc)
+            name = _resolve_font_name(run, para.style, doc)
+
+            if size:
+                if is_heading:
+                    heading_sizes[size] += 1
+                else:
+                    body_sizes[size] += 1
+
+            if name and not is_heading:
+                body_fonts[name] += 1
+
+        if is_heading:
+            # bold: eksplisit di run atau style
+            bold_val = para.runs[0].font.bold if para.runs else None
+            if bold_val is None:
+                bold_val = para.style.font.bold
+            if bold_val is not None:
+                heading_bold_votes.append(bool(bold_val))
+
+            # all caps: cek XML rPr allCaps / caps
+            caps_val = para.runs[0].font.all_caps if para.runs else None
+            if caps_val is None:
+                caps_val = para.style.font.all_caps
+            if caps_val is not None:
+                heading_caps_votes.append(bool(caps_val))
+            else:
+                # Deteksi visual: teks heading full uppercase
+                heading_caps_votes.append(para.text.strip() == para.text.strip().upper()
+                                          and len(para.text.strip()) > 2)
+
+    font_family = body_fonts.most_common(1)[0][0] if body_fonts else None
+    font_size_body = body_sizes.most_common(1)[0][0] if body_sizes else None
+    font_size_heading = heading_sizes.most_common(1)[0][0] if heading_sizes else None
+    heading_bold = (sum(heading_bold_votes) > len(heading_bold_votes) / 2) if heading_bold_votes else None
+    heading_all_caps = (sum(heading_caps_votes) > len(heading_caps_votes) / 2) if heading_caps_votes else None
 
     return {
         "font_family": font_family,
-        "font_size_body_pt": font_size_pt,
-        "font_size_heading_pt": heading_font_size,
+        "font_size_body_pt": font_size_body,
+        "font_size_heading_pt": font_size_heading,
         "heading_bold": heading_bold,
         "heading_all_caps": heading_all_caps,
     }
@@ -197,6 +330,17 @@ def _extract_page_layout(doc: Document) -> dict:
     else:
         orientation = "portrait"
 
+    # Columns — baca dari w:cols
+    cols_el = section._sectPr.find(qn("w:cols"))
+    columns = 1
+    if cols_el is not None:
+        num_str = cols_el.get(qn("w:num"))
+        if num_str:
+            try:
+                columns = int(num_str)
+            except ValueError:
+                columns = 1
+
     return {
         "margin_top_cm": round(margin_top, 2) if margin_top else None,
         "margin_bottom_cm": round(margin_bottom, 2) if margin_bottom else None,
@@ -204,6 +348,7 @@ def _extract_page_layout(doc: Document) -> dict:
         "margin_right_cm": round(margin_right, 2) if margin_right else None,
         "paper_size": paper_size,
         "orientation": orientation,
+        "columns": columns,
     }
 
 
@@ -211,43 +356,218 @@ def _extract_page_layout(doc: Document) -> dict:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Mendefinisikan fungsi `_extract_spacing" untuk kebutuhan modul `docx_property_extractor`.
 # ---------------------------------------------------------------------------
-def _extract_spacing(doc: Document) -> dict:
-    """Extract spacing properties from document."""
-    # Get from Normal style
-    normal_style = doc.styles["Normal"]
+def _resolve_line_spacing(para) -> float | None:
+    """Resolve effective line spacing sebagai multiplier dari paragraf."""
+    from docx.oxml.ns import qn as _qn
+    pPr = para._element.find(_qn("w:pPr"))
+    if pPr is None:
+        return None
+    spacing_el = pPr.find(_qn("w:spacing"))
+    if spacing_el is None:
+        return None
+    line_val = spacing_el.get(_qn("w:line"))
+    line_rule = spacing_el.get(_qn("w:lineRule"))
+    if line_val is None:
+        return None
+    # MULTIPLE: nilai dalam 240ths of a line (1 line = 240 units)
+    if line_rule in (None, "auto"):
+        return round(int(line_val) / 240, 2)
+    # EXACT / AT_LEAST: nilai dalam twips → konversi ke pt (1 twip = 1/20 pt)
+    return round(int(line_val) / 20 / 12, 2)  # relatif terhadap 12pt baseline
 
-    line_spacing = None
-    if normal_style.paragraph_format.line_spacing:
-        # Line spacing can be in points (float) or LINE_SPACING enum
-        ls_value = normal_style.paragraph_format.line_spacing
-        if isinstance(ls_value, (int, float)):
-            line_spacing = round(float(ls_value), 2)
+
+def _build_paragraph_map(doc: Document) -> list[dict]:
+    """Single-pass: bangun peta seluruh paragraf beserta konteks lokasi hierarkisnya.
+
+    Setiap entry berisi: index, style, text, heading_level, location, line_spacing.
+    """
+    para_map: list[dict] = []
+    h1_ctx: str | None = None
+    h2_ctx: str | None = None
+
+    for i, para in enumerate(doc.paragraphs):
+        text = para.text.strip()
+        if not text:
+            continue
+        style = para.style.name
+
+        # Tentukan level heading dari nama style
+        level: int | None = None
+        if style.startswith("Heading"):
+            try:
+                level = int(style.split()[-1])
+            except ValueError:
+                pass
+
+        # Fallback: deteksi dari teks untuk heading yang pakai custom style
+        if level is None and _re.match(r"^BAB\s+[IVXLC\d]+", text, _re.IGNORECASE):
+            level = 1
+        elif level is None and _re.match(r"^\d+\.\d+\s+\S", text):
+            level = 2
+
+        # Update context stack
+        if level == 1:
+            h1_ctx = text
+            h2_ctx = None
+        elif level == 2:
+            h2_ctx = text
+
+        # Bangun string lokasi hierarkis
+        if h1_ctx and h2_ctx:
+            location = f"{h1_ctx} > {h2_ctx}"
+        elif h1_ctx:
+            location = h1_ctx
         else:
-            line_spacing = 1.15  # default
+            location = f"Paragraf ke-{i + 1}"
 
-    paragraph_alignment = _get_alignment_string(normal_style.paragraph_format.alignment)
+        para_map.append({
+            "index": i,
+            "style": style,
+            "text": text,
+            "heading_level": level,
+            "location": location,
+            "line_spacing": _resolve_line_spacing(para),
+        })
 
-    first_line_indent = None
-    if normal_style.paragraph_format.first_line_indent:
-        first_line_indent = normal_style.paragraph_format.first_line_indent.cm
+    return para_map
 
-    # Check references style for hanging indent
+
+def _extract_heading_caps_anomalies(para_map: list[dict]) -> list[HeadingCapsAnomaly]:
+    """Periksa setiap heading: H1 harus ALL CAPS, H2 harus title case Indonesia."""
+    anomalies: list[HeadingCapsAnomaly] = []
+    for p in para_map:
+        lvl = p["heading_level"]
+        text = p["text"]
+        if lvl == 1:
+            if not _is_all_caps(text):
+                anomalies.append(HeadingCapsAnomaly(
+                    text=text,
+                    level=1,
+                    issue="not_all_caps",
+                    expected_form=text.upper(),
+                    location=text,
+                ))
+        elif lvl == 2:
+            if not _is_indonesian_title_case(text):
+                anomalies.append(HeadingCapsAnomaly(
+                    text=text,
+                    level=2,
+                    issue="not_title_case",
+                    expected_form=_to_indonesian_title_case(text),
+                    location=p["location"],
+                ))
+    return anomalies
+
+
+def _extract_spacing_anomalies(
+    para_map: list[dict],
+    majority_spacing: float,
+) -> list[SpacingAnomaly]:
+    """Kumpulkan paragraf body yang line spacing-nya menyimpang dari majority_spacing."""
+    if majority_spacing is None:
+        return []
+    anomalies: list[SpacingAnomaly] = []
+    for p in para_map:
+        if p["heading_level"] is not None:
+            continue
+        if any(p["style"].startswith(skip) for skip in SKIP_SPACING_STYLES):
+            continue
+        actual = p["line_spacing"]
+        if actual is None:
+            continue
+        if abs(actual - majority_spacing) > 0.05:
+            anomalies.append(SpacingAnomaly(
+                location=p["location"],
+                paragraph_index=p["index"],
+                expected=majority_spacing,
+                actual=actual,
+                text_preview=p["text"][:60],
+            ))
+        if len(anomalies) >= MAX_SPACING_ANOMALIES:
+            break
+    return anomalies
+
+
+def _detect_daftar_sections(para_map: list[dict]) -> dict[str, bool]:
+    """Deteksi keberadaan bagian Daftar Isi / Pustaka / Tabel / Gambar."""
+    flags: dict[str, bool] = {
+        "has_daftar_isi": False,
+        "has_daftar_pustaka": False,
+        "has_daftar_tabel": False,
+        "has_daftar_gambar": False,
+    }
+    for p in para_map:
+        upper = p["text"].upper()
+        if "DAFTAR ISI" in upper:
+            flags["has_daftar_isi"] = True
+        if "DAFTAR PUSTAKA" in upper or "DAFTAR REFERENSI" in upper:
+            flags["has_daftar_pustaka"] = True
+        if "DAFTAR TABEL" in upper:
+            flags["has_daftar_tabel"] = True
+        if "DAFTAR GAMBAR" in upper or "DAFTAR ILUSTRASI" in upper:
+            flags["has_daftar_gambar"] = True
+        # Setelah semua True, tidak perlu lanjut
+        if all(flags.values()):
+            break
+    return flags
+
+
+def _extract_spacing(doc: Document) -> dict:
+    """Extract spacing properties dari actual paragraphs (bukan hanya Normal style)."""
+    from collections import Counter
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    spacing_votes: Counter[float] = Counter()
+    alignment_votes: Counter[str] = Counter()
+    indent_votes: Counter[float] = Counter()
+
+    for para in doc.paragraphs:
+        if not para.text.strip():
+            continue
+        if para.style.name.startswith("Heading"):
+            continue
+
+        # Line spacing dari XML langsung
+        ls = _resolve_line_spacing(para)
+        if ls and 0.8 <= ls <= 4.0:
+            spacing_votes[ls] += 1
+
+        # Alignment
+        align = para.alignment
+        if align is None:
+            align = para.style.paragraph_format.alignment
+        if align is not None:
+            alignment_votes[_get_alignment_string(align)] += 1
+
+        # First line indent
+        fi = para.paragraph_format.first_line_indent
+        if fi is not None:
+            try:
+                indent_votes[round(fi.cm, 2)] += 1
+            except AttributeError:
+                pass
+
+    line_spacing = spacing_votes.most_common(1)[0][0] if spacing_votes else None
+    paragraph_alignment = alignment_votes.most_common(1)[0][0] if alignment_votes else "JUSTIFY"
+    first_line_indent = indent_votes.most_common(1)[0][0] if indent_votes else None
+
+    # Hanging indent untuk daftar pustaka
     references_hanging_indent = None
-    try:
-        ref_style = doc.styles["Citations"] or doc.styles["Bibliography"]
-        if ref_style and ref_style.paragraph_format:
-            # Check if left indent > first line indent (indicates hanging indent)
-            left_indent = ref_style.paragraph_format.left_indent
-            if left_indent and first_line_indent is not None:
-                references_hanging_indent = left_indent.cm > first_line_indent
-    except (KeyError, AttributeError):
-        pass
+    for style_name in ("Bibliography", "Citations", "Daftar Pustaka"):
+        try:
+            ref_style = doc.styles[style_name]
+            pf = ref_style.paragraph_format
+            if pf.left_indent and pf.first_line_indent:
+                references_hanging_indent = pf.first_line_indent.cm < 0
+            break
+        except KeyError:
+            continue
 
     return {
         "line_spacing": line_spacing,
         "line_spacing_rule": "MULTIPLE",
         "paragraph_alignment": paragraph_alignment,
-        "first_line_indent_cm": round(first_line_indent, 2) if first_line_indent else None,
+        "first_line_indent_cm": first_line_indent,
         "references_hanging_indent": references_hanging_indent,
     }
 
@@ -257,30 +577,32 @@ def _extract_spacing(doc: Document) -> dict:
 # Mendefinisikan fungsi `_extract_document_structure" untuk kebutuhan modul `docx_property_extractor`.
 # ---------------------------------------------------------------------------
 def _extract_document_structure(doc: Document) -> dict:
-    """Extract document structure (headings, sections)."""
-    # Count headings by style
+    """Extract document structure dari seluruh paragraf dokumen."""
     heading_count = 0
-    for para in doc.paragraphs:
-        if para.style.name.startswith("Heading"):
-            heading_count += 1
-
-    # Count sections (physical sections in document)
     section_count = len(doc.sections)
-
-    # Check first few paragraphs for preliminary pages
     has_cover = False
     has_approval = False
     has_summary = False
 
-    first_paras = [p.text.strip().upper() for p in doc.paragraphs[:20] if p.text.strip()]
+    all_texts = [p.text.strip().upper() for p in doc.paragraphs if p.text.strip()]
 
-    for text in first_paras:
-        if "SAMPUL" in text or "COVER" in text:
+    for text in all_texts:
+        if p_style := next(
+            (p.style.name for p in doc.paragraphs
+             if p.text.strip().upper() == text and p.style.name.startswith("Heading")),
+            None,
+        ):
+            heading_count += 1
+
+        if any(kw in text for kw in ("SAMPUL", "COVER", "HALAMAN JUDUL")):
             has_cover = True
-        if "PENGESAHAN" in text or "PERSETUJUAN" in text or "APPROVAL" in text:
+        if any(kw in text for kw in ("PENGESAHAN", "PERSETUJUAN", "APPROVAL", "LEMBAR PERSETUJUAN")):
             has_approval = True
-        if "RINGKASAN" in text or "ABSTRACT" in text:
+        if any(kw in text for kw in ("RINGKASAN", "ABSTRACT", "ABSTRAK")):
             has_summary = True
+
+    # Hitung ulang heading_count dengan cara yang benar
+    heading_count = sum(1 for p in doc.paragraphs if p.style.name.startswith("Heading"))
 
     return {
         "heading_count": heading_count,
@@ -315,17 +637,128 @@ def _extract_figures_tables(doc: Document) -> dict:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Mendefinisikan fungsi `_extract_numbering" untuk kebutuhan modul `docx_property_extractor`.
 # ---------------------------------------------------------------------------
-def _extract_numbering(doc: Document) -> dict:
-    """Extract numbering properties."""
-    # Page numbering is typically in headers/footers
-    # For now, return None as this requires more complex footer parsing
+def _detect_page_number_info(doc: Document) -> dict:
+    """Deteksi format dan lokasi nomor halaman dari header/footer."""
+    import re as _re
 
-    chapter_format = "BAB {n}"  # Default assumption for PKM proposal
+    preliminary_format = None
+    preliminary_location = None
+    preliminary_alignment = None
+    content_format = None
+    content_location = None
+    content_alignment = None
+
+    def _parse_fld_instrText(xml_el) -> str | None:
+        """Ambil teks instruksi field dari elemen XML."""
+        for child in xml_el.iter():
+            tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+            if tag == "instrText" and child.text:
+                return child.text.strip()
+        return None
+
+    def _detect_numfmt(xml_el) -> str | None:
+        """Deteksi format angka: roman (i/I) atau arabic (1)."""
+        instr = _parse_fld_instrText(xml_el)
+        if instr and "PAGE" in instr:
+            if "\\* Roman" in instr or "\\* roman" in instr:
+                return "roman"
+            if "\\* Arabic" in instr or "\\* arabic" in instr:
+                return "arabic"
+            return "arabic"  # default PAGE tanpa format = arabic
+        return None
+
+    def _detect_alignment(para) -> str | None:
+        align = para.alignment
+        if align is None and para.style:
+            align = para.style.paragraph_format.alignment
+        return _get_alignment_string(align) if align is not None else None
+
+    for section in doc.sections:
+        # Cek footer dulu (lokasi paling umum untuk nomor halaman PKM)
+        for hf_attr, location_label in (
+            ("footer", "bottom"),
+            ("header", "top"),
+        ):
+            hf = getattr(section, hf_attr, None)
+            if hf is None:
+                continue
+            for para in hf.paragraphs:
+                txt = para.text.strip()
+                num_fmt = _detect_numfmt(para._element)
+                if num_fmt is None:
+                    # Coba deteksi dari teks langsung: angka romawi atau arab
+                    if _re.search(r"\b(i|ii|iii|iv|v|vi|vii|viii|ix|x)\b", txt, _re.IGNORECASE):
+                        num_fmt = "roman"
+                    elif _re.search(r"\b\d+\b", txt):
+                        num_fmt = "arabic"
+                if num_fmt:
+                    align = _detect_alignment(para)
+                    if num_fmt == "roman" and preliminary_format is None:
+                        preliminary_format = num_fmt
+                        preliminary_location = location_label
+                        preliminary_alignment = align
+                    elif num_fmt == "arabic" and content_format is None:
+                        content_format = num_fmt
+                        content_location = location_label
+                        content_alignment = align
+
+    return {
+        "preliminary_page_format": preliminary_format,
+        "preliminary_page_location": preliminary_location,
+        "preliminary_page_alignment": preliminary_alignment,
+        "content_page_format": content_format,
+        "content_page_location": content_location,
+        "content_page_alignment": content_alignment,
+    }
+
+
+def _extract_numbering(doc: Document) -> dict:
+    """Extract numbering properties dari heading patterns dan header/footer."""
+    import re as _re
+
+    # Chapter format: scan heading paragraphs
+    chapter_format = None
+    sub_chapter_format = None
+    for para in doc.paragraphs:
+        txt = para.text.strip()
+        if not txt:
+            continue
+        style_name = para.style.name
+        if style_name == "Heading 1" or (style_name.startswith("Heading") and "1" in style_name):
+            if _re.match(r"^BAB\s+[IVXLC\d]+", txt, _re.IGNORECASE):
+                chapter_format = "BAB {n}"
+            elif _re.match(r"^\d+\s+\w", txt):
+                chapter_format = "{n}"
+        if style_name == "Heading 2" or (style_name.startswith("Heading") and "2" in style_name):
+            if _re.match(r"^\d+\.\d+", txt):
+                sub_chapter_format = "{n}.{m}"
+
+    # Caption format: scan paragraphs dengan style Caption
+    figure_format = None
+    table_format = None
+    for para in doc.paragraphs:
+        txt = para.text.strip()
+        if not txt:
+            continue
+        style_name = para.style.name.lower()
+        if "caption" in style_name or "keterangan" in style_name:
+            if _re.match(r"^(gambar|figure)\s+\d+[\.\-]\d+", txt, _re.IGNORECASE):
+                figure_format = "Gambar {bab}.{n}"
+            elif _re.match(r"^(gambar|figure)\s+\d+", txt, _re.IGNORECASE):
+                figure_format = "Gambar {n}"
+            if _re.match(r"^(tabel|table)\s+\d+[\.\-]\d+", txt, _re.IGNORECASE):
+                table_format = "Tabel {bab}.{n}"
+            elif _re.match(r"^(tabel|table)\s+\d+", txt, _re.IGNORECASE):
+                table_format = "Tabel {n}"
+
+    page_info = _detect_page_number_info(doc)
 
     return {
         "chapter_format": chapter_format,
-        "preliminary_page_format": None,  # Requires footer parsing
-        "content_page_format": None,  # Requires footer parsing
+        "sub_chapter_format": sub_chapter_format,
+        "figure_format": figure_format,
+        "table_format": table_format,
+        **page_info,
     }
 
 
@@ -355,6 +788,9 @@ def extract_docx_properties(docx_path: str | Path) -> DocxProperties:
     except Exception as e:
         raise Exception(f"Error reading DOCX file: {e}")
 
+    # Single-pass paragraph map — dipakai oleh semua extractor di bawah
+    para_map = _build_paragraph_map(doc)
+
     # Extract all properties
     typography = _extract_typography(doc)
     page_layout = _extract_page_layout(doc)
@@ -362,6 +798,12 @@ def extract_docx_properties(docx_path: str | Path) -> DocxProperties:
     doc_structure = _extract_document_structure(doc)
     figures_tables = _extract_figures_tables(doc)
     numbering = _extract_numbering(doc)
+
+    # Anomaly extraction (rule-based, per-item)
+    heading_caps_anomalies = _extract_heading_caps_anomalies(para_map)
+    majority_spacing = spacing["line_spacing"]
+    spacing_anomalies = _extract_spacing_anomalies(para_map, majority_spacing)
+    daftar_flags = _detect_daftar_sections(para_map)
 
     # Combine all into DocxProperties
     props = DocxProperties(
@@ -378,6 +820,7 @@ def extract_docx_properties(docx_path: str | Path) -> DocxProperties:
         margin_right_cm=page_layout["margin_right_cm"],
         paper_size=page_layout["paper_size"],
         orientation=page_layout["orientation"],
+        columns=page_layout["columns"],
         # Spacing
         line_spacing=spacing["line_spacing"],
         line_spacing_rule=spacing["line_spacing_rule"],
@@ -390,13 +833,28 @@ def extract_docx_properties(docx_path: str | Path) -> DocxProperties:
         has_halaman_sampul=doc_structure["has_halaman_sampul"],
         has_halaman_pengesahan=doc_structure["has_halaman_pengesahan"],
         has_ringkasan=doc_structure["has_ringkasan"],
+        # Daftar sections (dari paragraph map)
+        has_daftar_isi=daftar_flags["has_daftar_isi"],
+        has_daftar_pustaka=daftar_flags["has_daftar_pustaka"],
+        has_daftar_tabel=daftar_flags["has_daftar_tabel"],
+        has_daftar_gambar=daftar_flags["has_daftar_gambar"],
         # Numbering
         chapter_format=numbering["chapter_format"],
+        sub_chapter_format=numbering["sub_chapter_format"],
         preliminary_page_format=numbering["preliminary_page_format"],
+        preliminary_page_location=numbering["preliminary_page_location"],
+        preliminary_page_alignment=numbering["preliminary_page_alignment"],
         content_page_format=numbering["content_page_format"],
+        content_page_location=numbering["content_page_location"],
+        content_page_alignment=numbering["content_page_alignment"],
+        figure_format=numbering["figure_format"],
+        table_format=numbering["table_format"],
         # Figures & Tables
         table_count=figures_tables["table_count"],
         figure_count=figures_tables["figure_count"],
+        # Anomaly lists
+        heading_caps_anomalies=heading_caps_anomalies,
+        spacing_anomalies=spacing_anomalies,
     )
 
     return props

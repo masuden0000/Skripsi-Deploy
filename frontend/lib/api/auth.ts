@@ -15,3 +15,32 @@ export async function login(
 ): Promise<{ data: AuthLoginResponse | null; error: string | null }> {
   return apiRequest("POST", "/api/auth/login", credentials, authLoginResponseSchema)
 }
+
+export interface SessionUser {
+  id: string
+  email: string
+  role: string
+}
+
+export interface SessionResponse {
+  authenticated: boolean
+  destination: string
+  user: SessionUser
+}
+
+export async function getSession(): Promise<{ data: SessionResponse | null; error: string | null }> {
+  return apiRequest("GET", "/api/auth/session")
+}
+
+export interface UpdateProfileInput {
+  type: "email" | "password"
+  newEmail?: string
+  currentPassword?: string
+  newPassword?: string
+}
+
+export async function updateProfile(
+  input: UpdateProfileInput
+): Promise<{ data: { message: string } | null; error: string | null }> {
+  return apiRequest("PATCH", "/api/auth/profile", input)
+}

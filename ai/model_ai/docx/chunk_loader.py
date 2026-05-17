@@ -4,17 +4,16 @@ Fungsi: Memuat dan menormalkan data chunk yang akan dijadikan sumber isi DOCX.
 Digunakan oleh: model_ai/docx/generator.py; tests/docx/test_chunk_loader.py
 
 Tujuan: Memastikan sumber konten proposal siap dipakai generator dengan format seragam.
+
+Sumber data: Supabase (document_chunks table) — tidak menggunakan file lokal.
 """
-import json
 import re
 from dataclasses import dataclass
-from pathlib import Path
+
+from supabase import create_client
+from model_ai.config import get_config
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/docx/docx_renderer.py
-# Mendefinisikan class `ChunkSource` untuk kebutuhan modul `chunk_loader`.
-# ---------------------------------------------------------------------------
 @dataclass(frozen=True)
 class ChunkSource:
     chunk_parent: str
@@ -23,34 +22,40 @@ class ChunkSource:
     content: str
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/docx/generator.py
-# Menjalankan fungsi `load_chunk_sources` sebagai bagian alur `chunk_loader`.
-# ---------------------------------------------------------------------------
-def load_chunk_sources(path: Path) -> list[ChunkSource]:
-    if not path.exists():
-        raise FileNotFoundError(f"File chunk tidak ditemukan: {path}")
+def load_chunk_sources(project_id: str) -> list[ChunkSource]:
+    """
+    Load chunks dari Supabase document_chunks table.
+    Menggantikan load dari file lokal output_chunks.json.
+    """
+    config = get_config()
+    client = create_client(
+        config.supabase_url,
+        config.supabase_service_role_key.get_secret_value(),
+    )
 
-    with open(path, encoding="utf-8") as f:
-        payload = json.load(f)
+    result = client.table("document_chunks").select(
+        "chunk_parent, page_start, page_end, content"
+    ).eq("source_file", f"{project_id}/source.pdf").execute()
+
+    if not result.data:
+        raise FileNotFoundError(
+            f"Tidak ada chunk di Supabase untuk project_id: {project_id}"
+        )
 
     sources: list[ChunkSource] = []
-    for item in payload:
-        page = item.get("page") or {}
+    for item in result.data:
         parent = str(item.get("chunk_parent") or "").strip()
         content = str(item.get("content") or "").strip()
-        start = int(page.get("start") or 0)
-        end = int(page.get("end") or start)
+        start = int(item.get("page_start") or 0)
+        end = int(item.get("page_end") or start)
         if not parent or start <= 0 or end <= 0:
             continue
-        sources.append(
-            ChunkSource(
-                chunk_parent=parent,
-                page_start=start,
-                page_end=end,
-                content=content,
-            )
-        )
+        sources.append(ChunkSource(
+            chunk_parent=parent,
+            page_start=start,
+            page_end=end,
+            content=content,
+        ))
     return sources
 
 

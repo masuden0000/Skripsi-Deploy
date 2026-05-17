@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   AdminPageHeader,
@@ -95,6 +95,16 @@ export default function ProposalDocumentPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const resultStatus = result?.status
 
+  const applyStatusUpdate = useCallback((status: ProjectStatus, resultUrl: string | null, errorMessage: string | null) => {
+    setResult((prev) =>
+      prev ? { ...prev, status, resultUrl, errorMessage } : null
+    )
+    if (status === "completed" || status === "failed") {
+      setIsUploading(false)
+      localStorage.removeItem(ACTIVE_PROJECT_KEY)
+    }
+  }, [])
+
   // Restore in-progress project on page load
   useEffect(() => {
     const savedId = localStorage.getItem(ACTIVE_PROJECT_KEY)
@@ -133,6 +143,18 @@ export default function ProposalDocumentPage() {
         if (status !== "completed" && status !== "failed") {
           setIsUploading(true)
         }
+
+        // Muat log historis agar tidak hilang saat navigasi pergi-kembali
+        fetch(`/api/projects/${savedId}/logs`, {
+          headers: { accept: "application/json" },
+        })
+          .then((r) => r.json())
+          .then((logData) => {
+            if (Array.isArray(logData?.data) && logData.data.length > 0) {
+              setLogs(logData.data)
+            }
+          })
+          .catch(() => {})
       })
       .catch(() => {
         localStorage.removeItem(ACTIVE_PROJECT_KEY)
@@ -172,30 +194,26 @@ export default function ProposalDocumentPage() {
             result_url: string | null
             error_message: string | null
           }
-
-          setResult((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  status: project.status,
-                  resultUrl: project.result_url,
-                  errorMessage: project.error_message,
-                }
-              : null
-          )
-
-          if (project.status === "completed" || project.status === "failed") {
-            setIsUploading(false)
-            localStorage.removeItem(ACTIVE_PROJECT_KEY)
-          }
+          applyStatusUpdate(project.status, project.result_url, project.error_message)
         }
       )
-      .subscribe()
+      .subscribe(() => {
+        // Setelah subscription established, fetch status terkini untuk menangkap
+        // event yang mungkin terlewat selama jeda setup WebSocket.
+        fetch(`/api/projects/${currentProjectId}`)
+          .then((res) => res.json())
+          .then((data) => {
+            const project = data?.data
+            if (!project) return
+            applyStatusUpdate(project.status, project.result_url, project.error_message)
+          })
+          .catch(() => {})
+      })
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [currentProjectId, resultStatus])
+  }, [currentProjectId, resultStatus, applyStatusUpdate])
 
 
   // SSE log streaming effect
@@ -204,7 +222,7 @@ export default function ProposalDocumentPage() {
     if (resultStatus === "completed" || resultStatus === "failed") return
 
     let eventSource: EventSource | null = null
-    let lastLogId = 0
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
     const connectSSE = () => {
       eventSource = new EventSource(`/api/projects/${currentProjectId}/logs`)
@@ -213,9 +231,8 @@ export default function ProposalDocumentPage() {
         try {
           const logEntry: LogEntry = JSON.parse(event.data)
           setLogs((prev) => {
-            // Avoid duplicates
-            if (logEntry.id <= lastLogId) return prev
-            lastLogId = logEntry.id
+            // Dedup by ID — mencegah duplikat antara log historis (preload) dan SSE
+            if (prev.some((l) => l.id === logEntry.id)) return prev
             return [...prev, logEntry]
           })
         } catch (error) {
@@ -223,19 +240,28 @@ export default function ProposalDocumentPage() {
         }
       })
 
+      eventSource.addEventListener("status", (event) => {
+        try {
+          const project = JSON.parse(event.data)
+          applyStatusUpdate(project.status, project.result_url, project.error_message)
+        } catch (error) {
+          console.error("Error parsing status event:", error)
+        }
+      })
+
       eventSource.onerror = () => {
-        // Reconnect on error
         eventSource?.close()
-        setTimeout(connectSSE, 3000)
+        reconnectTimer = setTimeout(connectSSE, 3000)
       }
     }
 
     connectSSE()
 
     return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer)
       eventSource?.close()
     }
-  }, [currentProjectId, resultStatus])
+  }, [currentProjectId, resultStatus, applyStatusUpdate])
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -609,7 +635,7 @@ export default function ProposalDocumentPage() {
                   {result.status === "completed"
                     ? "Dokumen berhasil diproses"
                     : result.status === "failed"
-                      ? result.errorMessage || "Terjadi kesalahan saat memproses dokumen"
+                      ? "Terjadi kesalahan saat memproses dokumen"
                       : getStatusLabel(result.status)}
                 </p>
               </div>
@@ -688,14 +714,6 @@ export default function ProposalDocumentPage() {
                     <FileTextIcon className="size-4" />
                     Lihat Penilaian
                   </Button>
-                </div>
-              )}
-
-              {result.status === "failed" && (
-                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
-                  <p className="text-sm text-red-700">
-                    <strong>Error:</strong> {result.errorMessage || "Terjadi kesalahan yang tidak diketahui"}
-                  </p>
                 </div>
               )}
 

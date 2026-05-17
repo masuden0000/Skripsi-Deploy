@@ -9,7 +9,7 @@ tidak kosong dan tetap selaras dengan sumber chunk panduan.
 import re
 from typing import Iterable
 
-from model_ai.config import get_config
+from model_ai.extractor.doc_extractor import _build_llm
 from model_ai.docx.chunk_loader import ChunkSource, match_sources_for_section
 from model_ai.extractor.models import DocumentMetadata, SectionItem
 
@@ -207,67 +207,54 @@ def _build_instruction_text_with_llm(display_title: str, sources: list[ChunkSour
         from langchain_core.messages import HumanMessage, SystemMessage
         from langchain_groq import ChatGroq
 
-        config = get_config()
-        config.disable_blackhole_proxies()
-        llm = ChatGroq(
-            model=config.model_name,
-            api_key=config.groq_api_key.get_secret_value(),
-            temperature=0,
-        )
+        llm = _build_llm()
         context = "\n\n---\n\n".join(
             f"Header: {source.chunk_parent}\nHalaman: {source.page_start}-{source.page_end}\nIsi:\n{_clean_source_text(source.content)}"
             for source in sources[:6]
         )
 
         system_prompt = (
-            "Anda adalah asisten penyusun instructional placeholder untuk template "
-            "proposal akademik PKM.\n\n"
+            "Anda adalah mentor PKM berpengalaman yang memandu tim mahasiswa menyusun proposal berkualitas tinggi. "
+            "Tugas Anda adalah menulis panduan pengisian satu section proposal — bukan merangkum panduan, "
+            "melainkan memberi arahan spesifik dan actionable seperti seorang pembimbing yang tahu persis "
+            "apa yang membuat proposal lolos seleksi.\n\n"
             "ATURAN PERMANEN:\n"
-            "- Gunakan hanya informasi dari sumber yang diberikan.\n"
-            "- Jangan tambah informasi baru di luar sumber.\n"
-            "- Kalimat tentang margin, font, ukuran huruf, spasi baris, nomor halaman "
-            "DILARANG muncul di instruksi akhir.\n"
-            "- Jangan gunakan bullet list di instruksi akhir.\n"
-            "- Output instruksi adalah plain text saja, tanpa markdown."
+            "- Tulis dalam sudut pandang langsung kepada penulis ('Uraikan...', 'Pastikan...', 'Jelaskan...').\n"
+            "- Gunakan hanya informasi yang berasal dari sumber — jangan menambah informasi baru.\n"
+            "- Aturan format dokumen seperti margin, font, ukuran huruf, spasi baris, dan nomor halaman "
+            "DILARANG disebutkan.\n"
+            "- Jangan gunakan bullet list, numbering, atau markdown.\n"
+            "- Output akhir adalah plain text saja."
         )
 
         human_prompt = (
-            f"Section target: {display_title}\n\n"
-            "Ikuti langkah-langkah berikut secara berurutan sebelum menulis output akhir.\n\n"
-            "LANGKAH 1 — KLASIFIKASI SUMBER\n"
-            "Baca setiap kalimat penting dari sumber. Tandai masing-masing sebagai:\n"
-            "  [KONTEN] → aturan atau panduan yang spesifik untuk section ini\n"
-            "             (apa yang harus ditulis, batasan isi, struktur argumen)\n"
-            "  [FORMAT GLOBAL] → aturan yang berlaku untuk seluruh dokumen\n"
-            "                    (margin, font, ukuran huruf, spasi baris, nomor halaman)\n"
-            "  [TIDAK RELEVAN] → informasi yang tidak berkaitan dengan section ini\n\n"
-            "LANGKAH 2 — FILTER\n"
-            "Buang semua kalimat berlabel [FORMAT GLOBAL] dan [TIDAK RELEVAN].\n"
-            "Lanjutkan hanya dengan kalimat berlabel [KONTEN].\n\n"
-            "LANGKAH 3 — TULIS INSTRUKSI\n"
-            "Dari hasil filter, tulis 4 sampai 6 kalimat instruksi dalam Bahasa Indonesia.\n"
-            "Wajib memuat:\n"
-            "  1. Tujuan utama section ini.\n"
-            "  2. Konten spesifik yang wajib ada.\n"
-            "  3. Batasan atau aturan isi yang relevan (bukan format dokumen).\n"
-            "  4. Arahan konkret kepada penulis tentang cara menyusun isi.\n\n"
-            "FORMAT OUTPUT (wajib diikuti):\n"
-            "<analisis>\n"
-            "[hasil LANGKAH 1 dan 2]\n"
-            "</analisis>\n"
-            "<instruksi>\n"
-            "[hasil LANGKAH 3 — plain text saja]\n"
-            "</instruksi>\n\n"
+            f"Tulis panduan pengisian untuk section: {display_title}\n\n"
+            "Sebelum menulis panduan, lakukan analisis internal berikut (tidak perlu ditampilkan):\n"
+            "  1. Identifikasi kalimat-kalimat dari sumber yang benar-benar relevan untuk section ini "
+            "(fokus pada apa yang harus DITULIS, bukan aturan format dokumen).\n"
+            "  2. Abaikan kalimat yang membahas margin, font, spasi, atau ketentuan teknis penulisan global.\n"
+            "  3. Dari kalimat relevan tersebut, sintesiskan — jangan hanya menyalin ulang.\n\n"
+            "Kemudian tulis panduan pengisian dalam 4 sampai 5 kalimat yang:\n"
+            "  - Dimulai dengan menjelaskan MENGAPA section ini penting dalam konteks penilaian proposal PKM.\n"
+            "  - Menyebut secara konkret APA yang wajib ada (bukan sekadar 'isi sesuai panduan').\n"
+            "  - Memberi arahan BAGAIMANA menyusunnya — alur logis, sudut pandang, atau struktur argumen.\n"
+            "  - Menyebut jebakan atau kesalahan umum yang harus dihindari, jika dapat disimpulkan dari sumber.\n\n"
+            "PENTING — FORMAT OUTPUT:\n"
+            "Tulis hanya baris-baris panduan akhir. "
+            "Awali dengan penanda ##MULAI## dan akhiri dengan ##SELESAI##. "
+            "Jangan tampilkan proses analisis.\n\n"
             f"Sumber:\n{context}"
         )
 
         result = llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=human_prompt)])
         text = str(result.content)
 
-        match = re.search(r"<instruksi>(.*?)</instruksi>", text, re.DOTALL)
+        match = re.search(r"##MULAI##\s*(.*?)\s*##SELESAI##", text, re.DOTALL)
         if match:
             return " ".join(match.group(1).strip().split())
-        return " ".join(text.split()) or None
+        # Fallback: strip penanda jika ada tapi tidak berpasangan
+        text = re.sub(r"##MULAI##|##SELESAI##", "", text)
+        return " ".join(text.strip().split()) or None
     except Exception as exc:
         print(f"[instructional_placeholder] LLM gagal untuk '{display_title}': {type(exc).__name__}: {exc}")
         return None

@@ -116,7 +116,6 @@ def upsert_document_metadata(metadata: DocumentMetadata, project_id: str | None 
         "extracted_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    # Add project_id if provided (for multi-project isolation)
     if project_id:
         insert_data["project_id"] = project_id
 

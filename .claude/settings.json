@@ -48,7 +48,27 @@
       "Bash(curl -s 'https://qssegiguipgqjpaumgye.supabase.co/rest/v1/document_metadata?select=id,source_doc,extracted_at' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzc2VnaWd1aXBncWpwYXVtZ3llIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjAxNDE1MywiZXhwIjoyMDkxNTkwMTUzfQ.Jb1lkCq3yHncTLtLSqLstld0G2vFN-GJMCUVu0vYD7A' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzc2VnaWd1aXBncWpwYXVtZ3llIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjAxNDE1MywiZXhwIjoyMDkxNTkwMTUzfQ.Jb1lkCq3yHncTLtLSqLstld0G2vFN-GJMCUVu0vYD7A')",
       "Bash(curl -s 'https://qssegiguipgqjpaumgye.supabase.co/rest/v1/document_metadata?select=source_doc,extracted_at,payload' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzc2VnaWd1aXBncWpwYXVtZ3llIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjAxNDE1MywiZXhwIjoyMDkxNTkwMTUzfQ.Jb1lkCq3yHncTLtLSqLstld0G2vFN-GJMCUVu0vYD7A' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzc2VnaWd1aXBncWpwYXVtZ3llIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjAxNDE1MywiZXhwIjoyMDkxNTkwMTUzfQ.Jb1lkCq3yHncTLtLSqLstld0G2vFN-GJMCUVu0vYD7A')",
       "Bash(python -m json.tool)",
-      "mcp__plugin_claude-mem_mcp-search__search"
+      "mcp__plugin_claude-mem_mcp-search__search",
+      "mcp__plugin_claude-mem_mcp-search__smart_search",
+      "Bash(sed -n '72,76p' ai/manage.py)",
+      "Bash(sed -n '437,439p' ai/model_ai/extractor/doc_extractor.py)",
+      "mcp__plugin_claude-mem_mcp-search__smart_outline",
+      "Bash(Get-Content -Path \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\ai\\\\model_ai\\\\extractor\\\\doc_extractor.py\" -TotalCount 80)",
+      "mcp__plugin_claude-mem_mcp-search__smart_unfold",
+      "Bash(sed -n '230,242p' ai/model_ai/extractor/doc_extractor.py)",
+      "Bash(sed -n '330,345p' ai/model_ai/extractor/doc_extractor.py)",
+      "Bash(sed -n '397,402p' ai/model_ai/extractor/doc_extractor.py)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(sed -n '70,90p' frontend/components/auth/LoginForm.tsx)",
+      "Bash(sed -n '18,30p' frontend/app/\\\\\\(dashboard\\\\\\)/admin/layout.tsx)",
+      "Bash(powershell.exe -Command \"Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue; Write-Host 'Cache cleared'\")",
+      "Bash(Remove-Item \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\frontend\\\\components\\\\Logo.tsx\")",
+      "Bash(rm \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\frontend\\\\components\\\\Logo.tsx\")",
+      "Bash(head -n 160 \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\frontend\\\\components\\\\auth\\\\LoginForm.tsx\" | tail -n 30)",
+      "Read(//c/Users/hudar/Documents/**)",
+      "Bash(Get-Content -Path \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\ai\\\\manage.py\" -Raw)",
+      "Bash(Get-Content \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\ai\\\\manage.py\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\hudar\\.config\\superpowers\\worktrees\\Project 1 (AI)\\docx-pipeline\\experiments\\pymupdf4llm\\tests\\docx",
@@ -57,7 +77,8 @@
       "c:\\Users\\hudar\\Documents\\[1] Huda Rasyad Wicaksono\\[3] Project\\[1] Project Website\\Skripsi (Dummy)\\Project 1 (AI)\\ai\\model_ai\\docx",
       "c:\\Users\\hudar\\Documents\\[1] Huda Rasyad Wicaksono\\[3] Project\\[1] Project Website\\Skripsi (Dummy)\\Project 1 (AI)\\docs\\superpowers\\specs",
       "C:\\Users\\hudar\\Documents\\[1] Huda Rasyad Wicaksono\\[3] Project\\[1] Project Website\\Skripsi (Dummy)\\Project 1 (AI)\\frontend\\lib",
-      "c:\\Users\\hudar\\Documents\\[1] Huda Rasyad Wicaksono\\[3] Project\\[1] Project Website\\Skripsi (Dummy)\\Project 1 (AI)\\frontend"
+      "c:\\Users\\hudar\\Documents\\[1] Huda Rasyad Wicaksono\\[3] Project\\[1] Project Website\\Skripsi (Dummy)\\Project 1 (AI)\\frontend",
+      "c:\\Users\\hudar\\Documents\\[1] Huda Rasyad Wicaksono\\[3] Project\\[1] Project Website\\Skripsi (Dummy)\\Project 1 (AI)\\frontend\\components"
     ]
   },
   "enabledPlugins": {

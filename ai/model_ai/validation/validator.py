@@ -53,7 +53,7 @@ def validate_document(
     props = extract_docx_properties(path)
 
     # Compare properties against rules
-    issues = compare_properties(props, metadata)
+    issues, checks = compare_properties(props, metadata)
 
     # Determine overall status
     status = "pass"
@@ -82,6 +82,7 @@ def validate_document(
     return ValidationResult(
         status=status,
         issues=issues,
+        checks=checks,
         validated_at=datetime.now(timezone.utc).isoformat(),
         document_path=str(path),
         document_name=path.name,
@@ -129,14 +130,16 @@ def print_validation_result(result: ValidationResult) -> None:
         print("-" * 60)
         for i, issue in enumerate(result.issues, 1):
             severity_icon = {
-                "error": "❌",
-                "warning": "⚠️",
-                "info": "ℹ️",
-            }.get(issue.severity, "•")
-            print(f"\n{i}. {severity_icon} [{issue.severity.upper()}] {issue.category}.{issue.field}")
-            print(f"   Message: {issue.message}")
+                "error": "[ERROR]",
+                "warning": "[WARN] ",
+                "info": "[INFO] ",
+            }.get(issue.severity, "[?]   ")
+            print(f"\n{i}. {severity_icon} {issue.category}.{issue.field}")
+            print(f"   Message : {issue.message}")
+            if issue.location:
+                print(f"   Location: {issue.location}")
             print(f"   Expected: {issue.expected}")
-            print(f"   Actual: {issue.actual}")
+            print(f"   Actual  : {issue.actual}")
     else:
         print("✅ No issues found. Document is valid!")
 

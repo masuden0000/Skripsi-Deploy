@@ -13,6 +13,7 @@ from typing import Any, Type
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel
 from supabase import Client, create_client
 
@@ -225,6 +226,23 @@ def _format_vector(values: list[float]) -> str:
     return "[" + ",".join(f"{v:.8f}" for v in values) + "]"
 
 
+def _build_llm():
+    """Build LLM client with Groq-first + Gemini fallback rotation."""
+    CONFIG.disable_blackhole_proxies()
+    api_key, model_name = CONFIG.get_llm_api_key()
+    if model_name.startswith("gemini"):
+        return ChatGoogleGenerativeAI(
+            model=model_name,
+            google_api_key=api_key,
+            temperature=CONFIG.temperature,
+        )
+    return ChatGroq(
+        model=model_name,
+        api_key=api_key,
+        temperature=CONFIG.temperature,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Digunakan oleh: model_ai/extractor/schema_differ.py
 # Menjalankan fungsi `_build_embedder` sebagai bagian alur `doc_extractor`.
@@ -233,7 +251,7 @@ def _build_embedder() -> GoogleGenerativeAIEmbeddings:
     CONFIG.disable_blackhole_proxies()
     return GoogleGenerativeAIEmbeddings(
         model=CONFIG.embedding_model_name,
-        google_api_key=CONFIG.require_google_api_key(),
+        google_api_key=CONFIG.get_google_key(),
     )
 
 
@@ -287,7 +305,7 @@ def _expand_to_full_headers(seed_chunks: list[dict], client: Client) -> list[dic
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `_retrieve_chunks_multi` sebagai bagian alur `doc_extractor`.
 # ---------------------------------------------------------------------------
-def _retrieve_chunks_multi(queries: list[str], top_k: int) -> list[dict]:
+def _retrieve_chunks_multi(queries: list[str], top_k: int, source_file: str | None = None) -> list[dict]:
     """Embed setiap query, retrieve top-K chunks dari Supabase, lalu expand per header.
 
     Alur:
@@ -299,13 +317,17 @@ def _retrieve_chunks_multi(queries: list[str], top_k: int) -> list[dict]:
     embedder = _build_embedder()
     client = _build_supabase()
 
+    rpc_params: dict = {"query_embedding": None, "match_count": top_k}
+    if source_file:
+        rpc_params["filter_source_file"] = source_file
+
     seen: dict[int, dict] = {}
     for query in queries:
         vector = embedder.embed_query(query, output_dimensionality=EMBEDDING_DIMENSION)
-        formatted = _format_vector(vector)
+        rpc_params["query_embedding"] = _format_vector(vector)
         result = client.rpc(
             "match_document_chunks",
-            {"query_embedding": formatted, "match_count": top_k},
+            rpc_params,
         ).execute()
         for chunk in (result.data or []):
             idx = chunk["chunk_index"]
@@ -324,17 +346,15 @@ def _extract_key(
     prompt_cfg: PromptConfig,
     extracted_cls: Type[BaseModel],
     info_cls: Type[BaseModel],
+    source_file: str | None = None,
 ) -> Any:
     """Jalankan satu siklus ekstraksi: retrieve → prompt → LLM → merge sources."""
     top_k = prompt_cfg.top_k if prompt_cfg.top_k > 0 else CONFIG.rag_top_k
-    chunks = _retrieve_chunks_multi(prompt_cfg.queries, top_k)
+    chunks = _retrieve_chunks_multi(prompt_cfg.queries, top_k, source_file=source_file)
     prompt = render_prompt(prompt_cfg.template, chunks)
 
     CONFIG.disable_blackhole_proxies()
-    llm = ChatGroq(
-        model=LLM_MODEL,
-        api_key=CONFIG.groq_api_key.get_secret_value(),
-    )
+    llm = _build_llm()
     chain = llm.with_structured_output(extracted_cls)
 
     max_retries = 5
@@ -387,16 +407,16 @@ def _pause_after_batch(processed_count: int, total_count: int) -> None:
 # Digunakan oleh: model_ai/extractor/prompts.py
 # Menjalankan fungsi `_extract_document_type` sebagai bagian alur `doc_extractor`.
 # ---------------------------------------------------------------------------
-def _extract_document_type() -> str | None:
+def _extract_document_type(source_file: str | None = None) -> str | None:
     """Identifikasi jenis dokumen dari judul/konteks header dokumen."""
     top_k = DOCUMENT_TYPE.top_k if DOCUMENT_TYPE.top_k > 0 else CONFIG.rag_top_k
-    chunks = _retrieve_chunks_multi(DOCUMENT_TYPE.queries, top_k)
+    chunks = _retrieve_chunks_multi(DOCUMENT_TYPE.queries, top_k, source_file=source_file)
     if not chunks:
         return None
 
     prompt = render_prompt(DOCUMENT_TYPE.template, chunks)
     CONFIG.disable_blackhole_proxies()
-    llm = ChatGroq(model=LLM_MODEL, api_key=CONFIG.groq_api_key.get_secret_value())
+    llm = _build_llm()
     result = llm.invoke(prompt)
     text = str(result.content).strip().strip('"')
     return None if text.lower() == "null" else text
@@ -406,20 +426,20 @@ def _extract_document_type() -> str | None:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `extract_document_metadata` sebagai bagian alur `doc_extractor`.
 # ---------------------------------------------------------------------------
-def extract_document_metadata() -> DocumentMetadata:
+def extract_document_metadata(source_file: str | None = None) -> DocumentMetadata:
     results: dict[str, Any] = {}
     total_keys = len(KEY_REGISTRY)
     for index, (key, prompt_cfg, extracted_cls, info_cls) in enumerate(KEY_REGISTRY, start=1):
         print(f"[extract] Memproses: {key} ...")
-        results[key] = _extract_key(prompt_cfg, extracted_cls, info_cls)
+        results[key] = _extract_key(prompt_cfg, extracted_cls, info_cls, source_file=source_file)
         print(f"[extract] Selesai:   {key}")
         _pause_after_batch(index, total_keys)
 
     print("[extract] Memproses: document_type ...")
-    results["document_type"] = _extract_document_type()
-    print(f"[extract] Selesai:   document_type → {results['document_type']}")
+    results["document_type"] = _extract_document_type(source_file=source_file)
+    print(f"[extract] Selesai:   document_type -> {results['document_type']}")
 
-    results["source_document"] = Path(APP_DIR.parent / "file.pdf").name
+    results["source_document"] = source_file or (Path(APP_DIR.parent / "file.pdf").name)
     return DocumentMetadata(**results)
 
 
@@ -436,18 +456,6 @@ def save_to_supabase(metadata: DocumentMetadata, project_id: str | None = None) 
 # Digunakan oleh: manage.py
 # Menjalankan fungsi `run_extraction` sebagai bagian alur `doc_extractor`.
 # ---------------------------------------------------------------------------
-def run_extraction(project_id: str | None = None) -> None:
-    metadata = extract_document_metadata()
-    if project_id:
-        project_dir = APP_DIR / "data" / project_id
-        project_dir.mkdir(parents=True, exist_ok=True)
-        output_path = project_dir / "output.json"
-    else:
-        output_path = APP_DIR / "data" / "output.json"
-
-    output_path.write_text(
-        json.dumps(metadata.model_dump(exclude_none=True), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    print(f"[extract] Output lokal: {output_path}")
+def run_extraction(project_id: str | None = None, source_file: str | None = None) -> None:
+    metadata = extract_document_metadata(source_file=source_file)
     save_to_supabase(metadata, project_id)

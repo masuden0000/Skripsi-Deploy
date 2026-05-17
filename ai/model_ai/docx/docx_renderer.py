@@ -5,6 +5,7 @@ Digunakan oleh: model_ai/docx/generator.py
 
 Tujuan: Memisahkan logika render dokumen dari orkestrasi generator.
 """
+from io import BytesIO
 from pathlib import Path
 
 from docx import Document
@@ -285,7 +286,7 @@ def _apply_base_styles(document: Document, typography: dict, spacing: dict) -> N
         h.font.name      = body_font
         h.font.size      = Pt(heading_size)
         h.font.bold      = heading_bold
-        h.font.all_caps  = heading_caps
+        h.font.all_caps = heading_caps if style_name == "Heading 1" else False
         h.font.color.rgb = RGBColor(0, 0, 0)
         h.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
@@ -812,7 +813,7 @@ def _render_sub_bab_section(
     instructional_placeholders: dict[str, str],
 ) -> None:
     sub_num  = section.get("sub_number") or "?"
-    title    = section.get("title") or "[SUB_BAB_TANPA_JUDUL]"
+    title = (section.get("title") or "[SUB_BAB_TANPA_JUDUL]").title()
     heading_text = f"{sub_num} {title}".strip()
 
     heading = document.add_heading(heading_text, level=2)
@@ -1266,3 +1267,60 @@ def _append_field(paragraph, instruction: str) -> None:
 def _clear_paragraph(paragraph) -> None:
     for run in paragraph.runs:
         run.clear()
+
+
+def render_proposal_docx_bytes(
+    output_data: dict,
+    chunks: list,
+    instructional_placeholders: dict[str, str],
+) -> bytes:
+    """
+    Render DOCX dan return sebagai bytes.
+    Menggantikan versi yang menyimpan ke file — tidak ada filesystem lokal.
+    """
+    doc: Document = Document()
+    first_section = doc.sections[0]
+    _configure_page_layout(first_section, output_data["page_layout"])
+    _apply_base_styles(doc, output_data["typography"], output_data["spacing"])
+
+    typography = output_data["typography"]
+    page_layout = output_data["page_layout"]
+    spacing = output_data["spacing"]
+    numbering = output_data["numbering"]
+    figures_tables = output_data["figures_and_tables"]
+    doc_structure = output_data["document_structure_proposal"]
+
+    prelim_num = numbering.get("preliminary") or {}
+    content_num = numbering.get("content") or {}
+
+    has_preliminary = _has_preliminary_pages(doc_structure)
+    if has_preliminary:
+        _render_preliminary_pages(doc, doc_structure, page_layout, typography, instructional_placeholders, figures_tables)
+        _apply_page_numbering(
+            first_section,
+            _build_page_num_position(prelim_num.get("location", "FOOTER"), prelim_num.get("alignment", "RIGHT")),
+            fmt=prelim_num.get("format", "lowerRoman"),
+            start=1,
+        )
+        content_section = doc.add_section(WD_SECTION_START.NEW_PAGE)
+        _configure_page_layout(content_section, page_layout)
+        _apply_page_numbering(
+            content_section,
+            _build_page_num_position(content_num.get("location", "HEADER"), content_num.get("alignment", "RIGHT")),
+            fmt=content_num.get("format", "decimal"),
+            start=1,
+        )
+    else:
+        _apply_page_numbering(
+            first_section,
+            _build_page_num_position(content_num.get("location", "HEADER"), content_num.get("alignment", "RIGHT")),
+            fmt=content_num.get("format", "decimal"),
+            start=1,
+        )
+
+    _render_proposal_body(doc, doc_structure, page_layout, spacing, numbering, figures_tables, chunks, instructional_placeholders)
+
+    buf = BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+    return buf.getvalue()

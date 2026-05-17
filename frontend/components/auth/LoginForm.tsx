@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import BrandLogo from "@/components/BrandLogo"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -72,14 +73,7 @@ export default function LoginForm() {
             }}
           />
           <div className="relative flex size-28 items-end justify-center rounded-full bg-white px-4 pt-4 shadow-[0px_10px_15px_0px_rgba(0,0,0,0.1),0px_4px_6px_0px_rgba(0,0,0,0.1)]">
-            <Image
-              src="/logo-upnvj.png"
-              alt="Logo UPNVJ"
-              width={80}
-              height={80}
-              className="mb-2 object-contain"
-              priority
-            />
+            <BrandLogo size={80} priority />
           </div>
         </div>
 
@@ -124,19 +118,12 @@ export default function LoginForm() {
             Username
           </Label>
           <div className="relative">
-            <Image
-              src="/icon-user.svg"
-              alt=""
-              width={20}
-              height={20}
-              aria-hidden
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
-            />
+            <Image src="/icon-email.svg" alt="" width={20} height={20} aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
               id="email"
               name="email"
               type="email"
-              placeholder="Masukkan username"
+              placeholder="Masukkan email"
               required
               className="h-11 rounded-lg border-pkm-400 pl-10 text-sm placeholder:text-gray-400 focus-visible:ring-pkm-600"
             />

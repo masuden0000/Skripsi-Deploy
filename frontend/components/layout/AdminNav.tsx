@@ -5,6 +5,17 @@ import { usePathname } from "next/navigation"
 
 const navItems = [
   {
+    label: "Periode Review",
+    href: "/admin/periode",
+    exact: false,
+    icon: (
+      <svg className="size-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path strokeLinecap="round" d="M16 2v4M8 2v4M3 10h18" />
+      </svg>
+    ),
+  },
+  {
     label: "Kelola Fakultas",
     href: "/admin/fakultas",
     exact: false,
@@ -26,17 +37,6 @@ const navItems = [
         <circle cx="9" cy="7" r="4" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M22 21v-2a4 4 0 0 0-3-3.87" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
-  {
-    label: "Periode Review",
-    href: "/admin/periode",
-    exact: false,
-    icon: (
-      <svg className="size-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <path strokeLinecap="round" d="M16 2v4M8 2v4M3 10h18" />
       </svg>
     ),
   },

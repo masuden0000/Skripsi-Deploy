@@ -110,10 +110,17 @@ router.get("/:id", async (req, res, next) => {
   }
 })
 
-// GET /:id/logs - SSE stream for real-time project logs
+// GET /:id/logs - SSE stream (or JSON snapshot when Accept: application/json)
 router.get("/:id/logs", async (req, res, next) => {
   try {
     const { id } = req.params
+
+    // JSON fallback — digunakan saat halaman di-restore untuk memuat log historis
+    if (!req.headers.accept?.includes("text/event-stream")) {
+      const response = await fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}/logs`)
+      const data = await response.json()
+      return res.json(data)
+    }
 
     // Set SSE headers
     res.setHeader("Content-Type", "text/event-stream")
@@ -124,26 +131,41 @@ router.get("/:id/logs", async (req, res, next) => {
     // Send initial connection message
     res.write("event: connected\ndata: {\"status\":\"connected\"}\n\n")
 
-    // Track last log ID to detect new logs
+    // Track last log ID and last known status to detect changes
     let lastLogId = 0
+    let lastStatus = null
 
     const fetchLogs = async () => {
       try {
-        const response = await fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}/logs`)
-        if (!response.ok) return
+        const [logsResponse, statusResponse] = await Promise.all([
+          fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}/logs`),
+          fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}`),
+        ])
 
-        const data = await response.json()
-        if (!data.success || !data.data) return
+        if (logsResponse.ok) {
+          const data = await logsResponse.json()
+          if (data.success && data.data) {
+            const newLogs = data.data.filter(log => log.id > lastLogId)
+            if (newLogs.length > 0) {
+              lastLogId = newLogs[newLogs.length - 1].id
+              for (const log of newLogs) {
+                res.write(`event: log\ndata: ${JSON.stringify(log)}\n\n`)
+              }
+            }
+          }
+        }
 
-        const logs = data.data
-
-        // Send only new logs
-        const newLogs = logs.filter(log => log.id > lastLogId)
-        if (newLogs.length > 0) {
-          lastLogId = newLogs[newLogs.length - 1].id
-
-          for (const log of newLogs) {
-            res.write(`event: log\ndata: ${JSON.stringify(log)}\n\n`)
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json()
+          const project = statusData?.data
+          if (project && project.status !== lastStatus) {
+            lastStatus = project.status
+            res.write(`event: status\ndata: ${JSON.stringify(project)}\n\n`)
+            if (project.status === 'completed' || project.status === 'failed') {
+              clearInterval(intervalId)
+              res.end()
+              return
+            }
           }
         }
       } catch (error) {
@@ -151,7 +173,7 @@ router.get("/:id/logs", async (req, res, next) => {
       }
     }
 
-    // Poll for logs every 1 second
+    // Poll for logs and status every 1 second
     const intervalId = setInterval(fetchLogs, 1000)
 
     // Also fetch immediately on connection

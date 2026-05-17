@@ -11,6 +11,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, SecretStr
 
+
 # ---------------------------------------------------------------------------
 # Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
 # Blok konstanta `APP_DIR` untuk menyimpan konfigurasi/registry yang dipakai berulang.
@@ -30,26 +31,74 @@ load_dotenv(dotenv_path=ENV_FILE)
 # Mendefinisikan class `AppConfig` untuk kebutuhan modul `config`.
 # ---------------------------------------------------------------------------
 class AppConfig(BaseModel):
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=False)  # allow mutation for key rotation state
 
-    groq_api_key: SecretStr
-    google_api_key: SecretStr | None = None
+    groq_api_keys: list[SecretStr]
+    google_api_keys: list[SecretStr]
     supabase_service_role_key: SecretStr
     supabase_url: str
     model_name: str
     temperature: float
     embedding_model_name: str
+    gemini_model_name: str = "gemini-2.5-flash"
     chat_host: str = "127.0.0.1"
     chat_port: int = 8000
     rag_top_k: int = 5
     rag_min_context_similarity: float = 0.45
 
-    def require_google_api_key(self) -> str:
-        if self.google_api_key is None:
-            raise ValueError(
-                "GOOGLE_API_KEY wajib di-set di file ai/.env untuk proses embedding."
-            )
-        return self.google_api_key.get_secret_value()
+    # Rotation state
+    _groq_index: int = 0
+    _google_index: int = 0
+    _groq_exhausted: bool = False  # True = semua Groq key limit, switch ke Gemini
+
+    def get_groq_key(self) -> str:
+        if not self.groq_api_keys:
+            raise ValueError("Tidak ada Groq API key yang tersedia.")
+        return self.groq_api_keys[self._groq_index].get_secret_value()
+
+    def rotate_groq_key(self) -> str:
+        if len(self.groq_api_keys) > 1:
+            self._groq_index = (self._groq_index + 1) % len(self.groq_api_keys)
+        return self.get_groq_key()
+
+    def get_google_key(self) -> str:
+        if not self.google_api_keys:
+            raise ValueError("Tidak ada Google API key yang tersedia.")
+        return self.google_api_keys[self._google_index].get_secret_value()
+
+    def rotate_google_key(self) -> str:
+        if len(self.google_api_keys) > 1:
+            self._google_index = (self._google_index + 1) % len(self.google_api_keys)
+        return self.get_google_key()
+
+    def get_llm_api_key(self) -> tuple[str, str]:
+        """
+        Return (api_key, model_name) untuk LLM chat calls.
+        Strategy: Groq dulu, Gemini Flash 2.5 fallback.
+        Jika semua Groq key limit/error → switch ke Gemini.
+        """
+        # Phase 1: Coba Groq
+        if not self._groq_exhausted:
+            for _ in range(len(self.groq_api_keys)):
+                try:
+                    key = self.get_groq_key()
+                    return key, self.model_name
+                except Exception:
+                    if len(self.groq_api_keys) > 1:
+                        self.rotate_groq_key()
+            # Semua Groq gagal
+            self._groq_exhausted = True
+
+        # Phase 2: Gemini fallback
+        for _ in range(len(self.google_api_keys)):
+            try:
+                key = self.get_google_key()
+                return key, self.gemini_model_name
+            except Exception:
+                if len(self.google_api_keys) > 1:
+                    self.rotate_google_key()
+
+        raise ValueError("Semua API key (Groq + Gemini) tidak tersedia.")
 
     def disable_blackhole_proxies(self) -> None:
         proxy_keys = [
@@ -80,24 +129,27 @@ def _get_required_env(name: str) -> str:
     return value
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_get_optional_env` sebagai bagian alur `config`.
-# ---------------------------------------------------------------------------
-def _get_optional_env(name: str) -> str | None:
-    value = os.getenv(name, "").strip()
-    return value or None
 
 
 # ---------------------------------------------------------------------------
 # Digunakan oleh: model_ai/extractor/doc_extractor.py; model_ai/extractor/schema_differ.py; model_ai/loader/supabase_ingest.py; model_ai/docx/style_mapping_pipeline.py; dst.
 # Menjalankan fungsi `get_config` sebagai bagian alur `config`.
 # ---------------------------------------------------------------------------
+def _load_api_key_list(prefix: str, suffix_max: int = 5) -> list[SecretStr]:
+    """Load all numbered API keys (GROQ_API_KEY, GROQ_API_KEY_2, ..., GOOGLE_API_KEY_5)."""
+    keys: list[SecretStr] = []
+    for i in range(1, suffix_max + 1):
+        env_name = f"{prefix}_{i}" if i > 1 else prefix
+        value = os.getenv(env_name, "").strip()
+        if value:
+            keys.append(SecretStr(value))
+    return keys
+
+
 def get_config() -> AppConfig:
-    google_api_key = _get_optional_env("GOOGLE_API_KEY")
     return AppConfig(
-        groq_api_key=SecretStr(_get_required_env("GROQ_API_KEY")),
-        google_api_key=SecretStr(google_api_key) if google_api_key else None,
+        groq_api_keys=_load_api_key_list("GROQ_API_KEY"),
+        google_api_keys=_load_api_key_list("GOOGLE_API_KEY"),
         supabase_service_role_key=SecretStr(
             _get_required_env("SUPABASE_SERVICE_ROLE_KEY")
         ),
@@ -105,6 +157,7 @@ def get_config() -> AppConfig:
         model_name=_get_required_env("MODEL_NAME"),
         temperature=float(_get_required_env("TEMPERATURE")),
         embedding_model_name=_get_required_env("EMBEDDING_MODEL_NAME"),
+        gemini_model_name=os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash").strip() or "gemini-2.5-flash",
         chat_host=os.getenv("CHAT_HOST", "127.0.0.1").strip() or "127.0.0.1",
         chat_port=int(os.getenv("CHAT_PORT", "8000")),
         rag_top_k=int(os.getenv("RAG_TOP_K", "5")),

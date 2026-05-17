@@ -12,6 +12,31 @@ from pydantic import BaseModel, Field
 
 
 # ---------------------------------------------------------------------------
+# Sub-model untuk anomaly reporting (per-heading dan per-paragraph)
+# ---------------------------------------------------------------------------
+class HeadingCapsAnomaly(BaseModel):
+    """Satu pelanggaran aturan kapitalisasi pada sebuah heading."""
+
+    text: str = Field(description="Teks heading asli")
+    level: int = Field(description="Level heading: 1 (BAB/DAFTAR) atau 2 (sub-bab)")
+    issue: Literal["not_all_caps", "not_title_case"] = Field(
+        description="Jenis pelanggaran: not_all_caps untuk H1, not_title_case untuk H2"
+    )
+    expected_form: str | None = Field(default=None, description="Bentuk yang benar (uppercase / title case)")
+    location: str = Field(default="", description="Konteks lokasi heading dalam dokumen")
+
+
+class SpacingAnomaly(BaseModel):
+    """Satu paragraf yang memiliki line spacing berbeda dari mayoritas dokumen."""
+
+    location: str = Field(description="Lokasi hierarkis: 'BAB 4 > 4.1 Anggaran Biaya'")
+    paragraph_index: int = Field(description="Indeks paragraf dalam doc.paragraphs")
+    expected: float = Field(description="Nilai line spacing yang diharapkan (mayoritas dokumen)")
+    actual: float = Field(description="Nilai line spacing yang ditemukan")
+    text_preview: str = Field(default="", description="60 karakter pertama teks paragraf")
+
+
+# ---------------------------------------------------------------------------
 # Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
 # Blok konstanta `VALIDATION_CATEGORIES` untuk menyimpan konfigurasi/registry yang dipakai berulang.
 # ---------------------------------------------------------------------------
@@ -23,6 +48,38 @@ VALIDATION_CATEGORIES = (
     "numbering",
     "figures_tables",
 )
+
+
+# ---------------------------------------------------------------------------
+# Digunakan oleh: rule_validator.py — mencatat hasil setiap pengecekan properti.
+# ---------------------------------------------------------------------------
+class ValidationCheckResult(BaseModel):
+    """Hasil satu pengecekan properti: passed, failed, warning, atau skipped."""
+
+    category: Literal[
+        "typography",
+        "page_layout",
+        "spacing",
+        "document_structure",
+        "numbering",
+        "figures_tables",
+    ]
+    field: str = Field(description="Nama properti yang dicek")
+    status: Literal["passed", "failed", "warning", "skipped"] = Field(
+        description="Hasil pengecekan"
+    )
+    expected: str | int | float | bool | None = Field(
+        default=None, description="Nilai yang diharapkan (dari metadata/ground truth)"
+    )
+    actual: str | int | float | bool | None = Field(
+        default=None, description="Nilai yang ditemukan di dokumen"
+    )
+    message: str = Field(default="", description="Keterangan hasil")
+    location: str | None = Field(default=None, description="Lokasi dalam dokumen")
+    skip_reason: str | None = Field(
+        default=None,
+        description="Alasan dilewati: 'Tidak ada nilai di metadata' atau 'Tidak terdeteksi di dokumen'",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -61,6 +118,10 @@ class ValidationIssue(BaseModel):
         default="",
         description="Human-readable description of the issue"
     )
+    location: str | None = Field(
+        default=None,
+        description="Lokasi issue dalam dokumen (e.g., 'Seluruh dokumen', 'BAB 1 PENDAHULUAN', 'Paragraf ke-5')"
+    )
 
     def __str__(self) -> str:
         return f"[{self.severity.upper()}] {self.category}.{self.field}: {self.message}"
@@ -80,6 +141,10 @@ class ValidationResult(BaseModel):
     issues: list[ValidationIssue] = Field(
         default_factory=list,
         description="List of validation issues found"
+    )
+    checks: list[ValidationCheckResult] = Field(
+        default_factory=list,
+        description="Hasil lengkap setiap pengecekan properti (passed/failed/warning/skipped)",
     )
     validated_at: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat(),
@@ -110,18 +175,33 @@ class ValidationResult(BaseModel):
     def info_count(self) -> int:
         return sum(1 for issue in self.issues if issue.severity == "info")
 
+    @property
+    def passed_count(self) -> int:
+        return sum(1 for c in self.checks if c.status == "passed")
+
+    @property
+    def skipped_count(self) -> int:
+        return sum(1 for c in self.checks if c.status == "skipped")
+
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
+        # Kelompokkan checks per kategori untuk report terstruktur
+        report: dict[str, list[dict]] = {}
+        for c in self.checks:
+            report.setdefault(c.category, []).append(c.model_dump(exclude_none=False))
+
         return {
             "status": self.status,
-            "issues": [issue.model_dump() for issue in self.issues],
-            "validated_at": self.validated_at,
-            "document_path": self.document_path,
-            "document_name": self.document_name,
             "summary": self.summary,
+            "validated_at": self.validated_at,
+            "document_name": self.document_name,
+            "document_path": self.document_path,
             "error_count": self.error_count,
             "warning_count": self.warning_count,
-            "info_count": self.info_count,
+            "passed_count": self.passed_count,
+            "skipped_count": self.skipped_count,
+            "report": report,
+            "issues": [issue.model_dump() for issue in self.issues],
         }
 
 
@@ -149,6 +229,7 @@ class DocxProperties(BaseModel):
     margin_right_cm: float | None = Field(default=None, description="Right margin in cm")
     paper_size: str | None = Field(default=None, description="Paper size (A4, F4, etc.)")
     orientation: str | None = Field(default=None, description="Portrait or Landscape")
+    columns: int | None = Field(default=None, description="Number of text columns per page")
 
     # Spacing
     line_spacing: float | None = Field(default=None, description="Line spacing value")
@@ -166,14 +247,37 @@ class DocxProperties(BaseModel):
 
     # Numbering
     chapter_format: str | None = Field(default=None, description="Chapter number format")
+    sub_chapter_format: str | None = Field(default=None, description="Sub-chapter number format")
     preliminary_page_format: str | None = Field(default=None, description="Preliminary pages numbering format")
+    preliminary_page_location: str | None = Field(default=None, description="Preliminary page number location")
+    preliminary_page_alignment: str | None = Field(default=None, description="Preliminary page number alignment")
     content_page_format: str | None = Field(default=None, description="Content pages numbering format")
+    content_page_location: str | None = Field(default=None, description="Content page number location")
+    content_page_alignment: str | None = Field(default=None, description="Content page number alignment")
+    figure_format: str | None = Field(default=None, description="Figure caption format (e.g. 'Gambar 1.1')")
+    table_format: str | None = Field(default=None, description="Table caption format (e.g. 'Tabel 1.1')")
 
     # Figures & Tables
     table_caption_position: str | None = Field(default=None, description="Table caption position (above/below)")
     figure_caption_position: str | None = Field(default=None, description="Figure caption position (above/below)")
     table_count: int = Field(default=0, description="Number of tables in document")
     figure_count: int = Field(default=0, description="Number of figures in document")
+
+    # Document structure — detected daftar sections
+    has_daftar_isi: bool = Field(default=False, description="Whether document has Daftar Isi")
+    has_daftar_pustaka: bool = Field(default=False, description="Whether document has Daftar Pustaka")
+    has_daftar_tabel: bool = Field(default=False, description="Whether document has Daftar Tabel")
+    has_daftar_gambar: bool = Field(default=False, description="Whether document has Daftar Gambar")
+
+    # Per-item anomaly lists for detailed location-aware reporting
+    heading_caps_anomalies: list[HeadingCapsAnomaly] = Field(
+        default_factory=list,
+        description="List of heading paragraphs that violate ALL CAPS (H1) or title case (H2) rules",
+    )
+    spacing_anomalies: list[SpacingAnomaly] = Field(
+        default_factory=list,
+        description="List of body paragraphs with line spacing different from document majority",
+    )
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""

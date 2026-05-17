@@ -1,6 +1,7 @@
-import Image from "next/image"
+import BrandLogo from "@/components/BrandLogo"
 import ReviewerNav from "@/components/layout/ReviewerNav"
 import LogoutButton from "@/components/auth/LogoutButton"
+import { ReviewerProfileLink } from "@/components/layout/ReviewerProfileLink"
 
 export default function ReviewerLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -19,13 +20,7 @@ export default function ReviewerLayout({ children }: { children: React.ReactNode
             className="size-9 rounded-xl flex items-center justify-center flex-none overflow-hidden"
             style={{ background: "linear-gradient(135deg, #009966 0%, #007a55 100%)" }}
           >
-            <Image
-              src="/logo-upnvj.png"
-              alt="UPNVJ"
-              width={26}
-              height={26}
-              className="object-contain brightness-0 invert"
-            />
+            <BrandLogo size={26} invert />
           </div>
           <div>
             <p className="text-sm font-semibold text-pkm-900 leading-tight">Sistem Review</p>
@@ -47,7 +42,8 @@ export default function ReviewerLayout({ children }: { children: React.ReactNode
             Panel Reviewer
           </p>
 
-          <div className="mt-3">
+          <div className="mt-3 flex flex-col gap-1">
+            <ReviewerProfileLink />
             <LogoutButton />
           </div>
         </div>

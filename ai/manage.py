@@ -69,47 +69,31 @@ def run_setup(project_id: str | None = None, skip_ingest: bool = False) -> None:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `run_extract` sebagai bagian alur `manage`.
 # ---------------------------------------------------------------------------
-def run_extract(project_id: str | None = None) -> None:
+def run_extract(project_id: str | None = None, source_file: str | None = None) -> None:
     from model_ai.extractor.doc_extractor import run_extraction
 
-    run_extraction(project_id)
+    run_extraction(project_id=project_id, source_file=source_file)
 
 
 # ---------------------------------------------------------------------------
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `run_docx` sebagai bagian alur `manage`.
 # ---------------------------------------------------------------------------
-def run_docx(
-    doc_type: str,
-    project_id: str | None,
-    output_json: str,
-    chunks_path: str,
-    output_path: str,
-) -> str | None:
-    if doc_type != "proposal":
-        raise SystemExit(
-            f"Tipe dokumen '{doc_type}' belum didukung. Gunakan '--type proposal'."
-        )
+def run_docx(project_id: str) -> str | None:
+    from model_ai.docx.generator import generate_proposal_docx_bytes
+    from model_ai.storage import upload_docx_to_storage
 
-    from model_ai.docx.generator import generate_proposal_docx
+    source_doc = f"{project_id}/source.pdf"
 
-    # Build project-specific paths if project_id is provided
-    output_json_path = resolve_ai_path(output_json)
-    chunks_path_resolved = resolve_ai_path(chunks_path)
-    output_path_resolved = resolve_ai_path(output_path)
-
-    if project_id:
-        output_json_path = AI_DIR / "data" / project_id / "output.json"
-        chunks_path_resolved = AI_DIR / "data" / project_id / "output_chunks.json"
-        output_path_resolved = AI_DIR / "data" / project_id / "proposal_output.docx"
-
-    generated_path = generate_proposal_docx(
-        output_json_path=output_json_path,
-        chunks_path=chunks_path_resolved,
-        output_path=output_path_resolved,
+    doc_bytes, file_name = generate_proposal_docx_bytes(
+        project_id=project_id,
+        source_doc=source_doc,
     )
-    print(f"[docx] Berhasil membuat dokumen: {generated_path}")
-    return str(generated_path)
+
+    result_url = upload_docx_to_storage(doc_bytes, file_name, project_id)
+    print(f"[docx] Berhasil upload dokumen: {result_url}")
+    print(f"[docx] RESULT_URL={result_url}")
+    return result_url
 
 
 # ---------------------------------------------------------------------------
@@ -147,29 +131,41 @@ def run_schema_diff_cmd(source_doc: str) -> None:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `run_validate` sebagai bagian alur `manage`.
 # ---------------------------------------------------------------------------
-def run_validate(project_id: str | None = None, source_doc: str | None = None) -> None:
-    from model_ai.metadata_repository import load_document_metadata_payload
+def run_validate(project_id: str | None = None, output_json: str | None = None) -> None:
+    import json
     from model_ai.validation.validator import validate_and_print
 
-    # Resolve paths
+    # Resolve DOCX path
     if project_id:
         docx_path = AI_DIR / "data" / project_id / "file_target.docx"
+        default_output_json = AI_DIR / "data" / project_id / "output.json"
     else:
         docx_path = AI_DIR / "data" / "file_target.docx"
+        default_output_json = AI_DIR / "data" / "output.json"
 
     if not docx_path.exists():
         raise SystemExit(f"File tidak ditemukan: {docx_path}")
 
-    # Load metadata from Supabase
-    if source_doc is None:
-        # Default: gunakan nama file DOCX sebagai source_doc
-        source_doc = docx_path.name
+    # Resolve output.json path
+    json_path = AI_DIR / output_json if output_json else default_output_json
 
-    payload = load_document_metadata_payload(source_doc)
-    print(f"[validate] Loaded metadata untuk source_doc: {source_doc}")
+    if not json_path.exists():
+        raise SystemExit(f"File output.json tidak ditemukan: {json_path}")
+
+    with open(json_path, encoding="utf-8") as f:
+        payload = json.load(f)
+
+    print(f"[validate] Loaded metadata dari: {json_path}")
 
     # Run validation
     result = validate_and_print(str(docx_path), payload)
+
+    # Simpan output JSON
+    import json as _json
+    out_json_path = docx_path.parent / "validation_result.json"
+    with open(out_json_path, "w", encoding="utf-8") as f:
+        _json.dump(result.to_dict(), f, ensure_ascii=False, indent=2)
+    print(f"[validate] Hasil disimpan ke: {out_json_path}")
 
     if result.status != "pass":
         raise SystemExit(1)
@@ -208,6 +204,10 @@ def main() -> None:
     extract_parser.add_argument(
         "--project-id",
         help="Project ID untuk isolate extraction per-project.",
+    )
+    extract_parser.add_argument(
+        "--source-file",
+        help="Nama file sumber (misal 'data/{project_id}/source.pdf').",
     )
 
     schema_diff_parser = subparsers.add_parser(
@@ -284,15 +284,15 @@ def main() -> None:
 
     validate_parser = subparsers.add_parser(
         "validate",
-        help="Validasi format dokumen DOCX terhadap rules di document_metadata.",
+        help="Validasi format dokumen DOCX terhadap rules dari output.json lokal.",
     )
     validate_parser.add_argument(
         "--project-id",
-        help="Project ID untuk isolate output per-project (default: data/file_target.docx).",
+        help="Project ID untuk isolate per-project (default: data/file_target.docx + data/output.json).",
     )
     validate_parser.add_argument(
-        "--source-doc",
-        help="Nama file PDF sumber sebagai selector document_metadata (default: nama file DOCX).",
+        "--output-json",
+        help="Path output.json sebagai ground truth (default: data/output.json atau data/{project-id}/output.json).",
     )
 
     args = parser.parse_args()
@@ -302,7 +302,7 @@ def main() -> None:
         return
 
     if args.command == "extract":
-        run_extract(project_id=args.project_id)
+        run_extract(project_id=args.project_id, source_file=args.source_file)
         return
 
     if args.command == "schema-diff":
@@ -310,13 +310,11 @@ def main() -> None:
         return
 
     if args.command == "docx":
-        run_docx(
-            doc_type=args.doc_type,
-            project_id=args.project_id,
-            output_json=args.output_json,
-            chunks_path=args.chunks,
-            output_path=args.output,
-        )
+        if args.doc_type != "proposal":
+            raise SystemExit("Tipe dokumen belum didukung.")
+        if not args.project_id:
+            raise SystemExit("--project-id wajib untuk perintah docx.")
+        run_docx(project_id=args.project_id)
         return
 
     if args.command == "docx-style-map":
@@ -331,7 +329,7 @@ def main() -> None:
     if args.command == "validate":
         run_validate(
             project_id=getattr(args, "project_id", None),
-            source_doc=getattr(args, "source_doc", None),
+            output_json=getattr(args, "output_json", None),
         )
         return
 

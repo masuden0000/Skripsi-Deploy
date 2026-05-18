@@ -6,6 +6,7 @@ Digunakan oleh: manage.py
 Tujuan: Menyimpan hasil preprocessing ke storage terpusat yang dipakai query RAG.
 """
 import json
+import time
 from pathlib import Path
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -39,6 +40,9 @@ EMBEDDING_DIMENSION = 768
 # Blok konstanta `BATCH_SIZE` untuk menyimpan konfigurasi/registry yang dipakai berulang.
 # ---------------------------------------------------------------------------
 BATCH_SIZE = 20
+
+EMBED_MAX_RETRY_CYCLES = 5
+EMBED_RATE_LIMIT_WAIT = 60  # detik, tunggu saat semua Google key exhausted
 
 
 def get_chunks_file(project_id: str) -> Path:
@@ -106,6 +110,42 @@ def build_embedder() -> GoogleGenerativeAIEmbeddings:
     )
 
 
+def _embed_documents_with_retry(contents: list[str]) -> list[list[float]]:
+    """Embed batch dokumen dengan key rotation + retry saat rate limit.
+
+    Siklus: coba semua Google key satu per satu → jika semua exhausted, tunggu
+    EMBED_RATE_LIMIT_WAIT detik → ulangi. Max EMBED_MAX_RETRY_CYCLES siklus.
+    """
+    num_keys = len(CONFIG.google_api_keys)
+    for cycle in range(EMBED_MAX_RETRY_CYCLES):
+        for key_attempt in range(num_keys):
+            try:
+                embedder = build_embedder()
+                return embedder.embed_documents(contents, output_dimensionality=EMBEDDING_DIMENSION)
+            except Exception as e:
+                err_str = str(e)
+                is_rate_limit = (
+                    "ResourceExhausted" in type(e).__name__
+                    or "429" in err_str
+                    or "RESOURCE_EXHAUSTED" in err_str
+                )
+                if not is_rate_limit:
+                    raise
+                if key_attempt < num_keys - 1:
+                    CONFIG.rotate_google_key()
+                    print(f"[ingest] Key {key_attempt + 1}/{num_keys} exhausted, rotate ke key berikutnya...")
+        if cycle < EMBED_MAX_RETRY_CYCLES - 1:
+            print(
+                f"[ingest] Semua {num_keys} Google key exhausted "
+                f"(cycle {cycle + 1}/{EMBED_MAX_RETRY_CYCLES}). "
+                f"Menunggu {EMBED_RATE_LIMIT_WAIT} detik..."
+            )
+            time.sleep(EMBED_RATE_LIMIT_WAIT)
+    raise RuntimeError(
+        f"Embedding batch gagal setelah {EMBED_MAX_RETRY_CYCLES} siklus × {num_keys} key."
+    )
+
+
 # ---------------------------------------------------------------------------
 # Digunakan oleh: Dipakai internal modul ingest dan caller retrieval lain.
 # Menjalankan fungsi `format_vector` sebagai bagian alur `supabase_ingest`.
@@ -163,17 +203,13 @@ def upsert_embeddings(project_id: str) -> int:
         return 0
 
     client = build_supabase_client()
-    embedder = build_embedder()
 
     source_file = f"{project_id}/source.pdf"
 
     total_rows = 0
     for chunk_batch in batched(chunks, BATCH_SIZE):
         contents = [chunk.content for chunk in chunk_batch]
-        embeddings = embedder.embed_documents(
-            contents,
-            output_dimensionality=EMBEDDING_DIMENSION,
-        )
+        embeddings = _embed_documents_with_retry(contents)
         rows = build_rows(chunk_batch, embeddings, source_file, project_id)
         client.table("document_chunks").upsert(
             rows,

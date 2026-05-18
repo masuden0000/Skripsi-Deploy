@@ -21,7 +21,7 @@ export async function loginWithPassword({ email, password, role }) {
   })
 
   if (error || !data.user) {
-    throw new AppError("Email atau password salah. Periksa kembali.", 401)
+    throw new AppError("Password Anda salah.", 401)
   }
 
   const profile = await getProfileByUserId(data.user.id)

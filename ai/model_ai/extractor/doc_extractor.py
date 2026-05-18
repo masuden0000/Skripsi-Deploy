@@ -73,6 +73,9 @@ BATCH_PAUSE_SECONDS = 30
 # Batas atas waktu tunggu rate limit per percobaan — mencegah sleep > pipeline timeout
 MAX_RATE_LIMIT_WAIT = 120
 
+EMBED_MAX_RETRY_CYCLES = 5
+EMBED_RATE_LIMIT_WAIT = 60  # detik, tunggu saat semua Google key exhausted
+
 # ---------------------------------------------------------------------------
 # Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
 # Blok konstanta `CONFIG` untuk menyimpan konfigurasi/registry yang dipakai berulang.
@@ -258,6 +261,42 @@ def _build_embedder() -> GoogleGenerativeAIEmbeddings:
     )
 
 
+def _embed_query_with_retry(query: str) -> list[float]:
+    """Embed query dengan key rotation + retry saat rate limit.
+
+    Siklus: coba semua Google key satu per satu → jika semua exhausted, tunggu
+    EMBED_RATE_LIMIT_WAIT detik → ulangi. Max EMBED_MAX_RETRY_CYCLES siklus.
+    """
+    num_keys = len(CONFIG.google_api_keys)
+    for cycle in range(EMBED_MAX_RETRY_CYCLES):
+        for key_attempt in range(num_keys):
+            try:
+                embedder = _build_embedder()
+                return embedder.embed_query(query, output_dimensionality=EMBEDDING_DIMENSION)
+            except Exception as e:
+                err_str = str(e)
+                is_rate_limit = (
+                    "ResourceExhausted" in type(e).__name__
+                    or "429" in err_str
+                    or "RESOURCE_EXHAUSTED" in err_str
+                )
+                if not is_rate_limit:
+                    raise
+                if key_attempt < num_keys - 1:
+                    CONFIG.rotate_google_key()
+                    print(f"[embed] Key {key_attempt + 1}/{num_keys} exhausted, rotate ke key berikutnya...")
+        if cycle < EMBED_MAX_RETRY_CYCLES - 1:
+            print(
+                f"[embed] Semua {num_keys} Google key exhausted "
+                f"(cycle {cycle + 1}/{EMBED_MAX_RETRY_CYCLES}). "
+                f"Menunggu {EMBED_RATE_LIMIT_WAIT} detik..."
+            )
+            time.sleep(EMBED_RATE_LIMIT_WAIT)
+    raise RuntimeError(
+        f"Embedding gagal setelah {EMBED_MAX_RETRY_CYCLES} siklus × {num_keys} key."
+    )
+
+
 # ---------------------------------------------------------------------------
 # Digunakan oleh: model_ai/extractor/schema_differ.py
 # Menjalankan fungsi `_build_supabase` sebagai bagian alur `doc_extractor`.
@@ -317,7 +356,6 @@ def _retrieve_chunks_multi(queries: list[str], top_k: int, project_id: str | Non
        chunk_parent yang sama sehingga satu section selalu utuh.
     3. Sort by chunk_index agar konteks berurutan.
     """
-    embedder = _build_embedder()
     client = _build_supabase()
 
     rpc_params: dict = {"query_embedding": None, "match_count": top_k}
@@ -326,7 +364,7 @@ def _retrieve_chunks_multi(queries: list[str], top_k: int, project_id: str | Non
 
     seen: dict[int, dict] = {}
     for query in queries:
-        vector = embedder.embed_query(query, output_dimensionality=EMBEDDING_DIMENSION)
+        vector = _embed_query_with_retry(query)
         rpc_params["query_embedding"] = _format_vector(vector)
         result = client.rpc(
             "match_document_chunks",

@@ -15,7 +15,8 @@ __pycache__/
 # Local agent/app state
 .claude/settings.local.json*
 .claude/worktrees/
-
+.claude
+CLAUDE.md
 # PDF documents
 *.pdf
 **/*.pdf

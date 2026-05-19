@@ -851,7 +851,7 @@ def _render_sub_bab_section(
 
     # Sub bab 4.1: Tabel Anggaran Biaya
     if sub_num and str(sub_num).endswith(".1"):
-        fmt = figures_tables.get("caption_format_table", "Tabel {bab}.{n}. {title}")
+        fmt = figures_tables.get("caption_format_table") or "Tabel {bab}.{n}. {title}"
         caption_text = (
             fmt.replace("{bab}", str(bab_num)).replace("{n}", "1")
                .replace("{title}", "Rincian Anggaran Biaya")
@@ -873,7 +873,7 @@ def _render_sub_bab_section(
 
     # Sub bab 4.2: Tabel Jadwal Kegiatan
     elif sub_num and str(sub_num).endswith(".2"):
-        fmt = figures_tables.get("caption_format_table", "Tabel {bab}.{n}. {title}")
+        fmt = figures_tables.get("caption_format_table") or "Tabel {bab}.{n}. {title}"
         caption_text = (
             fmt.replace("{bab}", str(bab_num)).replace("{n}", "2")
                .replace("{title}", "Jadwal Pelaksanaan Kegiatan")

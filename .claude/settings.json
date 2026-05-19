@@ -73,7 +73,14 @@
       "Bash(Select-Object -Skip 0)",
       "Bash(Get-Content \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\ai\\\\manage.py\" -TotalCount 150)",
       "Bash(python -m py_compile routers/projects.py)",
-      "Bash(Get-Content \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\database\\\\supabase\\\\migrations\\\\20260517000200_enforce_project_id_not_null_document_chunks.sql\")"
+      "Bash(Get-Content \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\database\\\\supabase\\\\migrations\\\\20260517000200_enforce_project_id_not_null_document_chunks.sql\")",
+      "Bash(Get-Content \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\frontend\\\\app\\\\api\\\\review-periods\\\\[id]\\\\route.ts\" -Raw)",
+      "Bash(powershell -Command \"Get-Content 'c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\frontend\\\\app\\\\api\\\\review-periods\\\\[id]\\\\route.ts' -Raw\")",
+      "Bash(powershell -Command \"Get-Content 'c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\database\\\\supabase\\\\migrations\\\\20260509003100_create_pkm_review_periods.sql'\")",
+      "Skill(superpowers:systematic-debugging)",
+      "Skill(superpowers:systematic-debugging:*)",
+      "Skill(ecc:plan)",
+      "Skill(ecc:plan:*)"
     ],
     "additionalDirectories": [
       "C:\\Users\\hudar\\.config\\superpowers\\worktrees\\Project 1 (AI)\\docx-pipeline\\experiments\\pymupdf4llm\\tests\\docx",

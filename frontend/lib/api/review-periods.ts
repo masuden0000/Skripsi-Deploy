@@ -1,6 +1,6 @@
 import { apiRequest } from "./client"
 import {
-  reviewPeriodSchema,
+  reviewPeriodResponseSchema,
   reviewPeriodFormSchema,
   type ReviewPeriod,
   type ReviewPeriodFormData,
@@ -41,7 +41,9 @@ export async function createReviewPeriod(
     }
   }
 
-  return apiRequest("POST", endpoint, validated.data, reviewPeriodSchema)
+  const result = await apiRequest("POST", endpoint, validated.data, reviewPeriodResponseSchema)
+  if (result.error) return { data: null, error: result.error }
+  return { data: result.data?.data ?? null, error: null }
 }
 
 export async function updateReviewPeriod(
@@ -56,7 +58,9 @@ export async function updateReviewPeriod(
     }
   }
 
-  return apiRequest("PUT", `${endpoint}/${id}`, validated.data, reviewPeriodSchema)
+  const result = await apiRequest("PUT", `${endpoint}/${id}`, validated.data, reviewPeriodResponseSchema)
+  if (result.error) return { data: null, error: result.error }
+  return { data: result.data?.data ?? null, error: null }
 }
 
 export async function deleteReviewPeriod(

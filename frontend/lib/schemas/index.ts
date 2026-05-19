@@ -21,6 +21,10 @@ export const reviewPeriodFormSchema = z.object({
   { message: "Tanggal selesai tidak boleh sebelum tanggal mulai", path: ["tanggalSelesai"] }
 )
 
+export const reviewPeriodResponseSchema = z.object({
+  data: reviewPeriodSchema,
+})
+
 export type ReviewPeriod = z.infer<typeof reviewPeriodSchema>
 export type ReviewPeriodFormData = z.infer<typeof reviewPeriodFormSchema>
 

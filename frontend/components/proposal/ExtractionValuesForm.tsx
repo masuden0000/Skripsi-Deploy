@@ -296,23 +296,24 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
             />
             <SelectFieldInput
               label="Aturan Spasi"
-              value={data.spacing.line_spacing_rule}
+              value={data.spacing.line_spacing_rule?.toUpperCase() ?? null}
               options={[
-                { value: "single", label: "Single" },
-                { value: "at least", label: "At Least" },
-                { value: "double", label: "Double" },
-                { value: "multiple", label: "Multiple" },
+                { value: "SINGLE",   label: "Single" },
+                { value: "DOUBLE",   label: "Double" },
+                { value: "MULTIPLE", label: "Multiple" },
+                { value: "AT_LEAST", label: "At Least" },
+                { value: "EXACT",    label: "Exact" },
               ]}
               onChange={(v) => patch("spacing", { line_spacing_rule: v })}
             />
             <SelectFieldInput
               label="Alignment Paragraf"
-              value={data.spacing.paragraph_alignment}
+              value={data.spacing.paragraph_alignment?.toUpperCase() ?? null}
               options={[
-                { value: "justify", label: "Justify" },
-                { value: "left", label: "Left" },
-                { value: "center", label: "Center" },
-                { value: "right", label: "Right" },
+                { value: "JUSTIFY", label: "Justify" },
+                { value: "LEFT",    label: "Left" },
+                { value: "CENTER",  label: "Center" },
+                { value: "RIGHT",   label: "Right" },
               ]}
               onChange={(v) => patch("spacing", { paragraph_alignment: v })}
             />
@@ -371,9 +372,16 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
         <div className="mt-3 px-1 flex flex-col gap-4">
           <p className="text-xs font-medium text-muted-foreground">Halaman Pendahuluan</p>
           <FieldRow>
-            <TextFieldInput
+            <SelectFieldInput
               label="Format"
               value={data.numbering.preliminary?.format ?? null}
+              options={[
+                { value: "lowerRoman",  label: "lowerRoman  (i, ii, iii)" },
+                { value: "upperRoman",  label: "upperRoman  (I, II, III)" },
+                { value: "decimal",     label: "decimal     (1, 2, 3)" },
+                { value: "lowerLetter", label: "lowerLetter (a, b, c)" },
+                { value: "upperLetter", label: "upperLetter (A, B, C)" },
+              ]}
               onChange={(v) =>
                 patch("numbering", {
                   preliminary: { ...data.numbering.preliminary, format: v } as PageNumberConfig,
@@ -382,10 +390,10 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
             />
             <SelectFieldInput
               label="Lokasi"
-              value={data.numbering.preliminary?.location ?? null}
+              value={data.numbering.preliminary?.location?.toUpperCase() ?? null}
               options={[
-                { value: "footer", label: "Footer" },
-                { value: "header", label: "Header" },
+                { value: "FOOTER", label: "Footer" },
+                { value: "HEADER", label: "Header" },
               ]}
               onChange={(v) =>
                 patch("numbering", {
@@ -395,11 +403,11 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
             />
             <SelectFieldInput
               label="Alignment"
-              value={data.numbering.preliminary?.alignment ?? null}
+              value={data.numbering.preliminary?.alignment?.toUpperCase() ?? null}
               options={[
-                { value: "center", label: "Center" },
-                { value: "right", label: "Right" },
-                { value: "left", label: "Left" },
+                { value: "CENTER", label: "Center" },
+                { value: "RIGHT",  label: "Right" },
+                { value: "LEFT",   label: "Left" },
               ]}
               onChange={(v) =>
                 patch("numbering", {
@@ -411,9 +419,16 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
 
           <p className="text-xs font-medium text-muted-foreground">Halaman Isi</p>
           <FieldRow>
-            <TextFieldInput
+            <SelectFieldInput
               label="Format"
               value={data.numbering.content?.format ?? null}
+              options={[
+                { value: "lowerRoman",  label: "lowerRoman  (i, ii, iii)" },
+                { value: "upperRoman",  label: "upperRoman  (I, II, III)" },
+                { value: "decimal",     label: "decimal     (1, 2, 3)" },
+                { value: "lowerLetter", label: "lowerLetter (a, b, c)" },
+                { value: "upperLetter", label: "upperLetter (A, B, C)" },
+              ]}
               onChange={(v) =>
                 patch("numbering", {
                   content: { ...data.numbering.content, format: v } as PageNumberConfig,
@@ -422,10 +437,10 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
             />
             <SelectFieldInput
               label="Lokasi"
-              value={data.numbering.content?.location ?? null}
+              value={data.numbering.content?.location?.toUpperCase() ?? null}
               options={[
-                { value: "footer", label: "Footer" },
-                { value: "header", label: "Header" },
+                { value: "FOOTER", label: "Footer" },
+                { value: "HEADER", label: "Header" },
               ]}
               onChange={(v) =>
                 patch("numbering", {
@@ -435,11 +450,11 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
             />
             <SelectFieldInput
               label="Alignment"
-              value={data.numbering.content?.alignment ?? null}
+              value={data.numbering.content?.alignment?.toUpperCase() ?? null}
               options={[
-                { value: "center", label: "Center" },
-                { value: "right", label: "Right" },
-                { value: "left", label: "Left" },
+                { value: "CENTER", label: "Center" },
+                { value: "RIGHT",  label: "Right" },
+                { value: "LEFT",   label: "Left" },
               ]}
               onChange={(v) =>
                 patch("numbering", {
@@ -482,19 +497,19 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
           <FieldRow>
             <SelectFieldInput
               label="Posisi Keterangan Gambar"
-              value={data.figures_and_tables.figure_caption_position}
+              value={data.figures_and_tables.figure_caption_position?.toUpperCase() ?? null}
               options={[
-                { value: "atas", label: "Atas" },
-                { value: "bawah", label: "Bawah" },
+                { value: "ABOVE", label: "Atas (Above)" },
+                { value: "BELOW", label: "Bawah (Below)" },
               ]}
               onChange={(v) => patch("figures_and_tables", { figure_caption_position: v })}
             />
             <SelectFieldInput
               label="Posisi Keterangan Tabel"
-              value={data.figures_and_tables.table_caption_position}
+              value={data.figures_and_tables.table_caption_position?.toUpperCase() ?? null}
               options={[
-                { value: "atas", label: "Atas" },
-                { value: "bawah", label: "Bawah" },
+                { value: "ABOVE", label: "Atas (Above)" },
+                { value: "BELOW", label: "Bawah (Below)" },
               ]}
               onChange={(v) => patch("figures_and_tables", { table_caption_position: v })}
             />

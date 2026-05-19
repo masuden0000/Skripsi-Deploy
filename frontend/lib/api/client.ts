@@ -50,7 +50,7 @@ export async function parseApiResponse<T>(
       const result = schema.safeParse(json)
       if (!result.success) {
         return {
-          data: null,
+          data: json as T,
           error: result.error.issues.map((e: { message: string }) => e.message).join(", "),
         }
       }

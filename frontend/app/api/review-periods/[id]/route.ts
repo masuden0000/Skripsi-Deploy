@@ -33,7 +33,6 @@ export async function PUT(
 ) {
   const { id } = await context.params
   const body = await request.text()
-
   const backendResponse = await fetch(`${getBackendBaseUrl()}/api/review-periods/${id}`, {
     method: "PUT",
     headers: {

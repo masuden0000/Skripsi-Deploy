@@ -153,12 +153,16 @@ function SelectFieldInput({
   options: { value: string; label: string }[]
   onChange: (v: string) => void
 }) {
+  const selectedLabel = options.find((opt) => opt.value === value)?.label
+
   return (
     <div className="flex flex-col gap-1.5">
       <Label className="text-xs text-muted-foreground">{label}</Label>
       <Select value={value ?? ""} onValueChange={onChange}>
         <SelectTrigger className="h-8 text-sm">
-          <SelectValue placeholder="—" />
+          <SelectValue placeholder="—">
+            {selectedLabel}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {options.map((opt) => (
@@ -535,7 +539,7 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
       {/* ── 7. Pengaturan Format ── */}
       <div>
         <SectionHeader title="7. Pengaturan Format" />
-        <div className="mt-3 px-1 flex flex-col">
+        <div className="px-1 flex flex-col">
           <BoolFieldInput
             label="Heading Bold"
             value={data.typography.heading_bold}
@@ -550,21 +554,6 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
             label="Hanging Indent Referensi"
             value={data.spacing.references_hanging_indent}
             onChange={(v) => patch("spacing", { references_hanging_indent: v })}
-          />
-          <BoolFieldInput
-            label="Halaman Sampul"
-            value={data.document_structure_proposal.halaman_sampul}
-            onChange={(v) => patch("document_structure_proposal", { halaman_sampul: v })}
-          />
-          <BoolFieldInput
-            label="Halaman Pengesahan"
-            value={data.document_structure_proposal.halaman_pengesahan}
-            onChange={(v) => patch("document_structure_proposal", { halaman_pengesahan: v })}
-          />
-          <BoolFieldInput
-            label="Ringkasan"
-            value={data.document_structure_proposal.ringkasan}
-            onChange={(v) => patch("document_structure_proposal", { ringkasan: v })}
           />
         </div>
       </div>

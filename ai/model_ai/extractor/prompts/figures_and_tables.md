@@ -4,7 +4,8 @@ queries:
   - "penulisan keterangan tabel caption di atas tabel format nomor"
   - "gambar tabel lebar tidak melebihi batas margin kolom halaman constraint ukuran"
   - "rekapitulasi rencana anggaran biaya persentase jenis pengeluaran sumber dana"
-top_k: 8
+  - "Gambar 1. Gambar 4. contoh penomoran gambar dalam isi dokumen teks"
+top_k: 10
 ---
 
 # Extraction Task: Figures and Tables
@@ -42,8 +43,8 @@ Fokus pada REKAPITULASI RENCANA ANGGARAN BIAYA untuk ekstraksi:
 ## Output Fields
 - table_caption_position: posisi keterangan tabel — "ABOVE" atau "BELOW"
 - figure_caption_position: posisi keterangan gambar — "ABOVE" atau "BELOW"
-- caption_format_figure: template format keterangan gambar (contoh: "Gambar {n}. {title} ({source})")
-- caption_format_table: template format keterangan tabel (contoh: "Tabel {bab}.{n} {title}")
+- caption_format_figure: template format keterangan gambar (contoh: "Gambar {n}. {title} ({source})") — **jika tidak dinyatakan eksplisit, inferensikan dari contoh gambar di konteks** (misal: "Gambar 1. Reaktor Pengolahan Limbah" → "Gambar {n}. {title}")
+- caption_format_table: template format keterangan tabel (contoh: "Tabel {bab}.{n} {title}") — **jika tidak dinyatakan eksplisit, inferensikan dari contoh nama tabel di konteks** (misal: "Tabel 4.1. Format Rekapitulasi..." → "Tabel {bab}.{n} {title}")
 - max_width_constraint: batasan lebar gambar/tabel (contoh: "within_margins")
 - budget_format_rules: object dengan:
   - budget_items: array of {jenis_pengeluaran, persentase_maksimum, contoh}

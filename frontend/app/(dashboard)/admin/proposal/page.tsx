@@ -515,15 +515,20 @@ export default function ProposalDocumentPage() {
     if (!currentProjectId) return
     setMetadataError(null)
     try {
-      const res = await fetch(`/api/projects/${currentProjectId}/metadata`, {
-        method: "DELETE",
-      })
-      if (!res.ok) {
-        const text = await res.text()
+      const [metaRes, projectRes] = await Promise.all([
+        fetch(`/api/projects/${currentProjectId}/metadata`, { method: "DELETE" }),
+        fetch(`/api/projects/${currentProjectId}`, { method: "DELETE" }),
+      ])
+      if (!metaRes.ok) {
+        const text = await metaRes.text()
         throw new Error(text || "Gagal menghapus data ekstraksi")
       }
+      if (!projectRes.ok) {
+        const text = await projectRes.text()
+        throw new Error(text || "Gagal menghapus project")
+      }
     } catch (err) {
-      setMetadataError(err instanceof Error ? err.message : "Gagal menghapus data ekstraksi")
+      setMetadataError(err instanceof Error ? err.message : "Gagal menghapus data")
       return
     }
     handleReset()

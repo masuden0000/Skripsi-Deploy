@@ -80,7 +80,17 @@
       "Skill(superpowers:systematic-debugging)",
       "Skill(superpowers:systematic-debugging:*)",
       "Skill(ecc:plan)",
-      "Skill(ecc:plan:*)"
+      "Skill(ecc:plan:*)",
+      "Bash(Get-Content \"c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\frontend\\\\app\\\\\\(dashboard\\)\\\\admin\\\\fakultas\\\\page.tsx\" -Raw)",
+      "Bash(powershell.exe -Command \"Get-Content 'c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\frontend\\\\app\\\\\\(dashboard\\)\\\\admin\\\\fakultas\\\\page.tsx' -Raw\")",
+      "Bash(powershell.exe -Command \"Get-Content 'c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\frontend\\\\app\\\\\\(dashboard\\)\\\\admin\\\\fakultas\\\\page.tsx' -ReadCount -1\")",
+      "Bash(powershell.exe -Command \"Get-Content -LiteralPath 'c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\frontend\\\\app\\\\\\(dashboard\\)\\\\admin\\\\fakultas\\\\page.tsx' -ReadCount -1\")",
+      "Bash(powershell.exe -Command \"Get-Content -LiteralPath 'c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\frontend\\\\lib\\\\schemas\\\\index.ts' -ReadCount -1\")",
+      "Bash(powershell.exe -Command \"Get-Content -LiteralPath 'c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\frontend\\\\app\\\\api\\\\faculties\\\\[id]\\\\route.ts' -ReadCount -1\")",
+      "Bash(powershell.exe -Command \"Get-Content -LiteralPath 'c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\database\\\\supabase\\\\migrations\\\\20260509003200_create_faculties_and_reviewer_profiles.sql' -ReadCount -1\")",
+      "Bash(powershell -Command \"Get-ChildItem 'c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\docs\\\\' | Select-Object Name\")",
+      "Bash(powershell -Command \"Get-Content 'c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\docs\\\\fakultass-crud-activity.drawio' | Select-Object -First 10\")",
+      "Bash(powershell -Command \"Get-Content 'c:/Users/hudar/Documents/[1] Huda Rasyad Wicaksono/[3] Project/[1] Project Website/Skripsi \\(Dummy\\)/Project 1 \\(AI\\)/docs/fakultass-crud-activity.drawio' -TotalCount 20\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\hudar\\.config\\superpowers\\worktrees\\Project 1 (AI)\\docx-pipeline\\experiments\\pymupdf4llm\\tests\\docx",

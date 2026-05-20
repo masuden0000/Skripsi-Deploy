@@ -247,7 +247,7 @@ export default function ProposalDocumentPage() {
   // SSE log streaming effect
   useEffect(() => {
     if (!currentProjectId) return
-    if (resultStatus === "completed" || resultStatus === "failed") return
+    if (resultStatus === "completed" || resultStatus === "failed" || resultStatus === "extracted") return
 
     let eventSource: EventSource | null = null
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null
@@ -296,9 +296,9 @@ export default function ProposalDocumentPage() {
     }
   }, [currentProjectId, resultStatus, applyStatusUpdate])
 
-  // Auto-fetch extraction data when pipeline completes
+  // Auto-fetch extraction data when extraction is done (or completed)
   useEffect(() => {
-    if (result?.status !== "completed" || !currentProjectId || extractionData) return
+    if ((result?.status !== "extracted" && result?.status !== "completed") || !currentProjectId || extractionData) return
     setIsLoadingMetadata(true)
     setMetadataError(null)
     fetch(`/api/projects/${currentProjectId}/metadata`)
@@ -502,8 +502,17 @@ export default function ProposalDocumentPage() {
         const text = await res.text()
         throw new Error(text || "Gagal menyimpan nilai")
       }
+
+      const genRes = await fetch(`/api/projects/${currentProjectId}/generate`, {
+        method: "POST",
+      })
+      if (!genRes.ok) {
+        const text = await genRes.text()
+        throw new Error(text || "Gagal memulai pembuatan dokumen")
+      }
+
       setIsSaved(true)
-      localStorage.removeItem(ACTIVE_PROJECT_KEY)
+      setResult((prev) => prev ? { ...prev, status: "generating" } : null)
     } catch (err) {
       setMetadataError(err instanceof Error ? err.message : "Gagal menyimpan nilai")
     } finally {
@@ -539,7 +548,7 @@ export default function ProposalDocumentPage() {
       case "pending": return "Menunggu..."
       case "uploading": return "Mengupload file..."
       case "extracting": return "Mengekstrak konten..."
-      case "extracted": return "Ekstraksi selesai"
+      case "extracted": return "Ekstraksi selesai — menunggu konfirmasi"
       case "generating": return "Menghasilkan dokumen..."
       case "completed": return "Selesai"
       case "failed": return "Gagal"
@@ -551,6 +560,7 @@ export default function ProposalDocumentPage() {
     switch (status) {
       case "completed": return "text-green-600 bg-green-50 border-green-200"
       case "failed": return "text-red-600 bg-red-50 border-red-200"
+      case "extracted": return "text-blue-600 bg-blue-50 border-blue-200"
       case "extracting":
       case "generating":
       case "uploading": return "text-amber-600 bg-amber-50 border-amber-200"
@@ -601,15 +611,20 @@ export default function ProposalDocumentPage() {
       )
     }
 
-    if (result.status !== "completed") {
+    if (result.status !== "completed" && result.status !== "extracted") {
+      const isGenerating = result.status === "generating"
       return (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-5">
           <div className="flex items-start gap-3">
             <Loader2Icon className="mt-0.5 size-5 animate-spin text-amber-600" />
             <div>
-              <p className="text-sm font-semibold text-amber-700">Menunggu proses ekstraksi selesai.</p>
+              <p className="text-sm font-semibold text-amber-700">
+                {isGenerating ? "Sedang membuat dokumen..." : "Menunggu proses ekstraksi selesai."}
+              </p>
               <p className="mt-1 text-sm text-amber-600">
-                Form review akan aktif setelah dokumen selesai diproses.
+                {isGenerating
+                  ? "Harap tunggu, dokumen sedang dibuat berdasarkan nilai yang disimpan."
+                  : "Form review akan aktif setelah ekstraksi selesai."}
               </p>
             </div>
           </div>
@@ -669,18 +684,26 @@ export default function ProposalDocumentPage() {
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex gap-3">
-              <Button onClick={handleSave} disabled={isSaving || isSaved} className="gap-2">
-                {isSaving ? <Loader2Icon className="size-4 animate-spin" /> : null}
-                {isSaving ? "Menyimpan..." : isSaved ? "Tersimpan" : "Simpan"}
-              </Button>
-              <Button onClick={handleTolak} variant="outline" className="gap-2 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700">
-                Batal
-              </Button>
+              {result?.status === "completed" ? (
+                <Button onClick={handleReset} variant="outline">
+                  Keluar
+                </Button>
+              ) : (
+                <>
+                  <Button onClick={handleSave} disabled={isSaving || isSaved} className="gap-2">
+                    {isSaving ? <Loader2Icon className="size-4 animate-spin" /> : null}
+                    {isSaving ? "Menyimpan..." : "Simpan"}
+                  </Button>
+                  <Button onClick={handleTolak} variant="outline" className="gap-2 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700">
+                    Batal
+                  </Button>
+                </>
+              )}
             </div>
 
-            {isSaved && (
+            {result?.status === "completed" && result?.resultUrl && (
               <a
-                href={result?.resultUrl || "#"}
+                href={result.resultUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -884,12 +907,16 @@ export default function ProposalDocumentPage() {
                   ? "bg-green-100"
                   : result.status === "failed"
                     ? "bg-red-100"
-                    : "bg-amber-100"
+                    : result.status === "extracted"
+                      ? "bg-blue-100"
+                      : "bg-amber-100"
               }`}>
                 {result.status === "completed" ? (
                   <CheckCircleIcon className="size-6 text-green-600" />
                 ) : result.status === "failed" ? (
                   <AlertCircleIcon className="size-6 text-red-600" />
+                ) : result.status === "extracted" ? (
+                  <CheckCircleIcon className="size-6 text-blue-600" />
                 ) : (
                   <Loader2Icon className="size-6 text-amber-600 animate-spin" />
                 )}
@@ -900,14 +927,18 @@ export default function ProposalDocumentPage() {
                     ? "Dokumen Berhasil Dibuat"
                     : result.status === "failed"
                       ? "Dokumen Gagal Diproses"
-                      : "Memproses Dokumen..."}
+                      : result.status === "extracted"
+                        ? "Ekstraksi Selesai"
+                        : "Memproses Dokumen..."}
                 </h2>
                 <p className="mt-0.5 text-sm text-gray-500">
                   {result.status === "completed"
                     ? "Dokumen berhasil diproses"
                     : result.status === "failed"
                       ? "Terjadi kesalahan saat memproses dokumen"
-                      : getStatusLabel(result.status)}
+                      : result.status === "extracted"
+                        ? "Tinjau dan simpan nilai ekstraksi untuk membuat dokumen"
+                        : getStatusLabel(result.status)}
                 </p>
               </div>
             </div>
@@ -937,6 +968,8 @@ export default function ProposalDocumentPage() {
                   <CheckCircleIcon className="size-6 text-green-600" />
                 ) : result.status === "failed" ? (
                   <AlertCircleIcon className="size-6 text-red-600" />
+                ) : result.status === "extracted" ? (
+                  <CheckCircleIcon className="size-6 text-blue-600" />
                 ) : (
                   <Loader2Icon className="size-6 animate-spin" />
                 )}
@@ -970,7 +1003,7 @@ export default function ProposalDocumentPage() {
                 </div>
               )}
 
-              {result.status !== "completed" && (
+              {result.status !== "completed" && result.status !== "extracted" && (
                 <div className="mt-5 flex justify-end">
                   <Button onClick={handleReset} variant="outline">Batal</Button>
                 </div>

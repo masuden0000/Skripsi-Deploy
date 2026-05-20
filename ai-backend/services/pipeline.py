@@ -309,7 +309,8 @@ async def run_docx_generation(project_id: str) -> bool:
 
 async def run_pipeline(project_id: str, source_url: str, source_file: str) -> bool:
     """
-    Run the complete pipeline: download -> setup -> extraction -> DOCX generation.
+    Run extraction pipeline: download -> setup -> extraction.
+    Stops at 'extracted' status — DOCX generation is triggered separately via /generate endpoint.
     """
     log_event("pipeline", "=" * 60, project_id)
     log_event("pipeline", f"MULAI PIPELINE untuk project: {project_id}", project_id)
@@ -317,9 +318,9 @@ async def run_pipeline(project_id: str, source_url: str, source_file: str) -> bo
 
     # Step 1: Download source file from storage
     try:
-        log_event("pipeline", "Step 1/4: Download file dari Supabase Storage...", project_id)
+        log_event("pipeline", "Step 1/3: Download file dari Supabase Storage...", project_id)
         await download_source_file(source_url, project_id, source_file)
-        log_event("pipeline", "Step 1/4: Download selesai.", project_id)
+        log_event("pipeline", "Step 1/3: Download selesai.", project_id)
     except Exception as exc:
         log_event("pipeline", f"ERROR Step 1: Download gagal - {exc}", project_id)
         try:
@@ -333,37 +334,47 @@ async def run_pipeline(project_id: str, source_url: str, source_file: str) -> bo
         return False
 
     # Step 2: Run setup (extract chunks + ingest)
-    log_event("pipeline", "Step 2/4: Setup (chunk extraction + ingest)...", project_id)
+    log_event("pipeline", "Step 2/3: Setup (chunk extraction + ingest)...", project_id)
     setup_success = await run_setup(project_id)
     if not setup_success:
         log_event("pipeline", "Pipeline berhenti karena setup gagal.", project_id)
         return False
-    log_event("pipeline", "Step 2/4: Setup selesai.", project_id)
+    log_event("pipeline", "Step 2/3: Setup selesai.", project_id)
 
     # Step 3: Run extraction
-    log_event("pipeline", "Step 3/4: Ekstraksi metadata (RAG + LLM)...", project_id)
+    log_event("pipeline", "Step 3/3: Ekstraksi metadata (RAG + LLM)...", project_id)
     extraction_success = await run_extraction(project_id)
     if not extraction_success:
         log_event("pipeline", "Pipeline berhenti karena ekstraksi gagal.", project_id)
         return False
-    log_event("pipeline", "Step 3/4: Ekstraksi selesai.", project_id)
+    log_event("pipeline", "Step 3/3: Ekstraksi selesai.", project_id)
 
-    # Update status to extracted before DOCX generation
+    # Mark as extracted — user reviews and confirms before DOCX generation
     try:
         supabase = get_supabase()
         supabase.table("projects").update({"status": "extracted"}).eq("id", project_id).execute()
     except Exception:
         pass
 
-    # Step 4: Run DOCX generation
-    log_event("pipeline", "Step 4/4: Generate DOCX...", project_id)
+    log_event("pipeline", "Ekstraksi selesai. Menunggu konfirmasi user untuk generate dokumen.", project_id)
+    return True
+
+
+async def run_docx_pipeline(project_id: str) -> bool:
+    """
+    Run DOCX generation and cleanup. Called after user confirms extraction results.
+    """
+    log_event("pipeline", "=" * 60, project_id)
+    log_event("pipeline", f"MULAI GENERATE DOCX untuk project: {project_id}", project_id)
+    log_event("pipeline", "=" * 60, project_id)
+
     docx_success = await run_docx_generation(project_id)
     if docx_success:
         log_event("pipeline", "=" * 60, project_id)
-        log_event("pipeline", "PIPELINE SELESAI BERHASIL!", project_id)
+        log_event("pipeline", "DOCX GENERATION SELESAI BERHASIL!", project_id)
         log_event("pipeline", "=" * 60, project_id)
     else:
-        log_event("pipeline", "Pipeline berhenti karena DOCX generation gagal.", project_id)
+        log_event("pipeline", "DOCX generation gagal.", project_id)
 
     _cleanup_project_data(project_id)
     return docx_success

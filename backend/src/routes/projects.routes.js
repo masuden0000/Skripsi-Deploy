@@ -173,7 +173,7 @@ router.get("/:id/logs", async (req, res, next) => {
           if (project && project.status !== lastStatus) {
             lastStatus = project.status
             res.write(`event: status\ndata: ${JSON.stringify(project)}\n\n`)
-            if (project.status === 'completed' || project.status === 'failed') {
+            if (project.status === 'completed' || project.status === 'failed' || project.status === 'extracted') {
               clearInterval(intervalId)
               res.end()
               return
@@ -198,6 +198,24 @@ router.get("/:id/logs", async (req, res, next) => {
     })
   } catch (error) {
     next(error)
+  }
+})
+
+// POST /:id/generate - Trigger DOCX generation after extraction confirmed
+router.post("/:id/generate", async (req, res, next) => {
+  try {
+    const { id } = req.params
+    const aiResponse = await fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}/generate`, {
+      method: "POST",
+    })
+    const { data, status } = await parseAiResponse(aiResponse)
+    res.status(status).json(data)
+  } catch (error) {
+    console.error("[ProjectsRoute] Error proxying generate to AI Backend:", error)
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to connect to AI backend",
+    })
   }
 })
 

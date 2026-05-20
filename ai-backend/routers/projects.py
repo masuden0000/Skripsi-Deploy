@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from typing import Optional, Any
 from services.database import get_supabase
 from services.storage import upload_file, delete_file, create_signed_upload_url, BUCKET_SOURCE, BUCKET_OUTPUT
-from services.pipeline import run_pipeline
+from services.pipeline import run_pipeline, run_docx_pipeline
 from schemas.project_schema import Project, ProjectStatus
 from datetime import datetime
 import os
@@ -335,6 +335,40 @@ async def get_project_logs(project_id: str, since_id: int = Query(0, ge=0)):
         "success": True,
         "data": result.data or []
     }
+
+
+@router.post("/{project_id}/generate")
+async def generate_document(project_id: str, background_tasks: BackgroundTasks):
+    """
+    Trigger DOCX generation for a project that has already been extracted.
+    Called by frontend after user reviews and saves extraction results.
+    """
+    supabase = get_supabase()
+
+    result = supabase.table("projects").select("id, status").eq("id", project_id).execute()
+
+    if not result.data:
+        return JSONResponse(
+            status_code=404,
+            content={"success": False, "error": "Project not found"}
+        )
+
+    current_status = result.data[0].get("status", "")
+    if current_status != "extracted":
+        return JSONResponse(
+            status_code=400,
+            content={
+                "success": False,
+                "error": f"Project harus dalam status 'extracted' untuk generate dokumen, status saat ini: '{current_status}'"
+            }
+        )
+
+    background_tasks.add_task(run_docx_pipeline, project_id)
+
+    return JSONResponse(
+        status_code=200,
+        content={"success": True, "message": "Document generation started"}
+    )
 
 
 @router.delete("/{project_id}")

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="app.diagrams.net" modified="2026-05-19T00:00:00.000Z" agent="Claude" version="24.7.17">
-  <diagram id="review-period-crud-simple" name="Activity Diagram CRUD Periode Review">
+  <diagram id="fakultas-crud-simple" name="Activity Diagram CRUD Fakultas">
     <mxGraphModel dx="1200" dy="760" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="960" pageHeight="1340" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
 
-        <mxCell id="title" value="&lt;b&gt;Activity Diagram Pengelolaan Periode Review PKM&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="title" value="&lt;b&gt;Activity Diagram Pengelolaan Fakultas&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="18" width="840" height="30" as="geometry" />
         </mxCell>
 
@@ -27,16 +27,16 @@
         </mxCell>
 
         <!-- LOAD LIST -->
-        <mxCell id="buka" value="Buka halaman periode review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+        <mxCell id="buka" value="Buka halaman data fakultas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
           <mxGeometry x="80" y="150" width="200" height="44" as="geometry" />
         </mxCell>
-        <mxCell id="be_list" value="Ambil data periode review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;" vertex="1" parent="1">
+        <mxCell id="be_list" value="Ambil data fakultas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;" vertex="1" parent="1">
           <mxGeometry x="400" y="150" width="200" height="44" as="geometry" />
         </mxCell>
-        <mxCell id="db_select" value="SELECT periode" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
+        <mxCell id="db_select" value="SELECT fakultas" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
           <mxGeometry x="660" y="143" width="150" height="58" as="geometry" />
         </mxCell>
-        <mxCell id="tampil" value="Tampil daftar periode review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+        <mxCell id="tampil" value="Tampil daftar fakultas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
           <mxGeometry x="80" y="222" width="200" height="44" as="geometry" />
         </mxCell>
 
@@ -46,48 +46,48 @@
         </mxCell>
 
         <!-- TAMBAH -->
-        <mxCell id="fe_tambah" value="Form tambah periode" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+        <mxCell id="fe_tambah" value="Form tambah fakultas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
           <mxGeometry x="70" y="380" width="200" height="44" as="geometry" />
         </mxCell>
         <mxCell id="be_tambah" value="Validasi &amp; simpan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;" vertex="1" parent="1">
           <mxGeometry x="400" y="380" width="180" height="44" as="geometry" />
         </mxCell>
-        <mxCell id="db_insert" value="INSERT periode" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
+        <mxCell id="db_insert" value="INSERT fakultas" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
           <mxGeometry x="660" y="373" width="150" height="58" as="geometry" />
         </mxCell>
 
         <!-- LIHAT -->
-        <mxCell id="fe_lihat" value="Lihat detail periode" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+        <mxCell id="fe_lihat" value="Lihat detail fakultas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
           <mxGeometry x="70" y="462" width="200" height="44" as="geometry" />
         </mxCell>
-        <mxCell id="be_lihat" value="Ambil detail periode" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;" vertex="1" parent="1">
+        <mxCell id="be_lihat" value="Ambil detail fakultas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;" vertex="1" parent="1">
           <mxGeometry x="400" y="462" width="180" height="44" as="geometry" />
         </mxCell>
-        <mxCell id="db_lihat" value="SELECT periode" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
+        <mxCell id="db_lihat" value="SELECT fakultas" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
           <mxGeometry x="660" y="455" width="150" height="58" as="geometry" />
         </mxCell>
-        <mxCell id="tampil_detail" value="Tampil detail periode" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+        <mxCell id="tampil_detail" value="Tampil detail fakultas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
           <mxGeometry x="70" y="534" width="200" height="44" as="geometry" />
         </mxCell>
 
-        <!-- DECISION 2: Ubah atau Hapus -->
+        <!-- DECISION 2 -->
         <mxCell id="d_ubah_hapus" value="Ubah atau Hapus?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#111827;" vertex="1" parent="1">
           <mxGeometry x="160" y="608" width="100" height="60" as="geometry" />
         </mxCell>
 
         <!-- UBAH -->
-        <mxCell id="fe_ubah" value="Form ubah periode" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+        <mxCell id="fe_ubah" value="Form ubah fakultas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
           <mxGeometry x="70" y="698" width="200" height="44" as="geometry" />
         </mxCell>
         <mxCell id="be_ubah" value="Validasi &amp; perbarui" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;" vertex="1" parent="1">
           <mxGeometry x="400" y="698" width="180" height="44" as="geometry" />
         </mxCell>
-        <mxCell id="db_update" value="UPDATE periode" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
+        <mxCell id="db_update" value="UPDATE fakultas" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
           <mxGeometry x="660" y="691" width="150" height="58" as="geometry" />
         </mxCell>
 
         <!-- HAPUS -->
-        <mxCell id="fe_konfirm" value="Konfirmasi hapus periode" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
+        <mxCell id="fe_konfirm" value="Konfirmasi hapus fakultas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#16a34a;" vertex="1" parent="1">
           <mxGeometry x="70" y="780" width="200" height="44" as="geometry" />
         </mxCell>
         <mxCell id="d_konfirm" value="Konfirmasi?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#111827;" vertex="1" parent="1">
@@ -96,7 +96,7 @@
         <mxCell id="be_hapus" value="Proses hapus" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;" vertex="1" parent="1">
           <mxGeometry x="400" y="858" width="180" height="44" as="geometry" />
         </mxCell>
-        <mxCell id="db_delete" value="DELETE periode" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
+        <mxCell id="db_delete" value="DELETE fakultas" style="shape=mxgraph.flowchart.database;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#4b5563;" vertex="1" parent="1">
           <mxGeometry x="660" y="851" width="150" height="58" as="geometry" />
         </mxCell>
 
@@ -117,8 +117,6 @@
         </mxCell>
 
         <!-- ===== EDGES ===== -->
-
-        <!-- Load list -->
         <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;" edge="1" source="start" target="buka" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -139,8 +137,6 @@
         <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;" edge="1" source="tampil" target="d_aksi" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
-        <!-- d_aksi → 3 branches -->
         <mxCell id="e6" value="[Tambah]" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;fontSize=10;" edge="1" source="d_aksi" target="fe_tambah" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -162,16 +158,12 @@
             </Array>
           </mxGeometry>
         </mxCell>
-
-        <!-- Tambah flow -->
         <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;" edge="1" source="fe_tambah" target="be_tambah" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;" edge="1" source="be_tambah" target="db_insert" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
-        <!-- Lihat flow -->
         <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;" edge="1" source="fe_lihat" target="be_lihat" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -186,8 +178,6 @@
             </Array>
           </mxGeometry>
         </mxCell>
-
-        <!-- d_ubah_hapus → 2 branches -->
         <mxCell id="e14" value="[Ubah]" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;fontSize=10;" edge="1" source="d_ubah_hapus" target="fe_ubah" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
@@ -200,16 +190,12 @@
         <mxCell id="e15" value="[Hapus]" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;fontSize=10;" edge="1" source="d_ubah_hapus" target="fe_konfirm" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
-        <!-- Ubah flow -->
         <mxCell id="e16" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;" edge="1" source="fe_ubah" target="be_ubah" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e17" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;" edge="1" source="be_ubah" target="db_update" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
-        <!-- Hapus flow -->
         <mxCell id="e18" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;" edge="1" source="fe_konfirm" target="d_konfirm" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -219,8 +205,6 @@
         <mxCell id="e20" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;" edge="1" source="be_hapus" target="db_delete" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
-        <!-- DB results → shared perbarui -->
         <mxCell id="e21" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;" edge="1" source="db_insert" target="perbarui" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
@@ -245,8 +229,6 @@
             </Array>
           </mxGeometry>
         </mxCell>
-
-        <!-- tampil_detail → merge -->
         <mxCell id="e24" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;" edge="1" source="tampil_detail" target="merge" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
@@ -257,8 +239,6 @@
             </Array>
           </mxGeometry>
         </mxCell>
-
-        <!-- d_konfirm [Tidak] → merge -->
         <mxCell id="e25" value="[Tidak]" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;fontSize=10;" edge="1" source="d_konfirm" target="merge" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
@@ -267,8 +247,6 @@
             </Array>
           </mxGeometry>
         </mxCell>
-
-        <!-- perbarui → merge → finish -->
         <mxCell id="e26" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;" edge="1" source="perbarui" target="merge" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>

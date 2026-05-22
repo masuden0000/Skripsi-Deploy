@@ -124,10 +124,30 @@ def run_schema_diff_cmd(project_id: str) -> None:
     run_schema_diff(project_id)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `run_validate` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
+def run_generate_placeholders(project_id: str) -> None:
+    """Generate instructional placeholder via LLM dan simpan ke DB."""
+    from model_ai.docx.chunk_loader import load_chunk_sources
+    from model_ai.docx.instructional_placeholder_builder import build_instructional_placeholder_map
+    from model_ai.metadata_repository import load_document_metadata, save_generated_placeholders
+
+    print(f"[generate-placeholders] Memuat metadata dan chunks untuk project: {project_id}", flush=True)
+    metadata = load_document_metadata(project_id)
+    chunks = load_chunk_sources(project_id)
+
+    total = len(metadata.document_structure_proposal.sections)
+    print(f"[generate-placeholders] {total} section ditemukan. Memulai generate placeholder...", flush=True)
+
+    generated = build_instructional_placeholder_map(
+        metadata=metadata,
+        chunks=chunks,
+        use_llm=True,
+    )
+
+    print(f"[generate-placeholders] {len(generated)} placeholder selesai. Menyimpan ke DB...", flush=True)
+    save_generated_placeholders(project_id, generated)
+    print("[generate-placeholders] Selesai. Placeholder tersimpan ke DB.", flush=True)
+
+
 def run_export_payload(project_id: str, output: str | None = None) -> None:
     import json
     from model_ai.metadata_repository import load_document_metadata_payload
@@ -309,6 +329,16 @@ def main() -> None:
         help="Path output JSON (default: data/payload_<project-id>.json).",
     )
 
+    gen_ph_parser = subparsers.add_parser(
+        "generate-placeholders",
+        help="Generate instructional placeholder via LLM dan simpan ke DB.",
+    )
+    gen_ph_parser.add_argument(
+        "--project-id",
+        required=True,
+        help="Project ID.",
+    )
+
     validate_parser = subparsers.add_parser(
         "validate",
         help="Validasi format dokumen DOCX terhadap rules dari output.json lokal.",
@@ -351,6 +381,10 @@ def main() -> None:
             with_embeddings=not args.no_embeddings,
             use_llm_mapper=not args.no_llm_mapper,
         )
+        return
+
+    if args.command == "generate-placeholders":
+        run_generate_placeholders(project_id=args.project_id)
         return
 
     if args.command == "export-payload":

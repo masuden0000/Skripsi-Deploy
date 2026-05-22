@@ -24,10 +24,7 @@ Jika tidak ditemukan, gunakan null (JSON null, BUKAN string "null").
 - start_at_section: gunakan nama section yang sama persis dengan entries di `sections` list
 - chapter_format: gunakan template dengan placeholder {n} (contoh: "BAB {n}.") — perhatikan titik setelah nomor jika dokumen menggunakannya
 - sub_chapter_format: gunakan template dengan placeholder {bab} dan {sub} (contoh: "{bab}.{sub}") — inferensikan dari contoh sub-bab yang ada (misal: "4.1 Anggaran Biaya" → "{bab}.{sub}")
-- figure_format: gunakan template dengan placeholder {n} (contoh: "Gambar {n}.") — inferensikan dari contoh keterangan gambar yang ada (misal: "Gambar 1. Reaktor..." → "Gambar {n}.")
-- table_format: gunakan template (contoh: "Tabel {bab}.{n}") — inferensikan dari contoh nama tabel yang ada (misal: "Tabel 4.1. Format..." → "Tabel {bab}.{n}")
-
-**PENTING**: Jika aturan penomoran tidak dinyatakan secara eksplisit, **wajib inferensikan** dari contoh-contoh penomoran yang muncul dalam konteks. Dokumen akademik Indonesia umumnya menggunakan format "BAB {n}." untuk bab, "{bab}.{sub}" untuk sub-bab, "Gambar {n}." untuk gambar, dan "Tabel {bab}.{n}" untuk tabel.
+**PENTING**: Jika aturan penomoran tidak dinyatakan secara eksplisit, **wajib inferensikan** dari contoh-contoh penomoran yang muncul dalam konteks. Dokumen akademik Indonesia umumnya menggunakan format "BAB {n}." untuk bab dan "{bab}.{sub}" untuk sub-bab.
 
 ## Output Fields
 Keluarkan dua objek: `preliminary` (halaman awal/romawi) dan `content` (halaman isi/arab).
@@ -40,5 +37,3 @@ Setiap objek memiliki:
 Field tambahan di luar objek:
 - chapter_format: template format BAB (contoh: "BAB {n}.")
 - sub_chapter_format: template format sub-bab (contoh: "{bab}.{sub}")
-- figure_format: template format nomor gambar (contoh: "Gambar {n}.")
-- table_format: template format nomor tabel (contoh: "Tabel {bab}.{n}")

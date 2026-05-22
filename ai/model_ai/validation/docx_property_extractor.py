@@ -590,9 +590,30 @@ def _extract_figures_tables(doc: Document) -> dict:
         if "image" in rel.reltype:
             figure_count += 1
 
+    # Caption format: scan paragraphs dengan style Caption
+    figure_format = None
+    table_format = None
+    for para in doc.paragraphs:
+        txt_p = para.text.strip()
+        if not txt_p:
+            continue
+        style_name = para.style.name.lower()
+        if "caption" in style_name or "keterangan" in style_name:
+            import re as _re
+            if _re.match(r"^(gambar|figure)\s+\d+[\-]\d+", txt_p, _re.IGNORECASE):
+                figure_format = "Gambar {bab}.{n}"
+            elif _re.match(r"^(gambar|figure)\s+\d+", txt_p, _re.IGNORECASE):
+                figure_format = "Gambar {n}"
+            if _re.match(r"^(tabel|table)\s+\d+[\-]\d+", txt_p, _re.IGNORECASE):
+                table_format = "Tabel {bab}.{n}"
+            elif _re.match(r"^(tabel|table)\s+\d+", txt_p, _re.IGNORECASE):
+                table_format = "Tabel {n}"
+
     return {
         "table_count": table_count,
         "figure_count": figure_count,
+        "figure_format": figure_format,
+        "table_format": table_format,
     }
 
 
@@ -719,8 +740,6 @@ def _extract_numbering(doc: Document) -> dict:
     return {
         "chapter_format": chapter_format,
         "sub_chapter_format": sub_chapter_format,
-        "figure_format": figure_format,
-        "table_format": table_format,
         **page_info,
     }
 
@@ -806,8 +825,8 @@ def extract_docx_properties(docx_path: str | Path) -> DocxProperties:
         content_page_format=numbering["content_page_format"],
         content_page_location=numbering["content_page_location"],
         content_page_alignment=numbering["content_page_alignment"],
-        figure_format=numbering["figure_format"],
-        table_format=numbering["table_format"],
+        figure_format=figures_tables["figure_format"],
+        table_format=figures_tables["table_format"],
         # Figures & Tables
         table_count=figures_tables["table_count"],
         figure_count=figures_tables["figure_count"],

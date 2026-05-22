@@ -371,6 +371,46 @@ async def generate_document(project_id: str, background_tasks: BackgroundTasks):
     )
 
 
+@router.get("/{project_id}/placeholders")
+async def get_placeholders(project_id: str):
+    """
+    Baca generated_placeholders dan user_placeholders dari DB.
+    generated_placeholders disimpan saat pipeline docx selesai — tidak di-generate ulang di sini.
+    """
+    try:
+        supabase = get_supabase()
+        result = (
+            supabase.table("document_metadata")
+            .select("payload")
+            .eq("project_id", project_id)
+            .single()
+            .execute()
+        )
+
+        if not result.data:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "error": "Metadata project tidak ditemukan"},
+            )
+
+        payload: dict = result.data.get("payload") or {}
+        doc_structure: dict = payload.get("document_structure_proposal") or {}
+
+        generated: dict = doc_structure.get("generated_placeholders") or {}
+        user_overrides: dict = doc_structure.get("user_placeholders") or {}
+
+        return JSONResponse(content={
+            "success": True,
+            "data": {"generated": generated, "user_overrides": user_overrides},
+        })
+    except Exception as e:
+        import traceback
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e), "detail": traceback.format_exc()},
+        )
+
+
 @router.delete("/{project_id}")
 async def delete_project(project_id: str):
     """

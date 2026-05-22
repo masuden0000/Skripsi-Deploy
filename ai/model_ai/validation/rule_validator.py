@@ -420,15 +420,30 @@ def _validate_numbering(
             _record_skipped(checks, "numbering", f,
                             skip_reason="Metadata tidak mendefinisikan nomor halaman isi")
 
-    _record_check(checks, issues, "numbering", "figure_format",
-                  n.figure_format, props.figure_format, severity="warning",
-                  message=f"Format keterangan gambar: diharapkan '{n.figure_format}', ditemukan '{props.figure_format}'",
-                  location="Keterangan gambar (Caption style)")
+    # Validasi format keterangan gambar & tabel menggunakan figures_and_tables
+    ft = metadata.figures_and_tables
+    if ft is not None:
+        def _caption_prefix(fmt):
+            """Ambil prefix penomoran dari full caption format untuk perbandingan.
+            Contoh: 'Gambar {n}. {title}.' -> 'Gambar {n}'
+            """
+            if not fmt:
+                return None
+            import re as _re
+            m = _re.match(r'^(.*?\{n\})', fmt)
+            return m.group(1).rstrip('. ') if m else fmt
 
-    _record_check(checks, issues, "numbering", "table_format",
-                  n.table_format, props.table_format, severity="warning",
-                  message=f"Format keterangan tabel: diharapkan '{n.table_format}', ditemukan '{props.table_format}'",
-                  location="Keterangan tabel (Caption style)")
+        expected_fig = _caption_prefix(ft.caption_format_figure)
+        _record_check(checks, issues, "figures_and_tables", "caption_format_figure",
+                      expected_fig, props.figure_format, severity="warning",
+                      message=f"Format keterangan gambar: diharapkan '{expected_fig}', ditemukan '{props.figure_format}'",
+                      location="Keterangan gambar (Caption style)")
+
+        expected_tbl = _caption_prefix(ft.caption_format_table)
+        _record_check(checks, issues, "figures_and_tables", "caption_format_table",
+                      expected_tbl, props.table_format, severity="warning",
+                      message=f"Format keterangan tabel: diharapkan '{expected_tbl}', ditemukan '{props.table_format}'",
+                      location="Keterangan tabel (Caption style)")
 
 
 # ---------------------------------------------------------------------------

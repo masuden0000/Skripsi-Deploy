@@ -219,6 +219,19 @@ router.post("/:id/generate", async (req, res, next) => {
   }
 })
 
+// GET /:id/placeholders - Ambil instructional placeholder (LLM fallback + user overrides)
+router.get("/:id/placeholders", async (req, res, next) => {
+  try {
+    const { id } = req.params
+    const aiResponse = await fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}/placeholders`)
+    const data = await aiResponse.json()
+    res.status(aiResponse.status).json(data)
+  } catch (error) {
+    console.error("[ProjectsRoute] Error proxying placeholders to AI Backend:", error)
+    res.status(500).json({ success: false, error: "Gagal mengambil placeholder dari AI backend" })
+  }
+})
+
 router.delete("/:id", async (req, res, next) => {
   try {
     const { id } = req.params

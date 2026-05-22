@@ -349,6 +349,23 @@ async def run_pipeline(project_id: str, source_url: str, source_file: str) -> bo
         return False
     log_event("pipeline", "Step 3/3: Ekstraksi selesai.", project_id)
 
+    # Step 4: Generate placeholder hints (LLM) dan simpan ke DB
+    log_event("pipeline", "Step 4/4: Generate instructional placeholder...", project_id)
+    command_ph = [
+        sys.executable, "manage.py", "generate-placeholders",
+        "--project-id", project_id,
+    ]
+    ph_success, ph_error = await stream_manage_command(
+        step="placeholder",
+        command=command_ph,
+        project_id=project_id,
+        timeout_seconds=600,
+    )
+    if not ph_success:
+        log_event("pipeline", f"WARNING: Generate placeholder gagal: {ph_error}. Lanjut ke konfirmasi user.", project_id)
+    else:
+        log_event("pipeline", "Step 4/4: Placeholder tersimpan ke DB.", project_id)
+
     # Mark as extracted — user reviews and confirms before DOCX generation
     try:
         supabase = get_supabase()

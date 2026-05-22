@@ -219,6 +219,8 @@ class DocumentStructureExtracted(BaseModel):
 # ---------------------------------------------------------------------------
 class DocumentStructureInfo(DocumentStructureExtracted):
     sources: list[Source] = []
+    user_placeholders: dict[str, str] = {}       # key = instruction_key, value = teks override dari user
+    generated_placeholders: dict[str, str] = {}  # key = instruction_key, value = hasil generate LLM saat pipeline docx
 
 
 # --- Numbering ---
@@ -243,8 +245,6 @@ class NumberingExtracted(BaseModel):
     content: PageNumberConfig | None = None
     chapter_format: str | None = None
     sub_chapter_format: str | None = None
-    figure_format: str | None = None
-    table_format: str | None = None
 
 
 # ---------------------------------------------------------------------------

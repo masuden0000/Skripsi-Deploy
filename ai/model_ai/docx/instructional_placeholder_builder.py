@@ -7,11 +7,39 @@ Tujuan: Mengisi template DOCX dengan instruksi kontekstual per bagian agar place
 tidak kosong dan tetap selaras dengan sumber chunk panduan.
 """
 import re
+import time
+from pathlib import Path
 from typing import Iterable
 
-from model_ai.extractor.doc_extractor import _build_llm
+from model_ai.extractor.doc_extractor import _build_llm, CONFIG, MAX_RATE_LIMIT_WAIT
 from model_ai.docx.chunk_loader import ChunkSource, match_sources_for_section
 from model_ai.extractor.models import DocumentMetadata, SectionItem
+
+# Jeda antar section agar tidak langsung memicu rate limit (sama dengan BATCH_PAUSE_EVERY di extractor)
+_PLACEHOLDER_PAUSE_EVERY = 2
+_PLACEHOLDER_PAUSE_SECONDS = 30
+
+_PROMPTS_DIR = Path(__file__).parent / "prompts"
+_SYSTEM_PROMPT: str | None = None
+_HUMAN_PROMPT_TEMPLATE: str | None = None
+
+
+def _load_prompt(filename: str) -> str:
+    return (_PROMPTS_DIR / filename).read_text(encoding="utf-8").strip()
+
+
+def _get_system_prompt() -> str:
+    global _SYSTEM_PROMPT
+    if _SYSTEM_PROMPT is None:
+        _SYSTEM_PROMPT = _load_prompt("placeholder_system.md")
+    return _SYSTEM_PROMPT
+
+
+def _get_human_prompt_template() -> str:
+    global _HUMAN_PROMPT_TEMPLATE
+    if _HUMAN_PROMPT_TEMPLATE is None:
+        _HUMAN_PROMPT_TEMPLATE = _load_prompt("placeholder_human.md")
+    return _HUMAN_PROMPT_TEMPLATE
 
 
 # ---------------------------------------------------------------------------
@@ -43,7 +71,13 @@ def build_instructional_placeholder_map(
 
     chapter_fmt = metadata.numbering.chapter_format or "BAB {n}"
 
-    for section in structure.sections:
+    llm_call_count = 0
+    total_sections = len(structure.sections)
+
+    for section_idx, section in enumerate(structure.sections, start=1):
+        if use_llm:
+            section_label = section.title or section.type
+            print(f"[placeholder] ({section_idx}/{total_sections}) Generate placeholder: {section_label}...", flush=True)
         if section.type == "bab":
             title = section.title or "[JUDUL_BAB_BELUM_TERDETEKSI]"
             heading_text = _make_bab_heading(section, chapter_fmt)
@@ -108,6 +142,18 @@ def build_instructional_placeholder_map(
                 use_llm=use_llm,
                 fallback_hint=fallback_hint,
             )
+
+        if use_llm:
+            llm_call_count += 1
+            if (
+                llm_call_count % _PLACEHOLDER_PAUSE_EVERY == 0
+                and llm_call_count < total_sections
+            ):
+                print(
+                    f"[placeholder] {llm_call_count}/{total_sections} section selesai. "
+                    f"Jeda {_PLACEHOLDER_PAUSE_SECONDS} detik untuk mengurangi risiko rate limit..."
+                )
+                time.sleep(_PLACEHOLDER_PAUSE_SECONDS)
 
     return placeholders
 
@@ -205,50 +251,57 @@ def _build_instruction_text_with_llm(display_title: str, sources: list[ChunkSour
     try:
         # Lazy import supaya mode fallback tetap jalan walau dependency LLM tidak terpasang.
         from langchain_core.messages import HumanMessage, SystemMessage
-        from langchain_groq import ChatGroq
 
-        llm = _build_llm()
         context = "\n\n---\n\n".join(
             f"Header: {source.chunk_parent}\nHalaman: {source.page_start}-{source.page_end}\nIsi:\n{_clean_source_text(source.content)}"
             for source in sources[:6]
         )
 
-        system_prompt = (
-            "Anda adalah mentor PKM berpengalaman yang memandu tim mahasiswa menyusun proposal berkualitas tinggi. "
-            "Tugas Anda adalah menulis panduan pengisian satu section proposal — bukan merangkum panduan, "
-            "melainkan memberi arahan spesifik dan actionable seperti seorang pembimbing yang tahu persis "
-            "apa yang membuat proposal lolos seleksi.\n\n"
-            "ATURAN PERMANEN:\n"
-            "- Tulis dalam sudut pandang langsung kepada penulis ('Uraikan...', 'Pastikan...', 'Jelaskan...').\n"
-            "- Gunakan hanya informasi yang berasal dari sumber — jangan menambah informasi baru.\n"
-            "- Aturan format dokumen seperti margin, font, ukuran huruf, spasi baris, dan nomor halaman "
-            "DILARANG disebutkan.\n"
-            "- Jangan gunakan bullet list, numbering, atau markdown.\n"
-            "- Output akhir adalah plain text saja."
+        system_prompt = _get_system_prompt()
+        human_prompt = _get_human_prompt_template().format(
+            display_title=display_title,
+            context=context,
         )
 
-        human_prompt = (
-            f"Tulis panduan pengisian untuk section: {display_title}\n\n"
-            "Sebelum menulis panduan, lakukan analisis internal berikut (tidak perlu ditampilkan):\n"
-            "  1. Identifikasi kalimat-kalimat dari sumber yang benar-benar relevan untuk section ini "
-            "(fokus pada apa yang harus DITULIS, bukan aturan format dokumen).\n"
-            "  2. Abaikan kalimat yang membahas margin, font, spasi, atau ketentuan teknis penulisan global.\n"
-            "  3. Dari kalimat relevan tersebut, sintesiskan — jangan hanya menyalin ulang.\n\n"
-            "Kemudian tulis panduan pengisian dalam 4 sampai 5 kalimat yang:\n"
-            "  - Dimulai dengan menjelaskan MENGAPA section ini penting dalam konteks penilaian proposal PKM.\n"
-            "  - Menyebut secara konkret APA yang wajib ada (bukan sekadar 'isi sesuai panduan').\n"
-            "  - Memberi arahan BAGAIMANA menyusunnya — alur logis, sudut pandang, atau struktur argumen.\n"
-            "  - Menyebut jebakan atau kesalahan umum yang harus dihindari, jika dapat disimpulkan dari sumber.\n\n"
-            "PENTING — FORMAT OUTPUT:\n"
-            "Tulis hanya baris-baris panduan akhir. "
-            "Awali dengan penanda ##MULAI## dan akhiri dengan ##SELESAI##. "
-            "Jangan tampilkan proses analisis.\n\n"
-            f"Sumber:\n{context}"
-        )
+        llm = _build_llm()
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                result = llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=human_prompt)])
+                break
+            except Exception as e:
+                err_str = str(e)
+                if "429" in err_str or "rate_limit_exceeded" in err_str:
+                    wait_match = re.search(r"try again in (\d+)m(\d+(?:\.\d+)?)s", err_str)
+                    if wait_match:
+                        wait_secs = int(wait_match.group(1)) * 60 + float(wait_match.group(2)) + 5
+                    else:
+                        wait_secs = 60 * (2 ** attempt)
+                    wait_secs = min(wait_secs, MAX_RATE_LIMIT_WAIT)
 
-        result = llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=human_prompt)])
+                    # Rotate ke Groq key berikutnya atau switch ke Gemini sebelum retry
+                    if not CONFIG._groq_exhausted:
+                        if len(CONFIG.groq_api_keys) > 1:
+                            CONFIG.rotate_groq_key()
+                            print(f"[placeholder] Rate limit hit. Rotasi ke Groq key berikutnya (percobaan {attempt + 1}/{max_retries})...")
+                        else:
+                            CONFIG._groq_exhausted = True
+                            print(f"[placeholder] Rate limit hit. Semua Groq key exhausted, switch ke Gemini (percobaan {attempt + 1}/{max_retries})...")
+                    else:
+                        if len(CONFIG.google_api_keys) > 1:
+                            CONFIG.rotate_google_key()
+                        print(f"[placeholder] Rate limit hit pada Gemini. Menunggu {wait_secs:.0f} detik (percobaan {attempt + 1}/{max_retries})...")
+                        time.sleep(wait_secs)
+
+                    # Rebuild LLM dengan key/provider yang baru
+                    llm = _build_llm()
+                else:
+                    raise
+        else:
+            print(f"[placeholder] Gagal setelah {max_retries} percobaan untuk '{display_title}'.")
+            return None
+
         text = str(result.content)
-
         match = re.search(r"##MULAI##\s*(.*?)\s*##SELESAI##", text, re.DOTALL)
         if match:
             return " ".join(match.group(1).strip().split())
@@ -256,38 +309,8 @@ def _build_instruction_text_with_llm(display_title: str, sources: list[ChunkSour
         text = re.sub(r"##MULAI##|##SELESAI##", "", text)
         return " ".join(text.strip().split()) or None
     except Exception as exc:
-        print(f"[instructional_placeholder] LLM gagal untuk '{display_title}': {type(exc).__name__}: {exc}")
+        print(f"[placeholder] LLM gagal untuk '{display_title}': {type(exc).__name__}: {exc}")
         return None
-
-
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_build_instruction_text_fallback` sebagai bagian alur `instructional_placeholder_builder`.
-# ---------------------------------------------------------------------------
-def _build_instruction_text_fallback(
-    display_title: str,
-    sources: list[ChunkSource],
-    fallback_hint: str,
-) -> str:
-    if not sources:
-        return (
-            f"Instruksi pengisian untuk {display_title}: bagian ini dipakai untuk {fallback_hint}. "
-            "Lengkapi isi final sesuai struktur panduan yang berlaku."
-        )
-
-    cleaned_blocks = [_clean_source_text(source.content) for source in sources]
-    purpose = _pick_purpose_sentence(cleaned_blocks) or fallback_hint
-    rule_lines = _pick_rule_lines(cleaned_blocks)
-
-    instruction = (
-        f"Instruksi pengisian untuk {display_title}: bagian ini dipakai untuk {purpose}. "
-        "Isi bagian dengan uraian yang langsung mendukung fokus tersebut."
-    )
-    if rule_lines:
-        instruction += " Aturan terkait dari panduan: " + " ".join(rule_lines[:2])
-    else:
-        instruction += " Pada potongan sumber yang cocok tidak ditemukan aturan teknis yang lebih spesifik."
-    return " ".join(instruction.split())
 
 
 # ---------------------------------------------------------------------------
@@ -300,43 +323,3 @@ def _clean_source_text(text: str) -> str:
     cleaned = cleaned.replace("**", "").replace("__", "").replace("_", "")
     cleaned = re.sub(r"\s+", " ", cleaned)
     return cleaned.strip()
-
-
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_pick_purpose_sentence` sebagai bagian alur `instructional_placeholder_builder`.
-# ---------------------------------------------------------------------------
-def _pick_purpose_sentence(blocks: Iterable[str]) -> str | None:
-    for block in blocks:
-        for sentence in re.split(r"(?<=[.!?])\s+", block):
-            candidate = sentence.strip(" -:;")
-            if len(candidate) < 20:
-                continue
-            if candidate.upper() == candidate and len(candidate.split()) <= 6:
-                continue
-            return candidate
-    return None
-
-
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_pick_rule_lines` sebagai bagian alur `instructional_placeholder_builder`.
-# ---------------------------------------------------------------------------
-def _pick_rule_lines(blocks: Iterable[str]) -> list[str]:
-    matches: list[str] = []
-    rule_pattern = re.compile(
-        r"\b(wajib|harus|tidak boleh|ditulis|maksimal|maks\.?|ukuran|margin|spasi|judul)\b",
-        re.IGNORECASE,
-    )
-    for block in blocks:
-        for sentence in re.split(r"(?<=[.!?])\s+", block):
-            candidate = sentence.strip(" -:;")
-            if len(candidate) < 12:
-                continue
-            if not rule_pattern.search(candidate):
-                continue
-            if candidate not in matches:
-                matches.append(candidate)
-            if len(matches) >= 3:
-                return matches
-    return matches

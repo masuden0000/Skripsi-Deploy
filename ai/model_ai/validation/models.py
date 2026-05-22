@@ -250,8 +250,6 @@ class DocxProperties(BaseModel):
     content_page_format: str | None = Field(default=None, description="Content pages numbering format")
     content_page_location: str | None = Field(default=None, description="Content page number location")
     content_page_alignment: str | None = Field(default=None, description="Content page number alignment")
-    figure_format: str | None = Field(default=None, description="Figure caption format (e.g. 'Gambar 1.1')")
-    table_format: str | None = Field(default=None, description="Table caption format (e.g. 'Tabel 1.1')")
 
     # Figures & Tables
     table_caption_position: str | None = Field(default=None, description="Table caption position (above/below)")

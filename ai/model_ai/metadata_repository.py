@@ -107,3 +107,33 @@ def upsert_document_metadata(metadata: DocumentMetadata, project_id: str | None 
         on_conflict="project_id",
     ).execute()
     return project_id or "unknown"
+
+
+# ---------------------------------------------------------------------------
+# Digunakan oleh: model_ai/docx/generator.py
+# Simpan generated_placeholders hasil LLM ke payload tanpa overwrite field lain.
+# ---------------------------------------------------------------------------
+def save_generated_placeholders(project_id: str, generated: dict[str, str]) -> None:
+    """
+    Update hanya field document_structure_proposal.generated_placeholders di payload
+    tanpa menyentuh field lain di document_metadata.
+    """
+    client = build_metadata_supabase_client()
+
+    result = client.table("document_metadata") \
+        .select("payload") \
+        .eq("project_id", project_id) \
+        .single() \
+        .execute()
+
+    if not result.data:
+        return
+
+    payload: dict = result.data.get("payload") or {}
+    doc_structure: dict = payload.get("document_structure_proposal") or {}
+    doc_structure["generated_placeholders"] = generated
+    payload["document_structure_proposal"] = doc_structure
+
+    client.table("document_metadata").update({"payload": payload}) \
+        .eq("project_id", project_id) \
+        .execute()

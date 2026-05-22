@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+import { Info, Pencil } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,6 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import { ModalSectionEditor } from "./ModalSectionEditor"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -58,14 +62,13 @@ export type ExtractionPayload = {
     sections: SectionItem[]
     max_halaman_inti: number | null
     format_nama_file: string | null
+    user_placeholders?: Record<string, string>
   }
   numbering: {
     preliminary: PageNumberConfig | null
     content: PageNumberConfig | null
     chapter_format: string | null
     sub_chapter_format: string | null
-    figure_format: string | null
-    table_format: string | null
   }
   figures_and_tables: {
     table_caption_position: string | null
@@ -142,18 +145,20 @@ function SelectFieldInput({
   value,
   options,
   onChange,
+  disabled,
 }: {
   label: string
   value: string | null
   options: { value: string; label: string }[]
   onChange: (v: string) => void
+  disabled?: boolean
 }) {
   const selectedLabel = options.find((opt) => opt.value === value)?.label
 
   return (
     <div className="flex flex-col gap-1.5">
       <Label className="text-xs text-muted-foreground">{label}</Label>
-      <Select value={value ?? ""} onValueChange={onChange}>
+      <Select value={value ?? ""} onValueChange={onChange} disabled={disabled}>
         <SelectTrigger className="h-8 text-sm">
           <SelectValue placeholder="—">
             {selectedLabel}
@@ -194,14 +199,31 @@ function BoolFieldInput({
   )
 }
 
+
+const TYPE_LABEL_MAP: Record<string, string> = {
+  daftar_isi: "Daftar Isi",
+  daftar_gambar: "Daftar Gambar",
+  daftar_tabel: "Daftar Tabel",
+  daftar_lampiran: "Daftar Lampiran",
+  bab: "BAB",
+  sub_bab: "Sub-BAB",
+  daftar_pustaka: "Daftar Pustaka",
+  lampiran: "Lampiran",
+  item_lampiran: "Item Lampiran",
+}
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 type Props = {
   data: ExtractionPayload
   onChange: (updated: ExtractionPayload) => void
+  projectId?: string | null
 }
 
-export function ExtractionValuesForm({ data, onChange }: Props) {
+export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
+  const [showSectionModal, setShowSectionModal] = useState(false)
+  const [showFormatInfo, setShowFormatInfo] = useState(false)
+
   function patch<K extends keyof ExtractionPayload>(
     key: K,
     value: Partial<ExtractionPayload[K]>
@@ -269,6 +291,7 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
                 { value: "Legal", label: "Legal" },
               ]}
               onChange={(v) => patch("page_layout", { paper_size: v })}
+              disabled
             />
             <SelectFieldInput
               label="Orientasi"
@@ -278,6 +301,7 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
                 { value: "Landscape", label: "Landscape" },
               ]}
               onChange={(v) => patch("page_layout", { orientation: v })}
+              disabled
             />
           </FieldRow>
         </div>
@@ -316,11 +340,6 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
               ]}
               onChange={(v) => patch("spacing", { paragraph_alignment: v })}
             />
-            <NumberFieldInput
-              label="Indentasi Baris Pertama (cm)"
-              value={data.spacing.first_line_indent_cm}
-              onChange={(v) => patch("spacing", { first_line_indent_cm: v })}
-            />
           </FieldRow>
         </div>
       </div>
@@ -342,25 +361,56 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
             />
           </FieldRow>
 
-          {data.document_structure_proposal.sections.length > 0 && (
-            <div>
-              <p className="mb-2 text-xs font-medium text-muted-foreground">
-                Daftar Section (read-only)
-              </p>
-              <div className="rounded-md border bg-muted/30 p-3 text-xs space-y-1 max-h-48 overflow-y-auto">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-medium text-muted-foreground">Struktur Dokumen</p>
+              <Button
+                size="xs"
+                variant="outline"
+                onClick={() => setShowSectionModal(true)}
+              >
+                <Pencil className="size-3" />
+                Edit
+              </Button>
+            </div>
+            {data.document_structure_proposal.sections.length > 0 ? (
+              <div className="rounded-md bg-muted/30 text-xs max-h-48 overflow-y-auto">
+                <div className="sticky top-0 flex gap-2 bg-muted/60 px-3 py-1.5 font-medium text-[10px] uppercase tracking-wide text-muted-foreground">
+                  <span className="w-28 shrink-0">Jenis</span>
+                  <span>Nilai</span>
+                </div>
                 {data.document_structure_proposal.sections.map((s, i) => (
-                  <div key={i} className="flex gap-2 text-foreground/80">
-                    <span className="w-24 shrink-0 text-muted-foreground">{s.type}</span>
+                  <div key={i} className="flex gap-2 px-3 py-1 text-foreground/80 odd:bg-transparent even:bg-muted/20">
+                    <span className="w-28 shrink-0 text-muted-foreground">{TYPE_LABEL_MAP[s.type] ?? s.type}</span>
                     <span>
-                      {s.number != null ? `BAB ${s.number}` : ""}
-                      {s.sub_number ? ` ${s.sub_number}` : ""}
-                      {s.title ? ` — ${s.title}` : ""}
-                      {s.lampiran_number ? ` (${s.lampiran_number})` : ""}
+                      {s.type === "bab" && s.number != null ? `BAB ${s.number}` : ""}
+                      {s.sub_number ? s.sub_number : ""}
+                      {s.lampiran_number ? s.lampiran_number : ""}
+                      {s.title ? ` ${s.title}` : ""}
                     </span>
                   </div>
                 ))}
               </div>
-            </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Belum ada section.</p>
+            )}
+          </div>
+
+          {showSectionModal && (
+            <ModalSectionEditor
+              sections={data.document_structure_proposal.sections}
+              userPlaceholders={data.document_structure_proposal.user_placeholders ?? {}}
+              projectId={projectId}
+              chapterFormat={data.numbering.chapter_format}
+              onSave={(newSections, newPlaceholders) => {
+                patch("document_structure_proposal", {
+                  sections: newSections,
+                  user_placeholders: newPlaceholders,
+                })
+                setShowSectionModal(false)
+              }}
+              onClose={() => setShowSectionModal(false)}
+            />
           )}
         </div>
       </div>
@@ -475,23 +525,60 @@ export function ExtractionValuesForm({ data, onChange }: Props) {
               value={data.numbering.sub_chapter_format}
               onChange={(v) => patch("numbering", { sub_chapter_format: v })}
             />
-            <TextFieldInput
-              label="Format Gambar"
-              value={data.numbering.figure_format}
-              onChange={(v) => patch("numbering", { figure_format: v })}
-            />
-            <TextFieldInput
-              label="Format Tabel"
-              value={data.numbering.table_format}
-              onChange={(v) => patch("numbering", { table_format: v })}
-            />
+
           </FieldRow>
         </div>
       </div>
 
       {/* ── 6. Gambar & Tabel ── */}
       <div>
-        <SectionHeader title="6. Gambar & Tabel" />
+        <div className="flex items-center gap-2">
+          <SectionHeader title="6. Gambar & Tabel" />
+          <button
+            type="button"
+            onClick={() => setShowFormatInfo((v) => !v)}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label="Panduan format"
+          >
+            <Info className="size-3.5" />
+          </button>
+        </div>
+
+        {showFormatInfo && (
+          <div className="mt-2 rounded-md bg-muted/40 px-3 py-2.5 text-xs text-muted-foreground leading-relaxed">
+            <p className="mb-2 font-medium text-foreground">Placeholder yang dikenali sistem</p>
+            <p className="mb-1.5">
+              Hanya placeholder berikut yang akan <strong>diganti otomatis</strong> saat dokumen di-generate.
+              Nilai lain dalam kurung kurawal akan muncul <em>apa adanya</em> di dokumen.
+            </p>
+            <div className="mb-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+              <code className="rounded bg-muted px-1 self-start">{"{n}"}</code>
+              <span>Nomor urut gambar / tabel (1, 2, 3, …)</span>
+              <code className="rounded bg-muted px-1 self-start">{"{title}"}</code>
+              <span>Judul gambar / tabel</span>
+              <code className="rounded bg-muted px-1 self-start">{"{source}"}</code>
+              <span>Sumber / credit — khusus gambar</span>
+              <code className="rounded bg-muted px-1 self-start">{"{bab}"}</code>
+              <span>Nomor BAB induk — khusus tabel</span>
+            </div>
+            <p className="text-[10px]">
+              Contoh gambar:{" "}
+              <code className="rounded bg-muted px-1">{"Gambar {n}. {title}."}</code>
+              {" "}→ <em>Gambar 1. Arsitektur Sistem.</em>
+            </p>
+            <p className="mt-0.5 text-[10px]">
+              Contoh tabel:{" "}
+              <code className="rounded bg-muted px-1">{"Tabel {bab}.{n}. {title}"}</code>
+              {" "}→ <em>Tabel 2.1. Rincian Data.</em>
+            </p>
+            <p className="mt-0.5 text-[10px]">
+              Contoh gambar dengan sumber:{" "}
+              <code className="rounded bg-muted px-1">{"Gambar {n}. {title} (Sumber: {source})"}</code>
+              {" "}→ <em>Gambar 3. Diagram Alir (Sumber: Dokumentasi Tim).</em>
+            </p>
+          </div>
+        )}
+
         <div className="mt-3 px-1">
           <FieldRow>
             <SelectFieldInput

@@ -674,6 +674,7 @@ export default function ProposalDocumentPage() {
           <ExtractionValuesForm
             data={extractionData}
             onChange={setExtractionData}
+            projectId={currentProjectId}
           />
 
           {metadataError && (

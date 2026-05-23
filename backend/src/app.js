@@ -6,6 +6,7 @@ import assignmentsRoutes from "./routes/assignments.routes.js"
 import reviewerAssignmentsRoutes from "./routes/reviewer-assignments.routes.js"
 import authRoutes from "./routes/auth.routes.js"
 import facultyRoutes from "./routes/faculty.routes.js"
+import pkmRoutes from "./routes/pkm.routes.js"
 import projectsRoutes from "./routes/projects.routes.js"
 import reviewPeriodRoutes from "./routes/review-period.routes.js"
 import reviewerRoutes from "./routes/reviewer.routes.js"
@@ -33,6 +34,7 @@ app.use(cookieParser())
 
 // Special middleware for projects route - keep raw body for multipart
 app.use("/api/projects", express.raw({ type: "multipart/form-data", limit: "50mb" }))
+app.use("/api/pkm/validation/run", express.raw({ type: "multipart/form-data", limit: "20mb" }))
 
 app.get("/", (_req, res) => {
   res.status(200).json({
@@ -53,6 +55,7 @@ app.use("/api/assignments", assignmentsRoutes)
 app.use("/api/reviewer-assignments", reviewerAssignmentsRoutes)
 app.use("/api/auth", authRoutes)
 app.use("/api/faculties", facultyRoutes)
+app.use("/api/pkm", pkmRoutes)
 app.use("/api/projects", projectsRoutes)
 app.use("/api/review-periods", reviewPeriodRoutes)
 app.use("/api/reviewers", reviewerRoutes)

@@ -53,8 +53,11 @@ export function DocumentValidator() {
         setFile(null)
         return
       }
-      if (selected.type !== "application/pdf") {
-        setError("Hanya file PDF yang diterima.")
+      const isDocx =
+        selected.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        selected.name.toLowerCase().endsWith(".docx")
+      if (!isDocx) {
+        setError("Hanya file DOCX yang diterima.")
         setFile(null)
         return
       }
@@ -159,7 +162,7 @@ export function DocumentValidator() {
           >
             <input
               type="file"
-              accept=".pdf,application/pdf"
+              accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               onChange={handleFileChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               disabled={loading}
@@ -191,7 +194,7 @@ export function DocumentValidator() {
                     Seret file ke sini atau klik untuk memilih
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Format: PDF, maks 10MB
+                    Format: DOCX, maks 10MB
                   </p>
                 </>
               )}
@@ -240,51 +243,73 @@ export function DocumentValidator() {
                 <CheckCircleIcon className="size-4 text-green-600" />
                 <AlertTitle className="text-green-800">Dokumen Valid</AlertTitle>
                 <AlertDescription className="text-green-700">
-                  Dokumen proposal telah memenuhi semua persyaratan validasi.
+                  Dokumen proposal telah memenuhi semua persyaratan format.
+                  {result.summary && (
+                    <span className="ml-1">
+                      ({result.summary.passed ?? 0} dari {result.summary.total_checks ?? 0} pemeriksaan lulus)
+                    </span>
+                  )}
                 </AlertDescription>
               </Alert>
             ) : (
               <Alert variant="destructive">
                 <AlertCircleIcon className="size-4" />
-                <AlertTitle>Ditemukan Masalah</AlertTitle>
+                <AlertTitle>Ditemukan Masalah Format</AlertTitle>
                 <AlertDescription>
-                  Dokumen tidak memenuhi beberapa persyaratan.
+                  {result.issues?.filter((i) => i.severity === "error").length ?? 0} error,{" "}
+                  {result.issues?.filter((i) => i.severity === "warning").length ?? 0} peringatan ditemukan.
                 </AlertDescription>
               </Alert>
             )}
 
-            {result.errors && result.errors.length > 0 && (
+            {result.issues && result.issues.length > 0 && (
               <div className="rounded-lg border bg-card">
                 <div className="px-4 py-3 border-b bg-muted/50">
                   <h4 className="text-sm font-medium">
-                    Detail Masalah ({result.errors.length})
+                    Detail Masalah ({result.issues.length})
                   </h4>
                 </div>
                 <div className="divide-y">
-                  {result.errors.map((err, idx) => (
+                  {result.issues.map((issue, idx) => (
                     <div key={idx} className="px-4 py-3 flex items-start gap-3">
                       <div
                         className={[
-                          "shrink-0 size-5 rounded-full flex items-center justify-center text-xs font-medium",
-                          err.severity === "error"
+                          "shrink-0 size-5 rounded-full flex items-center justify-center text-xs font-medium mt-0.5",
+                          issue.severity === "error"
                             ? "bg-red-100 text-red-700"
-                            : err.severity === "warning"
+                            : issue.severity === "warning"
                             ? "bg-yellow-100 text-yellow-700"
                             : "bg-blue-100 text-blue-700",
                         ].join(" ")}
                       >
-                        {err.severity === "error" ? "!" : "i"}
+                        {issue.severity === "error" ? "!" : "i"}
                       </div>
                       <div className="flex-1 min-w-0">
-                        {err.field && (
-                          <p className="text-xs font-medium text-muted-foreground mb-0.5">
-                            {err.field}
-                          </p>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                            {issue.category}
+                          </span>
+                          {issue.field && (
+                            <span className="text-xs text-muted-foreground">· {issue.field}</span>
+                          )}
+                        </div>
+                        <p className="text-sm">{issue.message}</p>
+                        {(issue.expected || issue.actual) && (
+                          <div className="mt-1 flex gap-3 text-xs text-muted-foreground">
+                            {issue.expected && (
+                              <span>
+                                Diharapkan:{" "}
+                                <span className="font-medium text-foreground">{issue.expected}</span>
+                              </span>
+                            )}
+                            {issue.actual && (
+                              <span>
+                                Ditemukan:{" "}
+                                <span className="font-medium text-foreground">{issue.actual}</span>
+                              </span>
+                            )}
+                          </div>
                         )}
-                        <p className="text-sm">{err.message}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Rule: {err.rule}
-                        </p>
                       </div>
                     </div>
                   ))}

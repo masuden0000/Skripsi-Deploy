@@ -22,15 +22,29 @@ export const activePeriodSchema = z.object({
   updatedAt: z.string(),
 })
 
+export const validationIssueSchema = z.object({
+  severity: z.enum(["error", "warning", "info"]),
+  category: z.string(),
+  field: z.string().optional().nullable(),
+  message: z.string(),
+  expected: z.string().optional().nullable(),
+  actual: z.string().optional().nullable(),
+})
+
+export const validationSummarySchema = z.object({
+  total_checks: z.number().optional(),
+  passed: z.number().optional(),
+  failed: z.number().optional(),
+  warnings: z.number().optional(),
+  errors: z.number().optional(),
+})
+
 export const validationResultSchema = z.object({
   valid: z.boolean(),
-  errors: z.array(z.object({
-    rule: z.string(),
-    message: z.string(),
-    severity: z.enum(["error", "warning", "info"]),
-    field: z.string().optional(),
-  })).optional(),
-  metadata: z.record(z.any()).optional(),
+  status: z.enum(["pass", "fail", "warning"]),
+  issues: z.array(validationIssueSchema).optional().default([]),
+  summary: validationSummarySchema.optional(),
+  validated_at: z.string().optional(),
 })
 
 // ============================================================================
@@ -38,6 +52,7 @@ export const validationResultSchema = z.object({
 // ============================================================================
 export type PkmSchema = z.infer<typeof pkmSchemaSchema>
 export type ActivePeriod = z.infer<typeof activePeriodSchema>
+export type ValidationIssue = z.infer<typeof validationIssueSchema>
 export type ValidationResult = z.infer<typeof validationResultSchema>
 
 // ============================================================================

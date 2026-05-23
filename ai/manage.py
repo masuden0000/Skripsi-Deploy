@@ -79,14 +79,21 @@ def run_extract(project_id: str | None = None) -> None:
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `run_docx` sebagai bagian alur `manage`.
 # ---------------------------------------------------------------------------
-def run_docx(project_id: str) -> str | None:
+def run_docx(project_id: str, local_output: str | None = None) -> str | None:
     from model_ai.docx.generator import generate_proposal_docx_bytes
-    from model_ai.storage import upload_docx_to_storage
 
     doc_bytes, file_name = generate_proposal_docx_bytes(
         project_id=project_id,
     )
 
+    if local_output:
+        out_path = resolve_ai_path(local_output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_bytes(doc_bytes)
+        print(f"[docx] Disimpan lokal: {out_path}")
+        return str(out_path)
+
+    from model_ai.storage import upload_docx_to_storage
     result_url = upload_docx_to_storage(doc_bytes, file_name, project_id)
     print(f"[docx] Berhasil upload dokumen: {result_url}")
     print(f"[docx] RESULT_URL={result_url}")
@@ -286,6 +293,11 @@ def main() -> None:
         default="data/proposal_template.docx",
         help="Path output DOCX (default: data/proposal_template.docx).",
     )
+    docx_parser.add_argument(
+        "--local",
+        action="store_true",
+        help="Simpan DOCX ke lokal saja, skip upload ke Supabase storage.",
+    )
 
     map_parser = subparsers.add_parser(
         "docx-style-map",
@@ -371,7 +383,10 @@ def main() -> None:
             raise SystemExit("Tipe dokumen belum didukung.")
         if not args.project_id:
             raise SystemExit("--project-id wajib untuk perintah docx.")
-        run_docx(project_id=args.project_id)
+        run_docx(
+            project_id=args.project_id,
+            local_output=args.output if args.local else None,
+        )
         return
 
     if args.command == "docx-style-map":

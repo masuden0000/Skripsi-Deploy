@@ -1,0 +1,786 @@
+================================================================================
+  DEBUG EXTRACTION — key: 'document_structure_proposal'
+  Waktu     : 20260523_225817
+  project_id: 9aaea6d7-298d-4ff8-b9d1-e9cd4a5dc18e
+================================================================================
+
+[1] RAG QUERIES yang digunakan:
+--------------------------------------------------------------------------------
+  Query 1: Sistematika Proposal Kegiatan PKM lampiran daftar isi daftar pustaka
+  Query 2: Sistematika Penulisan Proposal PKM lampiran daftar isi daftar pustaka
+  Query 3: format nama file PKM pengumpulan sistematika proposal
+  Query 4: 4.1 anggaran biaya 4.2 jadwal kegiatan sub bab BAB 4 proposal PKM-KC rekapitulasi
+  top_k   : 10
+
+[2] Menjalankan RAG retrieval...
+--------------------------------------------------------------------------------
+  Total chunk ditemukan: 38
+
+  --- Chunk #1 ---
+  chunk_index : 2
+  chunk_parent: DAFTAR TABEL
+  page        : 4 - 4
+  snippet     : ## **DAFTAR TABEL**  Tabel 1. Jadwal pengiklanan di media sosial ............................................................................. 5 Tabel 2. Format Rekapitulasi Rencana Anggaran Biaya ......................................................... 11
+  isi penuh   : 257 karakter total
+
+  --- Chunk #2 ---
+  chunk_index : 4
+  chunk_parent: Pendahuluan
+  page        : 1 - 1
+  snippet     : ## **Pendahuluan**  PKM-KC merupakan wahana bagi mahasiswa untuk mewujudkan ide konstruktif berbasis karsa dan nalar, meskipun belum sepenuhnya mencapai nilai fungsional sempurna atau memberikan kemanfaatan langsung bagi pihak lain. Produk PKM-KC minimal berada pada skala prototipe yang siap diuji c...
+  isi penuh   : 455 karakter total
+
+  --- Chunk #3 ---
+  chunk_index : 5
+  chunk_parent: Pendahuluan
+  page        : 1 - 1
+  snippet     : PKM-KC tahun 2026 merupakan PKM tematik yang diharapkan memicu dan merealisasikan kreativitas mahasiswa dengan mengacu pada 10 tema PKM yang berfokus pada pemecahan permasalahan masyarakat serta mendukung program prioritas pemerintah. Tema tersebut meliputi: (1) Kemandirian pangan, energi, dan air; ...
+  isi penuh   : 794 karakter total
+
+  --- Chunk #4 ---
+  chunk_index : 6
+  chunk_parent: Pendahuluan
+  page        : 1 - 1
+  snippet     : Sebagai contoh, karya PKM-KC dapat berupa alat pengolah air limbah tekstil yang menggabungkan teknologi pertumbuhan biofilm dan _biofilter_ sarang tawon modifikasi. Rahmadi _et al_ . (2022) mengembangkan unit kompak berbasis _hybrid attached growth biofilm_ , yakni kombinasi _Rotating Biological Con...
+  isi penuh   : 770 karakter total
+
+  --- Chunk #5 ---
+  chunk_index : 7
+  chunk_parent: Pendahuluan
+  page        : 1 - 2
+  snippet     : Gambar 1. Reaktor Pengolahan Limbah Cair Tekstil Berbasis _Hybrid Attached Growth Biofilm_ Terintegrasi Arduino (Rahmadi _et al_ . (2022).   Gambar 2 di bawah ini menunjukkan perkembangan ide kreatif dan inovatif yang diharapkan muncul dari mahasiswa untuk menghasilkan _vacuum cleaner_ yang lebih ba...
+  isi penuh   : 756 karakter total
+
+  --- Chunk #6 ---
+  chunk_index : 8
+  chunk_parent: Pendahuluan
+  page        : 2 - 2
+  snippet     : Panduan pelaksanaan PKM-KC ini memuat penjelasan 10 tema PKM 2026, tujuan, ruang lingkup, konsep pelaksanaan program, luaran, kriteria pengusulan, sumber dana kegiatan, sistematika penulisan proposal, seleksi dan penilaian proposal, penilaian kemajuan pelaksanaan PKM (PKP2) dan pelaporan, sistematik...
+  isi penuh   : 362 karakter total
+
+  --- Chunk #7 ---
+  chunk_index : 29
+  chunk_parent: A. Susunan Proposal
+  page        : 8 - 8
+  snippet     : ## **A. Susunan Proposal**  Isian kelengkapan: Dientrikan langsung secara interaktif pada simbelmawa/pkm, dan proses pengesahan dilakukan dengan validasi oleh dosen pendamping dan pimpinan  perguruan tinggi bidang kemahasiswaan. Isian kelengkapan meliputi judul PKM,  bidang PKM, identitas ketua pela...
+  isi penuh   : 571 karakter total
+
+  --- Chunk #8 ---
+  chunk_index : 30
+  chunk_parent: A. Susunan Proposal
+  page        : 8 - 9
+  snippet     : Isi utama proposal: Dikemas dalam bentuk berkas pdf. Isi utama proposal terdiri dari: daftar isi, bagian inti, dan lampiran. Daftar isi diberi penomoran halaman dengan huruf romawi: i,ii, iii,..., yang diletakkan pada sudut kanan bawah. Penomoran halaman i dimulai dari Daftar Isi. Bagian inti adalah...
+  isi penuh   : 930 karakter total
+
+  --- Chunk #9 ---
+  chunk_index : 32
+  chunk_parent: C. Sistematika Penulisan Isi Utama Proposal
+  page        : 9 - 9
+  snippet     : ## **C. Sistematika Penulisan Isi Utama Proposal**  DAFTAR ISI  DAFTAR GAMBAR (jika ada)  DAFTAR TABEL (jika ada)  DAFTAR LAMPIRAN  BAB 1. PENDAHULUAN  Berisi uraian tentang proses identifikasi permasalahan yang akan dicari solusi atau pengembangannya termasuk sumber inspirasinya. Jika dasar inspira...
+  isi penuh   : 890 karakter total
+
+  --- Chunk #10 ---
+  chunk_index : 33
+  chunk_parent: C. Sistematika Penulisan Isi Utama Proposal
+  page        : 9 - 9
+  snippet     : Jika produk PKM-KC harus dibuat mulai dari awal karena belum ada produk riset sebelumnya yang dapat dijadikan landasan, juga tidak ada produk yang ditemukan/digunakan di masyarakat, maka ungkapkan target fungsionalnya disertai justifikasi ilmiah yang akhirnya bermuara pada desain sebelum dikonstruks...
+  isi penuh   : 513 karakter total
+
+  --- Chunk #11 ---
+  chunk_index : 34
+  chunk_parent: BAB 2. TINJAUAN PUSTAKA
+  page        : 9 - 10
+  snippet     : ## BAB 2. TINJAUAN PUSTAKA   Berisi gambaran perkembangan mutakhir terkait produk PKM-KC yang akan dihasilkan dan berasal dari berbagai sumber seperti skripsi, tesis, disertasi, buku referensi, artikel jurnal ilmiah ataupun prosiding, internet, brosur, media cetak, serta sumber-sumber informasi lain...
+  isi penuh   : 465 karakter total
+
+  --- Chunk #12 ---
+  chunk_index : 36
+  chunk_parent: BAB 4. BIAYA DAN JADWAL KEGIATAN
+  page        : 10 - 10
+  snippet     : ## BAB 4. BIAYA DAN JADWAL KEGIATAN
+  isi penuh   : 35 karakter total
+
+  --- Chunk #13 ---
+  chunk_index : 37
+  chunk_parent: 4.1 Anggaran Biaya
+  page        : 10 - 10
+  snippet     : ## 4.1 Anggaran Biaya  Rekomendasi besarnya pengalokasian dan penggunaan dana PKM-KC dari Direktorat Pembelajaran dan Kemahasiswaan adalah antara Rp 6.000.000,00 (enam juta rupiah) s.d. Rp 8.000.000,00 (delapan juta rupiah) ditambah dengan dana pendamping dari internal PT yang bersifat wajib maksimu...
+  isi penuh   : 986 karakter total
+
+  --- Chunk #14 ---
+  chunk_index : 38
+  chunk_parent: 4.1 Anggaran Biaya
+  page        : 10 - 11
+  snippet     : 2. Biaya sewa/jasa penggunaan _software_ atau program yang mendukung pengujian produk yang akan dihasilkan  3. Pembelian bahan-bahan pembuatan produk/prototipe  4. Kertas tidak lebih dari 2 rim, ATK sesuai kebutuhan  5. Transport lokal jika diperlukan diusahakan seminimal mungkin. maksimum 30% dari ...
+  isi penuh   : 976 karakter total
+
+  --- Chunk #15 ---
+  chunk_index : 39
+  chunk_parent: 4.1 Anggaran Biaya
+  page        : 11 - 11
+  snippet     : 3. Pembelian alat/bahan lebih dari Rp1.000.000,00 per item  4. Pembelian penyimpanan data ( _flashdisk, harddisk_ dan sebagainya)  5. Pembelian kuota internet lebih dari Rp100.000,00 per bulan per tim  6. Durasi sewa lisensi atau sejenisnya yang melebihi 6 bulan  7. Penyusunan, penggandaan dan/atau ...
+  isi penuh   : 610 karakter total
+
+  --- Chunk #16 ---
+  chunk_index : 40
+  chunk_parent: 4.1 Anggaran Biaya
+  page        : 11 - 11
+  snippet     : |No<br>|Jenis Pengeluaran<br>|Sumber Dana<br>|Besaran Dana<br>(Rp)<br>| |---|---|---|---| |1<br>|Bahan habis pakai (contoh: ATK,<br>kertas, bahan, dan lain-lain)<br>maksimum 60% dari jumlah dana<br>yangdiusulkan<br>|Belmawa<br><br>|<br><br>| |||Perguruan Tinggi<br>|<br>| |||Instansi Lain (jika ada)<...
+  isi penuh   : 982 karakter total
+
+  --- Chunk #17 ---
+  chunk_index : 41
+  chunk_parent: 4.1 Anggaran Biaya
+  page        : 11 - 11
+  snippet     : |||Perguruan Tinggi<br>|| |||Instansi Lain (jika ada)<br>|| |Jumlah<br><br>|||| |Rekap Sumber Dana<br>||Belmawa<br><br>|| |||Perguruan Tinggi<br>|| |||Instansi Lain (jika ada)<br>|| |||Jumlah<br>||
+  isi penuh   : 197 karakter total
+
+  --- Chunk #18 ---
+  chunk_index : 42
+  chunk_parent: 4.2 Jadwal Kegiatan
+  page        : 12 - 12
+  snippet     : ## 4.2 Jadwal Kegiatan  Jadwal kegiatan disesuaikan dengan tahap kegiatan dan dibatasi selama 3 (tiga) sampai 4 (empat) bulan. Jadwal disusun dalam bentuk _bar chart_ untuk rencana kegiatan yang diajukan serta sesuai dengan format pada lampiran.
+  isi penuh   : 245 karakter total
+
+  --- Chunk #19 ---
+  chunk_index : 43
+  chunk_parent: DAFTAR PUSTAKA
+  page        : 12 - 12
+  snippet     : ## DAFTAR PUSTAKA  Daftar pustaka ditulis dengan tipe huruf _Times New Roman_ ukuran 12 cetak normal. Teks menggunakan jarak baris 1,15 spasi dan perataan teks menggunakan rata kiri dan kanan dengan ketentuan baris kedua dan setelahnya menjorok ke dalam (lihat contoh pada lampiran). Daftar Pustaka b...
+  isi penuh   : 576 karakter total
+
+  --- Chunk #20 ---
+  chunk_index : 48
+  chunk_parent: Sistematika Laporan Kemajuan
+  page        : 14 - 14
+  snippet     : ## **Sistematika Laporan Kemajuan**  Setiap tim pelaksana wajib membuat laporan kemajuan yang menjelaskan progres kegiatan PKM-KC yang telah dilaksanakan.
+  isi penuh   : 154 karakter total
+
+  --- Chunk #21 ---
+  chunk_index : 49
+  chunk_parent: A. Susunan Laporan Kemajuan
+  page        : 14 - 14
+  snippet     : ## **A. Susunan Laporan Kemajuan**  Isi utama laporan kemajuan: Dikemas dalam bentuk berkas pdf. Isi utama laporan kemajuan terdiri dari: daftar isi, bagian inti, dan lampiran. Daftar isi diberi penomoran halaman dengan huruf romawi: i, ii, iii, ..., yang diletakkan pada sudut kanan bawah. Penomoran...
+  isi penuh   : 876 karakter total
+
+  --- Chunk #22 ---
+  chunk_index : 51
+  chunk_parent: C. Sistematika Penulisan Isi Utama Laporan Kemajuan
+  page        : 14 - 14
+  snippet     : ## **C. Sistematika Penulisan Isi Utama Laporan Kemajuan**  DAFTAR ISI  DAFTAR GAMBAR (jika ada)  DAFTAR TABEL (jika ada)  DAFTAR LAMPIRAN
+  isi penuh   : 138 karakter total
+
+  --- Chunk #23 ---
+  chunk_index : 56
+  chunk_parent: BAB 5. POTENSI HASIL
+  page        : 15 - 15
+  snippet     : ## BAB 5. POTENSI HASIL  Bab ini menguraikan tentang potensi hasil untuk disajikan dalam bentuk Artikel Ilmiah, peluang perolehan Kekayaan Intelektual (KI) atau sejenisnya dan/atau prediksi manfaat sosialekonomi-pendidikan dan lain-lain bagi pengguna.  BAB 6. RENCANA TAHAPAN BERIKUTNYA  Upaya untuk ...
+  isi penuh   : 907 karakter total
+
+  --- Chunk #24 ---
+  chunk_index : 57
+  chunk_parent: Sistematika Laporan Akhir
+  page        : 16 - 16
+  snippet     : ## **Sistematika Laporan Akhir**  Setiap tim pelaksana diwajibkan membuat laporan akhir yang memuat  keberhasilan pelaksanaan PKM-KC yang telah dilaksanakan oleh tim.
+  isi penuh   : 166 karakter total
+
+  --- Chunk #25 ---
+  chunk_index : 58
+  chunk_parent: A. Susunan Laporan Akhir
+  page        : 16 - 16
+  snippet     : ## **A. Susunan Laporan Akhir**  Isi utama laporan akhir: Dikemas dalam bentuk berkas pdf. Isi utama laporan akhir terdiri dari: ringkasan, Daftar Isi, Bagian Inti, dan Lampiran. Halaman daftar isi diberi nomor halaman dengan huruf: i, ii, iii, …, yang diletakkan pada sudut kanan bawah. Penomoran ha...
+  isi penuh   : 860 karakter total
+
+  --- Chunk #26 ---
+  chunk_index : 60
+  chunk_parent: C. Sistematika Penulisan Isi Utama Laporan Akhir
+  page        : 16 - 16
+  snippet     : ## **C. Sistematika Penulisan Isi Utama Laporan Akhir**  RINGKASAN (tanpa nomor halaman)  DAFTAR ISI  DAFTAR GAMBAR (jika ada)  DAFTAR TABEL (jika ada)  DAFTAR LAMPIRAN  BAB 1. PENDAHULUAN  Bab ini menguraikan sumber inspirasi dan tantangan intelektual yang melatarbelakangi transformasi ide kreatif ...
+  isi penuh   : 400 karakter total
+
+  --- Chunk #27 ---
+  chunk_index : 61
+  chunk_parent: BAB 2. TINJAUAN PUSTAKA
+  page        : 17 - 17
+  snippet     : ## BAB 2. TINJAUAN PUSTAKA  Bab ini menguraikan tentang kajian teori dari tantangan intelektual yang terkait langsung dengan prototipe serta gambaran produk sejenis yang pernah ada
+  isi penuh   : 180 karakter total
+
+  --- Chunk #28 ---
+  chunk_index : 65
+  chunk_parent: DAFTAR PUSTAKA
+  page        : 17 - 17
+  snippet     : ## DAFTAR PUSTAKA  Daftar pustaka ditulis dengan tipe huruf _Times New Roman_ ukuran 12 cetak normal. Teks menggunakan jarak baris 1,15 spasi dan perataan teks menggunakan rata kiri dan kanan dengan ketentuan baris kedua dan setelahnya menjorok ke dalam (lihat contoh pada lampiran ). Daftar Pustaka ...
+  isi penuh   : 577 karakter total
+
+  --- Chunk #29 ---
+  chunk_index : 68
+  chunk_parent: Lampiran 4. Format Justifikasi Anggaran Kegiatan (contoh)
+  page        : 20 - 20
+  snippet     : ## **Lampiran 4. Format Justifikasi Anggaran Kegiatan (contoh)**
+  isi penuh   : 64 karakter total
+
+  --- Chunk #30 ---
+  chunk_index : 69
+  chunk_parent: Lampiran 4. Format Justifikasi Anggaran Kegiatan (contoh)
+  page        : 20 - 20
+  snippet     : |No|Jenis Pengeluaran|Volume|Harga Satuan<br>(Rp)|Total<br>(Rp)| |---|---|---|---|---| |1|Belanja Bahan (maks. 60%)|||| ||Contoh: Kabel/engsel/mur/baut dan sejenisnya|a||| ||Bahan Kimia Lab/Bahan Logam/kayu dan<br>sejenisnya|||| ||Bibit Tanaman/Simplisia/Pupuk|||| ||Alat Ukir/Alat Lukis|||| ||Suku C...
+  isi penuh   : 985 karakter total
+
+  --- Chunk #31 ---
+  chunk_index : 70
+  chunk_parent: Lampiran 4. Format Justifikasi Anggaran Kegiatan (contoh)
+  page        : 20 - 20
+  snippet     : ||Percetakan produk|||| ||ATK lainnya|||| ||_Ads_(iklan berbayar) akun media sosial|||| ||Lainnya sesuai program PKM-KC|||| |SUB TOTAL||||| |GRAND TOTAL||||| |GRAND TOTAL (Terbilang )|||||
+  isi penuh   : 188 karakter total
+
+  --- Chunk #32 ---
+  chunk_index : 71
+  chunk_parent: Lampiran 4. Format Justifikasi Anggaran Kegiatan (contoh)
+  page        : 20 - 21
+  snippet     : Catatan: Kesalahan hasil perkalian dan penjumlahan dapat mempengaruhi hasil penilaian.   **Lampiran 5. Susunan Tim Pengusul dan Pembagian Tugas**  |No|Nama /NIM|Program<br>Studi|Bidang Ilmu|Alokasi Waktu<br>(jam/minggu)|Uraian Tugas| |---|---|---|---|---|---| |1|||||| |2|||||| |3||||||
+  isi penuh   : 286 karakter total
+
+  --- Chunk #33 ---
+  chunk_index : 74
+  chunk_parent: Lampiran 7. Formulir Penilaian Proposal
+  page        : 22 - 22
+  snippet     : ## **Lampiran 7. Formulir Penilaian Proposal**
+  isi penuh   : 46 karakter total
+
+  --- Chunk #34 ---
+  chunk_index : 75
+  chunk_parent: Lampiran 7. Formulir Penilaian Proposal
+  page        : 22 - 22
+  snippet     : Judul Kegiatan : .............................................................................. Skema PKM : PKM-KC Bidang Ilmu : .............................................................................. NIM / Nama Ketua : ............................................................................
+  isi penuh   : 994 karakter total
+
+  --- Chunk #35 ---
+  chunk_index : 76
+  chunk_parent: Lampiran 7. Formulir Penilaian Proposal
+  page        : 22 - 22
+  snippet     : unik dan manfaat masa depan) 20 Kemutakhiran IPTEK yang diadopsi 20 2 Kesesuaian Tahap Pelaksanaan 15 Potensi Program: Kontribusi produk luaran terhadap solusi permasalahan 3 25 dan perkembangan IPTEK Potensi Publikasi Artikel Ilmiah/Kekayaan Intelektual 10 Penjadwalan Kegiatan dan Personalia: 4 5 L...
+  isi penuh   : 691 karakter total
+
+  --- Chunk #36 ---
+  chunk_index : 77
+  chunk_parent: Lampiran 8. Formulir Penilaian Laporan Kemajuan Pelaksanaan
+  page        : 23 - 23
+  snippet     : ## **Lampiran 8. Formulir Penilaian Laporan Kemajuan Pelaksanaan**
+  isi penuh   : 66 karakter total
+
+  --- Chunk #37 ---
+  chunk_index : 78
+  chunk_parent: Lampiran 8. Formulir Penilaian Laporan Kemajuan Pelaksanaan
+  page        : 23 - 23
+  snippet     : Judul Kegiatan : .............................................................................. Skema PKM : PKM-KC Bidang Ilmu : .............................................................................. NIM / Nama Ketua : ............................................................................
+  isi penuh   : 991 karakter total
+
+  --- Chunk #38 ---
+  chunk_index : 79
+  chunk_parent: Lampiran 8. Formulir Penilaian Laporan Kemajuan Pelaksanaan
+  page        : 23 - 23
+  snippet     : Luaran 15 3 Tahap Pelaksanaan 25 4 Hasil Yang Dicapai 25 5 Potensi Hasil 15 6 Publikasi dan promosi hasil PKM di media sosial 5 7 Rencana tahapan selanjutnya 5 Total 100  Keterangan: Nilai=Bobot x Skor; Skor (1=Buruk; 2=Sangat kurang; 3=Kurang; 5=Cukup; 6=Baik; 7=Sangat baik); Komentar: ...............
+  isi penuh   : 427 karakter total
+
+
+[3] RENDERED PROMPT (template + context dari RAG):
+================================================================================
+# Extraction Task: Document Structure (Proposal PKM)
+
+## Context
+## **DAFTAR TABEL**
+
+Tabel 1. Jadwal pengiklanan di media sosial ............................................................................. 5 Tabel 2. Format Rekapitulasi Rencana Anggaran Biaya ......................................................... 11
+
+---
+
+## **Pendahuluan**
+
+PKM-KC merupakan wahana bagi mahasiswa untuk mewujudkan ide konstruktif berbasis karsa dan nalar, meskipun belum sepenuhnya mencapai nilai fungsional sempurna atau memberikan kemanfaatan langsung bagi pihak lain. Produk PKM-KC minimal berada pada skala prototipe yang siap diuji coba. PKM-KC menekankan keaslian ide atau sekurangkurangnya modifikasi produk yang telah ada, bukan sekadar menggunakan atau menerapkan karya yang tersedia.
+
+---
+
+PKM-KC tahun 2026 merupakan PKM tematik yang diharapkan memicu dan merealisasikan kreativitas mahasiswa dengan mengacu pada 10 tema PKM yang berfokus pada pemecahan permasalahan masyarakat serta mendukung program prioritas pemerintah. Tema tersebut meliputi: (1) Kemandirian pangan, energi, dan air; (2) Kesehatan dan gizi masyarakat; (3) Pencegahan dan Pemberantasan Korupsi; (4) Pemberantasan Kemiskinan; (5) Pencegahan dan Pemberantasan Narkoba; (6) Penguatan pendidikan, sains, dan teknologi; (7) Penguatan kesetaraan gender dan perlindungan hak-hak perempuan, anak, dan penyandang disabilitas; (8) Pelestarian lingkungan dan mitigasi bencana; (9) Pemerataan ekonomi, penguatan UMKM, dan pembangunan Ibu Kota Negara (IKN); serta (10) Pelestarian seni budaya dan peningkatan ekonomi kreatif.
+
+---
+
+Sebagai contoh, karya PKM-KC dapat berupa alat pengolah air limbah tekstil yang menggabungkan teknologi pertumbuhan biofilm dan _biofilter_ sarang tawon modifikasi. Rahmadi _et al_ . (2022) mengembangkan unit kompak berbasis _hybrid attached growth biofilm_ , yakni kombinasi _Rotating Biological Contactor_ (RBC) dan _biofilter_ modifikasi untuk meningkatkan luas permukaan pertumbuhan mikroorganisme dan efisiensi penyisihan kontaminan. Prototipe tersebut mampu mengolah limbah lebih banyak dalam waktu lebih singkat dibandingkan RBC konvensional, dengan efluen yang memenuhi baku mutu dan aman dibuang ke lingkungan (Gambar 1).
+
+Gambar 1. Reaktor Pengolahan Limbah Cair Tekstil Berbasis _Hybrid Attached Growth Biofilm_ Terintegrasi Arduino (Rahmadi _et al_ . (2022).
+
+---
+
+Gambar 1. Reaktor Pengolahan Limbah Cair Tekstil Berbasis _Hybrid Attached Growth Biofilm_ Terintegrasi Arduino (Rahmadi _et al_ . (2022).
+
+
+Gambar 2 di bawah ini menunjukkan perkembangan ide kreatif dan inovatif yang diharapkan muncul dari mahasiswa untuk menghasilkan _vacuum cleaner_ yang lebih baik lagi dari segi IPTEK dalam wujud model, fungsi, desain dan manfaatnya.
+
+Gambar 2. Perkembangan _vacuum cleaner_ dari tahun 1900 ke 2010-an
+
+(https://tfetimes.com/the-evolution-of-8-objects-americans-use-every-day/)
+
+Berdasarkan uraian di atas PKM-KC lebih menekankan pada tingkat kreativitas produk/prototipe yang akan dihasilkan, level teknologi, keterbaruan, metode pembuatan produk serta prediksi kemanfaatannya jika nantinya karyanya direalisasikan.
+
+---
+
+Panduan pelaksanaan PKM-KC ini memuat penjelasan 10 tema PKM 2026, tujuan, ruang lingkup, konsep pelaksanaan program, luaran, kriteria pengusulan, sumber dana kegiatan, sistematika penulisan proposal, seleksi dan penilaian proposal, penilaian kemajuan pelaksanaan PKM (PKP2) dan pelaporan, sistematika laporan kemajuan, sistematika laporan akhir, serta lampiran.
+
+---
+
+## **A. Susunan Proposal**
+
+Isian kelengkapan: Dientrikan langsung secara interaktif pada simbelmawa/pkm, dan proses pengesahan dilakukan dengan validasi oleh dosen pendamping dan pimpinan  perguruan tinggi bidang kemahasiswaan. Isian kelengkapan meliputi judul PKM,  bidang PKM, identitas ketua pelaksana, jumlah anggota pelaksana, identitas dosen pendamping , jumlah dana usulan, jangka waktu pelaksanaan, identitas kota,  tanggal, bulan dan tahun, identitas pimpinan fakultas/program studi, identitas  dosen pendamping serta identitas pimpinan PT bidang kemahasiswaan.
+
+---
+
+Isi utama proposal: Dikemas dalam bentuk berkas pdf. Isi utama proposal terdiri dari: daftar isi, bagian inti, dan lampiran. Daftar isi diberi penomoran halaman dengan huruf romawi: i,ii, iii,..., yang diletakkan pada sudut kanan bawah. Penomoran halaman i dimulai dari Daftar Isi. Bagian inti adalah bagian proposal yang memuat Bab 1 Pendahuluan sampai dengan Daftar Pustaka. Bagian inti memuat maksimum 10 (sepuluh) halaman. Halaman bagian inti dan lampiran diberi penomoran halaman dengan angka arab: 1, 2, 3, ..., diletakkan pada sudut kanan atas. Penomoran halaman 1 (satu) dimulai dari Bab 1 Pendahuluan. Berkas isi utama proposal
+
+
+diunggah ke laman  simbelmawa/pkm dengan penamaan berkas: namaketua_namaPT_PKMKC.pdf  untuk divalidasi oleh dosen pendamping dan pengesahan oleh pimpinan perguruan tinggi bidang kemahasiswaan melalui laman simbelmawa/pkm. Tidak ada halaman sampul dan halaman pengesahan pada berkas proposal.
+
+---
+
+## **C. Sistematika Penulisan Isi Utama Proposal**
+
+DAFTAR ISI
+
+DAFTAR GAMBAR (jika ada)
+
+DAFTAR TABEL (jika ada)
+
+DAFTAR LAMPIRAN
+
+BAB 1. PENDAHULUAN
+
+Berisi uraian tentang proses identifikasi permasalahan yang akan dicari solusi atau pengembangannya termasuk sumber inspirasinya. Jika dasar inspirasi adalah hasil riset orang lain, maka harus dinyatakan dengan jelas nama pelaksana dan institusi tim riset serta hasilnya yang akan dikonstruksikan dalam PKM-KC. Pada bagian pendahuluan ini diungkapkan juga fase final yang akan dicapai dalam PKM-KC.
+
+Jika akan melakukan pengembangan atau penyempurnaan atas produk yang sudah ada di masyarakat atau sudah digunakan di kalangan terbatas, maka nyatakan nama produsen/ pembuat dan institusinya. Ungkapkan target yang akan dicapai dan aspek pengembangan/ penyempurnaan yang akan dilakukan disertai justifikasi ilmiah dan/atau aspek ekonominya.
+
+---
+
+Jika produk PKM-KC harus dibuat mulai dari awal karena belum ada produk riset sebelumnya yang dapat dijadikan landasan, juga tidak ada produk yang ditemukan/digunakan di masyarakat, maka ungkapkan target fungsionalnya disertai justifikasi ilmiah yang akhirnya bermuara pada desain sebelum dikonstruksikan menjadi produk/jasa final yang fungsional. Bagian pendahuluan ini juga berisi uraian modifikasi dan keterbaruan produk atau prototipe yang akan dihasilkan serta luaran yang ditargetkan dan prediksi manfaatnya
+
+---
+
+## BAB 2. TINJAUAN PUSTAKA
+
+
+Berisi gambaran perkembangan mutakhir terkait produk PKM-KC yang akan dihasilkan dan berasal dari berbagai sumber seperti skripsi, tesis, disertasi, buku referensi, artikel jurnal ilmiah ataupun prosiding, internet, brosur, media cetak, serta sumber-sumber informasi lainnya. Pada bagian ini diuraikan informasi ilmiah lainnya yang relevan dan terkait langsung dengan spesifikasi awal dan/atau akhir produk serta solusi yang bermanfaat.
+
+---
+
+## BAB 4. BIAYA DAN JADWAL KEGIATAN
+
+---
+
+## 4.1 Anggaran Biaya
+
+Rekomendasi besarnya pengalokasian dan penggunaan dana PKM-KC dari Direktorat Pembelajaran dan Kemahasiswaan adalah antara Rp 6.000.000,00 (enam juta rupiah) s.d. Rp 8.000.000,00 (delapan juta rupiah) ditambah dengan dana pendamping dari internal PT yang bersifat wajib maksimum Rp 2.000.000,00 (dua juta rupiah) dan dari mitra/sponsor lainnya maksimum Rp 1.000.000,00 (satu juta rupiah) dengan komposisi minimum 80% untuk operasional dan maksimum 20% untuk administrasi. Khusus untuk biaya perjalanan PKM-KC hendaknya dilakukan seefisien dan seminimal mungkin (at cost). Rencana Anggaran Biaya (RAB) yang diajukan tim pengusul harus memuat alokasi dana publikasi dan/atau promosi kegiatan PKM di media sosial.
+
+Rekomendasi pengalokasian dan penggunaan dana adalah sebagai berikut:
+
+1. Rujukan publikasi ilmiah utama yang harus didapatkan secara berbayar.
+
+2. Biaya sewa/jasa penggunaan _software_ atau program yang mendukung pengujian produk yang akan dihasilkan
+
+---
+
+2. Biaya sewa/jasa penggunaan _software_ atau program yang mendukung pengujian produk yang akan dihasilkan
+
+3. Pembelian bahan-bahan pembuatan produk/prototipe
+
+4. Kertas tidak lebih dari 2 rim, ATK sesuai kebutuhan
+
+5. Transport lokal jika diperlukan diusahakan seminimal mungkin. maksimum 30% dari dana yang diajukan
+
+6. Biaya publikasi dan/atau promosi kegiatan  di media sosial (medsos) maksimal Rp500.000,00.
+
+7. Sewa laboratorium/peralatan laboratorium lainnya (jika sifatnya wajib agar besarannya tidak melebihi Rp1.000.000,00).
+
+
+Adapun item biaya yang TIDAK diperkenankan diusulkan dalam Rencana Anggaran Biaya (RAB):
+
+1. Honorarium, konsumsi, hadiah dan sejenisnya untuk tim, dosen pendamping, narasumber, pemateri, atau sejenisnya
+
+2. Sewa komputer PC, laptop, printer, ponsel, kamera, kamera genggam, tempat/ruangan/aula atau sejenis
+
+3. Pembelian alat/bahan lebih dari Rp1.000.000,00 per item
+
+4. Pembelian penyimpanan data ( _flashdisk, harddisk_ dan sebagainya)
+
+---
+
+3. Pembelian alat/bahan lebih dari Rp1.000.000,00 per item
+
+4. Pembelian penyimpanan data ( _flashdisk, harddisk_ dan sebagainya)
+
+5. Pembelian kuota internet lebih dari Rp100.000,00 per bulan per tim
+
+6. Durasi sewa lisensi atau sejenisnya yang melebihi 6 bulan
+
+7. Penyusunan, penggandaan dan/atau penjilidan laporan kemajuan, laporan akhir (kecuali PTS, atau PTN yang mewajibkan _hardcopy_ )
+
+8. Biaya seminar dan/atau publikasi hasil PKM di jurnal ilmiah
+
+Rekapitulasi rencana anggaran biaya disusun sesuai dengan kebutuhan dan mengikuti format Tabel 2.
+
+Tabel 2. Format Rekapitulasi Rencana Anggaran Biaya
+
+---
+
+|No<br>|Jenis Pengeluaran<br>|Sumber Dana<br>|Besaran Dana<br>(Rp)<br>|
+|---|---|---|---|
+|1<br>|Bahan habis pakai (contoh: ATK,<br>kertas, bahan, dan lain-lain)<br>maksimum 60% dari jumlah dana<br>yangdiusulkan<br>|Belmawa<br><br>|<br><br>|
+|||Perguruan Tinggi<br>|<br>|
+|||Instansi Lain (jika ada)<br>|<br>|
+|2|Sewa dan jasa (sewa/jasa alat, jasa<br>pembuatan produk pihak ketiga, dan<br>lain-lain), maksimum 15% dari jumlah<br>danayangdiusulkan|Belmawa<br>||
+|||Perguruan Tinggi<br>||
+|||Instansi Lain (jika ada)<br>||
+|3|Transportasi lokal maksimum 30%<br>dari jumlah dana yang diusulkan|Belmawa<br>||
+|||Perguruan Tinggi||
+|||Instansi Lain (jika ada)<br>||
+|4|Lain-lain (contoh: biaya komunikasi,<br>biaya bayar akses publikasi, biaya_ads_<br>(iklan berbayar) media sosial, dan<br>lain-lain) maksimum 15% dari<br>jumlah danayangdiusulkan<br>|Belmawa<br>||
+|||Perguruan Tinggi<br>||
+|||Instansi Lain (jika ada)<br>||
+|Jumlah<br><br>||||
+|Rekap Sumber Dana<br>||Belmawa<br><br>||
+
+---
+
+|||Perguruan Tinggi<br>||
+|||Instansi Lain (jika ada)<br>||
+|Jumlah<br><br>||||
+|Rekap Sumber Dana<br>||Belmawa<br><br>||
+|||Perguruan Tinggi<br>||
+|||Instansi Lain (jika ada)<br>||
+|||Jumlah<br>||
+
+---
+
+## 4.2 Jadwal Kegiatan
+
+Jadwal kegiatan disesuaikan dengan tahap kegiatan dan dibatasi selama 3 (tiga) sampai 4 (empat) bulan. Jadwal disusun dalam bentuk _bar chart_ untuk rencana kegiatan yang diajukan serta sesuai dengan format pada lampiran.
+
+---
+
+## DAFTAR PUSTAKA
+
+Daftar pustaka ditulis dengan tipe huruf _Times New Roman_ ukuran 12 cetak normal. Teks menggunakan jarak baris 1,15 spasi dan perataan teks menggunakan rata kiri dan kanan dengan ketentuan baris kedua dan setelahnya menjorok ke dalam (lihat contoh pada lampiran). Daftar Pustaka berisi informasi tentang sumber pustaka yang telah dirujuk dalam tubuh tulisan. Setiap pustaka yang dirujuk dalam naskah harus muncul dalam daftar Pustaka, dan sebaliknya. Format perujukan pustaka mengikuti _Harvard style_ (nama belakang, tahun dan diurutkan secara alfabetis).
+
+---
+
+## **Sistematika Laporan Kemajuan**
+
+Setiap tim pelaksana wajib membuat laporan kemajuan yang menjelaskan progres kegiatan PKM-KC yang telah dilaksanakan.
+
+---
+
+## **A. Susunan Laporan Kemajuan**
+
+Isi utama laporan kemajuan: Dikemas dalam bentuk berkas pdf. Isi utama laporan kemajuan terdiri dari: daftar isi, bagian inti, dan lampiran. Daftar isi diberi penomoran halaman dengan huruf romawi: i, ii, iii, ..., yang diletakkan pada sudut kanan bawah. Penomoran halaman i dimulai dari Daftar Isi. Bagian inti adalah bagian yang memuat Bab 1 Pendahuluan sampai dengan Daftar Pustaka. Bagian inti memuat maksimum 10 (sepuluh) halaman. Bagian inti dan lampiran diberi penomoran halaman dengan angka arab: 1, 2, 3, ..., yang diletakkan pada sudut kanan atas. Penomoran halaman 1 (satu) dimulai dari Bab 1 Pendahuluan. Berkas isi utama laporan kemajuan diunggah ke simbelmawa/pkm dengan penamaan: namaketua_namaPT_PKM-KC.pdf untuk divalidasi oleh dosen pendamping. Tidak ada halaman sampul dan halaman pengesahan pada berkas laporan kemajuan.
+
+---
+
+## **C. Sistematika Penulisan Isi Utama Laporan Kemajuan**
+
+DAFTAR ISI
+
+DAFTAR GAMBAR (jika ada)
+
+DAFTAR TABEL (jika ada)
+
+DAFTAR LAMPIRAN
+
+---
+
+## BAB 5. POTENSI HASIL
+
+Bab ini menguraikan tentang potensi hasil untuk disajikan dalam bentuk Artikel Ilmiah, peluang perolehan Kekayaan Intelektual (KI) atau sejenisnya dan/atau prediksi manfaat sosialekonomi-pendidikan dan lain-lain bagi pengguna.
+
+BAB 6. RENCANA TAHAPAN BERIKUTNYA
+
+Upaya untuk pencapaian target 100% kegiatan.
+
+DAFTAR PUSTAKA
+
+Daftar pustaka ditulis dengan tipe huruf _Times New Roman_ ukuran 12 cetak normal. Teks menggunakan jarak baris 1,15 spasi dan perataan teks menggunakan rata kiri dan kanan dengan ketentuan baris kedua dan setelahnya menjorok ke dalam (lihat contoh pada lampiran). Daftar pustaka berisi informasi tentang sumber pustaka yang telah dirujuk dalam tubuh tulisan. Setiap pustaka yang dirujuk dalam naskah harus muncul dalam daftar pustaka, dan sebaliknya. Format perujukan pustaka mengikuti _Harvard style_ (nama belakang, tahun dan diurutkan secara alfabetis).
+
+---
+
+## **Sistematika Laporan Akhir**
+
+Setiap tim pelaksana diwajibkan membuat laporan akhir yang memuat  keberhasilan pelaksanaan PKM-KC yang telah dilaksanakan oleh tim.
+
+---
+
+## **A. Susunan Laporan Akhir**
+
+Isi utama laporan akhir: Dikemas dalam bentuk berkas pdf. Isi utama laporan akhir terdiri dari: ringkasan, Daftar Isi, Bagian Inti, dan Lampiran. Halaman daftar isi diberi nomor halaman dengan huruf: i, ii, iii, …, yang diletakkan pada sudut kanan bawah. Penomoran halaman i dimulai dari Daftar Isi. Bagian Inti adalah halaman yang memuat Bab Pendahuluan sampai dengan Daftar Pustaka. Bagian Inti memuat maksimum 10 (sepuluh) halaman. Bagian Inti dan lampiran diberi nomor halaman dengan angka arab: 1, 2, 3, …, yang diletakkan pada sudut kanan atas. Penomoran halaman 1 (satu) dimulai dari Bab Pendahuluan. Berkas laporan akhir diunggah ke laman   simbelmawa/pkm dengan penamaan berkas: namaketua_namaPT_PKMKC.pdf untuk divalidasi oleh dosen pendamping. Tidak ada halaman sampul dan halaman pengesahan di berkas laporan akhir.
+
+---
+
+## **C. Sistematika Penulisan Isi Utama Laporan Akhir**
+
+RINGKASAN (tanpa nomor halaman)
+
+DAFTAR ISI
+
+DAFTAR GAMBAR (jika ada)
+
+DAFTAR TABEL (jika ada)
+
+DAFTAR LAMPIRAN
+
+BAB 1. PENDAHULUAN
+
+Bab ini menguraikan sumber inspirasi dan tantangan intelektual yang melatarbelakangi transformasi ide kreatif menjadi sebuah prototipe, lengkap dengan analisis mengenai keunikan teknologi yang telah diterapkan.
+
+---
+
+## BAB 2. TINJAUAN PUSTAKA
+
+Bab ini menguraikan tentang kajian teori dari tantangan intelektual yang terkait langsung dengan prototipe serta gambaran produk sejenis yang pernah ada
+
+---
+
+## DAFTAR PUSTAKA
+
+Daftar pustaka ditulis dengan tipe huruf _Times New Roman_ ukuran 12 cetak normal. Teks menggunakan jarak baris 1,15 spasi dan perataan teks menggunakan rata kiri dan kanan dengan ketentuan baris kedua dan setelahnya menjorok ke dalam (lihat contoh pada lampiran ). Daftar Pustaka berisi informasi tentang sumber pustaka yang telah dirujuk dalam tubuh tulisan. Setiap pustaka yang dirujuk dalam naskah harus muncul dalam daftar Pustaka, dan sebaliknya. Format perujukan pustaka mengikuti _Harvard style_ (nama belakang, tahun dan diurutkan secara alfabetis).
+
+---
+
+## **Lampiran 4. Format Justifikasi Anggaran Kegiatan (contoh)**
+
+---
+
+|No|Jenis Pengeluaran|Volume|Harga Satuan<br>(Rp)|Total<br>(Rp)|
+|---|---|---|---|---|
+|1|Belanja Bahan (maks. 60%)||||
+||Contoh: Kabel/engsel/mur/baut dan sejenisnya|a|||
+||Bahan Kimia Lab/Bahan Logam/kayu dan<br>sejenisnya||||
+||Bibit Tanaman/Simplisia/Pupuk||||
+||Alat Ukir/Alat Lukis||||
+||Suku Cadang/Microcontroller/ Sensor/Kit||||
+||Bahan lainnya sesuai program PKM-KC||||
+|SUB TOTAL|||||
+|2|Belanja Sewa (maks. 15%)||||
+||CONTOH:<br>Sewagedung/Alat||||
+||Sewa_server_/_hosting_/_domain_/SSL/akses jurnal|/SSL/akses jurnal|||
+||Sewa lab. (termasuk penggunaan alat lab)||||
+||Sewa lainnya sesuai program PKM-KC||||
+|SUB TOTAL|||||
+|3|Perjalanan (maks. 30 %)||||
+||Kegiatan penyiapan bahan||||
+||Kegiatan pendampingan||||
+||Kegiatan lainnya sesuai program PKM-KC||||
+|SUB TOTAL|||||
+|4|Lain-lain (maks. 15 %)||||
+||Jasa bengkel/Uji Coba||||
+||Percetakan produk||||
+||ATK lainnya||||
+||_Ads_(iklan berbayar) akun media sosial||||
+||Lainnya sesuai program PKM-KC||||
+|SUB TOTAL|||||
+
+---
+
+||Percetakan produk||||
+||ATK lainnya||||
+||_Ads_(iklan berbayar) akun media sosial||||
+||Lainnya sesuai program PKM-KC||||
+|SUB TOTAL|||||
+|GRAND TOTAL|||||
+|GRAND TOTAL (Terbilang )|||||
+
+---
+
+Catatan: Kesalahan hasil perkalian dan penjumlahan dapat mempengaruhi hasil penilaian.
+
+
+**Lampiran 5. Susunan Tim Pengusul dan Pembagian Tugas**
+
+|No|Nama /NIM|Program<br>Studi|Bidang Ilmu|Alokasi Waktu<br>(jam/minggu)|Uraian Tugas|
+|---|---|---|---|---|---|
+|1||||||
+|2||||||
+|3||||||
+
+---
+
+## **Lampiran 7. Formulir Penilaian Proposal**
+
+---
+
+Judul Kegiatan : .............................................................................. Skema PKM : PKM-KC Bidang Ilmu : .............................................................................. NIM / Nama Ketua : .............................................................................. NIM / Nama Anggota 1 : .............................................................................. ……………. : .............................................................................. NIM / Nama Anggota 4 : .............................................................................. Perguruan Tinggi : .............................................................................. Program Studi : .............................................................................. No Kriteria Bobot Skor Nilai Kreativitas: 1 Gagasan (orisinalitas, unik dan manfaat masa depan) 20 Kemutakhiran IPTEK yang diadopsi 20 2 Kesesuaian Tahap Pelaksanaan 15 Potensi Program: Kontribusi produk
+
+---
+
+unik dan manfaat masa depan) 20 Kemutakhiran IPTEK yang diadopsi 20 2 Kesesuaian Tahap Pelaksanaan 15 Potensi Program: Kontribusi produk luaran terhadap solusi permasalahan 3 25 dan perkembangan IPTEK Potensi Publikasi Artikel Ilmiah/Kekayaan Intelektual 10 Penjadwalan Kegiatan dan Personalia: 4 5 Lengkap, Jelas, Waktu, dan Personalianya Sesuai Penyusunan Anggaran Biaya: 5 Lengkap, Rinci, Wajar dan Jelas Peruntukannya 5 Total 100  Keterangan: Nilai=Bobot x Skor; Skor (1=Buruk; 2=Sangat kurang; 3=Kurang; 5=Cukup; 6=Baik; 7=Sangat baik); Komentar: .......................................................................... Kota, tanggal-bulan-tahun Penilai Tanda tangan (Nama Lengkap) 22
+
+---
+
+## **Lampiran 8. Formulir Penilaian Laporan Kemajuan Pelaksanaan**
+
+---
+
+Judul Kegiatan : .............................................................................. Skema PKM : PKM-KC Bidang Ilmu : .............................................................................. NIM / Nama Ketua : .............................................................................. NIM / Nama Anggota 1 : .............................................................................. ……………. : .............................................................................. NIM / Nama Anggota 4 : .............................................................................. Perguruan Tinggi : .............................................................................. Program Studi : .............................................................................. No Kriteria Bobot Skor Nilai 1 Pendahuluan 10 2 Target Luaran 15 3 Tahap Pelaksanaan 25 4 Hasil Yang Dicapai 25 5 Potensi Hasil 15 6 Publikasi dan promosi hasil PKM di media sosial 5 7 Rencana tahapan
+
+---
+
+Luaran 15 3 Tahap Pelaksanaan 25 4 Hasil Yang Dicapai 25 5 Potensi Hasil 15 6 Publikasi dan promosi hasil PKM di media sosial 5 7 Rencana tahapan selanjutnya 5 Total 100  Keterangan: Nilai=Bobot x Skor; Skor (1=Buruk; 2=Sangat kurang; 3=Kurang; 5=Cukup; 6=Baik; 7=Sangat baik); Komentar: .......................................................................... Kota, tanggal-bulan-tahun Penilai Tanda tangan (Nama Lengkap) 23
+
+## Task
+Ekstrak struktur dokumen untuk jenis **PROPOSAL PKM** dari konteks di atas.
+Susun `sections` dengan urutan munculnya section dalam dokumen.
+
+## Chain of Thought — Lakukan Langkah Ini Secara Mental Sebelum Menulis Output
+
+**Langkah 1 — Temukan section sumber kebenaran (targeted scan):**
+Jangan scan seluruh konteks secara acak. Gunakan prioritas bertingkat berikut:
+
+- **[P1 — Exact match]** Cari section dengan judul persis:
+  - `"Sistematika Proposal Kegiatan"`, atau
+  - `"Sistematika Penulisan Proposal"`
+  → Jika ditemukan, gunakan section itu sebagai **satu-satunya sumber kebenaran** untuk struktur dokumen.
+
+- **[P2 — Keyword fallback]** Jika tidak ada judul persis, cari section yang judulnya mengandung **kedua kata** `"sistematika"` DAN `"proposal"` (tidak harus persis, tidak case-sensitive).
+  → Gunakan section paling relevan yang ditemukan.
+
+- **[P3 — Last resort]** Jika P1 dan P2 tidak menghasilkan apapun, baru baca konteks secara umum.
+
+Contoh mental: *"Saya menemukan section 'Sistematika Penulisan Proposal' → saya gunakan section itu."*
+
+**Langkah 2 — Identifikasi semua sub-BAB dari section yang ditemukan:**
+Catat sub-BAB yang disebutkan beserta nomor dan judulnya.
+Contoh mental: *"Saya menemukan sub-BAB: 4.1 Anggaran Biaya, 4.2 Jadwal Kegiatan."*
+
+**Langkah 3 — Hitung dan daftarkan SEMUA lampiran dari section yang ditemukan:**
+Buat daftar semua lampiran yang disebutkan, terurut dari Lampiran 1 sampai lampiran terakhir.
+Contoh penalaran: *"Saya menemukan 6 lampiran: Lampiran 1 ... Lampiran 6."*
+**JANGAN berhenti di Lampiran 5 jika dokumen sumber menyebutkan lebih.**
+
+**Langkah 4 — Validasi kelengkapan:**
+Pastikan setiap lampiran yang ditemukan di Langkah 3 masuk ke output sections.
+Jika ada yang terlewat, tambahkan sebelum finalisasi output.
+
+## Normalization Rules
+- Gunakan JSON null (bukan string "null") untuk nilai yang tidak ditemukan
+- Judul BAB WAJIB ALL CAPS: "PENDAHULUAN", "BIAYA DAN JADWAL KEGIATAN", dst.
+- Judul sub-BAB menggunakan Title Case (huruf awal tiap kata besar): "Anggaran Biaya", "Jadwal Kegiatan"
+- Nilai bool: true atau false (bukan string)
+- required: true = wajib ada; false = opsional (sertakan jika ada konten)
+
+## Output Fields (top-level)
+- sections: daftar section berurutan (lihat format di bawah)
+- max_halaman_inti: batas maksimum halaman inti (integer)
+- format_nama_file: format nama file untuk pengumpulan (string)
+
+## Format sections
+Setiap entry di `sections` adalah objek dengan fields berikut:
+- type: nama section — gunakan TEPAT salah satu dari nilai berikut (lowercase snake_case, BUKAN Title Case atau UPPERCASE):
+  `"daftar_isi"`, `"daftar_gambar"`, `"daftar_tabel"`, `"daftar_lampiran"`, `"bab"`, `"sub_bab"`, `"daftar_pustaka"`, `"lampiran"`, `"item_lampiran"`
+  **PENTING**: Jangan gunakan "Daftar Isi", "Daftar Gambar", "DAFTAR ISI", atau variasi lain. Gunakan TEPAT nilai di atas.
+- required: true jika wajib ada, false jika opsional — hanya untuk non-bab sections
+- number: nomor BAB (integer) — hanya untuk type "bab"
+- sub_number: nomor sub-BAB seperti "4.1" (string) — hanya untuk type "sub_bab"
+- title: untuk type "bab" gunakan ALL CAPS; untuk type "sub_bab" gunakan Title Case (contoh: "Anggaran Biaya"); untuk type "lampiran" gunakan ALL CAPS
+- lampiran_number: nomor lampiran seperti "Lampiran 1" (string) — hanya untuk type "lampiran" atau "item_lampiran"
+
+## Aturan Sub-BAB
+- **WAJIB ekstrak SEMUA sub-BAB** yang disebutkan dalam dokumen sumber (misal: "4.1 Anggaran Biaya", "4.2 Jadwal Kegiatan")
+- Sub-BAB muncul setelah BAB atasannya dalam sections
+- Format: `{"type": "sub_bab", "sub_number": "4.1", "title": "Anggaran Biaya"}`
+
+## Aturan LAMPIRAN
+- **WAJIB ekstrak SEMUA lampiran** yang disebutkan dalam dokumen sumber — ikuti dokumen sumber, bukan asumsi angka tetap
+- Jumlah lampiran **ditentukan oleh dokumen sumber**, bukan nilai hardcode. Panduan PKM yang berbeda versi/tahun dapat memiliki jumlah lampiran yang berbeda.
+- Lampiran berikut adalah **referensi lampiran standar PKM-KC** (bukan daftar final — dokumen sumber adalah otoritas tertinggi):
+  - Lampiran 1: Biodata Ketua dan Anggota, serta Dosen Pendamping
+  - Lampiran 2: Justifikasi Anggaran Kegiatan
+  - Lampiran 3: Susunan Tim Pengusul dan Pembagian Tugas
+  - Lampiran 4: Surat Pernyataan Ketua Tim Pengusul
+  - Lampiran 5: Gambaran Teknologi yang akan Dikembangkan
+  - *(Lampiran tambahan mungkin ada tergantung versi panduan — selalu ikuti dokumen sumber)*
+- **JANGAN skip lampiran** yang ada di dokumen sumber hanya karena tidak ada di daftar referensi di atas
+- Format item lampiran: `{"type": "item_lampiran", "lampiran_number": "Lampiran 1", "title": "BIODATA KETUA DAN ANGGOTA, SERTA DOSEN PENDAMPING"}`
+
+## Aturan Kelengkapan BAB
+- **WAJIB sertakan SEMUA BAB** yang disebutkan dalam dokumen sumber. Jangan lewatkan satu pun BAB.
+- Proposal PKM-KC memiliki 4 BAB: BAB 1 sampai BAB 4. Pastikan semua 4 BAB hadir dalam sections.
+- Nomor BAB harus berurutan dan tidak ada yang terlewat (BAB 1, BAB 2, BAB 3, BAB 4).
+
+## Aturan DAFTAR PUSTAKA
+- Cek apakah dokumen sumber menyebutkan adanya DAFTAR PUSTAKA untuk proposal.
+- Jika ada, WAJIB sertakan `{"type": "daftar_pustaka", "required": true}` setelah BAB terakhir.
+- Jika tidak ada referensi eksplisit, tetap sertakan dengan `required: true` (standar akademik PKM).
+
+Contoh sections untuk proposal:
+```json
+[
+  {"type": "daftar_isi", "required": true},
+  {"type": "daftar_gambar", "required": false},
+  {"type": "daftar_tabel", "required": false},
+  {"type": "daftar_lampiran", "required": false},
+  {"type": "bab", "number": 1, "title": "PENDAHULUAN"},
+  {"type": "bab", "number": 2, "title": "TINJAUAN PUSTAKA"},
+  {"type": "bab", "number": 3, "title": "TAHAP PELAKSANAAN"},
+  {"type": "bab", "number": 4, "title": "BIAYA DAN JADWAL KEGIATAN"},
+  {"type": "sub_bab", "sub_number": "4.1", "title": "Anggaran Biaya"},
+  {"type": "sub_bab", "sub_number": "4.2", "title": "Jadwal Kegiatan"},
+  {"type": "daftar_pustaka", "required": true},
+  {"type": "lampiran", "title": "LAMPIRAN"},
+  {"type": "item_lampiran", "lampiran_number": "Lampiran 1", "title": "BIODATA KETUA DAN ANGGOTA, SERTA DOSEN PENDAMPING"},
+  {"type": "item_lampiran", "lampiran_number": "Lampiran 2", "title": "JUSTIFIKASI ANGGARAN KEGIATAN"},
+  {"type": "item_lampiran", "lampiran_number": "Lampiran 3", "title": "SUSUNAN TIM PENGUSUL DAN PEMBAGIAN TUGAS"},
+  {"type": "item_lampiran", "lampiran_number": "Lampiran 4", "title": "SURAT PERNYATAAN KETUA TIM PENGUSUL"},
+  {"type": "item_lampiran", "lampiran_number": "Lampiran 5", "title": "GAMBARAN TEKNOLOGI YANG AKAN DIKEMBANGKAN"},
+  {"type": "item_lampiran", "lampiran_number": "Lampiran 6", "title": "HASIL UJI PERIKSA SIMILARITAS PROPOSAL"}
+]
+
+> **Catatan contoh di atas:** Jumlah `item_lampiran` di output HARUS mengikuti dokumen sumber.
+> Jika dokumen sumber hanya menyebut 5 lampiran, output hanya 5. Jika 6, output 6. Jika lebih, ikuti semua.
+```
+================================================================================
+
+[4] RAW LLM RESPONSE (sebelum diproses Pydantic):
+================================================================================
+  Memanggil LLM tanpa structured output...
+
+Berikut adalah struktur dokumen untuk jenis **PROPOSAL PKM**:
+
+```json
+{
+  "sections": [
+    {"type": "daftar_isi", "required": true},
+    {"type": "daftar_gambar", "required": false},
+    {"type": "daftar_tabel", "required": false},
+    {"type": "daftar_lampiran", "required": false},
+    {"type": "bab", "number": 1, "title": "PENDAHULUAN"},
+    {"type": "bab", "number": 2, "title": "TINJAUAN PUSTAKA"},
+    {"type": "bab", "number": 3, "title": "METODE PELAKSANAAN"},
+    {"type": "bab", "number": 4, "title": "BIAYA DAN JADWAL KEGIATAN"},
+    {"type": "sub_bab", "sub_number": "4.1", "title": "Anggaran Biaya"},
+    {"type": "sub_bab", "sub_number": "4.2", "title": "Jadwal Kegiatan"},
+    {"type": "daftar_pustaka", "required": true},
+    {"type": "lampiran", "title": "LAMPIRAN"},
+    {"type": "item_lampiran", "lampiran_number": "Lampiran 1", "title": "BIODATA KETUA DAN ANGGOTA, SERTA DOSEN PENDAMPING"},
+    {"type": "item_lampiran", "lampiran_number": "Lampiran 2", "title": "JUSTIFIKASI ANGGARAN KEGIATAN"},
+    {"type": "item_lampiran", "lampiran_number": "Lampiran 3", "title": "SUSUNAN TIM PENGUSUL DAN PEMBAGIAN TUGAS"},
+    {"type": "item_lampiran", "lampiran_number": "Lampiran 4", "title": "SURAT PERNYATAAN KETUA TIM PENGUSUL"},
+    {"type": "item_lampiran", "lampiran_number": "Lampiran 5", "title": "GAMBARAN TEKNOLOGI YANG AKAN DIKEMBANGKAN"},
+    {"type": "item_lampiran", "lampiran_number": "Lampiran 6", "title": "HASIL UJI PERIKSA SIMILARITAS PROPOSAL"},
+    {"type": "item_lampiran", "lampiran_number": "Lampiran 7", "title": "FORMULIR PENILAIAN PROPOSAL"},
+    {"type": "item_lampiran", "lampiran_number": "Lampiran 8", "title": "FORMULIR PENILAIAN LAPORAN KEMAJUAN PELAKSANAAN"}
+  ],
+  "max_halaman_inti": 10,
+  "format_nama_file": "namaketua_namaPT_PKMKC.pdf"
+}
+```
+================================================================================
+
+[5] RINGKASAN — 'document_structure_proposal':
+--------------------------------------------------------------------------------
+  Chunks retrieved : 38
+  Prompt length    : 27,602 karakter
+  Response length  : 1,796 karakter
+--------------------------------------------------------------------------------

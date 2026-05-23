@@ -1,7 +1,7 @@
 ---
 queries:
-  - "sistematika penulisan proposal PKM daftar isi daftar pustaka lampiran"
-  - "BAB 1 pendahuluan BAB 2 tinjauan pustaka BAB 3 tahap pelaksanaan BAB 4 biaya jadwal kegiatan proposal PKM-KC"
+  - "Sistematika Proposal Kegiatan PKM lampiran daftar isi daftar pustaka"
+  - "Sistematika Penulisan Proposal PKM lampiran daftar isi daftar pustaka"
   - "format nama file PKM pengumpulan sistematika proposal"
   - "4.1 anggaran biaya 4.2 jadwal kegiatan sub bab BAB 4 proposal PKM-KC rekapitulasi"
 top_k: 10
@@ -15,6 +15,36 @@ top_k: 10
 ## Task
 Ekstrak struktur dokumen untuk jenis **PROPOSAL PKM** dari konteks di atas.
 Susun `sections` dengan urutan munculnya section dalam dokumen.
+
+## Chain of Thought — Lakukan Langkah Ini Secara Mental Sebelum Menulis Output
+
+**Langkah 1 — Temukan section sumber kebenaran (targeted scan):**
+Jangan scan seluruh konteks secara acak. Gunakan prioritas bertingkat berikut:
+
+- **[P1 — Exact match]** Cari section dengan judul persis:
+  - `"Sistematika Proposal Kegiatan"`, atau
+  - `"Sistematika Penulisan Proposal"`
+  → Jika ditemukan, gunakan section itu sebagai **satu-satunya sumber kebenaran** untuk struktur dokumen.
+
+- **[P2 — Keyword fallback]** Jika tidak ada judul persis, cari section yang judulnya mengandung **kedua kata** `"sistematika"` DAN `"proposal"` (tidak harus persis, tidak case-sensitive).
+  → Gunakan section paling relevan yang ditemukan.
+
+- **[P3 — Last resort]** Jika P1 dan P2 tidak menghasilkan apapun, baru baca konteks secara umum.
+
+Contoh mental: *"Saya menemukan section 'Sistematika Penulisan Proposal' → saya gunakan section itu."*
+
+**Langkah 2 — Identifikasi semua sub-BAB dari section yang ditemukan:**
+Catat sub-BAB yang disebutkan beserta nomor dan judulnya.
+Contoh mental: *"Saya menemukan sub-BAB: 4.1 Anggaran Biaya, 4.2 Jadwal Kegiatan."*
+
+**Langkah 3 — Hitung dan daftarkan SEMUA lampiran dari section yang ditemukan:**
+Buat daftar semua lampiran yang disebutkan, terurut dari Lampiran 1 sampai lampiran terakhir.
+Contoh penalaran: *"Saya menemukan 6 lampiran: Lampiran 1 ... Lampiran 6."*
+**JANGAN berhenti di Lampiran 5 jika dokumen sumber menyebutkan lebih.**
+
+**Langkah 4 — Validasi kelengkapan:**
+Pastikan setiap lampiran yang ditemukan di Langkah 3 masuk ke output sections.
+Jika ada yang terlewat, tambahkan sebelum finalisasi output.
 
 ## Normalization Rules
 - Gunakan JSON null (bukan string "null") untuk nilai yang tidak ditemukan
@@ -45,14 +75,16 @@ Setiap entry di `sections` adalah objek dengan fields berikut:
 - Format: `{"type": "sub_bab", "sub_number": "4.1", "title": "Anggaran Biaya"}`
 
 ## Aturan LAMPIRAN
-- **WAJIB ekstrak SEMUA lampiran** yang disebutkan dalam dokumen sumber
-- Proposal PKM-KC WAJIB memiliki minimal 5 lampiran:
+- **WAJIB ekstrak SEMUA lampiran** yang disebutkan dalam dokumen sumber — ikuti dokumen sumber, bukan asumsi angka tetap
+- Jumlah lampiran **ditentukan oleh dokumen sumber**, bukan nilai hardcode. Panduan PKM yang berbeda versi/tahun dapat memiliki jumlah lampiran yang berbeda.
+- Lampiran berikut adalah **referensi lampiran standar PKM-KC** (bukan daftar final — dokumen sumber adalah otoritas tertinggi):
   - Lampiran 1: Biodata Ketua dan Anggota, serta Dosen Pendamping
   - Lampiran 2: Justifikasi Anggaran Kegiatan
   - Lampiran 3: Susunan Tim Pengusul dan Pembagian Tugas
   - Lampiran 4: Surat Pernyataan Ketua Tim Pengusul
   - Lampiran 5: Gambaran Teknologi yang akan Dikembangkan
-- Jika dokumen sumber menyebutkan lampiran lain, WAJIB sertakan juga
+  - *(Lampiran tambahan mungkin ada tergantung versi panduan — selalu ikuti dokumen sumber)*
+- **JANGAN skip lampiran** yang ada di dokumen sumber hanya karena tidak ada di daftar referensi di atas
 - Format item lampiran: `{"type": "item_lampiran", "lampiran_number": "Lampiran 1", "title": "BIODATA KETUA DAN ANGGOTA, SERTA DOSEN PENDAMPING"}`
 
 ## Aturan Kelengkapan BAB
@@ -84,6 +116,10 @@ Contoh sections untuk proposal:
   {"type": "item_lampiran", "lampiran_number": "Lampiran 2", "title": "JUSTIFIKASI ANGGARAN KEGIATAN"},
   {"type": "item_lampiran", "lampiran_number": "Lampiran 3", "title": "SUSUNAN TIM PENGUSUL DAN PEMBAGIAN TUGAS"},
   {"type": "item_lampiran", "lampiran_number": "Lampiran 4", "title": "SURAT PERNYATAAN KETUA TIM PENGUSUL"},
-  {"type": "item_lampiran", "lampiran_number": "Lampiran 5", "title": "GAMBARAN TEKNOLOGI YANG AKAN DIKEMBANGKAN"}
+  {"type": "item_lampiran", "lampiran_number": "Lampiran 5", "title": "GAMBARAN TEKNOLOGI YANG AKAN DIKEMBANGKAN"},
+  {"type": "item_lampiran", "lampiran_number": "Lampiran 6", "title": "HASIL UJI PERIKSA SIMILARITAS PROPOSAL"}
 ]
+
+> **Catatan contoh di atas:** Jumlah `item_lampiran` di output HARUS mengikuti dokumen sumber.
+> Jika dokumen sumber hanya menyebut 5 lampiran, output hanya 5. Jika 6, output 6. Jika lebih, ikuti semua.
 ```

@@ -743,17 +743,11 @@ def _render_named_section(
     sep = document.add_paragraph()
     sep.paragraph_format.space_before = Pt(0)
     sep.paragraph_format.space_after  = Pt(0)
-    _apply_line_spacing(sep.paragraph_format, spacing)
 
     heading = document.add_heading(title, level=1)
     heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
     _force_paragraph_runs_black(heading)
     _add_bookmark_to_paragraph(heading, _bookmark_id(section_type), _bookmark_name(section_type))
-
-    # Enter 1x sebelum body (space_after = 0)
-    empty = document.add_paragraph()
-    empty.paragraph_format.space_before = Pt(0)
-    empty.paragraph_format.space_after  = Pt(0)
 
     note = document.add_paragraph(_SECTION_DELETE_NOTE)
     note.runs[0].italic     = True
@@ -839,6 +833,25 @@ def _render_sub_bab_section(
 
     # Sub bab 4.1: Tabel Anggaran Biaya — hanya berlaku untuk BAB 4
     if sub_num and bab_num == 4 and str(sub_num).endswith(".1"):
+        body_placeholder = document.add_paragraph(
+            instructional_placeholders.get(
+                make_instruction_key("sub_bab", heading_text),
+                f"Instruksi pengisian untuk {heading_text}: lengkapi isi bagian ini sesuai panduan.",
+            )
+        )
+        _apply_line_spacing(body_placeholder.paragraph_format, spacing)
+        body_placeholder.paragraph_format.alignment = _map_alignment(
+            (spacing.get("paragraph_alignment") or "JUSTIFY").upper()
+        )
+        body_placeholder.paragraph_format.space_after = Pt(0)
+        _force_paragraph_runs_black(body_placeholder)
+
+        sep_table = document.add_paragraph()
+        sep_table.paragraph_format.space_before = Pt(0)
+        sep_table.paragraph_format.space_after  = Pt(0)
+        sep_table.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+        sep_table.paragraph_format.line_spacing = 1.15
+
         fmt = figures_tables.get("caption_format_table") or "Tabel {bab}.{n}. {title}"
         caption_text = (
             fmt.replace("{bab}", str(bab_num)).replace("{n}", "1")
@@ -855,10 +868,6 @@ def _render_sub_bab_section(
             cap_p = document.add_paragraph(caption_text, style="Caption")
             cap_p.paragraph_format.space_after = Pt(0)
             _force_paragraph_runs_black(cap_p)
-
-        empty = document.add_paragraph()
-        empty.paragraph_format.space_before = Pt(0)
-        empty.paragraph_format.space_after  = Pt(0)
 
     # Sub bab 4.2: Tabel Jadwal Kegiatan — hanya berlaku untuk BAB 4
     elif sub_num and bab_num == 4 and str(sub_num).endswith(".2"):
@@ -878,10 +887,6 @@ def _render_sub_bab_section(
             cap_p = document.add_paragraph(caption_text, style="Caption")
             cap_p.paragraph_format.space_after = Pt(0)
             _force_paragraph_runs_black(cap_p)
-
-        empty = document.add_paragraph()
-        empty.paragraph_format.space_before = Pt(0)
-        empty.paragraph_format.space_after  = Pt(0)
 
     # Untuk sub_bab yang sudah memiliki tabel (4.1 Anggaran Biaya, 4.2 Jadwal Kegiatan),
     # tidak perlu instructional placeholder tambahan di bawah tabel.
@@ -909,8 +914,8 @@ def _render_item_lampiran_section(
     spacing: dict,
     instructional_placeholders: dict[str, str],
 ) -> None:
-    lampiran_number = section.get("lampiran_number") or "Lampiran ?"
-    title           = section.get("title") or "[LAMPIRAN_TANPA_JUDUL]"
+    lampiran_number = (section.get("lampiran_number") or "Lampiran ?").title()
+    title           = (section.get("title") or "[LAMPIRAN_TANPA_JUDUL]").title()
     heading_text    = f"{lampiran_number}. {title}".strip()
 
     sep = document.add_paragraph()
@@ -925,11 +930,6 @@ def _render_item_lampiran_section(
     bm_id = _bookmark_id("lampiran")
     bm_name = _bookmark_name("lampiran", lampiran_number)
     _add_bookmark_to_paragraph(heading, bm_id, bm_name)
-
-    # Spasi kosong 1 baris enter antara header dan body
-    empty = document.add_paragraph()
-    empty.paragraph_format.space_before = Pt(0)
-    empty.paragraph_format.space_after  = Pt(0)
 
     note = document.add_paragraph(_SECTION_DELETE_NOTE)
     note.runs[0].italic     = True

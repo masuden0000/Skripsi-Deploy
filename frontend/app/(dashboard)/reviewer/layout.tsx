@@ -1,7 +1,6 @@
 import BrandLogo from "@/components/BrandLogo"
 import ReviewerNav from "@/components/layout/ReviewerNav"
 import LogoutButton from "@/components/auth/LogoutButton"
-import { ReviewerProfileLink } from "@/components/layout/ReviewerProfileLink"
 
 export default function ReviewerLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -43,7 +42,6 @@ export default function ReviewerLayout({ children }: { children: React.ReactNode
           </p>
 
           <div className="mt-3 flex flex-col gap-1">
-            <ReviewerProfileLink />
             <LogoutButton />
           </div>
         </div>

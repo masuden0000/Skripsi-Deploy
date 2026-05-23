@@ -398,30 +398,32 @@ def _extract_key(
     llm = _build_llm()
     chain = llm.with_structured_output(extracted_cls)
 
-    max_retries = 5
+    groq_keys_tried = 0
+    max_retries = len(CONFIG.groq_api_keys) + len(CONFIG.google_api_keys) + 2
     for attempt in range(max_retries):
         try:
             extracted = chain.invoke(prompt)
             break
         except Exception as e:
             err_str = str(e)
-            if "429" in err_str or "rate_limit_exceeded" in err_str:
+            if "429" in err_str or "rate_limit_exceeded" in err_str or "quota" in err_str.lower():
                 import re
                 wait_match = re.search(r"try again in (\d+)m(\d+(?:\.\d+)?)s", err_str)
                 if wait_match:
                     wait_secs = int(wait_match.group(1)) * 60 + float(wait_match.group(2)) + 5
                 else:
-                    wait_secs = 60 * (2 ** attempt)
+                    wait_secs = 30
                 wait_secs = min(wait_secs, MAX_RATE_LIMIT_WAIT)
 
                 # Rotate ke Groq key berikutnya atau switch ke Gemini sebelum retry
                 if not CONFIG._groq_exhausted:
-                    if len(CONFIG.groq_api_keys) > 1:
+                    groq_keys_tried += 1
+                    if groq_keys_tried < len(CONFIG.groq_api_keys):
                         CONFIG.rotate_groq_key()
-                        print(f"[extract] Rate limit hit. Rotasi ke Groq key berikutnya (percobaan {attempt + 1}/{max_retries})...")
+                        print(f"[extract] Rate limit hit. Rotasi ke Groq key berikutnya ({groq_keys_tried}/{len(CONFIG.groq_api_keys)}) percobaan {attempt + 1}...")
                     else:
                         CONFIG._groq_exhausted = True
-                        print(f"[extract] Rate limit hit. Semua Groq key exhausted, switch ke Gemini (percobaan {attempt + 1}/{max_retries})...")
+                        print(f"[extract] Semua {len(CONFIG.groq_api_keys)} Groq key exhausted, switch ke Gemini (percobaan {attempt + 1})...")
                 else:
                     if len(CONFIG.google_api_keys) > 1:
                         CONFIG.rotate_google_key()

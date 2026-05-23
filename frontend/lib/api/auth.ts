@@ -32,15 +32,3 @@ export async function getSession(): Promise<{ data: SessionResponse | null; erro
   return apiRequest("GET", "/api/auth/session")
 }
 
-export interface UpdateProfileInput {
-  type: "email" | "password"
-  newEmail?: string
-  currentPassword?: string
-  newPassword?: string
-}
-
-export async function updateProfile(
-  input: UpdateProfileInput
-): Promise<{ data: { message: string } | null; error: string | null }> {
-  return apiRequest("PATCH", "/api/auth/profile", input)
-}

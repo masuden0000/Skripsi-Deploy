@@ -1,7 +1,6 @@
 import BrandLogo from "@/components/BrandLogo"
 import AdminNav from "@/components/layout/AdminNav"
 import LogoutButton from "@/components/auth/LogoutButton"
-import { AdminProfileLink } from "@/components/layout/AdminProfileLink"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -43,7 +42,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </p>
 
           <div className="mt-3 flex flex-col gap-1">
-            <AdminProfileLink />
             <LogoutButton />
           </div>
         </div>

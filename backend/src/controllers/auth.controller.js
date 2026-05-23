@@ -1,6 +1,6 @@
 import { ROLE_ROUTES } from "../constants/roles.js"
 import { env } from "../config/env.js"
-import { loginWithPassword, updateUserProfile } from "../services/auth.service.js"
+import { loginWithPassword } from "../services/auth.service.js"
 import { clearSessionCookie, getSessionCookieOptions } from "../utils/cookies.js"
 
 export async function login(req, res) {
@@ -32,9 +32,4 @@ export async function getSession(req, res) {
     destination,
     user: req.user,
   })
-}
-
-export async function updateProfile(req, res) {
-  await updateUserProfile(req.user.id, req.user.email, req.body ?? {})
-  res.status(200).json({ message: "Profil berhasil diperbarui." })
 }

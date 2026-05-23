@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import projects, health
+from routers import projects, health, validation
 
 app = FastAPI(
     title="AI Proposal Backend",
@@ -20,6 +20,7 @@ app.add_middleware(
 # Include routers
 app.include_router(health.router, prefix="/api")
 app.include_router(projects.router, prefix="/api/projects")
+app.include_router(validation.router, prefix="/api/validation")
 
 
 @app.get("/")

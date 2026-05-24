@@ -1,3 +1,9 @@
+/**
+ * Fungsi: Entry point server Express.
+ * Digunakan oleh: process utama (node server.js)
+ * Tujuan: Memulai server dan melakukan warmup koneksi Supabase.
+ */
+
 import app from "./app.js"
 import { env } from "./config/env.js"
 import { adminClient, createAuthClient } from "./config/supabase.js"
@@ -5,7 +11,6 @@ import { adminClient, createAuthClient } from "./config/supabase.js"
 app.listen(env.PORT, async () => {
   console.log(`Backend server listening on http://127.0.0.1:${env.PORT}`)
 
-  // Warm up PostgREST connection (database queries)
   try {
     await adminClient.from("profiles").select("id").limit(1)
     console.log("Supabase PostgREST connection warmed up.")
@@ -13,8 +18,6 @@ app.listen(env.PORT, async () => {
     console.warn("Supabase PostgREST warmup failed (non-fatal):", err.message)
   }
 
-  // Warm up auth API connection — login menggunakan endpoint /auth/v1/ yang berbeda
-  // dari PostgREST, sehingga perlu warmup terpisah agar tidak ECONNRESET pada login pertama
   try {
     const authClient = createAuthClient()
     await authClient.auth.getSession()

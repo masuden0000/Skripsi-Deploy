@@ -1,7 +1,8 @@
-/**
- * Shared Project Schema - Source of Truth
- * Dipakai oleh: Express Backend, FastAPI AI Backend, Frontend
- */
+"""
+Fungsi: Mendefinisikan TypeScript schema dan tipe data untuk Project
+Digunakan oleh: Express Backend, FastAPI AI Backend, Frontend
+Tujuan: Menyediakan type definitions yang konsisten antar service
+"""
 
 export enum ProjectStatus {
   PENDING = "pending",

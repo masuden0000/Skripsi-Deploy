@@ -1,9 +1,8 @@
 """
-Schema untuk validasi dokumen.
-
+Fungsi: Definisikan struktur data untuk hasil validasi dan properti DOCX.
 Digunakan oleh: validator.py, rule_validator.py, docx_property_extractor.py
-
-Tujuan: Mendefinisikan struktur data untuk hasil validasi dan properti DOCX.
+Tujuan: Mendefinisikan schema Pydantic untuk validasi dokumen.
+Keyword: automated document generation
 """
 from datetime import datetime, timezone
 from typing import Literal
@@ -259,6 +258,8 @@ class DocxProperties(BaseModel):
     figure_caption_position: str | None = Field(default=None, description="Figure caption position (above/below)")
     table_count: int = Field(default=0, description="Number of tables in document")
     figure_count: int = Field(default=0, description="Number of figures in document")
+    figure_format: str | None = Field(default=None, description="Detected caption prefix format for figures (e.g. 'Gambar {n}')")
+    table_format: str | None = Field(default=None, description="Detected caption prefix format for tables (e.g. 'Tabel {n}')")
 
     # Document structure — detected daftar sections
     has_daftar_isi: bool = Field(default=False, description="Whether document has Daftar Isi")

@@ -1,5 +1,5 @@
 """
-Fungsi: Entry point CLI untuk menjalankan workflow setup, extract, schema-diff, dan docx.
+Fungsi: Entry point CLI untuk menjalankan workflow setup, extract, dan docx.
 
 Digunakan oleh: Dijalankan langsung oleh pengguna via command line.
 
@@ -15,10 +15,6 @@ from pathlib import Path
 AI_DIR = Path(__file__).resolve().parent
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: run_docx dan run_docx_style_map.
-# Menormalkan path relatif CLI agar selalu mengarah ke folder ai/.
-# ---------------------------------------------------------------------------
 def resolve_ai_path(path_value: str) -> Path:
     path = Path(path_value)
     if path.is_absolute():
@@ -28,10 +24,6 @@ def resolve_ai_path(path_value: str) -> Path:
     return AI_DIR / path
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `ensure_supported_python` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
 def ensure_supported_python() -> None:
     version = sys.version_info
     if version < (3, 11):
@@ -48,13 +40,12 @@ def ensure_supported_python() -> None:
         )
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `run_setup` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
 def run_setup(project_id: str, skip_ingest: bool = False) -> None:
-    from model_ai.loader.pdf_extractor import extract_chunks
+    import shutil
+    from model_ai.loader.pdf_extractor import extract_chunks, APP_DIR
     from model_ai.loader.supabase_ingest import upsert_embeddings
+
+    project_data_dir = APP_DIR / "data" / project_id
 
     total_chunks, output_path = extract_chunks(project_id=project_id)
     print(f"[setup] Berhasil membuat {total_chunks} chunk: {output_path}")
@@ -66,21 +57,16 @@ def run_setup(project_id: str, skip_ingest: bool = False) -> None:
     total_rows = upsert_embeddings(project_id=project_id)
     print(f"[setup] Berhasil upsert {total_rows} chunk ke Supabase.")
 
+    shutil.rmtree(project_data_dir, ignore_errors=True)
+    print(f"[setup] Folder data lokal dihapus: {project_data_dir}")
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `run_extract` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
+
 def run_extract(project_id: str | None = None) -> None:
     from model_ai.extractor.doc_extractor import run_extraction
 
     run_extraction(project_id=project_id)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `run_docx` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
 def run_docx(project_id: str, local_output: str | None = None) -> str | None:
     from model_ai.docx.generator import generate_proposal_docx_bytes
 
@@ -102,10 +88,6 @@ def run_docx(project_id: str, local_output: str | None = None) -> str | None:
     return result_url
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `run_docx_style_map` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
 def run_docx_style_map(
     project_id: str,
     dictionary_path: str,
@@ -122,15 +104,6 @@ def run_docx_style_map(
         use_llm_mapper=use_llm_mapper,
     )
 
-
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `run_schema_diff_cmd` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
-def run_schema_diff_cmd(project_id: str) -> None:
-    from model_ai.extractor.schema_differ import run_schema_diff
-
-    run_schema_diff(project_id)
 
 
 def run_generate_placeholders(project_id: str) -> None:
@@ -172,10 +145,6 @@ def run_export_payload(project_id: str, output: str | None = None) -> None:
     print(f"[export-payload] Payload disimpan ke: {out_path}")
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `run_validate` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
 def run_validate(project_id: str | None = None, output_json: str | None = None) -> None:
     import json
     from model_ai.validation.validator import validate_and_print
@@ -216,10 +185,6 @@ def run_validate(project_id: str | None = None, output_json: str | None = None) 
         raise SystemExit(1)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/loader/pdf_extractor.py; model_ai/loader/supabase_ingest.py
-# Menjalankan fungsi `main` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
 def main() -> None:
     ensure_supported_python()
 
@@ -250,19 +215,6 @@ def main() -> None:
     extract_parser.add_argument(
         "--project-id",
         help="Project ID untuk isolate extraction per-project.",
-    )
-
-    schema_diff_parser = subparsers.add_parser(
-        "schema-diff",
-        help=(
-            "Jalankan free extraction via LLM lalu bandingkan terhadap baseline document_metadata. "
-            "Simpan laporan diff ke data/schema_diff_<timestamp>.json dan .md."
-        ),
-    )
-    schema_diff_parser.add_argument(
-        "--project-id",
-        required=True,
-        help="Project ID sebagai selector document_metadata.",
     )
 
     docx_parser = subparsers.add_parser(
@@ -374,10 +326,6 @@ def main() -> None:
 
     if args.command == "extract":
         run_extract(project_id=args.project_id)
-        return
-
-    if args.command == "schema-diff":
-        run_schema_diff_cmd(project_id=args.project_id)
         return
 
     if args.command == "docx":

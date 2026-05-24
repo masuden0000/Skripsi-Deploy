@@ -39,7 +39,6 @@ from model_ai.extractor.models import (
 from model_ai.metadata_repository import upsert_document_metadata
 from model_ai.extractor.prompts import (
     DOCUMENT_STRUCTURE_PROPOSAL,
-    DOCUMENT_TYPE,
     FIGURES_AND_TABLES,
     NUMBERING,
     PAGE_COUNT_LIMITS,
@@ -347,7 +346,7 @@ def _expand_to_full_headers(seed_chunks: list[dict], client: Client) -> list[dic
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `_retrieve_chunks_multi` sebagai bagian alur `doc_extractor`.
 # ---------------------------------------------------------------------------
-def _retrieve_chunks_multi(queries: list[str], top_k: int, project_id: str | None = None) -> list[dict]:
+def _retrieve_chunks_multi(queries: list[str], top_k: int, project_id: str | None = None, min_similarity: float | None = None) -> list[dict]:
     """Embed setiap query, retrieve top-K chunks dari Supabase, lalu expand per header.
 
     Alur:
@@ -361,6 +360,8 @@ def _retrieve_chunks_multi(queries: list[str], top_k: int, project_id: str | Non
     rpc_params: dict = {"query_embedding": None, "match_count": top_k}
     if project_id:
         rpc_params["filter_project_id"] = project_id
+    if min_similarity is not None:
+        rpc_params["min_similarity"] = min_similarity
 
     seen: dict[int, dict] = {}
     for query in queries:
@@ -391,7 +392,7 @@ def _extract_key(
 ) -> Any:
     """Jalankan satu siklus ekstraksi: retrieve → prompt → LLM → merge sources."""
     top_k = prompt_cfg.top_k if prompt_cfg.top_k > 0 else CONFIG.rag_top_k
-    chunks = _retrieve_chunks_multi(prompt_cfg.queries, top_k, project_id=project_id)
+    chunks = _retrieve_chunks_multi(prompt_cfg.queries, top_k, project_id=project_id, min_similarity=CONFIG.rag_min_context_similarity)
     prompt = render_prompt(prompt_cfg.template, chunks)
 
     CONFIG.disable_blackhole_proxies()
@@ -464,25 +465,6 @@ def _pause_after_batch(processed_count: int, total_count: int) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/extractor/prompts.py
-# Menjalankan fungsi `_extract_document_type` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
-def _extract_document_type(project_id: str | None = None) -> str | None:
-    """Identifikasi jenis dokumen dari judul/konteks header dokumen."""
-    top_k = DOCUMENT_TYPE.top_k if DOCUMENT_TYPE.top_k > 0 else CONFIG.rag_top_k
-    chunks = _retrieve_chunks_multi(DOCUMENT_TYPE.queries, top_k, project_id=project_id)
-    if not chunks:
-        return None
-
-    prompt = render_prompt(DOCUMENT_TYPE.template, chunks)
-    CONFIG.disable_blackhole_proxies()
-    llm = _build_llm()
-    result = llm.invoke(prompt)
-    text = str(result.content).strip().strip('"')
-    return None if text.lower() == "null" else text
-
-
-# ---------------------------------------------------------------------------
 # Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
 # Menjalankan fungsi `extract_document_metadata` sebagai bagian alur `doc_extractor`.
 # ---------------------------------------------------------------------------
@@ -494,10 +476,6 @@ def extract_document_metadata(project_id: str | None = None) -> DocumentMetadata
         results[key] = _extract_key(prompt_cfg, extracted_cls, info_cls, project_id=project_id)
         print(f"[extract] Selesai:   {key}")
         _pause_after_batch(index, total_keys)
-
-    print("[extract] Memproses: document_type ...")
-    results["document_type"] = _extract_document_type(project_id=project_id)
-    print(f"[extract] Selesai:   document_type -> {results['document_type']}")
 
     results["source_document"] = f"{project_id}/source.pdf" if project_id else None
     return DocumentMetadata(**results)

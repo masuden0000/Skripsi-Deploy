@@ -1,28 +1,8 @@
 """
-Validation package untuk automated document validation.
-
-Digunakan oleh: ai-backend, manage.py, atau command-line
-
-Tujuan: Validasi otomatis apakah DOCX hasil generate sesuai dengan formatting rules
-yang diekstraksi dari document_metadata.payload.
-
-Modul:
-- models: ValidationIssue, ValidationResult, DocxProperties schemas
-- docx_property_extractor: Extract formatting properties from DOCX files
-- rule_validator: Compare properties against DocumentMetadata rules
-- validator: Main entry point
-
-Contoh penggunaan:
-```python
-from model_ai.validation import validate_document
-
-result = validate_document(
-    docx_path="output/proposal.docx",
-    metadata_dict=document_metadata.payload
-)
-print(result.status)  # 'pass', 'fail', atau 'warning'
-print(result.issues)   # List of ValidationIssue objects
-```
+Fungsi: Package validasi dokumen.
+Digunakan oleh: ai-backend, manage.py, command-line
+Tujuan: Validasi otomatis apakah DOCX hasil generate sesuai dengan formatting rules.
+Keyword: automated document generation
 """
 from model_ai.validation.models import (
     DocxProperties,

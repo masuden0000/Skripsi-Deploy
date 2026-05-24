@@ -1,66 +1,82 @@
-import cookieParser from "cookie-parser"
-import cors from "cors"
+/**
+ * Fungsi: Konfigurasi utama aplikasi Express.
+ * Digunakan oleh: server.js
+ * Tujuan: Mendaftarkan semua middleware, routes, dan error handler Express.
+ */
+
 import express from "express"
-import { env } from "./config/env.js"
-import assignmentsRoutes from "./routes/assignments.routes.js"
-import reviewerAssignmentsRoutes from "./routes/reviewer-assignments.routes.js"
-import authRoutes from "./routes/auth.routes.js"
-import facultyRoutes from "./routes/faculty.routes.js"
-import pkmRoutes from "./routes/pkm.routes.js"
-import projectsRoutes from "./routes/projects.routes.js"
-import reviewPeriodRoutes from "./routes/review-period.routes.js"
-import reviewerRoutes from "./routes/reviewer.routes.js"
-import { errorHandler, notFoundHandler } from "./middlewares/error-handler.js"
+import cors from "cors"
+import helmet from "helmet"
+import cookieParser from "cookie-parser"
+
+import projectsRouter from "./routes/projects.routes.js"
+import authRouter from "./routes/auth.routes.js"
+import pkmRouter from "./routes/pkm.routes.js"
+import reviewerAssignmentsRouter from "./routes/reviewer-assignments.routes.js"
+import facultiesRouter from "./routes/faculties.routes.js"
+import reviewerProfilesRouter from "./routes/reviewer-profiles.routes.js"
+import adminAssignmentsRouter from "./routes/admin-assignments.routes.js"
+import adminReviewersRouter from "./routes/admin-reviewers.routes.js"
+import uploadRouter from "./routes/upload.routes.js"
+
+import { authenticateSession } from "./middlewares/authenticate-session.js"
+import { asyncHandler } from "./utils/async-handler.js"
+import { AppError } from "./utils/app-error.js"
 
 const app = express()
-const allowedOrigins = new Set(env.FRONTEND_URLS)
 
 app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+)
+app.use(
   cors({
-    origin(origin, callback) {
-      // Request dari browser membawa header Origin; health check dan server-to-server biasanya tidak.
-      if (!origin || allowedOrigins.has(origin)) {
-        callback(null, true)
-        return
-      }
-
-      callback(new Error(`Origin tidak diizinkan oleh CORS: ${origin}`))
-    },
+    origin: true,
     credentials: true,
   })
 )
-app.use(express.json())
 app.use(cookieParser())
 
-// Special middleware for projects route - keep raw body for multipart
-app.use("/api/projects", express.raw({ type: "multipart/form-data", limit: "50mb" }))
-app.use("/api/pkm/validation/run", express.raw({ type: "multipart/form-data", limit: "20mb" }))
-
-app.get("/", (_req, res) => {
-  res.status(200).json({
-    ok: true,
-    service: "backend",
-    message: "Backend aktif. Gunakan /api/health untuk health check.",
-  })
-})
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 
 app.get("/api/health", (_req, res) => {
-  res.status(200).json({
-    ok: true,
-    service: "backend",
-  })
+  res.json({ status: "ok" })
 })
 
-app.use("/api/assignments", assignmentsRoutes)
-app.use("/api/reviewer-assignments", reviewerAssignmentsRoutes)
-app.use("/api/auth", authRoutes)
-app.use("/api/faculties", facultyRoutes)
-app.use("/api/pkm", pkmRoutes)
-app.use("/api/projects", projectsRoutes)
-app.use("/api/review-periods", reviewPeriodRoutes)
-app.use("/api/reviewers", reviewerRoutes)
+app.use("/api/auth", authRouter)
+app.use("/api/projects", express.raw({ type: "multipart/form-data", limit: "50mb" }), projectsRouter)
+app.use("/api/pkm", pkmRouter)
+app.use("/api/reviewer-assignments", reviewerAssignmentsRouter)
+app.use("/api/faculties", facultiesRouter)
+app.use("/api/reviewers", reviewerProfilesRouter)
+app.use("/api/admin/assignments", adminAssignmentsRouter)
+app.use("/api/admin/reviewers", adminReviewersRouter)
+app.use("/api/upload", uploadRouter)
 
-app.use(notFoundHandler)
-app.use(errorHandler)
+app.use((req, _res, next) => {
+  next(new AppError(`Route ${req.method} ${req.path} tidak ditemukan.`, 404))
+})
+
+app.use((err, _req, res, _next) => {
+  console.error("[Error]", err)
+
+  if (err instanceof AppError) {
+    return res.status(err.statusCode).json({
+      error: err.message,
+    })
+  }
+
+  if (err.type === "entity.parse.failed") {
+    return res.status(400).json({
+      error: "Request body tidak valid.",
+    })
+  }
+
+  res.status(500).json({
+    error: "Terjadi kesalahan internal pada server.",
+  })
+})
 
 export default app

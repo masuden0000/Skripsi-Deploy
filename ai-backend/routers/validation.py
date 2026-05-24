@@ -1,19 +1,9 @@
 """
-Fungsi: FastAPI router untuk validasi format dokumen DOCX proposal mahasiswa.
-
-Pipeline validasi (dipanggil oleh reviewer):
-  1. Terima file DOCX + schema_slug dari frontend via Express proxy
-  2. Tentukan tahun aktif dari pkm_review_periods
-  3. Cari project referensi (skema + tahun) dari tabel projects
-  4. Muat payload document_metadata sebagai ground truth aturan format
-  5. Jalankan validator Python terhadap file DOCX yang diupload
-  6. Kembalikan ValidationResult (status, issues, checks) ke frontend
-
-schema_slug adalah value dari PKM_SCHEMES di frontend (mis. "pkm-re"),
-yang harus cocok persis dengan kolom projects.skema di database.
-
-Digunakan oleh: backend/src/routes/pkm.routes.js (sebagai proxy)
+Fungsi: API route untuk validasi format dokumen DOCX proposal mahasiswa
+Digunakan oleh: Express Backend (via POST /api/validation/run)
+Tujuan: Memvalidasi dokumen DOCX terhadap aturan skema dan tahun periode review aktif
 """
+
 import os
 import sys
 import tempfile
@@ -23,7 +13,6 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from services.database import get_supabase
 
-# Tambah ai/ ke sys.path agar bisa import model_ai.validation
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _AI_DIR = os.path.join(_PROJECT_ROOT, "ai")
 if _AI_DIR not in sys.path:
@@ -37,20 +26,12 @@ async def run_validation(
     schema_id: str = Form(...),
     file: UploadFile = File(...),
 ):
-    """
-    Validasi format DOCX proposal mahasiswa terhadap aturan yang tersimpan
-    di document_metadata untuk skema dan tahun periode review aktif.
-
-    schema_id: slug PKM (mis. "pkm-re") yang cocok dengan projects.skema.
-    """
-    # Validasi tipe file
     if not (file.filename or "").lower().endswith(".docx"):
         raise HTTPException(status_code=400, detail="File harus berformat DOCX (.docx).")
 
     supabase = get_supabase()
     today = date.today().isoformat()
 
-    # 1. Fetch active review period → ambil tahun dari tanggal_mulai
     period_result = (
         supabase.table("pkm_review_periods")
         .select("id, nama, tanggal_mulai")
@@ -66,10 +47,8 @@ async def run_validation(
         )
     year = period_result.data[0]["tanggal_mulai"][:4]
 
-    # schema_id IS the slug (e.g. "pkm-re") — matches projects.skema directly
     skema_slug = schema_id
 
-    # 2. Cari project untuk skema + tahun (ambil yang terbaru)
     project_result = (
         supabase.table("projects")
         .select("id")
@@ -86,7 +65,6 @@ async def run_validation(
         )
     project_id = project_result.data[0]["id"]
 
-    # 4. Ambil payload document_metadata
     metadata_result = (
         supabase.table("document_metadata")
         .select("payload")
@@ -101,7 +79,6 @@ async def run_validation(
         )
     payload = metadata_result.data[0]["payload"]
 
-    # 5. Simpan DOCX ke temp file, jalankan validator, hapus temp
     content = await file.read()
     tmp_path = None
     try:
@@ -115,7 +92,6 @@ async def run_validation(
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
 
-    # 6. Ubah ValidationResult ke dict dengan field `valid` tambahan
     result_dict = result.to_dict()
     result_dict["valid"] = result_dict.get("status") == "pass"
     return result_dict

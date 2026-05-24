@@ -1,10 +1,8 @@
 ---
 queries:
-  - "Sistematika Proposal Kegiatan PKM lampiran daftar isi daftar pustaka"
   - "Sistematika Penulisan Proposal PKM lampiran daftar isi daftar pustaka"
   - "format nama file PKM pengumpulan sistematika proposal"
   - "4.1 anggaran biaya 4.2 jadwal kegiatan sub bab BAB 4 proposal PKM-KC rekapitulasi"
-top_k: 10
 ---
 
 # Extraction Task: Document Structure (Proposal PKM)
@@ -117,7 +115,6 @@ Contoh sections untuk proposal:
   {"type": "item_lampiran", "lampiran_number": "Lampiran 3", "title": "SUSUNAN TIM PENGUSUL DAN PEMBAGIAN TUGAS"},
   {"type": "item_lampiran", "lampiran_number": "Lampiran 4", "title": "SURAT PERNYATAAN KETUA TIM PENGUSUL"},
   {"type": "item_lampiran", "lampiran_number": "Lampiran 5", "title": "GAMBARAN TEKNOLOGI YANG AKAN DIKEMBANGKAN"},
-  {"type": "item_lampiran", "lampiran_number": "Lampiran 6", "title": "HASIL UJI PERIKSA SIMILARITAS PROPOSAL"}
 ]
 
 > **Catatan contoh di atas:** Jumlah `item_lampiran` di output HARUS mengikuti dokumen sumber.

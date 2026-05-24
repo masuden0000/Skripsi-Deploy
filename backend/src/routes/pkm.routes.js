@@ -1,20 +1,15 @@
 /**
- * Router Express untuk endpoint PKM (Program Kreativitas Mahasiswa).
- *
- * Peran dalam pipeline:
- *   - GET  /api/pkm/schemas        → Baca daftar skema PKM langsung dari Supabase
- *   - POST /api/pkm/validation/run → Proxy multipart/form-data ke FastAPI ai-backend
- *
- * Frontend tidak memanggil ai-backend langsung; semua request melewati Express ini.
+ * Fungsi: Router Express untuk endpoint PKM (Program Kreativitas Mahasiswa).
  * Digunakan oleh: frontend/lib/api/pkm.ts
+ * Tujuan: Menyediakan daftar skema PKM dan proxy validasi ke AI backend.
  */
+
 import { Router } from "express"
 import { adminClient } from "../config/supabase.js"
 import { env } from "../config/env.js"
 
 const router = Router()
 
-// Helper: parse response dari ai-backend secara aman (ai-backend bisa return non-JSON saat error)
 async function parseAiResponse(aiResponse) {
   const text = await aiResponse.text()
   try {
@@ -27,7 +22,6 @@ async function parseAiResponse(aiResponse) {
   }
 }
 
-// GET /api/pkm/schemas - Daftar skema PKM dari Supabase (dipakai dropdown pilih skema di reviewer)
 router.get("/schemas", async (req, res, next) => {
   try {
     const { data, error } = await adminClient
@@ -53,8 +47,6 @@ router.get("/schemas", async (req, res, next) => {
   }
 })
 
-// POST /api/pkm/validation/run - Proxy multipart DOCX + schema_id ke FastAPI ai-backend
-// Body diteruskan as-is (raw Buffer) agar boundary multipart tidak rusak saat di-forward
 router.post("/validation/run", async (req, res, next) => {
   try {
     const rawBody = req.body

@@ -76,14 +76,10 @@ FIGURES_AND_TABLES = _load("figures_and_tables.md")
 PAGE_COUNT_LIMITS = _load("page_count_limits.md")
 
 # ---------------------------------------------------------------------------
-# Digunakan oleh: _extract_document_type() di doc_extractor.py
-# top_k=3 sengaja override global — identifikasi jenis dokumen cukup
-# dari beberapa chunk header, tidak perlu konteks panjang.
-# ---------------------------------------------------------------------------
-DOCUMENT_TYPE = _load("document_type.md")
-
-# ---------------------------------------------------------------------------
 # Digunakan oleh: free_extract_all_rules() di schema_differ.py
 # Prompt untuk ekstraksi bebas semua aturan dokumen tanpa batasan schema.
+# Lazy-loaded agar tidak memblokir pipeline jika file belum tersedia.
 # ---------------------------------------------------------------------------
-FREE_EXTRACTION = _load("free_extraction.md")
+def get_free_extraction() -> PromptConfig:
+    """Muat FREE_EXTRACTION prompt secara lazy (hanya saat dipanggil)."""
+    return _load("free_extraction.md")

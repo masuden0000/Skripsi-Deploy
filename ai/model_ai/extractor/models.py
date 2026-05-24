@@ -78,6 +78,7 @@ class PageLayoutExtracted(BaseModel):
     margin_right_cm: float | None = None
     paper_size: str | None = None
     orientation: str | None = None
+    columns: int | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -379,7 +380,6 @@ class PageCountInfo(PageCountExtracted):
 # Mendefinisikan class `DocumentMetadata` untuk kebutuhan modul `models`.
 # ---------------------------------------------------------------------------
 class DocumentMetadata(BaseModel):
-    document_type: str | None = None
     source_document: str | None = None
     typography: TypographyInfo
     page_layout: PageLayoutInfo

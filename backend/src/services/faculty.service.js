@@ -1,3 +1,9 @@
+/**
+ * Fungsi: Mengelola data fakultas dan reviewer per fakultas.
+ * Digunakan oleh: routes/faculties.routes.js, routes/admin-reviewers.routes.js
+ * Tujuan: Operasi CRUD fakultas dan pengambilan daftar reviewer per fakultas.
+ */
+
 import { adminClient } from "../config/supabase.js"
 import { AppError } from "../utils/app-error.js"
 
@@ -28,8 +34,6 @@ export async function listFaculties() {
     throw new AppError("Gagal mengambil jumlah reviewer per fakultas.", 500)
   }
 
-  // Hitung manual supaya daftar fakultas tetap sederhana dan tidak bergantung
-  // pada bentuk nested relation dari PostgREST.
   const reviewerCountByFaculty = new Map()
   for (const row of reviewerRows ?? []) {
     const currentCount = reviewerCountByFaculty.get(row.faculty_id) ?? 0
@@ -133,7 +137,7 @@ export async function getFacultyByIdService(id) {
 }
 
 export async function updateFaculty(id, payload) {
-  const current = await getFacultyById(id)
+  await getFacultyById(id)
   const values = normalizeFacultyPayload(payload)
 
   const { data, error } = await adminClient

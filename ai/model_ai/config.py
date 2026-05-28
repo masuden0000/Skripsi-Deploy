@@ -1,10 +1,4 @@
-"""
-Fungsi: Memuat konfigurasi environment (ai/.env) dan konstanta global untuk layanan AI/pipeline.
-
-Digunakan oleh: model_ai/extractor/doc_extractor.py; model_ai/extractor/schema_differ.py; model_ai/loader/supabase_ingest.py; model_ai/docx/style_mapping_pipeline.py
-
-Tujuan: Memusatkan konfigurasi supaya modul lain tidak hardcode nilai environment.
-"""
+"""Memuat konfigurasi environment (ai/.env) dan konstanta global untuk layanan AI/pipeline. Posisi pipeline: diimpor oleh semua modul yang membutuhkan konfigurasi Supabase, LLM, dan embedding."""
 import os
 from pathlib import Path
 
@@ -12,26 +6,14 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, SecretStr
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `APP_DIR` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
 APP_DIR = Path(__file__).resolve().parents[1]
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `ENV_FILE` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
 ENV_FILE = APP_DIR / ".env"
 
 load_dotenv(dotenv_path=ENV_FILE)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan class `AppConfig` untuk kebutuhan modul `config`.
-# ---------------------------------------------------------------------------
 class AppConfig(BaseModel):
-    model_config = ConfigDict(frozen=False)  # allow mutation for key rotation state
+    model_config = ConfigDict(frozen=False)
 
     groq_api_keys: list[SecretStr]
     google_api_keys: list[SecretStr]
@@ -46,10 +28,9 @@ class AppConfig(BaseModel):
     rag_top_k: int = 5
     rag_min_context_similarity: float = 0.45
 
-    # Rotation state
     _groq_index: int = 0
     _google_index: int = 0
-    _groq_exhausted: bool = False  # True = semua Groq key limit, switch ke Gemini
+    _groq_exhausted: bool = False
 
     def get_groq_key(self) -> str:
         if not self.groq_api_keys:
@@ -77,7 +58,6 @@ class AppConfig(BaseModel):
         Strategy: Groq dulu, Gemini Flash 2.5 fallback.
         Jika semua Groq key limit/error → switch ke Gemini.
         """
-        # Phase 1: Coba Groq
         if not self._groq_exhausted:
             for _ in range(len(self.groq_api_keys)):
                 try:
@@ -86,10 +66,8 @@ class AppConfig(BaseModel):
                 except Exception:
                     if len(self.groq_api_keys) > 1:
                         self.rotate_groq_key()
-            # Semua Groq gagal
             self._groq_exhausted = True
 
-        # Phase 2: Gemini fallback
         for _ in range(len(self.google_api_keys)):
             try:
                 key = self.get_google_key()
@@ -113,15 +91,10 @@ class AppConfig(BaseModel):
 
         for key in proxy_keys:
             value = os.getenv(key, "").strip().lower()
-            # Sebagian environment menyetel localhost:9 sebagai proxy "buang trafik".
             if value in blackhole_proxy_targets:
                 os.environ.pop(key, None)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_get_required_env` sebagai bagian alur `config`.
-# ---------------------------------------------------------------------------
 def _get_required_env(name: str) -> str:
     value = os.getenv(name, "").strip()
     if not value:
@@ -129,12 +102,6 @@ def _get_required_env(name: str) -> str:
     return value
 
 
-
-
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/extractor/doc_extractor.py; model_ai/extractor/schema_differ.py; model_ai/loader/supabase_ingest.py; model_ai/docx/style_mapping_pipeline.py; dst.
-# Menjalankan fungsi `get_config` sebagai bagian alur `config`.
-# ---------------------------------------------------------------------------
 def _load_api_key_list(prefix: str, suffix_max: int = 5) -> list[SecretStr]:
     """Load all numbered API keys (GROQ_API_KEY, GROQ_API_KEY_2, ..., GOOGLE_API_KEY_5)."""
     keys: list[SecretStr] = []

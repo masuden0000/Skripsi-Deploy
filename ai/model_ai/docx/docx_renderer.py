@@ -1,12 +1,4 @@
-"""
-Fungsi: Renderer yang menulis konten terstruktur ke dokumen .docx (paragraph, style, tabel).
-
-Digunakan oleh: model_ai/docx/generator.py
-
-Tujuan: Memisahkan logika render dokumen dari orkestrasi generator.
-
-Keyword: automated document generation
-"""
+"""Renderer yang menulis konten terstruktur ke dokumen .docx (paragraph, style, tabel). Posisi pipeline: instructional_placeholder_builder → docx_renderer → DOCX output. Keyword: automated document generation."""
 from io import BytesIO
 from pathlib import Path
 
@@ -27,14 +19,11 @@ from model_ai.docx.chunk_loader import (
 from model_ai.docx.instructional_placeholder_builder import make_instruction_key
 
 
-# ---------------------------------------------------------------------------
-# Paper size mapping: (width_cm, height_cm)
-# ---------------------------------------------------------------------------
 PAPER_SIZES_CM: dict[str, tuple[float, float]] = {
     "A3":     (29.7, 42.0),
     "A4":     (21.0, 29.7),
     "A5":     (14.85, 21.0),
-    "F4":     (21.0, 33.0),   # Folio
+    "F4":     (21.0, 33.0),
     "FOLIO":  (21.0, 33.0),
     "LETTER": (21.59, 27.94),
     "LEGAL":  (21.59, 35.56),
@@ -51,13 +40,10 @@ def _get_paper_dimensions(paper_size: str | None) -> tuple[float, float]:
         (width_cm, height_cm) tuple
     """
     if not paper_size:
-        return (21.0, 29.7)  # default A4
+        return (21.0, 29.7)
     return PAPER_SIZES_CM.get(paper_size.upper(), (21.0, 29.7))
 
 
-# ---------------------------------------------------------------------------
-# Bibliography style placeholders
-# ---------------------------------------------------------------------------
 BIBLIOGRAPHY_STYLES: dict[str, str] = {
     "HARVARD": (
         "Tuliskan daftar pustaka menggunakan format Harvard style:\n\n"
@@ -116,15 +102,9 @@ def _get_bibliography_placeholder(style: str | None) -> str:
     return BIBLIOGRAPHY_STYLES.get((style or "HARVARD").upper(), BIBLIOGRAPHY_STYLES["HARVARD"])
 
 
-# ---------------------------------------------------------------------------
-# Reusable constants
-# ---------------------------------------------------------------------------
 _SECTION_DELETE_NOTE = "(Catatan: bagian ini boleh dihapus)"
 
 
-# ---------------------------------------------------------------------------
-# ID bookmark tetap per section type agar TOC dan heading selalu sinkron
-# ---------------------------------------------------------------------------
 _BOOKMARK_IDS: dict[str, int] = {
     "daftar_isi": 4,    "daftar_gambar": 5,      "daftar_tabel": 6,
     "daftar_lampiran": 7, "daftar_pustaka": 20,  "lampiran": 21,
@@ -143,10 +123,9 @@ def _bookmark_id(section_type: str, number=None) -> int:
     if section_type == "bab" and number:
         return 10 + int(number)
     if section_type == "sub_bab" and number:
-        # 4.1 -> id 41, 4.2 -> id 42, etc.
         parts = str(number).split(".")
         if len(parts) == 2:
-            return 40 + int(parts[1])  # sub_bab_4.1 -> 41, sub_bab_4.2 -> 42
+            return 40 + int(parts[1])
     return _BOOKMARK_IDS.get(section_type, 99)
 
 
@@ -166,10 +145,6 @@ def _add_bookmark_to_paragraph(paragraph, bm_id: int, bm_name: str) -> None:
     p.append(bm_end)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/docx/generator.py (legacy — menyimpan ke filesystem)
-# Untuk pipeline production (Supabase upload), gunakan render_proposal_docx_bytes.
-# ---------------------------------------------------------------------------
 def render_proposal_docx(
     output_data: dict,
     chunks: list[ChunkSource],
@@ -183,17 +158,14 @@ def render_proposal_docx(
     figures_tables = output_data["figures_and_tables"]
     doc_structure  = output_data["document_structure_proposal"]
 
-    # Langkah 1: Inisialisasi dokumen kosong dan terapkan ukuran kertas + margin
     document = Document()
     first_section = document.sections[0]
     _configure_page_layout(first_section, page_layout)
-    # Langkah 2: Terapkan gaya dasar — font, ukuran, spasi, alignment ke style Normal dan Heading 1-4
     _apply_base_styles(document, typography, spacing)
 
     prelim_num  = numbering.get("preliminary") or {}
     content_num = numbering.get("content") or {}
 
-    # Langkah 3: Render halaman preliminary (daftar isi/gambar/tabel) jika struktur dokumen mengharuskannya
     has_preliminary = _has_preliminary_pages(doc_structure)
     if has_preliminary:
         _render_preliminary_pages(document, doc_structure, page_layout, typography, instructional_placeholders, figures_tables)
@@ -219,15 +191,12 @@ def render_proposal_docx(
             start=1,
         )
 
-    # Langkah 4: Render seluruh body proposal — BAB, sub-bab, daftar pustaka, lampiran
     _render_proposal_body(document, doc_structure, page_layout, spacing, numbering, figures_tables, chunks, instructional_placeholders)
 
-    # Langkah 5: Simpan ke filesystem (production tidak melewati path ini)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         document.save(str(output_path))
     except PermissionError:
-        # File sedang terbuka di aplikasi lain (misal Word) — simpan dengan nama bertimestamp
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         alt_path = output_path.parent / f"{output_path.stem}_{timestamp}{output_path.suffix}"
@@ -240,15 +209,10 @@ def render_proposal_docx(
     return output_path
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: render_proposal_docx; render_proposal_docx_bytes
-# Mengatur ukuran kertas, orientasi, dan margin dari dict page_layout hasil ekstraksi.
-# ---------------------------------------------------------------------------
 def _configure_page_layout(section, page_layout: dict) -> None:
     orientation = (page_layout.get("orientation") or "PORTRAIT").strip().upper()
     paper_width_cm, paper_height_cm = _get_paper_dimensions(page_layout.get("paper_size"))
 
-    # Convert cm to mm for python-docx
     paper_width_mm = paper_width_cm * 10
     paper_height_mm = paper_height_cm * 10
 
@@ -267,11 +231,6 @@ def _configure_page_layout(section, page_layout: dict) -> None:
     section.right_margin  = Cm(page_layout.get("margin_right_cm", 3.0))
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: render_proposal_docx; render_proposal_docx_bytes
-# Menerapkan font, ukuran, spasi baris, dan alignment ke style Normal dan Heading 1-4.
-# Juga menghapus theme font override di XML agar Times New Roman konsisten di semua heading.
-# ---------------------------------------------------------------------------
 def _apply_base_styles(document: Document, typography: dict, spacing: dict) -> None:
     body_font    = typography.get("font_family", "Times New Roman")
     body_size    = typography.get("font_size_body_pt", 12)
@@ -292,8 +251,6 @@ def _apply_base_styles(document: Document, typography: dict, spacing: dict) -> N
     normal_style.paragraph_format.space_before = Pt(0)
     normal_style.paragraph_format.space_after  = Pt(0)
 
-    # Perbaikan: hapus theme font override (w:asciiTheme/w:hAnsiTheme) agar
-    # Times New Roman benar-benar diterapkan pada semua heading level.
     for style_name in ("Heading 1", "Heading 2", "Heading 3", "Heading 4"):
         try:
             h = document.styles[style_name]
@@ -308,7 +265,6 @@ def _apply_base_styles(document: Document, typography: dict, spacing: dict) -> N
         h.paragraph_format.space_before = Pt(0)
         h.paragraph_format.space_after  = Pt(0)
 
-        # Paksa font di level XML — hapus theme font yang bisa menimpa explicit font
         style_el = h._element
         rPr = style_el.find(qn("w:rPr"))
         if rPr is None:
@@ -325,7 +281,6 @@ def _apply_base_styles(document: Document, typography: dict, spacing: dict) -> N
         rFonts.set(qn("w:hAnsi"), body_font)
         rFonts.set(qn("w:cs"), body_font)
 
-    # Style tersendiri untuk caption gambar/tabel
     try:
         caption_style = document.styles["Caption"]
     except KeyError:
@@ -340,19 +295,16 @@ def _apply_base_styles(document: Document, typography: dict, spacing: dict) -> N
     caption_style.paragraph_format.space_after  = Pt(6)
 
 
-# ---------------------------------------------------------------------------
 def _force_paragraph_runs_black(paragraph) -> None:
     for run in paragraph.runs:
         run.font.color.rgb = RGBColor(0, 0, 0)
 
 
-# ---------------------------------------------------------------------------
 def _has_preliminary_pages(doc_structure: dict) -> bool:
     prelim_types = {"daftar_isi", "daftar_gambar", "daftar_tabel", "daftar_lampiran"}
     return any(s["type"] in prelim_types for s in doc_structure.get("sections", []))
 
 
-# ---------------------------------------------------------------------------
 def _render_preliminary_pages(
     document: Document,
     doc_structure: dict,
@@ -361,7 +313,7 @@ def _render_preliminary_pages(
     instructional_placeholders: dict[str, str],
     figures_tables: dict | None = None,
 ) -> None:
-    prelim_entries: list[tuple[str, str, str]] = []  # (instruction_key, title, section_type)
+    prelim_entries: list[tuple[str, str, str]] = []
 
     for section in doc_structure.get("sections", []):
         if section["type"] in ("daftar_isi", "daftar_gambar", "daftar_tabel", "daftar_lampiran"):
@@ -375,12 +327,10 @@ def _render_preliminary_pages(
         _force_paragraph_runs_black(heading)
         _add_bookmark_to_paragraph(heading, _bookmark_id(sec_type), _bookmark_name(sec_type))
 
-        # Enter 1x sebelum body (space_after = 0)
         empty = document.add_paragraph()
         empty.paragraph_format.space_before = Pt(0)
         empty.paragraph_format.space_after  = Pt(0)
 
-        # Pilih renderer contoh sesuai tipe
         if sec_type == "daftar_isi":
             _render_daftar_isi_example(document, doc_structure, page_layout, typography)
         elif sec_type == "daftar_gambar":
@@ -401,9 +351,6 @@ def _render_preliminary_pages(
             document.add_page_break()
 
 
-# ---------------------------------------------------------------------------
-# Daftar Isi dengan hyperlink ke tiap section
-# ---------------------------------------------------------------------------
 def _render_daftar_isi_example(
     document: Document,
     doc_structure: dict,
@@ -415,7 +362,7 @@ def _render_daftar_isi_example(
     body_font = typography.get("font_family", "Times New Roman")
     body_size = typography.get("font_size_body_pt", 12)
 
-    entries: list[tuple[str, str, str]] = []  # (teks, nomor, anchor_bookmark)
+    entries: list[tuple[str, str, str]] = []
     prelim_counter = 1
 
 
@@ -424,7 +371,6 @@ def _render_daftar_isi_example(
         sec_type = sec["type"]
         title    = sec.get("title") or sec_type.upper().replace("_", " ")
 
-        # Semua prelim entries (termasuk daftar isi) pakai roman numeral
         if sec_type in ("daftar_isi", "daftar_gambar", "daftar_tabel", "daftar_lampiran"):
             entries.append((title, _to_roman(prelim_counter), _bookmark_name(sec_type)))
             prelim_counter += 1
@@ -434,11 +380,9 @@ def _render_daftar_isi_example(
             entries.append((label, str(body_counter), _bookmark_name("bab", num)))
             body_counter += 2
         elif sec_type == "sub_bab":
-            # Sub bab 4.1 dan 4.2 masuk ke daftar isi dengan indentasi
             sub_num = sec.get("sub_number") or ""
             sub_title = (sec.get("title") or "").title()
             label = f"{sub_num} {sub_title}".strip()
-            # Bookmark menggunakan nama heading
             bookmark = _bookmark_name("sub_bab", sub_num)
             entries.append((label, str(body_counter), bookmark))
             body_counter += 1
@@ -474,7 +418,6 @@ def _add_toc_hyperlink(paragraph, text: str, anchor: str, font_name: str, font_s
     b_el = OxmlElement("w:b")
     rPr_el.append(b_el)
 
-    # Warna hitam (bukan biru default hyperlink)
     color_el = OxmlElement("w:color")
     color_el.set(qn("w:val"), "000000")
     rPr_el.append(color_el)
@@ -490,7 +433,6 @@ def _add_toc_hyperlink(paragraph, text: str, anchor: str, font_name: str, font_s
     paragraph._p.append(hyperlink)
 
 
-# ---------------------------------------------------------------------------
 def _parse_caption_format(format_template: str | None, prefix: str) -> str:
     """Parse caption format dari database atau gunakan default.
 
@@ -504,14 +446,9 @@ def _parse_caption_format(format_template: str | None, prefix: str) -> str:
     if not format_template:
         return f"{prefix} 1.1 [Contoh judul {prefix.lower()} pada BAB 1]"
 
-    # Generate sample entry berdasarkan template
-    # Format: "Gambar {num}. {caption}" -> "Gambar 1.1 [Contoh judul...]"
     return f"{prefix} 1.1 [Contoh judul {prefix.lower()} pada BAB 1]"
 
 
-# ---------------------------------------------------------------------------
-# Daftar Gambar — contoh entri
-# ---------------------------------------------------------------------------
 def _render_daftar_gambar_example(
     document: Document,
     page_layout: dict,
@@ -544,9 +481,6 @@ def _render_daftar_gambar_example(
         run.font.color.rgb = RGBColor(0, 0, 0)
 
 
-# ---------------------------------------------------------------------------
-# Daftar Tabel — contoh entri
-# ---------------------------------------------------------------------------
 def _render_daftar_tabel_example(
     document: Document,
     page_layout: dict,
@@ -579,9 +513,6 @@ def _render_daftar_tabel_example(
         run.font.color.rgb = RGBColor(0, 0, 0)
 
 
-# ---------------------------------------------------------------------------
-# Daftar Lampiran — contoh entri
-# ---------------------------------------------------------------------------
 def _render_daftar_lampiran_example(document: Document, page_layout: dict, typography: dict) -> None:
     paper_width, _ = _get_paper_dimensions(page_layout.get("paper_size"))
     text_width_cm = paper_width - page_layout.get("margin_left_cm", 4.0) - page_layout.get("margin_right_cm", 3.0)
@@ -604,7 +535,6 @@ def _render_daftar_lampiran_example(document: Document, page_layout: dict, typog
         run.font.color.rgb = RGBColor(0, 0, 0)
 
 
-# ---------------------------------------------------------------------------
 def _to_roman(n: int) -> str:
     vals = [
         (1000, "m"), (900, "cm"), (500, "d"), (400, "cd"),
@@ -619,11 +549,6 @@ def _to_roman(n: int) -> str:
     return result
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: render_proposal_docx; render_proposal_docx_bytes
-# Iterasi seluruh sections dari document_structure_proposal dan dispatch ke renderer spesifik.
-# Urutan sections mencerminkan urutan halaman akhir dokumen.
-# ---------------------------------------------------------------------------
 def _render_proposal_body(
     document: Document,
     doc_structure: dict,
@@ -634,13 +559,10 @@ def _render_proposal_body(
     chunks: list[ChunkSource],
     instructional_placeholders: dict[str, str],
 ) -> None:
-    # Dispatch setiap section ke renderer yang sesuai berdasarkan tipe hasil ekstraksi
     for section in doc_structure.get("sections", []):
         if section["type"] == "bab":
-            # BAB utama: heading level 1 + placeholder isi + sumber referensi
             _render_bab_section(document, section, page_layout, spacing, numbering, figures_tables, chunks, instructional_placeholders)
         elif section["type"] == "daftar_pustaka":
-            # Daftar referensi: heading + placeholder format bibliografi
             _render_named_section(
                 document, section["type"],
                 section.get("title") or "DAFTAR PUSTAKA",
@@ -648,7 +570,6 @@ def _render_proposal_body(
                 doc_structure,
             )
         elif section["type"] == "lampiran":
-            # Halaman lampiran induk: heading + item_lampiran di section berikutnya
             _render_named_section(
                 document, section["type"],
                 section.get("title") or "LAMPIRAN",
@@ -656,18 +577,11 @@ def _render_proposal_body(
                 doc_structure,
             )
         elif section["type"] == "sub_bab":
-            # Sub-bab (1.1, 1.2, ...): heading level 2 + placeholder + tabel anggaran/jadwal jika BAB 4
             _render_sub_bab_section(document, section, page_layout, spacing, figures_tables, instructional_placeholders)
         elif section["type"] == "item_lampiran":
-            # Item lampiran (Lampiran 1., 2., ...): heading + placeholder + sumber
             _render_item_lampiran_section(document, section, page_layout, spacing, instructional_placeholders)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: _render_proposal_body
-# Merender satu BAB: separator, heading level 1 dengan bookmark, catatan instruksional,
-# placeholder isi dari LLM/user, contoh gambar di BAB 1, dan blok sumber referensi.
-# ---------------------------------------------------------------------------
 def _render_bab_section(
     document: Document,
     section: dict,
@@ -684,19 +598,16 @@ def _render_bab_section(
     bab_label    = chapter_fmt.replace("{n}", str(num)) if num else "BAB"
     heading_text = f"{bab_label} {title}".strip()
 
-    # Separator kosong sebelum heading BAB agar ada jarak visual dari section sebelumnya
     sep = document.add_paragraph()
     sep.paragraph_format.space_before = Pt(0)
     sep.paragraph_format.space_after  = Pt(0)
     _apply_line_spacing(sep.paragraph_format, spacing)
 
-    # Heading BAB level 1, center-aligned; bookmark dipakai untuk hyperlink dari daftar isi
     heading = document.add_heading(heading_text, level=1)
     heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
     _force_paragraph_runs_black(heading)
     _add_bookmark_to_paragraph(heading, _bookmark_id("bab", num), _bookmark_name("bab", num))
 
-    # Catatan instruksional (italic, kecil) — paragraf ini harus dihapus mahasiswa sebelum pengumpulan
     note = document.add_paragraph(_SECTION_DELETE_NOTE)
     note.runs[0].italic     = True
     note.runs[0].font.size  = Pt(10)
@@ -704,7 +615,6 @@ def _render_bab_section(
     note.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
     _force_paragraph_runs_black(note)
 
-    # Placeholder isi BAB: diambil dari LLM (generated_placeholders) atau user_placeholders
     body_placeholder = document.add_paragraph(
         instructional_placeholders.get(
             make_instruction_key("bab", heading_text, number=num),
@@ -718,9 +628,7 @@ def _render_bab_section(
     body_placeholder.paragraph_format.space_after = Pt(0)
     _force_paragraph_runs_black(body_placeholder)
 
-    # Tambah contoh gambar di BAB 1 (setelah instructional placeholder)
     if str(num) == "1":
-        # Enter 1x sebelum gambar
         empty = document.add_paragraph()
         empty.paragraph_format.space_before = Pt(0)
         empty.paragraph_format.space_after  = Pt(0)
@@ -734,11 +642,7 @@ def _render_bab_section(
             )
         _add_example_figure(document, fig_caption, page_layout, figures_tables)
 
-    # Khusus bab BIAYA: placeholder untuk sub bab (4.1 Anggaran Biaya, 4.2 Jadwal Kegiatan)
-    # Tabel anggaran biaya dan jadwal kegiatan akan dirender di sub_bab sections
-    # Contoh gambar sudah dipindahkan ke BAB 1 (setelah instructional placeholder)
     if "BIAYA" in title.upper():
-        # Placeholder text untuk mengingatkan bahwa 4.1 dan 4.2 harus diisi
         bab_num = int(num) if num else 4
         placeholder = document.add_paragraph(
             instructional_placeholders.get(
@@ -760,13 +664,8 @@ def _render_bab_section(
         section_title=section.get("title"),
     )
     _render_source_block(document, sources)
-    # Caption tidak ditampilkan di setiap bab (poin 3)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: _render_proposal_body
-# Merender section bernama (daftar_pustaka, lampiran): heading + placeholder + sumber referensi.
-# ---------------------------------------------------------------------------
 def _render_named_section(
     document: Document,
     section_type: str,
@@ -799,7 +698,6 @@ def _render_named_section(
                     bibliography_style = section.get("bibliography_style")
                     break
         placeholder_text = _get_bibliography_placeholder(bibliography_style)
-        # Multiple paragraphs - full width, justify, no indent
         paragraphs = placeholder_text.strip().split("\n\n")
         for para_text in paragraphs:
             lines = para_text.strip().split("\n")
@@ -824,10 +722,6 @@ def _render_named_section(
     _render_source_block(document, sources)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: _render_proposal_body
-# Merender sub-bab (1.1, 1.2, ...): heading level 2 + placeholder + tabel anggaran/jadwal jika BAB 4.
-# ---------------------------------------------------------------------------
 def _render_sub_bab_section(
     document: Document,
     section: dict,
@@ -848,7 +742,6 @@ def _render_sub_bab_section(
     heading = document.add_heading(heading_text, level=2)
     heading.alignment = WD_ALIGN_PARAGRAPH.LEFT
     _force_paragraph_runs_black(heading)
-    # Tambahkan bookmark untuk hyperlink dari daftar isi
     bm_id = _bookmark_id("sub_bab")
     bm_name = _bookmark_name("sub_bab", sub_num)
     _add_bookmark_to_paragraph(heading, bm_id, bm_name)
@@ -860,7 +753,6 @@ def _render_sub_bab_section(
     note.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
     _force_paragraph_runs_black(note)
 
-    # Tentukan nomor BAB dari sub_number (misal "4.1" -> 4, "4.2" -> 4)
     bab_num = 4
     if sub_num and "." in str(sub_num):
         try:
@@ -870,7 +762,6 @@ def _render_sub_bab_section(
 
     table_caption_pos = (figures_tables.get("table_caption_position") or "ABOVE").upper()
 
-    # Sub bab 4.1: Tabel Anggaran Biaya — hanya berlaku untuk BAB 4
     if sub_num and bab_num == 4 and str(sub_num).endswith(".1"):
         body_placeholder = document.add_paragraph(
             instructional_placeholders.get(
@@ -908,7 +799,6 @@ def _render_sub_bab_section(
             cap_p.paragraph_format.space_after = Pt(0)
             _force_paragraph_runs_black(cap_p)
 
-    # Sub bab 4.2: Tabel Jadwal Kegiatan — hanya berlaku untuk BAB 4
     elif sub_num and bab_num == 4 and str(sub_num).endswith(".2"):
         fmt = figures_tables.get("caption_format_table") or "Tabel {bab}.{n}. {title}"
         caption_text = (
@@ -927,8 +817,6 @@ def _render_sub_bab_section(
             cap_p.paragraph_format.space_after = Pt(0)
             _force_paragraph_runs_black(cap_p)
 
-    # Untuk sub_bab yang sudah memiliki tabel (4.1 Anggaran Biaya, 4.2 Jadwal Kegiatan),
-    # tidak perlu instructional placeholder tambahan di bawah tabel.
     is_table_sub_bab = sub_num and bab_num == 4 and (str(sub_num).endswith(".1") or str(sub_num).endswith(".2"))
     if not is_table_sub_bab:
         body_placeholder = document.add_paragraph(
@@ -945,7 +833,6 @@ def _render_sub_bab_section(
         _force_paragraph_runs_black(body_placeholder)
 
 
-# ---------------------------------------------------------------------------
 def _render_item_lampiran_section(
     document: Document,
     section: dict,
@@ -965,7 +852,6 @@ def _render_item_lampiran_section(
     heading = document.add_heading(heading_text, level=2)
     heading.alignment = WD_ALIGN_PARAGRAPH.LEFT
     _force_paragraph_runs_black(heading)
-    # Tambahkan bookmark untuk hyperlink dari daftar isi
     bm_id = _bookmark_id("lampiran")
     bm_name = _bookmark_name("lampiran", lampiran_number)
     _add_bookmark_to_paragraph(heading, bm_id, bm_name)
@@ -991,7 +877,6 @@ def _render_item_lampiran_section(
     _force_paragraph_runs_black(body_placeholder)
 
 
-# ---------------------------------------------------------------------------
 def _render_source_block(document: Document, sources: list[ChunkSource]) -> None:
     if not sources:
         p = document.add_paragraph("Sumber: [BELUM DITEMUKAN]")
@@ -1007,16 +892,10 @@ def _render_source_block(document: Document, sources: list[ChunkSource]) -> None
     _force_paragraph_runs_black(p)
 
 
-# ---------------------------------------------------------------------------
-# Tabel anggaran biaya — caption di atas
-# ---------------------------------------------------------------------------
 def _add_budget_table(document: Document, bab_number: int, figures_tables: dict) -> None:
-    # Get budget rules from database or use fallback
     budget_rules = figures_tables.get("budget_format_rules")
 
-    # Caption sudah ditambahkan oleh pemanggil (_render_sub_bab_section) sebelum memanggil fungsi ini.
     if budget_rules and budget_rules.get("budget_items"):
-        # Use database-driven values
         items = []
         for i, item in enumerate(budget_rules["budget_items"][:4], start=1):
             desc = item.get("jenis_pengeluaran", "")
@@ -1027,7 +906,6 @@ def _add_budget_table(document: Document, bab_number: int, figures_tables: dict)
             items.append((str(i), desc))
         sumber_dana = budget_rules.get("sumber_dana_options", ["Belmawa", "Perguruan Tinggi", "Instansi Lain (jika ada)"])
     else:
-        # Fallback to hardcoded default
         items = [
             ("1", "Bahan habis pakai (contoh: ATK, kertas, bahan, dan lain lain) "
                   "maksimum 60% dari jumlah dana yang diusulkan"),
@@ -1040,7 +918,7 @@ def _add_budget_table(document: Document, bab_number: int, figures_tables: dict)
         sumber_dana = ["Belmawa", "Perguruan Tinggi", "Instansi Lain (jika ada)"]
 
     num_items = len(items)
-    table_rows = 2 + (num_items * 3) + 1 + 1  # header + (item*3) + jumlah + rekap
+    table_rows = 2 + (num_items * 3) + 1 + 1
     table = document.add_table(rows=table_rows, cols=4)
     table.style = "Table Grid"
 
@@ -1059,12 +937,10 @@ def _add_budget_table(document: Document, bab_number: int, figures_tables: dict)
             if base + j < table_rows:
                 table.cell(base + j, 2).text = sd
 
-    # Jumlah row
     jumlah_row = 1 + num_items * 3
     table.cell(jumlah_row, 0).text = "Jumlah"
     table.cell(jumlah_row, 0).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # Rekap Sumber Dana row
     rekap_row = jumlah_row + 1
     table.cell(rekap_row, 0).text = "Rekap Sumber Dana"
     table.cell(rekap_row, 0).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -1072,7 +948,6 @@ def _add_budget_table(document: Document, bab_number: int, figures_tables: dict)
         if rekap_row + j < table_rows:
             table.cell(rekap_row + j, 2).text = sd
 
-    # Merge cells
     for i in range(num_items):
         base = 1 + i * 3
         table.cell(base, 0).merge(table.cell(base + 2, 0))
@@ -1103,21 +978,13 @@ def _add_budget_table(document: Document, bab_number: int, figures_tables: dict)
         _force_paragraph_runs_black(note_p)
 
 
-# ---------------------------------------------------------------------------
-# Tabel jadwal kegiatan sesuai format panduan — caption di atas (poin 5)
-# ---------------------------------------------------------------------------
 def _add_schedule_table(document: Document, bab_number: int, figures_tables: dict, page_layout: dict) -> None:
-    # Caption sudah ditambahkan oleh pemanggil (_render_sub_bab_section) sebelum memanggil fungsi ini.
     paper_width, _ = _get_paper_dimensions(page_layout.get("paper_size"))
     text_width_cm = paper_width - page_layout.get("margin_left_cm", 4.0) - page_layout.get("margin_right_cm", 3.0)
-    # Struktur: No | Jenis Kegiatan | Bulan (1-4) | Penanggung Jawab
-    # 2 baris header + 5 baris data = 7 baris, 7 kolom
     table = document.add_table(rows=7, cols=7)
     table.style = "Table Grid"
 
-    # Hitung lebar kolom proporsional berdasarkan text_width_cm
-    # Kolom: No(1.0) + Jenis_Kegiatan(?) + Bulan1-4(1.0 each) + PJ(3.5) = text_width_cm
-    total_fixed = Cm(1.0) + Cm(1.0) * 4 + Cm(3.5)  # 8.5 cm fixed
+    total_fixed = Cm(1.0) + Cm(1.0) * 4 + Cm(3.5)
     remaining = Cm(text_width_cm) - total_fixed
     jenis_kegiatan_width = remaining if remaining > Cm(0) else Cm(4.5)
 
@@ -1126,24 +993,20 @@ def _add_schedule_table(document: Document, bab_number: int, figures_tables: dic
         for ci, width in enumerate(widths):
             table.cell(ri, ci).width = width
 
-    # Teks header baris 0
     for ci, txt in enumerate(["No", "Jenis Kegiatan", "Bulan", "", "", "", "Penanggung Jawab"]):
         if txt:
             table.cell(0, ci).text = txt
 
-    # Sub-header baris 1: angka bulan
     for m, label in enumerate(["1", "2", "3", "4"]):
         table.cell(1, 2 + m).text = label
         table.cell(1, 2 + m).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # Data baris
     for i in range(5):
         table.cell(2 + i, 0).text = str(i + 1)
         table.cell(2 + i, 0).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
         table.cell(2 + i, 1).text = f"[Jenis Kegiatan {i + 1}]"
         table.cell(2 + i, 6).text = "[Penanggung Jawab]"
 
-    # Merge: No (baris 0-1), Jenis Kegiatan (baris 0-1), PJ (baris 0-1)
     table.cell(0, 0).merge(table.cell(1, 0))
     table.cell(0, 0).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
     table.cell(0, 0).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -1152,7 +1015,6 @@ def _add_schedule_table(document: Document, bab_number: int, figures_tables: dic
     table.cell(0, 1).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
     table.cell(0, 1).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # Merge: "Bulan" melebar ke kolom 2-5 pada baris 0
     table.cell(0, 2).merge(table.cell(0, 5))
     table.cell(0, 2).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
     table.cell(0, 2).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -1161,13 +1023,11 @@ def _add_schedule_table(document: Document, bab_number: int, figures_tables: dic
     table.cell(0, 6).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
     table.cell(0, 6).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # Bold header utama (tanpa underline)
     for ci in [0, 1, 2, 6]:
         para = table.cell(0, ci).paragraphs[0]
         if para.runs:
             para.runs[0].bold = True
 
-    # Enter 1x setelah tabel jadwal
     empty = document.add_paragraph()
     empty.paragraph_format.space_before = Pt(0)
     empty.paragraph_format.space_after  = Pt(0)
@@ -1180,7 +1040,6 @@ def _add_example_figure(
     figures_tables: dict | None = None,
 ) -> None:
     """Add example figure from data/images.jpg if available."""
-    # Lebar gambar selalu dalam batas margin
     if page_layout:
         paper_width, _ = _get_paper_dimensions(page_layout.get("paper_size"))
         img_width = Cm(paper_width - page_layout.get("margin_left_cm", 4.0) - page_layout.get("margin_right_cm", 3.0))
@@ -1189,7 +1048,6 @@ def _add_example_figure(
 
     caption_pos = (figures_tables.get("figure_caption_position") or "BELOW").upper() if figures_tables else "BELOW"
 
-    # Try multiple paths for images.jpg
     possible_paths = [
         Path(__file__).parent.parent.parent / "data" / "images.jpg",
         Path(__file__).parent.parent / "data" / "images.jpg",
@@ -1228,7 +1086,6 @@ def _add_example_figure(
     empty.paragraph_format.space_after  = Pt(0)
 
 
-# ---------------------------------------------------------------------------
 def _add_seq_caption(document: Document, label: str, template: str) -> None:
     paragraph = document.add_paragraph(style="Caption")
     prefix, suffix = _split_caption_template(template, label)
@@ -1238,7 +1095,6 @@ def _add_seq_caption(document: Document, label: str, template: str) -> None:
     _force_paragraph_runs_black(paragraph)
 
 
-# ---------------------------------------------------------------------------
 def _split_caption_template(template: str, label: str) -> tuple[str, str]:
     normalized = (
         template
@@ -1256,8 +1112,6 @@ def _split_caption_template(template: str, label: str) -> tuple[str, str]:
     return f"{label} ", ". [JUDUL]"
 
 
-# ---------------------------------------------------------------------------
-# Grup A: rule statis — multiplier sudah di-encode, line_spacing metadata = None.
 _LINE_SPACING_GRUP_A: dict[str, float] = {
     "SINGLE": 1.0,
     "ONE_POINT_FIVE": 1.5,
@@ -1301,7 +1155,6 @@ def _apply_line_spacing(paragraph_format, spacing: dict) -> None:
         paragraph_format.line_spacing = 1.15
 
 
-# ---------------------------------------------------------------------------
 def _map_alignment(value: str) -> WD_ALIGN_PARAGRAPH:
     mapping = {
         "LEFT":    WD_ALIGN_PARAGRAPH.LEFT,
@@ -1312,12 +1165,10 @@ def _map_alignment(value: str) -> WD_ALIGN_PARAGRAPH:
     return mapping.get(value, WD_ALIGN_PARAGRAPH.JUSTIFY)
 
 
-# ---------------------------------------------------------------------------
 def _build_page_num_position(location: str, alignment: str) -> str:
     return f"{(location or 'FOOTER').lower()}_{(alignment or 'RIGHT').lower()}"
 
 
-# ---------------------------------------------------------------------------
 def _apply_page_numbering(section, position: str, fmt: str, start: int) -> None:
     section.header.is_linked_to_previous = False
     section.footer.is_linked_to_previous = False
@@ -1331,7 +1182,6 @@ def _apply_page_numbering(section, position: str, fmt: str, start: int) -> None:
     _set_page_number_type(section, fmt=fmt, start=start)
 
 
-# ---------------------------------------------------------------------------
 def _position_alignment(position: str) -> WD_ALIGN_PARAGRAPH:
     if position.endswith("_left"):
         return WD_ALIGN_PARAGRAPH.LEFT
@@ -1340,7 +1190,6 @@ def _position_alignment(position: str) -> WD_ALIGN_PARAGRAPH:
     return WD_ALIGN_PARAGRAPH.RIGHT
 
 
-# ---------------------------------------------------------------------------
 def _set_page_number_type(section, fmt: str, start: int) -> None:
     sect_pr = section._sectPr
     pg_num_type = sect_pr.find(qn("w:pgNumType"))
@@ -1351,7 +1200,6 @@ def _set_page_number_type(section, fmt: str, start: int) -> None:
     pg_num_type.set(qn("w:start"), str(start))
 
 
-# ---------------------------------------------------------------------------
 def _append_field(paragraph, instruction: str) -> None:
     run = paragraph.add_run()
     run.font.color.rgb = RGBColor(0, 0, 0)
@@ -1377,17 +1225,11 @@ def _append_field(paragraph, instruction: str) -> None:
     run._r.append(end)
 
 
-# ---------------------------------------------------------------------------
 def _clear_paragraph(paragraph) -> None:
     for run in paragraph.runs:
         run.clear()
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/docx/generator.py (pipeline production)
-# Entry point utama generate DOCX — tidak menyimpan ke filesystem, langsung return bytes.
-# Dipanggil oleh generate_proposal_docx_bytes → diupload ke Supabase Storage oleh manage.py.
-# ---------------------------------------------------------------------------
 def render_proposal_docx_bytes(
     output_data: dict,
     chunks: list,
@@ -1397,11 +1239,9 @@ def render_proposal_docx_bytes(
     Render DOCX dan return sebagai bytes.
     Menggantikan versi yang menyimpan ke file — tidak ada filesystem lokal.
     """
-    # Langkah 1: Inisialisasi dokumen kosong dan terapkan ukuran kertas + margin
     doc: Document = Document()
     first_section = doc.sections[0]
     _configure_page_layout(first_section, output_data["page_layout"])
-    # Langkah 2: Terapkan gaya dasar — font, ukuran, spasi, alignment ke Normal dan Heading 1-4
     _apply_base_styles(doc, output_data["typography"], output_data["spacing"])
 
     typography = output_data["typography"]
@@ -1414,7 +1254,6 @@ def render_proposal_docx_bytes(
     prelim_num = numbering.get("preliminary") or {}
     content_num = numbering.get("content") or {}
 
-    # Langkah 3: Render halaman preliminary (daftar isi/gambar/tabel) + penomoran romawi jika diperlukan
     has_preliminary = _has_preliminary_pages(doc_structure)
     if has_preliminary:
         _render_preliminary_pages(doc, doc_structure, page_layout, typography, instructional_placeholders, figures_tables)
@@ -1424,7 +1263,6 @@ def render_proposal_docx_bytes(
             fmt=prelim_num.get("format", "lowerRoman"),
             start=1,
         )
-        # Section baru dimulai setelah halaman preliminary — nomor halaman reset ke 1 (arab)
         content_section = doc.add_section(WD_SECTION_START.NEW_PAGE)
         _configure_page_layout(content_section, page_layout)
         _apply_page_numbering(
@@ -1434,7 +1272,6 @@ def render_proposal_docx_bytes(
             start=1,
         )
     else:
-        # Tidak ada halaman preliminary — langsung gunakan penomoran arab dari halaman pertama
         _apply_page_numbering(
             first_section,
             _build_page_num_position(content_num.get("location", "HEADER"), content_num.get("alignment", "RIGHT")),
@@ -1442,10 +1279,8 @@ def render_proposal_docx_bytes(
             start=1,
         )
 
-    # Langkah 4: Render seluruh body proposal — BAB, sub-bab, daftar pustaka, lampiran
     _render_proposal_body(doc, doc_structure, page_layout, spacing, numbering, figures_tables, chunks, instructional_placeholders)
 
-    # Catatan format nama file di akhir dokumen jika tersedia dari ekstraksi
     format_nama_file = doc_structure.get("format_nama_file")
     if format_nama_file:
         doc.core_properties.subject = f"Format nama file: {format_nama_file}"
@@ -1454,7 +1289,6 @@ def render_proposal_docx_bytes(
         note_p.runs[0].font.size = Pt(10)
         _force_paragraph_runs_black(note_p)
 
-    # Langkah 5: Serialize dokumen ke bytes buffer — tidak menyimpan ke disk
     buf = BytesIO()
     doc.save(buf)
     buf.seek(0)

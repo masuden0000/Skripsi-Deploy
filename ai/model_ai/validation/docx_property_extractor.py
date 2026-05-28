@@ -1,11 +1,4 @@
-"""
-Ekstrak properti formatting dari file DOCX menggunakan python-docx.
-
-Digunakan oleh: validator.py, rule_validator.py
-
-Tujuan: Membaca semua properti formatting (typography, page layout, spacing,
-document structure) dari file DOCX untuk dibandingkan dengan rules.
-"""
+"""Mengekstrak properti formatting dari file DOCX menggunakan python-docx. Posisi pipeline: DOCX input → docx_property_extractor → rule_validator."""
 from pathlib import Path
 
 from docx import Document
@@ -19,9 +12,6 @@ import re as _re
 from model_ai.validation.models import DocxProperties, HeadingCapsAnomaly, SpacingAnomaly
 
 
-# ---------------------------------------------------------------------------
-# Konstanta dan helper untuk aturan kapitalisasi
-# ---------------------------------------------------------------------------
 INDONESIAN_CONJUNCTIONS = {
     "di", "ke", "dari", "dan", "atau", "yang", "untuk", "dengan",
     "pada", "serta", "oleh", "dalam", "akan", "agar", "bagi",
@@ -29,10 +19,8 @@ INDONESIAN_CONJUNCTIONS = {
     "atas", "antara", "bahwa", "karena", "jika", "maka",
 }
 
-# Style prefix yang TIDAK dianggap sebagai paragraf body (dilewati saat cek spacing)
 SKIP_SPACING_STYLES = ("TOC", "Caption", "Header", "Footer", "Footnote", "Table")
 
-# Maksimum anomali spacing yang dilaporkan (hindari noise pada dokumen panjang)
 MAX_SPACING_ANOMALIES = 50
 
 
@@ -65,15 +53,12 @@ def _is_indonesian_title_case(text: str) -> bool:
         if not core or not core[0].isalpha():
             continue
         if i == 0:
-            # Kata pertama: harus kapital
             if not core[0].isupper():
                 return False
         elif core.lower() in INDONESIAN_CONJUNCTIONS:
-            # Kata sambung: harus lowercase (warning jika kapital)
             if core[0].isupper():
                 return False
         else:
-            # Kata biasa: harus kapital di huruf pertama
             if not core[0].isupper():
                 return False
     return True
@@ -100,10 +85,6 @@ def _to_indonesian_title_case(text: str) -> str:
     return (prefix + " ".join(result)).strip()
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Blok konstanta `PAPER_SIZE_MAP` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
 PAPER_SIZE_MAP: dict[tuple[float, float], str] = {
     (21.0, 29.7): "A4",
     (21.0, 33.0): "F4",
@@ -113,30 +94,19 @@ PAPER_SIZE_MAP: dict[tuple[float, float], str] = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `_get_paper_size` untuk kebutuhan modul `docx_property_extractor`.
-# ---------------------------------------------------------------------------
 def _get_paper_size(width_cm: float, height_cm: float) -> str:
     """Map paper dimensions to standard paper size names."""
-    # Check portrait (width < height)
     if width_cm < height_cm:
         key = (round(width_cm, 1), round(height_cm, 1))
         if key in PAPER_SIZE_MAP:
             return PAPER_SIZE_MAP[key]
-    # Check landscape (width > height)
     else:
         key = (round(height_cm, 1), round(width_cm, 1))
         if key in PAPER_SIZE_MAP:
             return PAPER_SIZE_MAP[key]
-    # Return approximate size if not in map
     return f"{round(width_cm, 1)}x{round(height_cm, 1)}cm"
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `_get_alignment_string` untuk kebutuhan modul `docx_property_extractor`.
-# ---------------------------------------------------------------------------
 def _get_alignment_string(alignment) -> str:
     """Convert python-docx alignment enum to string."""
     mapping = {
@@ -148,10 +118,6 @@ def _get_alignment_string(alignment) -> str:
     return mapping.get(alignment, "LEFT")
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `_get_orientation_string" untuk kebutuhan modul `docx_property_extractor`.
-# ---------------------------------------------------------------------------
 def _get_orientation_string(orientation) -> str:
     """Convert python-docx orientation enum to string."""
     mapping = {
@@ -161,31 +127,20 @@ def _get_orientation_string(orientation) -> str:
     return mapping.get(orientation, "PORTRAIT")
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `_get_line_spacing_rule" untuk kebutuhan modul `docx_property_extractor`.
-# ---------------------------------------------------------------------------
 def _get_line_spacing_rule(line_spacing) -> str:
     """Deprecated stub — gunakan _resolve_line_spacing_info."""
     return "MULTIPLE"
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `_extract_typography" untuk kebutuhan modul `docx_property_extractor`.
-# ---------------------------------------------------------------------------
 def _resolve_font_size(run, para_style, doc: Document) -> int | None:
     """Resolve effective font size dengan menelusuri style hierarchy."""
-    # 1. Nilai eksplisit di run
     if run.font.size is not None:
         return int(run.font.size.pt)
-    # 2. Style paragraf langsung
     style = para_style
     while style is not None:
         if style.font.size is not None:
             return int(style.font.size.pt)
         style = getattr(style, "base_style", None)
-    # 3. Fallback ke Normal style
     try:
         normal = doc.styles["Normal"]
         if normal.font.size is not None:
@@ -213,10 +168,6 @@ def _resolve_font_name(run, para_style, doc: Document) -> str | None:
     return None
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: extract_docx_properties (di file ini)
-# Ekstrak font, ukuran, alignment dari paragraf & run aktual — hasilnya masuk ke DocxProperties.typography.
-# ---------------------------------------------------------------------------
 def _extract_typography(doc: Document) -> dict:
     """Extract typography properties dari actual paragraphs dan runs."""
     from collections import Counter
@@ -250,21 +201,18 @@ def _extract_typography(doc: Document) -> dict:
                 body_fonts[name] += 1
 
         if is_heading:
-            # bold: eksplisit di run atau style
             bold_val = para.runs[0].font.bold if para.runs else None
             if bold_val is None:
                 bold_val = para.style.font.bold
             if bold_val is not None:
                 heading_bold_votes.append(bool(bold_val))
 
-            # all caps: cek XML rPr allCaps / caps
             caps_val = para.runs[0].font.all_caps if para.runs else None
             if caps_val is None:
                 caps_val = para.style.font.all_caps
             if caps_val is not None:
                 heading_caps_votes.append(bool(caps_val))
             else:
-                # Deteksi visual: teks heading full uppercase
                 heading_caps_votes.append(para.text.strip() == para.text.strip().upper()
                                           and len(para.text.strip()) > 2)
 
@@ -283,10 +231,6 @@ def _extract_typography(doc: Document) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `_extract_page_layout" untuk kebutuhan modul `docx_property_extractor`.
-# ---------------------------------------------------------------------------
 def _twips_to_cm(value_str: str | None) -> float | None:
     """Convert twips string (may be float) to cm. 1 inch = 1440 twips = 2.54 cm."""
     if value_str is None:
@@ -297,15 +241,10 @@ def _twips_to_cm(value_str: str | None) -> float | None:
         return None
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: extract_docx_properties (di file ini)
-# Ekstrak ukuran kertas, orientasi, dan margin dari section pertama dokumen → DocxProperties.page_layout.
-# ---------------------------------------------------------------------------
 def _extract_page_layout(doc: Document) -> dict:
     """Extract page layout properties from first section."""
     section = doc.sections[0]
 
-    # Read margins directly from XML to avoid python-docx int() cast on float strings
     pgMar = section._sectPr.find(qn("w:pgMar"))
     if pgMar is not None:
         margin_top    = _twips_to_cm(pgMar.get(qn("w:top")))
@@ -315,7 +254,6 @@ def _extract_page_layout(doc: Document) -> dict:
     else:
         margin_top = margin_bottom = margin_left = margin_right = None
 
-    # Paper size — read from XML for same reason
     pgSz = section._sectPr.find(qn("w:pgSz"))
     if pgSz is not None:
         page_width_cm  = _twips_to_cm(pgSz.get(qn("w:w")))
@@ -327,14 +265,12 @@ def _extract_page_layout(doc: Document) -> dict:
     if page_width_cm and page_height_cm:
         paper_size = _get_paper_size(page_width_cm, page_height_cm)
 
-    # Orientation — read from XML to avoid python-docx enum parse issues
     orient_attr = pgSz.get(qn("w:orient")) if pgSz is not None else None
     if orient_attr == "landscape":
         orientation = "landscape"
     else:
         orientation = "portrait"
 
-    # Columns — baca dari w:cols
     cols_el = section._sectPr.find(qn("w:cols"))
     columns = 1
     if cols_el is not None:
@@ -356,10 +292,6 @@ def _extract_page_layout(doc: Document) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `_extract_spacing" untuk kebutuhan modul `docx_property_extractor`.
-# ---------------------------------------------------------------------------
 def _resolve_line_spacing_info(para) -> tuple[float | None, str]:
     """Baca spasi baris dari XML paragraf.
 
@@ -384,7 +316,6 @@ def _resolve_line_spacing_info(para) -> tuple[float | None, str]:
     line_int = int(line_val)
 
     if line_rule in (None, "auto"):
-        # MULTIPLE: satuan 240ths-of-a-line → konversi ke multiplier
         multiplier = round(line_int / 240, 2)
         if abs(multiplier - 1.0) <= 0.02:
             return None, "SINGLE"
@@ -394,10 +325,8 @@ def _resolve_line_spacing_info(para) -> tuple[float | None, str]:
             return None, "DOUBLE"
         return multiplier, "MULTIPLE"
     elif line_rule == "exact":
-        # EXACTLY: satuan twips → pt (1 twip = 1/20 pt)
         return round(line_int / 20, 2), "EXACTLY"
     elif line_rule == "atLeast":
-        # AT_LEAST: satuan twips → pt
         return round(line_int / 20, 2), "AT_LEAST"
     else:
         multiplier = round(line_int / 240, 2)
@@ -425,7 +354,6 @@ def _build_paragraph_map(doc: Document) -> list[dict]:
             continue
         style = para.style.name
 
-        # Tentukan level heading dari nama style
         level: int | None = None
         if style.startswith("Heading"):
             try:
@@ -433,20 +361,17 @@ def _build_paragraph_map(doc: Document) -> list[dict]:
             except ValueError:
                 pass
 
-        # Fallback: deteksi dari teks untuk heading yang pakai custom style
         if level is None and _re.match(r"^BAB\s+[IVXLC\d]+", text, _re.IGNORECASE):
             level = 1
         elif level is None and _re.match(r"^\d+\.\d+\s+\S", text):
             level = 2
 
-        # Update context stack
         if level == 1:
             h1_ctx = text
             h2_ctx = None
         elif level == 2:
             h2_ctx = text
 
-        # Bangun string lokasi hierarkis
         if h1_ctx and h2_ctx:
             location = f"{h1_ctx} > {h2_ctx}"
         elif h1_ctx:
@@ -540,22 +465,16 @@ def _detect_daftar_sections(para_map: list[dict]) -> dict[str, bool]:
             flags["has_daftar_tabel"] = True
         if "DAFTAR GAMBAR" in upper or "DAFTAR ILUSTRASI" in upper:
             flags["has_daftar_gambar"] = True
-        # Setelah semua True, tidak perlu lanjut
         if all(flags.values()):
             break
     return flags
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: extract_docx_properties (di file ini)
-# Ekstrak line spacing dominan, before/after paragraph, dan anomali spacing → DocxProperties.spacing.
-# ---------------------------------------------------------------------------
 def _extract_spacing(doc: Document) -> dict:
     """Extract spacing properties dari actual paragraphs (bukan hanya Normal style)."""
     from collections import Counter
     from docx.enum.text import WD_ALIGN_PARAGRAPH
 
-    # Votes untuk (line_spacing, line_spacing_rule) sekaligus
     rule_votes: Counter[str] = Counter()
     value_by_rule: dict[str, Counter] = {}
     alignment_votes: Counter[str] = Counter()
@@ -570,7 +489,6 @@ def _extract_spacing(doc: Document) -> dict:
         ls_val, ls_rule = _resolve_line_spacing_info(para)
         rule_votes[ls_rule] += 1
         if ls_val is not None:
-            # Sanity guard: tolak nilai di luar rentang wajar per tipe rule
             valid = (
                 (ls_rule == "MULTIPLE" and 0.8 <= ls_val <= 4.0)
                 or (ls_rule in ("EXACTLY", "AT_LEAST") and 6.0 <= ls_val <= 144.0)
@@ -578,14 +496,12 @@ def _extract_spacing(doc: Document) -> dict:
             if valid:
                 value_by_rule.setdefault(ls_rule, Counter())[ls_val] += 1
 
-        # Alignment
         align = para.alignment
         if align is None:
             align = para.style.paragraph_format.alignment
         if align is not None:
             alignment_votes[_get_alignment_string(align)] += 1
 
-        # First line indent
         fi = para.paragraph_format.first_line_indent
         if fi is not None:
             try:
@@ -593,10 +509,8 @@ def _extract_spacing(doc: Document) -> dict:
             except AttributeError:
                 pass
 
-    # Pilih rule paling dominan
     dominant_rule = rule_votes.most_common(1)[0][0] if rule_votes else "MULTIPLE"
 
-    # Grup A: line_spacing = None (multiplier sudah di-encode oleh rule)
     _GRUP_A = {"SINGLE", "ONE_POINT_FIVE", "DOUBLE"}
     if dominant_rule in _GRUP_A:
         line_spacing = None
@@ -615,15 +529,10 @@ def _extract_spacing(doc: Document) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `_extract_document_structure" untuk kebutuhan modul `docx_property_extractor`.
-# ---------------------------------------------------------------------------
 def _extract_document_structure(doc: Document) -> dict:
     """Extract document structure dari seluruh paragraf dokumen."""
     heading_count = 0
     section_count = len(doc.sections)
-    # Hitung heading_count
     heading_count = sum(1 for p in doc.paragraphs if p.style.name.startswith("Heading"))
 
     return {
@@ -632,21 +541,15 @@ def _extract_document_structure(doc: Document) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `_extract_figures_tables" untuk kebutuhan modul `docx_property_extractor`.
-# ---------------------------------------------------------------------------
 def _extract_figures_tables(doc: Document) -> dict:
     """Extract figures and tables information."""
     table_count = len(doc.tables)
 
-    # Estimate figure count by checking image elements
     figure_count = 0
     for rel in doc.part.rels.values():
         if "image" in rel.reltype:
             figure_count += 1
 
-    # Caption format: scan paragraphs dengan style Caption
     figure_format = None
     table_format = None
     for para in doc.paragraphs:
@@ -673,10 +576,6 @@ def _extract_figures_tables(doc: Document) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `_extract_numbering" untuk kebutuhan modul `docx_property_extractor`.
-# ---------------------------------------------------------------------------
 def _detect_page_number_info(doc: Document) -> dict:
     """Deteksi format dan lokasi nomor halaman dari header/footer."""
     import re as _re
@@ -704,7 +603,7 @@ def _detect_page_number_info(doc: Document) -> dict:
                 return "roman"
             if "\\* Arabic" in instr or "\\* arabic" in instr:
                 return "arabic"
-            return "arabic"  # default PAGE tanpa format = arabic
+            return "arabic"
         return None
 
     def _detect_alignment(para) -> str | None:
@@ -714,7 +613,6 @@ def _detect_page_number_info(doc: Document) -> dict:
         return _get_alignment_string(align) if align is not None else None
 
     for section in doc.sections:
-        # Cek footer dulu (lokasi paling umum untuk nomor halaman PKM)
         for hf_attr, location_label in (
             ("footer", "bottom"),
             ("header", "top"),
@@ -726,7 +624,6 @@ def _detect_page_number_info(doc: Document) -> dict:
                 txt = para.text.strip()
                 num_fmt = _detect_numfmt(para._element)
                 if num_fmt is None:
-                    # Coba deteksi dari teks langsung: angka romawi atau arab
                     if _re.search(r"\b(i|ii|iii|iv|v|vi|vii|viii|ix|x)\b", txt, _re.IGNORECASE):
                         num_fmt = "roman"
                     elif _re.search(r"\b\d+\b", txt):
@@ -756,7 +653,6 @@ def _extract_numbering(doc: Document) -> dict:
     """Extract numbering properties dari heading patterns dan header/footer."""
     import re as _re
 
-    # Chapter format: scan heading paragraphs
     chapter_format = None
     sub_chapter_format = None
     for para in doc.paragraphs:
@@ -773,7 +669,6 @@ def _extract_numbering(doc: Document) -> dict:
             if _re.match(r"^\d+\.\d+", txt):
                 sub_chapter_format = "{n}.{m}"
 
-    # Caption format: scan paragraphs dengan style Caption
     figure_format = None
     table_format = None
     for para in doc.paragraphs:
@@ -800,12 +695,6 @@ def _extract_numbering(doc: Document) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/validation/validator.py → validate_document
-# Entry point utama ekstraksi properti DOCX pada pipeline validasi.
-# Memanggil semua sub-extractor (_extract_typography, _extract_page_layout, _extract_spacing, dll.)
-# dan mengembalikan DocxProperties yang dibandingkan dengan ground truth document_metadata.payload.
-# ---------------------------------------------------------------------------
 def extract_docx_properties(docx_path: str | Path) -> DocxProperties:
     """Extract all formatting properties from a DOCX file.
 
@@ -828,10 +717,8 @@ def extract_docx_properties(docx_path: str | Path) -> DocxProperties:
     except Exception as e:
         raise Exception(f"Error reading DOCX file: {e}")
 
-    # Single-pass paragraph map — dipakai oleh semua extractor di bawah
     para_map = _build_paragraph_map(doc)
 
-    # Extract all properties
     typography = _extract_typography(doc)
     page_layout = _extract_page_layout(doc)
     spacing = _extract_spacing(doc)
@@ -839,21 +726,17 @@ def extract_docx_properties(docx_path: str | Path) -> DocxProperties:
     figures_tables = _extract_figures_tables(doc)
     numbering = _extract_numbering(doc)
 
-    # Anomaly extraction (rule-based, per-item)
     heading_caps_anomalies = _extract_heading_caps_anomalies(para_map)
     majority_spacing = spacing["line_spacing"]
     spacing_anomalies = _extract_spacing_anomalies(para_map, majority_spacing)
     daftar_flags = _detect_daftar_sections(para_map)
 
-    # Combine all into DocxProperties
     props = DocxProperties(
-        # Typography
         font_family=typography["font_family"],
         font_size_body_pt=typography["font_size_body_pt"],
         font_size_heading_pt=typography["font_size_heading_pt"],
         heading_bold=typography["heading_bold"],
         heading_all_caps=typography["heading_all_caps"],
-        # Page Layout
         margin_top_cm=page_layout["margin_top_cm"],
         margin_bottom_cm=page_layout["margin_bottom_cm"],
         margin_left_cm=page_layout["margin_left_cm"],
@@ -861,20 +744,16 @@ def extract_docx_properties(docx_path: str | Path) -> DocxProperties:
         paper_size=page_layout["paper_size"],
         orientation=page_layout["orientation"],
         columns=page_layout["columns"],
-        # Spacing
         line_spacing=spacing["line_spacing"],
         line_spacing_rule=spacing["line_spacing_rule"],
         paragraph_alignment=spacing["paragraph_alignment"],
         first_line_indent_cm=spacing["first_line_indent_cm"],
-        # Document Structure
         heading_count=doc_structure["heading_count"],
         section_count=doc_structure["section_count"],
-        # Daftar sections (dari paragraph map)
         has_daftar_isi=daftar_flags["has_daftar_isi"],
         has_daftar_pustaka=daftar_flags["has_daftar_pustaka"],
         has_daftar_tabel=daftar_flags["has_daftar_tabel"],
         has_daftar_gambar=daftar_flags["has_daftar_gambar"],
-        # Numbering
         chapter_format=numbering["chapter_format"],
         sub_chapter_format=numbering["sub_chapter_format"],
         preliminary_page_format=numbering["preliminary_page_format"],
@@ -885,10 +764,8 @@ def extract_docx_properties(docx_path: str | Path) -> DocxProperties:
         content_page_alignment=numbering["content_page_alignment"],
         figure_format=figures_tables["figure_format"],
         table_format=figures_tables["table_format"],
-        # Figures & Tables
         table_count=figures_tables["table_count"],
         figure_count=figures_tables["figure_count"],
-        # Anomaly lists
         heading_caps_anomalies=heading_caps_anomalies,
         spacing_anomalies=spacing_anomalies,
     )
@@ -896,10 +773,6 @@ def extract_docx_properties(docx_path: str | Path) -> DocxProperties:
     return props
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `extract_docx_properties_dict` untuk kebutuhan modul `docx_property_extractor`.
-# ---------------------------------------------------------------------------
 def extract_docx_properties_dict(docx_path: str | Path) -> dict:
     """Extract all formatting properties from a DOCX file as dict.
 

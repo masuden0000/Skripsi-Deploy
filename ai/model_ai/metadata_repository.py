@@ -1,10 +1,4 @@
-"""
-Fungsi: Helper terpusat untuk baca/tulis metadata dokumen di tabel Supabase `document_metadata`.
-
-Digunakan oleh: model_ai/docx/metadata_loader.py; model_ai/extractor/doc_extractor.py; model_ai/extractor/schema_differ.py; testing ekstraksi.
-
-Tujuan: Menjadikan `document_metadata.payload` sebagai source of truth metadata lintas runtime AI.
-"""
+"""Helper terpusat untuk baca/tulis metadata dokumen di tabel Supabase document_metadata. Posisi pipeline: doc_extractor → metadata_repository → instructional_placeholder_builder."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -16,10 +10,6 @@ from model_ai.config import get_config
 from model_ai.extractor.models import DocumentMetadata
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Fungsi-fungsi repository metadata pada modul ini.
-# Menyediakan client Supabase yang konsisten dengan konfigurasi runtime AI.
-# ---------------------------------------------------------------------------
 def build_metadata_supabase_client() -> Client:
     config = get_config()
     return create_client(
@@ -28,10 +18,6 @@ def build_metadata_supabase_client() -> Client:
     )
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: load_document_metadata_payload()
-# Mengambil satu row metadata dari Supabase berdasarkan project_id.
-# ---------------------------------------------------------------------------
 def get_document_metadata_row(project_id: str) -> dict[str, Any]:
     client = build_metadata_supabase_client()
     result = (
@@ -55,10 +41,6 @@ def get_document_metadata_row(project_id: str) -> dict[str, Any]:
     return row
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/docx/metadata_loader.py; schema_differ; testing ekstraksi.
-# Mengambil raw payload JSON metadata berdasarkan project_id.
-# ---------------------------------------------------------------------------
 def load_document_metadata_payload(project_id: str) -> dict[str, Any]:
     row = get_document_metadata_row(project_id)
     payload = row.get("payload")
@@ -69,27 +51,15 @@ def load_document_metadata_payload(project_id: str) -> dict[str, Any]:
     return payload
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/docx/metadata_loader.py
-# Memvalidasi payload raw menjadi object DocumentMetadata yang aman dipakai runtime.
-# ---------------------------------------------------------------------------
 def validate_document_metadata_payload(payload: dict[str, Any]) -> DocumentMetadata:
     return DocumentMetadata.model_validate(payload)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/docx/metadata_loader.py
-# Shortcut untuk memuat sekaligus memvalidasi metadata dari Supabase.
-# ---------------------------------------------------------------------------
 def load_document_metadata(project_id: str) -> DocumentMetadata:
     payload = load_document_metadata_payload(project_id)
     return validate_document_metadata_payload(payload)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/extractor/doc_extractor.py
-# Upsert metadata hasil extract ke Supabase dan kembalikan project_id yang dipakai.
-# ---------------------------------------------------------------------------
 def upsert_document_metadata(metadata: DocumentMetadata, project_id: str | None = None) -> str:
     payload = metadata.model_dump(exclude_none=True)
     client = build_metadata_supabase_client()
@@ -109,10 +79,6 @@ def upsert_document_metadata(metadata: DocumentMetadata, project_id: str | None 
     return project_id or "unknown"
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/docx/generator.py
-# Simpan generated_placeholders hasil LLM ke payload tanpa overwrite field lain.
-# ---------------------------------------------------------------------------
 def save_generated_placeholders(project_id: str, generated: dict[str, str]) -> None:
     """
     Update hanya field document_structure_proposal.generated_placeholders di payload

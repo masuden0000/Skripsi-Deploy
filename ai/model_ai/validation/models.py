@@ -1,19 +1,10 @@
-"""
-Schema untuk validasi dokumen.
-
-Digunakan oleh: validator.py, rule_validator.py, docx_property_extractor.py
-
-Tujuan: Mendefinisikan struktur data untuk hasil validasi dan properti DOCX.
-"""
+"""Schema Pydantic untuk hasil validasi dokumen dan properti DOCX. Posisi pipeline: dipakai oleh docx_property_extractor, rule_validator, dan validator."""
 from datetime import datetime, timezone
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
 
-# ---------------------------------------------------------------------------
-# Sub-model untuk anomaly reporting (per-heading dan per-paragraph)
-# ---------------------------------------------------------------------------
 class HeadingCapsAnomaly(BaseModel):
     """Satu pelanggaran aturan kapitalisasi pada sebuah heading."""
 
@@ -36,10 +27,6 @@ class SpacingAnomaly(BaseModel):
     text_preview: str = Field(default="", description="60 karakter pertama teks paragraf")
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `VALIDATION_CATEGORIES` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
 VALIDATION_CATEGORIES = (
     "typography",
     "page_layout",
@@ -50,9 +37,6 @@ VALIDATION_CATEGORIES = (
 )
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: rule_validator.py — mencatat hasil setiap pengecekan properti.
-# ---------------------------------------------------------------------------
 class ValidationCheckResult(BaseModel):
     """Hasil satu pengecekan properti: passed, failed, warning, atau skipped."""
 
@@ -82,10 +66,6 @@ class ValidationCheckResult(BaseModel):
     )
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan class `ValidationIssue` untuk kebutuhan modul `validation`.
-# ---------------------------------------------------------------------------
 class ValidationIssue(BaseModel):
     """Represents a single validation issue found in the document."""
 
@@ -127,10 +107,6 @@ class ValidationIssue(BaseModel):
         return f"[{self.severity.upper()}] {self.category}.{self.field}: {self.message}"
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan class `ValidationResult` untuk kebutuhan modul `validation`.
-# ---------------------------------------------------------------------------
 class ValidationResult(BaseModel):
     """Represents the result of a document validation."""
 
@@ -185,7 +161,6 @@ class ValidationResult(BaseModel):
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
-        # Kelompokkan checks per kategori untuk report terstruktur
         report: dict[str, list[dict]] = {}
         for c in self.checks:
             report.setdefault(c.category, []).append(c.model_dump(exclude_none=False))
@@ -205,24 +180,18 @@ class ValidationResult(BaseModel):
         }
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan class `DocxProperties` untuk kebutuhan modul `validation`.
-# ---------------------------------------------------------------------------
 class DocxProperties(BaseModel):
     """Represents extracted properties from a DOCX file.
 
     This mirrors the structure of DocumentMetadata for easy comparison.
     """
 
-    # Typography
     font_family: str | None = Field(default=None, description="Primary font family")
     font_size_body_pt: int | None = Field(default=None, description="Body font size in points")
     font_size_heading_pt: int | None = Field(default=None, description="Heading font size in points")
     heading_bold: bool | None = Field(default=None, description="Whether headings are bold")
     heading_all_caps: bool | None = Field(default=None, description="Whether headings are ALL CAPS")
 
-    # Page Layout
     margin_top_cm: float | None = Field(default=None, description="Top margin in cm")
     margin_bottom_cm: float | None = Field(default=None, description="Bottom margin in cm")
     margin_left_cm: float | None = Field(default=None, description="Left margin in cm")
@@ -231,20 +200,14 @@ class DocxProperties(BaseModel):
     orientation: str | None = Field(default=None, description="Portrait or Landscape")
     columns: int | None = Field(default=None, description="Number of text columns per page")
 
-    # Spacing
-    # Grup A (SINGLE/ONE_POINT_FIVE/DOUBLE): line_spacing = None (multiplier dari rule).
-    # Grup B (MULTIPLE): line_spacing = desimal pengali.
-    # Grup C (AT_LEAST/EXACTLY): line_spacing = nilai pt.
     line_spacing: float | None = Field(default=None, description="Nilai spasi: None untuk Grup A, desimal untuk MULTIPLE, pt untuk AT_LEAST/EXACTLY")
     line_spacing_rule: str | None = Field(default=None, description="Aturan spasi: SINGLE | ONE_POINT_FIVE | DOUBLE | MULTIPLE | AT_LEAST | EXACTLY")
     paragraph_alignment: str | None = Field(default=None, description="Default paragraph alignment")
     first_line_indent_cm: float | None = Field(default=None, description="First line indent in cm")
 
-    # Document Structure
     heading_count: int = Field(default=0, description="Number of headings in document")
     section_count: int = Field(default=0, description="Number of sections in document")
 
-    # Numbering
     chapter_format: str | None = Field(default=None, description="Chapter number format")
     sub_chapter_format: str | None = Field(default=None, description="Sub-chapter number format")
     preliminary_page_format: str | None = Field(default=None, description="Preliminary pages numbering format")
@@ -254,19 +217,16 @@ class DocxProperties(BaseModel):
     content_page_location: str | None = Field(default=None, description="Content page number location")
     content_page_alignment: str | None = Field(default=None, description="Content page number alignment")
 
-    # Figures & Tables
     table_caption_position: str | None = Field(default=None, description="Table caption position (above/below)")
     figure_caption_position: str | None = Field(default=None, description="Figure caption position (above/below)")
     table_count: int = Field(default=0, description="Number of tables in document")
     figure_count: int = Field(default=0, description="Number of figures in document")
 
-    # Document structure — detected daftar sections
     has_daftar_isi: bool = Field(default=False, description="Whether document has Daftar Isi")
     has_daftar_pustaka: bool = Field(default=False, description="Whether document has Daftar Pustaka")
     has_daftar_tabel: bool = Field(default=False, description="Whether document has Daftar Tabel")
     has_daftar_gambar: bool = Field(default=False, description="Whether document has Daftar Gambar")
 
-    # Per-item anomaly lists for detailed location-aware reporting
     heading_caps_anomalies: list[HeadingCapsAnomaly] = Field(
         default_factory=list,
         description="List of heading paragraphs that violate ALL CAPS (H1) or title case (H2) rules",

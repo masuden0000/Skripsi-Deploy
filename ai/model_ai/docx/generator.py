@@ -1,15 +1,4 @@
-"""
-Fungsi: Orkestrator utama pembuatan DOCX proposal dari output.json, chunk, dan instructional placeholders.
-
-Digunakan oleh: manage.py; tests/docx/test_docx_generator.py
-
-Tujuan: Menyediakan alur end-to-end agar perintah docx menghasilkan file final konsisten.
-
-Input: output.json (dari extract), chunks (dari Supabase)
-Output: bytes DOCX — tidak disimpan ke filesystem lokal.
-
-Keyword: automated document generation
-"""
+"""Orkestrator utama pembuatan DOCX proposal dari metadata, chunk, dan instructional placeholders. Posisi pipeline: instructional_placeholder_builder → generator → docx_renderer → DOCX output."""
 from pathlib import Path
 
 from model_ai.docx.chunk_loader import load_chunk_sources
@@ -36,7 +25,6 @@ def generate_proposal_docx_bytes(
 
     chunks = load_chunk_sources(project_id)
 
-    # Gunakan placeholder yang sudah tersimpan di DB (dari step pipeline sebelumnya)
     existing_placeholders = (
         metadata.document_structure_proposal.generated_placeholders
         if metadata.document_structure_proposal
@@ -60,7 +48,6 @@ def generate_proposal_docx_bytes(
         except Exception as exc:
             print(f"[docx] WARNING: Gagal menyimpan placeholder ke DB: {exc}", flush=True)
 
-    # User-edited placeholders override LLM-generated
     user_placeholders = (
         metadata.document_structure_proposal.user_placeholders
         if metadata.document_structure_proposal

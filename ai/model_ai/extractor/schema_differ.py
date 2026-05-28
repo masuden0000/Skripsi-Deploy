@@ -1,10 +1,4 @@
-"""
-Fungsi: Membandingkan hasil ekstraksi terstruktur vs ekstraksi bebas untuk analisis selisih schema.
-
-Digunakan oleh: manage.py; tests/extractor/test_schema_differ.py
-
-Tujuan: Membantu evaluasi kualitas schema dengan diff yang bisa ditinjau.
-"""
+"""Membandingkan hasil ekstraksi terstruktur vs ekstraksi bebas untuk analisis selisih schema. Posisi pipeline: doc_extractor → schema_differ (evaluasi/diagnostik)."""
 import json
 import re
 from dataclasses import dataclass, field
@@ -12,33 +6,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from langchain_groq import ChatGroq  # kept for potential direct use
 from model_ai.config import get_config
 from model_ai.extractor.doc_extractor import render_prompt, _build_llm
 from model_ai.metadata_repository import load_document_metadata_payload
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `APP_DIR` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
 APP_DIR = Path(__file__).resolve().parents[2]
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `DIFF_OUTPUT_DIR` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
 DIFF_OUTPUT_DIR = APP_DIR / "data"
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `_SKIP_KEYS` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
 _SKIP_KEYS = {"sources", "document_type", "source_document"}
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan class `FieldChange` untuk kebutuhan modul `schema_differ`.
-# ---------------------------------------------------------------------------
 @dataclass
 class FieldChange:
     key: str
@@ -46,10 +23,6 @@ class FieldChange:
     new_value: Any
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan class `SchemaDiff` untuk kebutuhan modul `schema_differ`.
-# ---------------------------------------------------------------------------
 @dataclass
 class SchemaDiff:
     matched: list[str] = field(default_factory=list)
@@ -58,20 +31,12 @@ class SchemaDiff:
     removed: list[FieldChange] = field(default_factory=list)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_normalize` sebagai bagian alur `schema_differ`.
-# ---------------------------------------------------------------------------
 def _normalize(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip().lower()
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `flatten_schema` sebagai bagian alur `schema_differ`.
-# ---------------------------------------------------------------------------
 def flatten_schema(data: dict[str, Any], prefix: str = "") -> dict[str, Any]:
     """Flatten nested dict to dotted key notation, skipping source/metadata keys."""
     result: dict[str, Any] = {}
@@ -88,10 +53,6 @@ def flatten_schema(data: dict[str, Any], prefix: str = "") -> dict[str, Any]:
     return result
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `diff_schemas` sebagai bagian alur `schema_differ`.
-# ---------------------------------------------------------------------------
 def diff_schemas(old: dict[str, Any], new: dict[str, Any]) -> SchemaDiff:
     """Compare two flat schema dicts and categorize differences into 4 buckets."""
     diff = SchemaDiff()
@@ -113,20 +74,12 @@ def diff_schemas(old: dict[str, Any], new: dict[str, Any]) -> SchemaDiff:
     return diff
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `load_old_schema` sebagai bagian alur `schema_differ`.
-# ---------------------------------------------------------------------------
 def load_old_schema(project_id: str) -> dict[str, Any]:
     """Load and flatten the existing extraction payload from document_metadata."""
     data = load_document_metadata_payload(project_id)
     return flatten_schema(data)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `generate_report` sebagai bagian alur `schema_differ`.
-# ---------------------------------------------------------------------------
 def generate_report(diff: SchemaDiff) -> str:
     """Generate a human-readable markdown diff report."""
     lines = [
@@ -172,10 +125,6 @@ def generate_report(diff: SchemaDiff) -> str:
     return "\n".join(lines)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `save_diff` sebagai bagian alur `schema_differ`.
-# ---------------------------------------------------------------------------
 def save_diff(diff: SchemaDiff, report: str) -> None:
     """Save diff results to timestamped JSON and markdown files."""
     DIFF_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -207,10 +156,6 @@ def save_diff(diff: SchemaDiff, report: str) -> None:
     print(f"[schema-diff] Laporan disimpan: {json_path}")
     print(f"[schema-diff] Laporan disimpan: {md_path}")
 
-
-# ---------------------------------------------------------------------------
-# LLM + Supabase functions — imported lazily to avoid circular deps
-# ---------------------------------------------------------------------------
 
 def fetch_broad_chunks(project_id: str) -> list[dict]:
     """Retrieve representative chunks via broad RAG queries for one project."""
@@ -253,10 +198,6 @@ def fetch_broad_chunks(project_id: str) -> list[dict]:
     return _expand_to_full_headers(seed_chunks, client)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/extractor/prompts.py
-# Menjalankan fungsi `free_extract_all_rules` sebagai bagian alur `schema_differ`.
-# ---------------------------------------------------------------------------
 def free_extract_all_rules(chunks: list[dict]) -> dict[str, Any]:
     """Ask LLM to freely identify all extractable rules from chunks as flat key-value JSON."""
     if not chunks:
@@ -271,7 +212,6 @@ def free_extract_all_rules(chunks: list[dict]) -> dict[str, Any]:
     result = llm.invoke(prompt)
     raw = str(result.content).strip()
 
-    # Try extracting JSON from markdown code fence first, then plain JSON
     json_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, re.DOTALL)
     if json_match:
         raw = json_match.group(1)
@@ -282,10 +222,6 @@ def free_extract_all_rules(chunks: list[dict]) -> dict[str, Any]:
         return {}
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: manage.py
-# Menjalankan fungsi `run_schema_diff` sebagai bagian alur `schema_differ`.
-# ---------------------------------------------------------------------------
 def run_schema_diff(project_id: str) -> SchemaDiff:
     """Orchestrate the full schema diff pipeline."""
     print(

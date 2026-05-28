@@ -1,24 +1,13 @@
-"""
-Bandingkan properti DOCX dengan rules dari DocumentMetadata.
-
-Digunakan oleh: validator.py
-
-Tujuan: Mendeteksi deviasi format antara dokumen dengan rules yang diharapkan.
-        Setiap properti dicatat hasilnya (passed / failed / warning / skipped).
-"""
+"""Membandingkan properti DOCX dengan rules dari DocumentMetadata. Posisi pipeline: docx_property_extractor → rule_validator → validator."""
 from typing import Any
 
 from model_ai.extractor.models import DocumentMetadata
 from model_ai.validation.models import DocxProperties, ValidationCheckResult, ValidationIssue
 
 
-# ---------------------------------------------------------------------------
-# Toleransi perbandingan float
-# ---------------------------------------------------------------------------
 MARGIN_TOLERANCE_CM = 0.1
 LINE_SPACING_TOLERANCE = 0.01
 
-# Grup A: rule statis — multiplier sudah di-encode, line_spacing = None
 _GRUP_A_MULTIPLIER: dict[str, float] = {
     "SINGLE": 1.0,
     "ONE_POINT_FIVE": 1.5,
@@ -26,9 +15,6 @@ _GRUP_A_MULTIPLIER: dict[str, float] = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Helper: bandingkan dua nilai dengan toleransi opsional
-# ---------------------------------------------------------------------------
 def _compare_values(
     expected: Any,
     actual: Any,
@@ -49,9 +35,6 @@ def _compare_values(
     return expected == actual
 
 
-# ---------------------------------------------------------------------------
-# Helper: catat satu pengecekan dan tambahkan issue jika gagal
-# ---------------------------------------------------------------------------
 def _record_check(
     checks: list[ValidationCheckResult],
     issues: list[ValidationIssue],
@@ -65,7 +48,6 @@ def _record_check(
     tolerance: float | None = None,
 ) -> None:
     """Catat hasil satu pengecekan. Jika gagal, tambahkan juga ke issues."""
-    # Tentukan skip_reason
     if expected is None and actual is None:
         checks.append(ValidationCheckResult(
             category=category, field=field, status="skipped",
@@ -143,9 +125,6 @@ def _record_skipped(
     ))
 
 
-# ---------------------------------------------------------------------------
-# 1. TIPOGRAFI
-# ---------------------------------------------------------------------------
 def _validate_typography(
     props: DocxProperties,
     metadata: DocumentMetadata,
@@ -177,7 +156,6 @@ def _validate_typography(
                   message=f"Heading bold: diharapkan {'Ya' if t.heading_bold else 'Tidak'}, ditemukan {'Ya' if props.heading_bold else 'Tidak'}",
                   location="Seluruh dokumen (gaya Heading)")
 
-    # Per-heading ALL CAPS (H1) dan title case (H2)
     if props.heading_caps_anomalies:
         for anomaly in props.heading_caps_anomalies:
             field = "heading1_all_caps" if anomaly.level == 1 else "heading2_title_case"
@@ -205,9 +183,6 @@ def _validate_typography(
                        "Semua Heading 2 sudah title case")
 
 
-# ---------------------------------------------------------------------------
-# 2. TATA LETAK HALAMAN
-# ---------------------------------------------------------------------------
 def _validate_page_layout(
     props: DocxProperties,
     metadata: DocumentMetadata,
@@ -246,9 +221,6 @@ def _validate_page_layout(
                   location=loc)
 
 
-# ---------------------------------------------------------------------------
-# 3. SPASI & INDENTASI
-# ---------------------------------------------------------------------------
 def _validate_spacing(
     props: DocxProperties,
     metadata: DocumentMetadata,
@@ -261,19 +233,14 @@ def _validate_spacing(
     loc_global = "Seluruh dokumen (gaya Normal)"
     rule = (s.line_spacing_rule or "MULTIPLE").upper()
 
-    # Validasi rule (berlaku untuk semua grup)
     _record_check(checks, issues, "spacing", "line_spacing_rule",
                   rule, (props.line_spacing_rule or "").upper(),
                   message=f"Aturan spasi: diharapkan {rule}, ditemukan {props.line_spacing_rule}",
                   location=loc_global)
 
-    # Resolusi nilai efektif untuk referensi anomali per-paragraf
-    # Grup A: nilai sudah di-encode di rule; line_spacing metadata = None
     if rule in _GRUP_A_MULTIPLIER:
         effective_spacing = _GRUP_A_MULTIPLIER[rule]
-        # Untuk Grup A, line_spacing di props juga harus None (tidak dibandingkan numerik)
     else:
-        # Grup B / C: line_spacing = nilai aktual (multiplier atau pt)
         effective_spacing = s.line_spacing
         _record_check(checks, issues, "spacing", "line_spacing",
                       s.line_spacing, props.line_spacing,
@@ -292,7 +259,6 @@ def _validate_spacing(
                   message=f"First line indent: diharapkan {s.first_line_indent_cm}cm, ditemukan {props.first_line_indent_cm}cm",
                   location=loc_global)
 
-    # Per-paragraf spacing anomalies — gunakan effective_spacing sebagai referensi
     reported = 0
     for anomaly in props.spacing_anomalies:
         if effective_spacing is not None and abs(anomaly.actual - effective_spacing) <= 0.05:
@@ -324,9 +290,6 @@ def _validate_spacing(
                        "Tidak ada anomali spacing per-paragraf")
 
 
-# ---------------------------------------------------------------------------
-# 4. STRUKTUR KELENGKAPAN DOKUMEN
-# ---------------------------------------------------------------------------
 def _validate_document_structure(
     props: DocxProperties,
     metadata: DocumentMetadata,
@@ -337,7 +300,6 @@ def _validate_document_structure(
         return
     d = metadata.document_structure_proposal
 
-    # Section count
     if props.section_count < 1:
         checks.append(ValidationCheckResult(
             category="document_structure", field="section_count",
@@ -355,7 +317,6 @@ def _validate_document_structure(
         _record_passed(checks, "document_structure", "section_count",
                        f"Dokumen memiliki {props.section_count} Word section")
 
-    # Daftar sections
     _DAFTAR_MAP = {
         "daftar_isi":     ("has_daftar_isi",     "Daftar Isi"),
         "daftar_pustaka": ("has_daftar_pustaka",  "Daftar Pustaka"),
@@ -376,9 +337,6 @@ def _validate_document_structure(
                             skip_reason=f"'{label}' tidak diwajibkan oleh metadata")
 
 
-# ---------------------------------------------------------------------------
-# 5. PENOMORAN
-# ---------------------------------------------------------------------------
 def _validate_numbering(
     props: DocxProperties,
     metadata: DocumentMetadata,
@@ -399,7 +357,6 @@ def _validate_numbering(
                   message=f"Format sub-BAB: diharapkan '{n.sub_chapter_format}', ditemukan '{props.sub_chapter_format}'",
                   location="Heading sub-BAB (Heading 2)")
 
-    # Nomor halaman awal (preliminary)
     pre = n.preliminary
     if pre is not None:
         _record_check(checks, issues, "numbering", "preliminary_page_format",
@@ -419,7 +376,6 @@ def _validate_numbering(
             _record_skipped(checks, "numbering", f,
                             skip_reason="Metadata tidak mendefinisikan nomor halaman awal")
 
-    # Nomor halaman isi (content)
     con = n.content
     if con is not None:
         _record_check(checks, issues, "numbering", "content_page_format",
@@ -439,7 +395,6 @@ def _validate_numbering(
             _record_skipped(checks, "numbering", f,
                             skip_reason="Metadata tidak mendefinisikan nomor halaman isi")
 
-    # Validasi format keterangan gambar & tabel menggunakan figures_and_tables
     ft = metadata.figures_and_tables
     if ft is not None:
         def _caption_prefix(fmt):
@@ -465,9 +420,6 @@ def _validate_numbering(
                       location="Keterangan tabel (Caption style)")
 
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 def compare_properties(
     props: DocxProperties,
     metadata: DocumentMetadata,

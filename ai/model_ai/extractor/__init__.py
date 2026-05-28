@@ -1,11 +1,1 @@
-"""
-Fungsi: Penanda paket extractor.
-
-Digunakan oleh: Diimpor tidak langsung saat package terkait diakses.
-
-Tujuan: Mengelompokkan modul ekstraksi agar struktur import tetap rapi.
-"""
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Diimpor tidak langsung saat package terkait diakses.
-# Menandai package `model_ai` agar import modul tetap konsisten.
-# ---------------------------------------------------------------------------
+"""Penanda paket extractor. Posisi pipeline: sub-package untuk doc_extractor, models, prompts, dan schema_differ."""

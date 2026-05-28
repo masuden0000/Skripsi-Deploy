@@ -1,10 +1,4 @@
-"""
-Fungsi: Upload file ke Supabase Storage.
-
-Digunakan oleh: model_ai/docx/generator.py
-
-Tujuan: Langsung stream DOCX ke Supabase Storage tanpa menyimpan ke filesystem lokal.
-"""
+"""Upload file DOCX ke Supabase Storage. Posisi pipeline: generator → storage (upload output akhir)."""
 from supabase import create_client
 from model_ai.config import get_config
 

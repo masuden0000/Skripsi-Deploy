@@ -1,12 +1,4 @@
-"""
-Fungsi: Entry point CLI untuk menjalankan workflow setup, extract, schema-diff, dan docx.
-
-Digunakan oleh: Dijalankan langsung oleh pengguna via command line.
-
-Tujuan: Menyediakan satu pintu eksekusi agar pipeline bisa dijalankan konsisten dari command line.
-
-Keyword: automated document generation
-"""
+"""CLI entry point untuk menjalankan pipeline automated document extraction dan generation. Posisi pipeline: entry point utama (setup → extract → schema-diff → generate-placeholders → docx → validate)."""
 import argparse
 import sys
 from pathlib import Path
@@ -15,10 +7,6 @@ from pathlib import Path
 AI_DIR = Path(__file__).resolve().parent
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: run_docx dan run_docx_style_map.
-# Menormalkan path relatif CLI agar selalu mengarah ke folder ai/.
-# ---------------------------------------------------------------------------
 def resolve_ai_path(path_value: str) -> Path:
     path = Path(path_value)
     if path.is_absolute():
@@ -28,10 +16,6 @@ def resolve_ai_path(path_value: str) -> Path:
     return AI_DIR / path
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `ensure_supported_python` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
 def ensure_supported_python() -> None:
     version = sys.version_info
     if version < (3, 11):
@@ -48,10 +32,6 @@ def ensure_supported_python() -> None:
         )
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `run_setup` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
 def run_setup(project_id: str, skip_ingest: bool = False) -> None:
     from model_ai.loader.pdf_extractor import extract_chunks
     from model_ai.loader.supabase_ingest import upsert_embeddings
@@ -67,20 +47,12 @@ def run_setup(project_id: str, skip_ingest: bool = False) -> None:
     print(f"[setup] Berhasil upsert {total_rows} chunk ke Supabase.")
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `run_extract` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
 def run_extract(project_id: str | None = None) -> None:
     from model_ai.extractor.doc_extractor import run_extraction
 
     run_extraction(project_id=project_id)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `run_docx` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
 def run_docx(project_id: str, local_output: str | None = None) -> str | None:
     from model_ai.docx.generator import generate_proposal_docx_bytes
 
@@ -102,31 +74,6 @@ def run_docx(project_id: str, local_output: str | None = None) -> str | None:
     return result_url
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `run_docx_style_map` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
-def run_docx_style_map(
-    project_id: str,
-    dictionary_path: str,
-    with_embeddings: bool,
-    use_llm_mapper: bool,
-) -> None:
-    from model_ai.docx.style_mapping_pipeline import run_docx_style_mapping_pipeline
-    from model_ai.metadata_repository import load_document_metadata_payload
-
-    run_docx_style_mapping_pipeline(
-        dictionary_path=resolve_ai_path(dictionary_path),
-        extracted_payload=load_document_metadata_payload(project_id),
-        with_embeddings=with_embeddings,
-        use_llm_mapper=use_llm_mapper,
-    )
-
-
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `run_schema_diff_cmd` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
 def run_schema_diff_cmd(project_id: str) -> None:
     from model_ai.extractor.schema_differ import run_schema_diff
 
@@ -172,15 +119,10 @@ def run_export_payload(project_id: str, output: str | None = None) -> None:
     print(f"[export-payload] Payload disimpan ke: {out_path}")
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `run_validate` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
 def run_validate(project_id: str | None = None, output_json: str | None = None) -> None:
     import json
     from model_ai.validation.validator import validate_and_print
 
-    # Resolve DOCX path
     if project_id:
         docx_path = AI_DIR / "data" / project_id / "file_target.docx"
         default_output_json = AI_DIR / "data" / project_id / "output.json"
@@ -191,7 +133,6 @@ def run_validate(project_id: str | None = None, output_json: str | None = None) 
     if not docx_path.exists():
         raise SystemExit(f"File tidak ditemukan: {docx_path}")
 
-    # Resolve output.json path
     json_path = AI_DIR / output_json if output_json else default_output_json
 
     if not json_path.exists():
@@ -202,10 +143,8 @@ def run_validate(project_id: str | None = None, output_json: str | None = None) 
 
     print(f"[validate] Loaded metadata dari: {json_path}")
 
-    # Run validation
     result = validate_and_print(str(docx_path), payload)
 
-    # Simpan output JSON
     import json as _json
     out_json_path = docx_path.parent / "validation_result.json"
     with open(out_json_path, "w", encoding="utf-8") as f:
@@ -216,10 +155,6 @@ def run_validate(project_id: str | None = None, output_json: str | None = None) 
         raise SystemExit(1)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/loader/pdf_extractor.py; model_ai/loader/supabase_ingest.py
-# Menjalankan fungsi `main` sebagai bagian alur `manage`.
-# ---------------------------------------------------------------------------
 def main() -> None:
     ensure_supported_python()
 
@@ -301,34 +236,6 @@ def main() -> None:
         help="Simpan DOCX ke lokal saja, skip upload ke Supabase storage.",
     )
 
-    map_parser = subparsers.add_parser(
-        "docx-style-map",
-        help=(
-            "Bangun catalog python-docx + chunk index, lalu lakukan retrieval, "
-            "candidate mapping, validasi, dan apply-plan audit."
-        ),
-    )
-    map_parser.add_argument(
-        "--dictionary",
-        default="data/python_docx_full_dictionary.yaml",
-        help="Path dictionary python-docx YAML.",
-    )
-    map_parser.add_argument(
-        "--project-id",
-        required=True,
-        help="Project ID sebagai selector document_metadata.",
-    )
-    map_parser.add_argument(
-        "--no-embeddings",
-        action="store_true",
-        help="Gunakan retrieval lexical saja (tanpa embedding index).",
-    )
-    map_parser.add_argument(
-        "--no-llm-mapper",
-        action="store_true",
-        help="Gunakan mapper rule-based sederhana tanpa LLM.",
-    )
-
     export_payload_parser = subparsers.add_parser(
         "export-payload",
         help="Export document_metadata.payload dari Supabase ke file JSON lokal.",
@@ -388,15 +295,6 @@ def main() -> None:
         run_docx(
             project_id=args.project_id,
             local_output=args.output if args.local else None,
-        )
-        return
-
-    if args.command == "docx-style-map":
-        run_docx_style_map(
-            project_id=args.project_id,
-            dictionary_path=args.dictionary,
-            with_embeddings=not args.no_embeddings,
-            use_llm_mapper=not args.no_llm_mapper,
         )
         return
 

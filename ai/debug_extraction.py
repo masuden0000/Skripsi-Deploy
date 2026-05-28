@@ -1,6 +1,6 @@
 """
-File debugging untuk melihat hasil RAG retrieval dan output mentah LLM
-SEBELUM diproses oleh Pydantic menjadi structured JSON.
+Utilitas debugging untuk melihat hasil RAG retrieval dan output mentah LLM sebelum diproses Pydantic.
+Pipeline: digunakan secara manual di luar pipeline utama untuk inspeksi dan diagnosis.
 
 Cara pakai:
   cd ai
@@ -49,9 +49,6 @@ import textwrap
 from datetime import datetime
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# Pastikan working directory adalah folder ai/ agar import model_ai bisa jalan
-# ---------------------------------------------------------------------------
 sys.path.insert(0, str(Path(__file__).parent))
 
 from model_ai.extractor.doc_extractor import (
@@ -70,9 +67,6 @@ from model_ai.extractor.prompts import (
     PromptConfig,
 )
 
-# ---------------------------------------------------------------------------
-# Registry prompt — urutan ini juga urutan eksekusi saat --all
-# ---------------------------------------------------------------------------
 PROMPT_REGISTRY: dict[str, PromptConfig] = {
     "typography": TYPOGRAPHY,
     "page_layout": PAGE_LAYOUT,
@@ -113,9 +107,6 @@ def _collect_one(
         },
     }
 
-    # ----------------------------------------------------------------
-    # RAG RETRIEVAL
-    # ----------------------------------------------------------------
     print(f"  [1/3] RAG retrieval untuk '{key}'...")
     try:
         chunks = _retrieve_chunks_multi(
@@ -128,7 +119,6 @@ def _collect_one(
         print(f"  [ERROR] {result['summary']['error']}")
         return result
 
-    # Susun data setiap chunk
     for i, chunk in enumerate(chunks, 1):
         content = str(chunk.get("content", ""))
         result["chunks"].append({
@@ -145,18 +135,12 @@ def _collect_one(
     result["summary"]["chunks_retrieved"] = len(chunks)
     print(f"        → {len(chunks)} chunk ditemukan")
 
-    # ----------------------------------------------------------------
-    # RENDER PROMPT
-    # ----------------------------------------------------------------
     print(f"  [2/3] Render prompt...")
     rendered = render_prompt(prompt_cfg.template, chunks)
     result["rendered_prompt"] = rendered
     result["summary"]["prompt_length"] = len(rendered)
     print(f"        → {len(rendered):,} karakter")
 
-    # ----------------------------------------------------------------
-    # PANGGIL LLM (tanpa Pydantic)
-    # ----------------------------------------------------------------
     print(f"  [3/3] Memanggil LLM (raw, tanpa structured output)...")
     try:
         llm = _build_llm()
@@ -188,7 +172,6 @@ def run_debug(key: str, project_id: str | None, save: bool) -> None:
     print(f"\n[debug] Memproses prompt: '{key}'")
     result = _collect_one(key, PROMPT_REGISTRY[key], project_id, timestamp)
 
-    # Tampilkan ringkasan ke terminal
     s = result["summary"]
     print(f"\n{'─' * 50}")
     print(f"  RINGKASAN — '{key}'")
@@ -239,7 +222,6 @@ def run_debug_all(project_id: str | None, save: bool) -> None:
             "status": "ERROR: " + s["error"] if s["error"] else "OK",
         })
 
-    # Tampilkan ringkasan akhir ke terminal
     print(f"\n{'=' * 60}")
     print(f"  RINGKASAN SEMUA PROMPT")
     print(f"{'=' * 60}")

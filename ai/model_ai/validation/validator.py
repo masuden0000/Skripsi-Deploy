@@ -1,10 +1,4 @@
-"""
-Main entry point untuk validasi dokumen.
-
-Digunakan oleh: ai-backend, manage.py, atau command-line
-
-Tujuan: Menyediakan interface utama untuk validasi dokumen terhadap rules.
-"""
+"""Main entry point untuk validasi dokumen DOCX terhadap formatting rules. Posisi pipeline: DOCX + metadata → validator (menggunakan docx_property_extractor dan rule_validator)."""
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -14,10 +8,6 @@ from model_ai.validation.models import DocxProperties, ValidationResult
 from model_ai.validation.rule_validator import compare_properties
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `validate_document` untuk kebutuhan modul `validator`.
-# ---------------------------------------------------------------------------
 def validate_document(
     docx_path: str | Path,
     metadata: DocumentMetadata | None = None,
@@ -43,26 +33,21 @@ def validate_document(
     if not path.exists():
         raise FileNotFoundError(f"DOCX file not found: {path}")
 
-    # Load metadata if not provided
     if metadata is None:
         if metadata_dict is None:
             raise ValueError("Either metadata or metadata_dict must be provided")
         metadata = DocumentMetadata.model_validate(metadata_dict)
 
-    # Extract properties from DOCX
     props = extract_docx_properties(path)
 
-    # Compare properties against rules
     issues, checks = compare_properties(props, metadata)
 
-    # Determine overall status
     status = "pass"
     if any(i.severity == "error" for i in issues):
         status = "fail"
     elif any(i.severity == "warning" for i in issues):
         status = "warning"
 
-    # Generate summary
     error_count = sum(1 for i in issues if i.severity == "error")
     warning_count = sum(1 for i in issues if i.severity == "warning")
     info_count = sum(1 for i in issues if i.severity == "info")
@@ -90,10 +75,6 @@ def validate_document(
     )
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `validate_document_simple` untuk kebutuhan modul `validator`.
-# ---------------------------------------------------------------------------
 def validate_document_simple(
     docx_path: str | Path,
     rules: dict,
@@ -110,10 +91,6 @@ def validate_document_simple(
     return validate_document(docx_path=docx_path, metadata_dict=rules)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `print_validation_result` untuk kebutuhan modul `validator`.
-# ---------------------------------------------------------------------------
 def print_validation_result(result: ValidationResult) -> None:
     """Print validation result in a human-readable format."""
     print(f"\n{'='*60}")
@@ -146,10 +123,6 @@ def print_validation_result(result: ValidationResult) -> None:
     print(f"\n{'='*60}\n")
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Mendefinisikan fungsi `validate_and_print` untuk kebutuhan modul `validator`.
-# ---------------------------------------------------------------------------
 def validate_and_print(
     docx_path: str | Path,
     metadata_dict: dict,
@@ -168,9 +141,6 @@ def validate_and_print(
     return result
 
 
-# ---------------------------------------------------------------------------
-# CLI interface
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import sys
     import json
@@ -184,12 +154,9 @@ if __name__ == "__main__":
     docx_path = sys.argv[1]
     metadata_path = sys.argv[2]
 
-    # Load metadata
     with open(metadata_path, "r", encoding="utf-8") as f:
         metadata_dict = json.load(f)
 
-    # Validate and print
     result = validate_and_print(docx_path, metadata_dict)
 
-    # Exit with appropriate code
     sys.exit(0 if result.status == "pass" else 1)

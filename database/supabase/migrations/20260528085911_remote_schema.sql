@@ -108,10 +108,10 @@ $$;
 ALTER FUNCTION "public"."match_document_chunks"("query_embedding" "public"."vector", "match_count" integer, "filter_source_file" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."match_document_chunks"("query_embedding" "public"."vector", "match_count" integer DEFAULT 5, "filter_project_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("chunk_index" integer, "content" "text", "chunk_parent" "text", "source_file" "text", "project_id" "uuid", "page_start" integer, "page_end" integer, "similarity" double precision)
+CREATE OR REPLACE FUNCTION "public"."match_document_chunks"("query_embedding" "public"."vector", "match_count" integer DEFAULT 5, "filter_project_id" "uuid" DEFAULT NULL::"uuid", "min_similarity" double precision DEFAULT 0.0) RETURNS TABLE("chunk_index" integer, "content" "text", "chunk_parent" "text", "source_file" "text", "project_id" "uuid", "page_start" integer, "page_end" integer, "similarity" double precision)
     LANGUAGE "sql" STABLE
     AS $$
-    select
+    SELECT
         document_chunks.chunk_index,
         document_chunks.content,
         document_chunks.chunk_parent,
@@ -119,15 +119,17 @@ CREATE OR REPLACE FUNCTION "public"."match_document_chunks"("query_embedding" "p
         document_chunks.project_id,
         document_chunks.page_start,
         document_chunks.page_end,
-        1 - (document_chunks.embedding <=> query_embedding) as similarity
-    from public.document_chunks
-    where (filter_project_id is null or document_chunks.project_id = filter_project_id)
-    order by document_chunks.embedding <=> query_embedding
-    limit match_count;
+        1 - (document_chunks.embedding <=> query_embedding) AS similarity
+    FROM public.document_chunks
+    WHERE
+        (filter_project_id IS NULL OR document_chunks.project_id = filter_project_id)
+        AND (1 - (document_chunks.embedding <=> query_embedding)) >= min_similarity
+    ORDER BY document_chunks.embedding <=> query_embedding
+    LIMIT match_count;
 $$;
 
 
-ALTER FUNCTION "public"."match_document_chunks"("query_embedding" "public"."vector", "match_count" integer, "filter_project_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "public"."match_document_chunks"("query_embedding" "public"."vector", "match_count" integer, "filter_project_id" "uuid", "min_similarity" double precision) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."set_updated_at"() RETURNS "trigger"
@@ -1704,9 +1706,9 @@ GRANT ALL ON FUNCTION "public"."match_document_chunks"("query_embedding" "public
 
 
 
-GRANT ALL ON FUNCTION "public"."match_document_chunks"("query_embedding" "public"."vector", "match_count" integer, "filter_project_id" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "public"."match_document_chunks"("query_embedding" "public"."vector", "match_count" integer, "filter_project_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."match_document_chunks"("query_embedding" "public"."vector", "match_count" integer, "filter_project_id" "uuid") TO "service_role";
+GRANT ALL ON FUNCTION "public"."match_document_chunks"("query_embedding" "public"."vector", "match_count" integer, "filter_project_id" "uuid", "min_similarity" double precision) TO "anon";
+GRANT ALL ON FUNCTION "public"."match_document_chunks"("query_embedding" "public"."vector", "match_count" integer, "filter_project_id" "uuid", "min_similarity" double precision) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."match_document_chunks"("query_embedding" "public"."vector", "match_count" integer, "filter_project_id" "uuid", "min_similarity" double precision) TO "service_role";
 
 
 
@@ -2116,5 +2118,8 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
+
+
+drop extension if exists "pg_net";
 
 

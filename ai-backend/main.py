@@ -1,9 +1,3 @@
-"""
-Fungsi: Entry point FastAPI untuk AI Proposal Backend
-Digunakan oleh: Uvicorn, Express Backend (via proxy)
-Tujuan: Menjalankan server API dengan router proyek, validasi, dan health check
-"""
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import projects, health, validation
@@ -14,6 +8,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# CORS middleware for frontend access
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,6 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include routers
 app.include_router(health.router, prefix="/api")
 app.include_router(projects.router, prefix="/api/projects")
 app.include_router(validation.router, prefix="/api/validation")

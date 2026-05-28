@@ -24,6 +24,7 @@ export async function POST(request: Request) {
 
   const setCookie = backendResponse.headers.get("set-cookie")
   if (setCookie) {
+    // Forward cookie session agar browser menyimpannya di origin frontend.
     response.headers.set("set-cookie", setCookie)
   }
 

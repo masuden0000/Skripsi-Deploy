@@ -1,9 +1,7 @@
 """
-Fungsi: Mendefinisikan Pydantic schema dan enum status untuk Project
-Digunakan oleh: FastAPI AI Backend (internal validation dan response serialization)
-Tujuan: Menyediakan Python type definitions yang konsisten dengan TypeScript schema
+Shared Project Schema - Source of Truth
+Dipakai oleh: Express Backend, FastAPI AI Backend
 """
-
 from enum import Enum
 from pydantic import BaseModel
 from typing import Optional

@@ -1,4 +1,4 @@
-"""Registry prompt yang memuat file markdown prompt menjadi PromptConfig siap pakai. Posisi pipeline: dipakai oleh doc_extractor dan schema_differ."""
+"""Registry prompt yang memuat file markdown prompt menjadi PromptConfig siap pakai. Posisi pipeline: dipakai oleh doc_extractor."""
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -43,5 +43,3 @@ FIGURES_AND_TABLES = _load("figures_and_tables.md")
 PAGE_COUNT_LIMITS = _load("page_count_limits.md")
 
 DOCUMENT_TYPE = _load("document_type.md")
-
-FREE_EXTRACTION = _load("free_extraction.md")

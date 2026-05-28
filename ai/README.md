@@ -10,7 +10,7 @@ Eksperimen ini memuat pipeline ekstraksi PDF, chunking markdown, embedding ke Su
 4. Hasil disimpan ke `data/output.md` dan `data/output_chunks.json`.
 5. `model_ai/loader/supabase_ingest.py` membuat embedding lalu upsert ke tabel `document_chunks`.
 6. `model_ai/extractor/doc_extractor.py` melakukan retrieval + grounding untuk ekstraksi metadata terstruktur lalu upsert ke `document_metadata`.
-7. Consumer metadata seperti `docx`, `docx-style-map`, dan `schema-diff` membaca ulang metadata dari `document_metadata.payload` memakai selector `source_doc`.
+7. Consumer metadata seperti `docx` membaca ulang metadata dari `document_metadata.payload` memakai selector `source_doc`.
 
 ## Struktur Folder
 
@@ -94,7 +94,7 @@ Nilai yang saat ini dipakai oleh kode:
 
 Catatan:
 
-- Model untuk ekstraksi (`doc_extractor.py`, `schema_differ.py`) dan pipeline mapping DOCX memakai Groq via `langchain-groq`.
+- Model untuk ekstraksi (`doc_extractor.py`) memakai Groq via `langchain-groq`.
 - Embedding untuk retrieval dan ingest Supabase masih memakai Gemini embedding (`langchain-google-genai`).
 - `SUPABASE_SERVICE_ROLE_KEY` hanya untuk runtime server-side AI, bukan untuk frontend.
 

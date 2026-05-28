@@ -1,4 +1,4 @@
-"""CLI entry point untuk menjalankan pipeline automated document extraction dan generation. Posisi pipeline: entry point utama (setup → extract → schema-diff → generate-placeholders → docx → validate)."""
+"""CLI entry point untuk menjalankan pipeline automated document extraction dan generation. Posisi pipeline: entry point utama (setup → extract → generate-placeholders → docx → validate)."""
 import argparse
 import sys
 from pathlib import Path
@@ -72,12 +72,6 @@ def run_docx(project_id: str, local_output: str | None = None) -> str | None:
     print(f"[docx] Berhasil upload dokumen: {result_url}")
     print(f"[docx] RESULT_URL={result_url}")
     return result_url
-
-
-def run_schema_diff_cmd(project_id: str) -> None:
-    from model_ai.extractor.schema_differ import run_schema_diff
-
-    run_schema_diff(project_id)
 
 
 def run_generate_placeholders(project_id: str) -> None:
@@ -187,19 +181,6 @@ def main() -> None:
         help="Project ID untuk isolate extraction per-project.",
     )
 
-    schema_diff_parser = subparsers.add_parser(
-        "schema-diff",
-        help=(
-            "Jalankan free extraction via LLM lalu bandingkan terhadap baseline document_metadata. "
-            "Simpan laporan diff ke data/schema_diff_<timestamp>.json dan .md."
-        ),
-    )
-    schema_diff_parser.add_argument(
-        "--project-id",
-        required=True,
-        help="Project ID sebagai selector document_metadata.",
-    )
-
     docx_parser = subparsers.add_parser(
         "docx",
         help="Generate dokumen DOCX berdasarkan output.json hasil ekstraksi.",
@@ -281,10 +262,6 @@ def main() -> None:
 
     if args.command == "extract":
         run_extract(project_id=args.project_id)
-        return
-
-    if args.command == "schema-diff":
-        run_schema_diff_cmd(project_id=args.project_id)
         return
 
     if args.command == "docx":

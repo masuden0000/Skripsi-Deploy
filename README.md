@@ -61,8 +61,6 @@ Semua command utama bisa dijalankan dari root repo:
 	- Hanya build chunk lokal tanpa upsert ke Supabase.
 - `python ai/manage.py extract`
 	- Ekstraksi metadata terstruktur lalu upsert ke `document_metadata.payload`.
-- `python ai/manage.py schema-diff --source-doc file.pdf`
-	- Jalankan free extraction dan bandingkan dengan baseline `document_metadata.payload`, hasil diff disimpan ke `data/schema_diff_<timestamp>.json/.md`.
 - `python ai/manage.py docx --type proposal --source-doc file.pdf`
 	- Generate dokumen DOCX proposal dari metadata Supabase + chunks lokal.
 - `python ai/manage.py docx-style-map --source-doc file.pdf`
@@ -138,7 +136,6 @@ frontend/
 ## Catatan Perubahan Terbaru
 
 - Prompt extractor sudah dipusatkan ke `model_ai/extractor/prompts/*.md` via registry di `model_ai/extractor/prompts.py`.
-- Ditambahkan modul `model_ai/extractor/schema_differ.py` + command `schema-diff`.
 - Pipeline DOCX diperkuat dengan:
 	- `model_ai/docx/generator.py`,
 	- `model_ai/docx/metadata_loader.py`,

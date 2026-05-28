@@ -90,7 +90,8 @@
       "Bash(powershell.exe -Command \"Get-Content -LiteralPath 'c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\database\\\\supabase\\\\migrations\\\\20260509003200_create_faculties_and_reviewer_profiles.sql' -ReadCount -1\")",
       "Bash(powershell -Command \"Get-ChildItem 'c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\docs\\\\' | Select-Object Name\")",
       "Bash(powershell -Command \"Get-Content 'c:\\\\Users\\\\hudar\\\\Documents\\\\[1] Huda Rasyad Wicaksono\\\\[3] Project\\\\[1] Project Website\\\\Skripsi \\(Dummy\\)\\\\Project 1 \\(AI\\)\\\\docs\\\\fakultass-crud-activity.drawio' | Select-Object -First 10\")",
-      "Bash(powershell -Command \"Get-Content 'c:/Users/hudar/Documents/[1] Huda Rasyad Wicaksono/[3] Project/[1] Project Website/Skripsi \\(Dummy\\)/Project 1 \\(AI\\)/docs/fakultass-crud-activity.drawio' -TotalCount 20\")"
+      "Bash(powershell -Command \"Get-Content 'c:/Users/hudar/Documents/[1] Huda Rasyad Wicaksono/[3] Project/[1] Project Website/Skripsi \\(Dummy\\)/Project 1 \\(AI\\)/docs/fakultass-crud-activity.drawio' -TotalCount 20\")",
+      "WebFetch(domain:claude-sonnet-4-5&signature=+iiio+yop+pfrksacm2az+0yhia=)"
     ],
     "additionalDirectories": [
       "C:\\Users\\hudar\\.config\\superpowers\\worktrees\\Project 1 (AI)\\docx-pipeline\\experiments\\pymupdf4llm\\tests\\docx",

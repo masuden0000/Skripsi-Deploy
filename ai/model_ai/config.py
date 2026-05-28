@@ -1,6 +1,6 @@
 """
 Fungsi: Memuat konfigurasi environment (ai/.env) dan konstanta global untuk layanan AI/pipeline.
-Digunakan oleh: model_ai/extractor/doc_extractor.py; model_ai/extractor/schema_differ.py; model_ai/loader/supabase_ingest.py; model_ai/docx/style_mapping_pipeline.py
+Digunakan oleh: model_ai/extractor/doc_extractor.py; model_ai/loader/supabase_ingest.py
 Tujuan: Memusatkan konfigurasi supaya modul lain tidak hardcode nilai environment.
 Keyword: automated document generation
 """
@@ -33,7 +33,6 @@ class AppConfig(BaseModel):
     rag_top_k: int
     rag_min_context_similarity: float
 
-    # Rotation state
     _groq_index: int = 0
     _google_index: int = 0
     _groq_exhausted: bool = False  # True = semua Groq key limit, switch ke Gemini
@@ -64,7 +63,6 @@ class AppConfig(BaseModel):
         Strategy: Groq dulu, Gemini Flash 2.5 fallback.
         Jika semua Groq key limit/error → switch ke Gemini.
         """
-        # Phase 1: Coba Groq
         if not self._groq_exhausted:
             for _ in range(len(self.groq_api_keys)):
                 try:
@@ -73,10 +71,8 @@ class AppConfig(BaseModel):
                 except Exception:
                     if len(self.groq_api_keys) > 1:
                         self.rotate_groq_key()
-            # Semua Groq gagal
             self._groq_exhausted = True
 
-        # Phase 2: Gemini fallback
         for _ in range(len(self.google_api_keys)):
             try:
                 key = self.get_google_key()
@@ -100,7 +96,6 @@ class AppConfig(BaseModel):
 
         for key in proxy_keys:
             value = os.getenv(key, "").strip().lower()
-            # Sebagian environment menyetel localhost:9 sebagai proxy "buang trafik".
             if value in blackhole_proxy_targets:
                 os.environ.pop(key, None)
 

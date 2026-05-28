@@ -13,10 +13,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# Pastikan working directory adalah folder ai/ agar import model_ai bisa jalan
-# ---------------------------------------------------------------------------
-sys.path.insert(0, str(Path(__file__).parent))
 
 from model_ai.extractor.doc_extractor import (
     CONFIG,
@@ -25,28 +21,19 @@ from model_ai.extractor.doc_extractor import (
     render_prompt,
 )
 from model_ai.extractor.prompts import (
-    DOCUMENT_STRUCTURE_PROPOSAL,
-    FIGURES_AND_TABLES,
-    NUMBERING,
-    PAGE_COUNT_LIMITS,
-    PAGE_LAYOUT,
-    SPACING,
-    TYPOGRAPHY,
     PromptConfig,
+    load_prompts,
 )
 
-# ---------------------------------------------------------------------------
-# Registry prompt — urutan ini juga urutan eksekusi saat --all
-# ---------------------------------------------------------------------------
-PROMPT_REGISTRY: dict[str, PromptConfig] = {
-    "typography": TYPOGRAPHY,
-    "page_layout": PAGE_LAYOUT,
-    "spacing": SPACING,
-    "document_structure_proposal": DOCUMENT_STRUCTURE_PROPOSAL,
-    "numbering": NUMBERING,
-    "figures_and_tables": FIGURES_AND_TABLES,
-    "page_count_limits": PAGE_COUNT_LIMITS,
-}
+_PROMPT_KEYS = [
+    "typography",
+    "page_layout",
+    "spacing",
+    "document_structure",
+    "numbering",
+    "figures_and_tables",
+    "page_count_limits",
+]
 
 
 def _collect_one(
@@ -78,10 +65,6 @@ def _collect_one(
         },
     }
 
-    # ----------------------------------------------------------------
-    # RAG RETRIEVAL
-    # ----------------------------------------------------------------
-    print(f"  [1/3] RAG retrieval untuk '{key}'...")
     try:
         chunks = _retrieve_chunks_multi(
             prompt_cfg.queries,
@@ -93,7 +76,6 @@ def _collect_one(
         print(f"  [ERROR] {result['summary']['error']}")
         return result
 
-    # Susun data setiap chunk
     for i, chunk in enumerate(chunks, 1):
         content = str(chunk.get("content", ""))
         result["chunks"].append({
@@ -110,19 +92,11 @@ def _collect_one(
     result["summary"]["chunks_retrieved"] = len(chunks)
     print(f"        → {len(chunks)} chunk ditemukan")
 
-    # ----------------------------------------------------------------
-    # RENDER PROMPT
-    # ----------------------------------------------------------------
-    print(f"  [2/3] Render prompt...")
     rendered = render_prompt(prompt_cfg.template, chunks)
     result["rendered_prompt"] = rendered
     result["summary"]["prompt_length"] = len(rendered)
     print(f"        → {len(rendered):,} karakter")
 
-    # ----------------------------------------------------------------
-    # PANGGIL LLM (tanpa Pydantic) — dengan Groq key rotation jika rate limit
-    # ----------------------------------------------------------------
-    print(f"  [3/3] Memanggil LLM (raw, tanpa structured output)...")
     max_retries = len(CONFIG.groq_api_keys) + 1  # coba semua Groq key + 1 buffer
     raw_text = None
     for attempt in range(max_retries):
@@ -166,14 +140,13 @@ def _save_json(data: dict, out_path: Path) -> None:
     print(f"\n[debug] Output disimpan ke: {out_path}")
 
 
-def run_debug(key: str, project_id: str | None, save: bool) -> None:
+def run_debug(key: str, prompt_registry: dict[str, PromptConfig], project_id: str | None, save: bool) -> None:
     """Debug satu prompt, simpan sebagai JSON jika --save."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     print(f"\n[debug] Memproses prompt: '{key}'")
-    result = _collect_one(key, PROMPT_REGISTRY[key], project_id, timestamp)
+    result = _collect_one(key, prompt_registry[key], project_id, timestamp)
 
-    # Tampilkan ringkasan ke terminal
     s = result["summary"]
     print(f"\n{'─' * 50}")
     print(f"  RINGKASAN — '{key}'")
@@ -190,10 +163,10 @@ def run_debug(key: str, project_id: str | None, save: bool) -> None:
         _save_json(result, out_dir / f"{key}_{timestamp}.json")
 
 
-def run_debug_all(project_id: str | None, save: bool) -> None:
+def run_debug_all(prompt_registry: dict[str, PromptConfig], project_id: str | None, save: bool) -> None:
     """Debug semua prompt, simpan semua dalam satu file JSON gabungan."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    keys = list(PROMPT_REGISTRY.keys())
+    keys = list(prompt_registry.keys())
 
     all_results: dict = {
         "meta": {
@@ -212,7 +185,7 @@ def run_debug_all(project_id: str | None, save: bool) -> None:
         print(f"  ({idx}/{len(keys)}) Prompt: '{key}'")
         print(f"{'=' * 50}")
 
-        result = _collect_one(key, PROMPT_REGISTRY[key], project_id, timestamp)
+        result = _collect_one(key, prompt_registry[key], project_id, timestamp)
         all_results["results"][key] = result
 
         s = result["summary"]
@@ -224,7 +197,6 @@ def run_debug_all(project_id: str | None, save: bool) -> None:
             "status": "ERROR: " + s["error"] if s["error"] else "OK",
         })
 
-    # Tampilkan ringkasan akhir ke terminal
     print(f"\n{'=' * 60}")
     print(f"  RINGKASAN SEMUA PROMPT")
     print(f"{'=' * 60}")
@@ -253,13 +225,20 @@ def main() -> None:
               python debug_extraction.py --key typography
               python debug_extraction.py --all
               python debug_extraction.py --all --project-id abc-123 --save
+              python debug_extraction.py --skema pkm-kc --key document_structure
         """),
     )
     parser.add_argument(
         "--key",
-        default="document_structure_proposal",
-        choices=list(PROMPT_REGISTRY.keys()),
-        help="Prompt key yang ingin di-debug (default: document_structure_proposal)",
+        default="document_structure",
+        choices=_PROMPT_KEYS,
+        help="Prompt key yang ingin di-debug (default: document_structure)",
+    )
+    parser.add_argument(
+        "--skema",
+        default="pkm-kc",
+        metavar="SKEMA",
+        help="Slug skema PKM untuk memilih folder prompt (default: pkm-kc)",
     )
     parser.add_argument(
         "--all",
@@ -279,11 +258,12 @@ def main() -> None:
     )
 
     args = parser.parse_args()
+    prompt_registry = load_prompts(args.skema)
 
     if args.all:
-        run_debug_all(project_id=args.project_id, save=args.save)
+        run_debug_all(prompt_registry=prompt_registry, project_id=args.project_id, save=args.save)
     else:
-        run_debug(key=args.key, project_id=args.project_id, save=args.save)
+        run_debug(key=args.key, prompt_registry=prompt_registry, project_id=args.project_id, save=args.save)
 
 
 if __name__ == "__main__":

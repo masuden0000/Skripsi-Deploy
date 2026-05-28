@@ -181,7 +181,7 @@ def render_proposal_docx(
     spacing        = output_data["spacing"]
     numbering      = output_data["numbering"]
     figures_tables = output_data["figures_and_tables"]
-    doc_structure  = output_data["document_structure_proposal"]
+    doc_structure  = output_data["document_structure"]
 
     # Langkah 1: Inisialisasi dokumen kosong dan terapkan ukuran kertas + margin
     document = Document()
@@ -621,7 +621,7 @@ def _to_roman(n: int) -> str:
 
 # ---------------------------------------------------------------------------
 # Digunakan oleh: render_proposal_docx; render_proposal_docx_bytes
-# Iterasi seluruh sections dari document_structure_proposal dan dispatch ke renderer spesifik.
+# Iterasi seluruh sections dari document_structure dan dispatch ke renderer spesifik.
 # Urutan sections mencerminkan urutan halaman akhir dokumen.
 # ---------------------------------------------------------------------------
 def _render_proposal_body(
@@ -1386,7 +1386,7 @@ def _clear_paragraph(paragraph) -> None:
 # ---------------------------------------------------------------------------
 # Digunakan oleh: model_ai/docx/generator.py (pipeline production)
 # Entry point utama generate DOCX — tidak menyimpan ke filesystem, langsung return bytes.
-# Dipanggil oleh generate_proposal_docx_bytes → diupload ke Supabase Storage oleh manage.py.
+# Dipanggil oleh generate_docx_bytes (generator.py) → diupload ke Supabase Storage oleh manage.py.
 # ---------------------------------------------------------------------------
 def render_proposal_docx_bytes(
     output_data: dict,
@@ -1409,7 +1409,7 @@ def render_proposal_docx_bytes(
     spacing = output_data["spacing"]
     numbering = output_data["numbering"]
     figures_tables = output_data["figures_and_tables"]
-    doc_structure = output_data["document_structure_proposal"]
+    doc_structure = output_data["document_structure"]
 
     prelim_num = numbering.get("preliminary") or {}
     content_num = numbering.get("content") or {}

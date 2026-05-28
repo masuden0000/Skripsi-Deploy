@@ -22,16 +22,12 @@ from model_ai.validation.validator import (
 )
 
 __all__ = [
-    # Models
     "DocxProperties",
     "ValidationIssue",
     "ValidationResult",
-    # Extractors
     "extract_docx_properties",
     "extract_docx_properties_dict",
-    # Validators
     "compare_properties",
-    # Main entry points
     "validate_document",
     "validate_document_simple",
     "validate_and_print",

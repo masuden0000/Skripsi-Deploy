@@ -1,7 +1,7 @@
 """
 Fungsi: Orkestrator ekstraksi aturan dokumen berbasis RAG + LLM ke schema terstruktur.
 
-Digunakan oleh: manage.py; model_ai/extractor/schema_differ.py; tests/extractor/test_doc_extractor.py
+Digunakan oleh: manage.py; debug_extraction.py
 
 Tujuan: Mengubah konteks chunk menjadi metadata dokumen yang bisa divalidasi dan dipakai downstream.
 """
@@ -38,78 +38,54 @@ from model_ai.extractor.models import (
 )
 from model_ai.metadata_repository import upsert_document_metadata
 from model_ai.extractor.prompts import (
-    DOCUMENT_STRUCTURE_PROPOSAL,
-    FIGURES_AND_TABLES,
-    NUMBERING,
-    PAGE_COUNT_LIMITS,
-    PAGE_LAYOUT,
-    SPACING,
-    TYPOGRAPHY,
     PromptConfig,
+    load_prompts,
 )
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `APP_DIR` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
 APP_DIR = Path(__file__).resolve().parents[2]
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `EMBEDDING_DIMENSION` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
 EMBEDDING_DIMENSION = 768
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `BATCH_PAUSE_EVERY` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
 BATCH_PAUSE_EVERY = 2
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `BATCH_PAUSE_SECONDS` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
 BATCH_PAUSE_SECONDS = 30
 
-# Batas atas waktu tunggu rate limit per percobaan — mencegah sleep > pipeline timeout
 MAX_RATE_LIMIT_WAIT = 120
 
 EMBED_MAX_RETRY_CYCLES = 5
 EMBED_RATE_LIMIT_WAIT = 60  # detik, tunggu saat semua Google key exhausted
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `CONFIG` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
 CONFIG = get_config()
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `LLM_MODEL` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
 LLM_MODEL = CONFIG.model_name
 
-KEY_REGISTRY: list[tuple[str, PromptConfig, Type[BaseModel], Type[BaseModel]]] = [
-    ("typography", TYPOGRAPHY, TypographyExtracted, TypographyInfo),
-    ("page_layout", PAGE_LAYOUT, PageLayoutExtracted, PageLayoutInfo),
-    ("spacing", SPACING, SpacingExtracted, SpacingInfo),
-    ("document_structure_proposal", DOCUMENT_STRUCTURE_PROPOSAL, DocumentStructureExtracted, DocumentStructureInfo),
-    ("numbering", NUMBERING, NumberingExtracted, NumberingInfo),
-    ("figures_and_tables", FIGURES_AND_TABLES, FiguresTablesExtracted, FiguresTablesInfo),
-    ("page_count_limits", PAGE_COUNT_LIMITS, PageCountExtracted, PageCountInfo),
-]
+def fetch_project_skema(project_id: str) -> str:
+    """Query projects.skema dari Supabase; hasilnya langsung dipakai sebagai folder prompt."""
+    client = _build_supabase()
+    result = client.table("projects").select("skema").eq("id", project_id).single().execute()
+    if not result.data:
+        raise ValueError(f"Project tidak ditemukan: {project_id!r}")
+    skema = result.data.get("skema")
+    if not skema:
+        raise ValueError(f"Project {project_id!r} tidak memiliki field 'skema'.")
+    return str(skema)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `_BOLD_HEADING_PATTERNS` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
+def build_key_registry(skema_slug: str) -> list[tuple[str, PromptConfig, Type[BaseModel], Type[BaseModel]]]:
+    """Build KEY_REGISTRY dinamis dari folder prompts/{skema_slug}/."""
+    prompts = load_prompts(skema_slug)
+    return [
+        ("typography",         prompts["typography"],         TypographyExtracted,        TypographyInfo),
+        ("page_layout",        prompts["page_layout"],        PageLayoutExtracted,         PageLayoutInfo),
+        ("spacing",            prompts["spacing"],            SpacingExtracted,            SpacingInfo),
+        ("document_structure", prompts["document_structure"], DocumentStructureExtracted,  DocumentStructureInfo),
+        ("numbering",          prompts["numbering"],          NumberingExtracted,          NumberingInfo),
+        ("figures_and_tables", prompts["figures_and_tables"], FiguresTablesExtracted,      FiguresTablesInfo),
+        ("page_count_limits",  prompts["page_count_limits"],  PageCountExtracted,          PageCountInfo),
+    ]
+
+
 _BOLD_HEADING_PATTERNS = (
     re.compile(r"\*\*\s*BAB\b", re.IGNORECASE),
     re.compile(r"\*\*\s*DAFTAR\b", re.IGNORECASE),
     re.compile(r"\*\*\s*RINGKASAN\b", re.IGNORECASE),
 )
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
-# Blok konstanta `_EXPLICIT_NOT_BOLD_PATTERN` untuk menyimpan konfigurasi/registry yang dipakai berulang.
-# ---------------------------------------------------------------------------
 _EXPLICIT_NOT_BOLD_PATTERN = re.compile(
     r"(judul|heading|bab).{0,40}(tidak|bukan).{0,20}(bold|tebal)|"
     r"(judul|heading|bab).{0,40}cetak normal",
@@ -117,10 +93,6 @@ _EXPLICIT_NOT_BOLD_PATTERN = re.compile(
 )
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `build_sources` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def build_sources(chunks: list[dict]) -> list[Source]:
     return [
         Source(
@@ -134,20 +106,12 @@ def build_sources(chunks: list[dict]) -> list[Source]:
     ]
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/extractor/schema_differ.py
-# Menjalankan fungsi `render_prompt` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def render_prompt(template: str, chunks: list[dict]) -> str:
     """Ganti {context} di template dengan gabungan teks chunks."""
     context = "\n\n---\n\n".join(c["content"] for c in chunks)
     return template.replace("{context}", context)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_context_has_markdown_bold_heading` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def _context_has_markdown_bold_heading(chunks: list[dict]) -> bool:
     for chunk in chunks:
         content = str(chunk.get("content", ""))
@@ -157,10 +121,6 @@ def _context_has_markdown_bold_heading(chunks: list[dict]) -> bool:
     return False
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_context_explicitly_says_heading_not_bold` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def _context_explicitly_says_heading_not_bold(chunks: list[dict]) -> bool:
     for chunk in chunks:
         content = str(chunk.get("content", ""))
@@ -169,10 +129,6 @@ def _context_explicitly_says_heading_not_bold(chunks: list[dict]) -> bool:
     return False
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_apply_typography_heading_bold_heuristic` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def _apply_typography_heading_bold_heuristic(payload: dict[str, Any], chunks: list[dict]) -> dict[str, Any]:
     """Force heading_bold=True when markdown heading markers imply bold styling.
 
@@ -192,10 +148,6 @@ def _apply_typography_heading_bold_heuristic(payload: dict[str, Any], chunks: li
     return patched
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_apply_typography_caps_heuristic` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def _apply_typography_caps_heuristic(payload: dict[str, Any], chunks: list[dict]) -> dict[str, Any]:
     """Force heading_all_caps=True when BAB headings are written in ALL CAPS.
 
@@ -206,9 +158,6 @@ def _apply_typography_caps_heuristic(payload: dict[str, Any], chunks: list[dict]
     if payload.get("heading_all_caps") is True:
         return payload
 
-    # Pattern untuk mendeteksi BAB dalam format ALL CAPS
-    # Contoh: "BAB 1. PENDAHULUAN", "**BAB 2. TINJAUAN PUSTAKA**", "BAB 3.TAHAP PELAKSANAAN"
-    import re
     caps_pattern = re.compile(
         r"(?:^|\s|\*+)BAB\s+[\dIVX]+\.?\s+[A-Z]{2,}",
         re.MULTILINE
@@ -223,10 +172,6 @@ def _apply_typography_caps_heuristic(payload: dict[str, Any], chunks: list[dict]
     return payload
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/extractor/schema_differ.py
-# Menjalankan fungsi `_format_vector` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def _format_vector(values: list[float]) -> str:
     return "[" + ",".join(f"{v:.8f}" for v in values) + "]"
 
@@ -248,10 +193,6 @@ def _build_llm():
     )
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/extractor/schema_differ.py
-# Menjalankan fungsi `_build_embedder` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def _build_embedder() -> GoogleGenerativeAIEmbeddings:
     CONFIG.disable_blackhole_proxies()
     return GoogleGenerativeAIEmbeddings(
@@ -296,10 +237,6 @@ def _embed_query_with_retry(query: str) -> list[float]:
     )
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/extractor/schema_differ.py
-# Menjalankan fungsi `_build_supabase` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def _build_supabase() -> Client:
     return create_client(
         CONFIG.supabase_url,
@@ -307,10 +244,6 @@ def _build_supabase() -> Client:
     )
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/extractor/schema_differ.py
-# Menjalankan fungsi `_expand_to_full_headers` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def _expand_to_full_headers(seed_chunks: list[dict], client: Client) -> list[dict]:
     """Expand seed chunks ke seluruh chunk dalam header (chunk_parent) yang sama.
 
@@ -342,10 +275,6 @@ def _expand_to_full_headers(seed_chunks: list[dict], client: Client) -> list[dic
     return sorted(seen.values(), key=lambda c: c["chunk_index"])
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_retrieve_chunks_multi` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def _retrieve_chunks_multi(queries: list[str], top_k: int, project_id: str | None = None, min_similarity: float | None = None) -> list[dict]:
     """Embed setiap query, retrieve top-K chunks dari Supabase, lalu expand per header.
 
@@ -380,10 +309,6 @@ def _retrieve_chunks_multi(queries: list[str], top_k: int, project_id: str | Non
     return _expand_to_full_headers(seed_chunks, client)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/extractor/prompts.py
-# Menjalankan fungsi `_extract_key` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def _extract_key(
     prompt_cfg: PromptConfig,
     extracted_cls: Type[BaseModel],
@@ -408,7 +333,6 @@ def _extract_key(
         except Exception as e:
             err_str = str(e)
             if "429" in err_str or "rate_limit_exceeded" in err_str or "quota" in err_str.lower():
-                import re
                 wait_match = re.search(r"try again in (\d+)m(\d+(?:\.\d+)?)s", err_str)
                 if wait_match:
                     wait_secs = int(wait_match.group(1)) * 60 + float(wait_match.group(2)) + 5
@@ -416,7 +340,6 @@ def _extract_key(
                     wait_secs = 30
                 wait_secs = min(wait_secs, MAX_RATE_LIMIT_WAIT)
 
-                # Rotate ke Groq key berikutnya atau switch ke Gemini sebelum retry
                 if not CONFIG._groq_exhausted:
                     groq_keys_tried += 1
                     if groq_keys_tried < len(CONFIG.groq_api_keys):
@@ -431,7 +354,6 @@ def _extract_key(
                     print(f"[extract] Rate limit hit pada Gemini. Menunggu {wait_secs:.0f} detik (percobaan {attempt + 1}/{max_retries})...")
                     time.sleep(wait_secs)
 
-                # Rebuild LLM dengan key/provider yang baru
                 llm = _build_llm()
                 chain = llm.with_structured_output(extracted_cls)
             else:
@@ -448,12 +370,7 @@ def _extract_key(
     return info_cls(**payload, sources=sources)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_pause_after_batch` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def _pause_after_batch(processed_count: int, total_count: int) -> None:
-    # Jeda hanya dipakai setelah tiap 2 proses selesai dan bukan di item terakhir.
     if processed_count % BATCH_PAUSE_EVERY != 0 or processed_count >= total_count:
         return
 
@@ -464,36 +381,34 @@ def _pause_after_batch(processed_count: int, total_count: int) -> None:
     time.sleep(BATCH_PAUSE_SECONDS)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `extract_document_metadata` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
-def extract_document_metadata(project_id: str | None = None) -> DocumentMetadata:
+def extract_document_metadata(
+    project_id: str | None = None,
+    skema_slug: str | None = None,
+) -> DocumentMetadata:
+    if project_id and skema_slug is None:
+        skema_slug = fetch_project_skema(project_id)
+    if skema_slug is None:
+        raise ValueError("Salah satu dari project_id atau skema_slug wajib diisi.")
+
+    registry = build_key_registry(skema_slug)
     results: dict[str, Any] = {}
-    total_keys = len(KEY_REGISTRY)
-    for index, (key, prompt_cfg, extracted_cls, info_cls) in enumerate(KEY_REGISTRY, start=1):
+    total_keys = len(registry)
+    for index, (key, prompt_cfg, extracted_cls, info_cls) in enumerate(registry, start=1):
         print(f"[extract] Memproses: {key} ...")
         results[key] = _extract_key(prompt_cfg, extracted_cls, info_cls, project_id=project_id)
         print(f"[extract] Selesai:   {key}")
         _pause_after_batch(index, total_keys)
 
+    results["skema"] = skema_slug
     results["source_document"] = f"{project_id}/source.pdf" if project_id else None
     return DocumentMetadata(**results)
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `save_to_supabase` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def save_to_supabase(metadata: DocumentMetadata, project_id: str | None = None) -> None:
     result = upsert_document_metadata(metadata, project_id)
     print(f"[extract] Supabase upsert: project_id={result}")
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: manage.py
-# Menjalankan fungsi `run_extraction` sebagai bagian alur `doc_extractor`.
-# ---------------------------------------------------------------------------
 def run_extraction(project_id: str | None = None) -> None:
     metadata = extract_document_metadata(project_id=project_id)
     save_to_supabase(metadata, project_id)

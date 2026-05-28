@@ -1,7 +1,7 @@
 """
 Fungsi: Memuat dan menormalkan data chunk yang akan dijadikan sumber isi DOCX.
 
-Digunakan oleh: model_ai/docx/generator.py; tests/docx/test_chunk_loader.py
+Digunakan oleh: model_ai/docx/generator.py
 
 Tujuan: Memastikan sumber konten proposal siap dipakai generator dengan format seragam.
 
@@ -59,10 +59,6 @@ def load_chunk_sources(project_id: str) -> list[ChunkSource]:
     return sources
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/docx/docx_renderer.py
-# Menjalankan fungsi `format_source_line` sebagai bagian alur `chunk_loader`.
-# ---------------------------------------------------------------------------
 def format_source_line(source: ChunkSource) -> str:
     return (
         f"Sumber: Hal. {source.page_start}-{source.page_end} | "
@@ -70,10 +66,6 @@ def format_source_line(source: ChunkSource) -> str:
     )
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: model_ai/docx/docx_renderer.py
-# Menjalankan fungsi `match_sources_for_section` sebagai bagian alur `chunk_loader`.
-# ---------------------------------------------------------------------------
 def match_sources_for_section(
     chunks: list[ChunkSource],
     section_label: str,
@@ -107,10 +99,6 @@ def match_sources_for_section(
     return unique
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_score_chunk` sebagai bagian alur `chunk_loader`.
-# ---------------------------------------------------------------------------
 def _score_chunk(
     chunk: ChunkSource,
     norm_label: str,
@@ -139,20 +127,12 @@ def _score_chunk(
     return score
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_normalize_text` sebagai bagian alur `chunk_loader`.
-# ---------------------------------------------------------------------------
 def _normalize_text(value: str) -> str:
     value = value.lower()
     value = re.sub(r"[^a-z0-9\s]", " ", value)
     return " ".join(value.split())
 
 
-# ---------------------------------------------------------------------------
-# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
-# Menjalankan fungsi `_tokenize` sebagai bagian alur `chunk_loader`.
-# ---------------------------------------------------------------------------
 def _tokenize(value: str) -> list[str]:
     if not value:
         return []

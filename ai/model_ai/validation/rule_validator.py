@@ -331,9 +331,9 @@ def _validate_document_structure(
     issues: list[ValidationIssue],
     checks: list[ValidationCheckResult],
 ) -> None:
-    if metadata.document_structure_proposal is None:
+    if metadata.document_structure is None:
         return
-    d = metadata.document_structure_proposal
+    d = metadata.document_structure
 
     # Section count
     if props.section_count < 1:

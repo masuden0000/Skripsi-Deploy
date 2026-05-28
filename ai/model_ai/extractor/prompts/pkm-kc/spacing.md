@@ -31,7 +31,7 @@ Jangan scan seluruh konteks secara acak. Gunakan prioritas bertingkat berikut:
 
 - **[P3 — Last resort]** Jika P1 dan P2 tidak menghasilkan apapun, baru baca konteks secara umum.
 
-Contoh penalaran: *"Saya menemukan section 'Sistematika Proposal Kegiatan' → saya gunakan section itu."*
+Contoh penalaran: *"Saya menemukan section 'Sistematika Penulisan Proposal' → saya gunakan section itu."*
 
 **Langkah 2 — Identifikasi jenis spasi:**
 Dari section yang ditemukan, tentukan jenis `line_spacing_rule` berdasarkan tabel di bawah, lalu catat nilai `line_spacing` jika diperlukan.

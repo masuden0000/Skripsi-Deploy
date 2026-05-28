@@ -2,7 +2,7 @@
 queries:
   - "Sistematika Penulisan Proposal PKM lampiran daftar isi daftar pustaka"
   - "format nama file PKM pengumpulan sistematika proposal"
-  - "4.1 anggaran biaya 4.2 jadwal kegiatan sub bab BAB 4 proposal PKM-KC rekapitulasi"
+  - "4.1 anggaran biaya 4.2 jadwal kegiatan sub bab BAB 4 proposal rekapitulasi"
 ---
 
 # Extraction Task: Document Structure (Proposal PKM)
@@ -75,7 +75,7 @@ Setiap entry di `sections` adalah objek dengan fields berikut:
 ## Aturan LAMPIRAN
 - **WAJIB ekstrak SEMUA lampiran** yang disebutkan dalam dokumen sumber — ikuti dokumen sumber, bukan asumsi angka tetap
 - Jumlah lampiran **ditentukan oleh dokumen sumber**, bukan nilai hardcode. Panduan PKM yang berbeda versi/tahun dapat memiliki jumlah lampiran yang berbeda.
-- Lampiran berikut adalah **referensi lampiran standar PKM-KC** (bukan daftar final — dokumen sumber adalah otoritas tertinggi):
+- Lampiran berikut adalah **referensi lampiran standar PKM** (bukan daftar final — dokumen sumber adalah otoritas tertinggi):
   - Lampiran 1: Biodata Ketua dan Anggota, serta Dosen Pendamping
   - Lampiran 2: Justifikasi Anggaran Kegiatan
   - Lampiran 3: Susunan Tim Pengusul dan Pembagian Tugas
@@ -87,7 +87,7 @@ Setiap entry di `sections` adalah objek dengan fields berikut:
 
 ## Aturan Kelengkapan BAB
 - **WAJIB sertakan SEMUA BAB** yang disebutkan dalam dokumen sumber. Jangan lewatkan satu pun BAB.
-- Proposal PKM-KC memiliki 4 BAB: BAB 1 sampai BAB 4. Pastikan semua 4 BAB hadir dalam sections.
+- Proposal PKM memiliki 4 BAB: BAB 1 sampai BAB 4. Pastikan semua 4 BAB hadir dalam sections.
 - Nomor BAB harus berurutan dan tidak ada yang terlewat (BAB 1, BAB 2, BAB 3, BAB 4).
 
 ## Aturan DAFTAR PUSTAKA

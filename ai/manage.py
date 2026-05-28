@@ -68,9 +68,9 @@ def run_extract(project_id: str | None = None) -> None:
 
 
 def run_docx(project_id: str, local_output: str | None = None) -> str | None:
-    from model_ai.docx.generator import generate_proposal_docx_bytes
+    from model_ai.docx.generator import generate_docx_bytes
 
-    doc_bytes, file_name = generate_proposal_docx_bytes(
+    doc_bytes, file_name = generate_docx_bytes(
         project_id=project_id,
     )
 
@@ -88,24 +88,6 @@ def run_docx(project_id: str, local_output: str | None = None) -> str | None:
     return result_url
 
 
-def run_docx_style_map(
-    project_id: str,
-    dictionary_path: str,
-    with_embeddings: bool,
-    use_llm_mapper: bool,
-) -> None:
-    from model_ai.docx.style_mapping_pipeline import run_docx_style_mapping_pipeline
-    from model_ai.metadata_repository import load_document_metadata_payload
-
-    run_docx_style_mapping_pipeline(
-        dictionary_path=resolve_ai_path(dictionary_path),
-        extracted_payload=load_document_metadata_payload(project_id),
-        with_embeddings=with_embeddings,
-        use_llm_mapper=use_llm_mapper,
-    )
-
-
-
 def run_generate_placeholders(project_id: str) -> None:
     """Generate instructional placeholder via LLM dan simpan ke DB."""
     from model_ai.docx.chunk_loader import load_chunk_sources
@@ -116,7 +98,7 @@ def run_generate_placeholders(project_id: str) -> None:
     metadata = load_document_metadata(project_id)
     chunks = load_chunk_sources(project_id)
 
-    total = len(metadata.document_structure_proposal.sections)
+    total = len(metadata.document_structure.sections)
     print(f"[generate-placeholders] {total} section ditemukan. Memulai generate placeholder...", flush=True)
 
     generated = build_instructional_placeholder_map(
@@ -145,11 +127,22 @@ def run_export_payload(project_id: str, output: str | None = None) -> None:
     print(f"[export-payload] Payload disimpan ke: {out_path}")
 
 
+def run_migrate_payload() -> None:
+    from model_ai.metadata_repository import migrate_all_payload_keys
+
+    total, migrated = migrate_all_payload_keys()
+    clean = total - migrated
+    print(f"[migrate-payload] Memindai {total} record...")
+    if migrated:
+        print(f"[migrate-payload] {migrated} record dimigrasi (document_structure_proposal → document_structure)")
+    print(f"[migrate-payload] {clean} record sudah menggunakan key yang benar.")
+    print("[migrate-payload] Selesai.")
+
+
 def run_validate(project_id: str | None = None, output_json: str | None = None) -> None:
     import json
     from model_ai.validation.validator import validate_and_print
 
-    # Resolve DOCX path
     if project_id:
         docx_path = AI_DIR / "data" / project_id / "file_target.docx"
         default_output_json = AI_DIR / "data" / project_id / "output.json"
@@ -160,7 +153,6 @@ def run_validate(project_id: str | None = None, output_json: str | None = None) 
     if not docx_path.exists():
         raise SystemExit(f"File tidak ditemukan: {docx_path}")
 
-    # Resolve output.json path
     json_path = AI_DIR / output_json if output_json else default_output_json
 
     if not json_path.exists():
@@ -171,10 +163,8 @@ def run_validate(project_id: str | None = None, output_json: str | None = None) 
 
     print(f"[validate] Loaded metadata dari: {json_path}")
 
-    # Run validation
     result = validate_and_print(str(docx_path), payload)
 
-    # Simpan output JSON
     import json as _json
     out_json_path = docx_path.parent / "validation_result.json"
     with open(out_json_path, "w", encoding="utf-8") as f:
@@ -253,34 +243,6 @@ def main() -> None:
         help="Simpan DOCX ke lokal saja, skip upload ke Supabase storage.",
     )
 
-    map_parser = subparsers.add_parser(
-        "docx-style-map",
-        help=(
-            "Bangun catalog python-docx + chunk index, lalu lakukan retrieval, "
-            "candidate mapping, validasi, dan apply-plan audit."
-        ),
-    )
-    map_parser.add_argument(
-        "--dictionary",
-        default="data/python_docx_full_dictionary.yaml",
-        help="Path dictionary python-docx YAML.",
-    )
-    map_parser.add_argument(
-        "--project-id",
-        required=True,
-        help="Project ID sebagai selector document_metadata.",
-    )
-    map_parser.add_argument(
-        "--no-embeddings",
-        action="store_true",
-        help="Gunakan retrieval lexical saja (tanpa embedding index).",
-    )
-    map_parser.add_argument(
-        "--no-llm-mapper",
-        action="store_true",
-        help="Gunakan mapper rule-based sederhana tanpa LLM.",
-    )
-
     export_payload_parser = subparsers.add_parser(
         "export-payload",
         help="Export document_metadata.payload dari Supabase ke file JSON lokal.",
@@ -303,6 +265,11 @@ def main() -> None:
         "--project-id",
         required=True,
         help="Project ID.",
+    )
+
+    subparsers.add_parser(
+        "migrate-payload",
+        help="Migrasi key document_structure_proposal → document_structure di semua record Supabase.",
     )
 
     validate_parser = subparsers.add_parser(
@@ -339,15 +306,6 @@ def main() -> None:
         )
         return
 
-    if args.command == "docx-style-map":
-        run_docx_style_map(
-            project_id=args.project_id,
-            dictionary_path=args.dictionary,
-            with_embeddings=not args.no_embeddings,
-            use_llm_mapper=not args.no_llm_mapper,
-        )
-        return
-
     if args.command == "generate-placeholders":
         run_generate_placeholders(project_id=args.project_id)
         return
@@ -357,6 +315,10 @@ def main() -> None:
             project_id=args.project_id,
             output=getattr(args, "output", None),
         )
+        return
+
+    if args.command == "migrate-payload":
+        run_migrate_payload()
         return
 
     if args.command == "validate":

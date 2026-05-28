@@ -79,7 +79,7 @@ SAMPLE_PAYLOAD = {
         "definisi_halaman_inti": "Bab Pendahuluan_to_Daftar Pustaka",
         "proposal_halaman_inti_maks": 10,
     },
-    "document_structure": {
+    "document_structure_proposal": {
         "sources": [],
         "sections": [
             {

@@ -1,7 +1,7 @@
 """
 Fungsi: Orkestrator utama pembuatan DOCX proposal dari output.json, chunk, dan instructional placeholders.
 
-Digunakan oleh: manage.py
+Digunakan oleh: manage.py; tests/docx/test_docx_generator.py
 
 Tujuan: Menyediakan alur end-to-end agar perintah docx menghasilkan file final konsisten.
 
@@ -20,7 +20,7 @@ from model_ai.docx.instructional_placeholder_builder import (
 from model_ai.metadata_repository import load_document_metadata, save_generated_placeholders
 
 
-def generate_docx_bytes(
+def generate_proposal_docx_bytes(
     project_id: str,
     use_llm_instructional_placeholders: bool = True,
 ) -> tuple[bytes, str]:
@@ -29,20 +29,17 @@ def generate_docx_bytes(
     Tidak ada file yang disimpan ke filesystem lokal.
     """
     metadata = load_document_metadata(project_id)
-    skema = metadata.skema or ""
 
-    file_name = f"{metadata.document_structure.format_nama_file or project_id}.docx"
-    if metadata.document_structure.format_nama_file:
-        file_name = f"{Path(metadata.document_structure.format_nama_file).stem}.docx"
-
-    if skema == "pkm-ai":
-        raise NotImplementedError("Renderer PKM-AI belum tersedia.")
+    file_name = f"{metadata.document_structure_proposal.format_nama_file or project_id}.docx"
+    if metadata.document_structure_proposal.format_nama_file:
+        file_name = f"{Path(metadata.document_structure_proposal.format_nama_file).stem}.docx"
 
     chunks = load_chunk_sources(project_id)
 
+    # Gunakan placeholder yang sudah tersimpan di DB (dari step pipeline sebelumnya)
     existing_placeholders = (
-        metadata.document_structure.generated_placeholders
-        if metadata.document_structure
+        metadata.document_structure_proposal.generated_placeholders
+        if metadata.document_structure_proposal
         else {}
     ) or {}
 
@@ -63,9 +60,10 @@ def generate_docx_bytes(
         except Exception as exc:
             print(f"[docx] WARNING: Gagal menyimpan placeholder ke DB: {exc}", flush=True)
 
+    # User-edited placeholders override LLM-generated
     user_placeholders = (
-        metadata.document_structure.user_placeholders
-        if metadata.document_structure
+        metadata.document_structure_proposal.user_placeholders
+        if metadata.document_structure_proposal
         else {}
     ) or {}
     if user_placeholders:

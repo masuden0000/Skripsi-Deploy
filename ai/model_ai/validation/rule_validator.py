@@ -1,8 +1,10 @@
 """
-Fungsi: Bandingkan properti DOCX dengan rules dari DocumentMetadata.
+Bandingkan properti DOCX dengan rules dari DocumentMetadata.
+
 Digunakan oleh: validator.py
+
 Tujuan: Mendeteksi deviasi format antara dokumen dengan rules yang diharapkan.
-Keyword: automated document generation
+        Setiap properti dicatat hasilnya (passed / failed / warning / skipped).
 """
 from typing import Any
 
@@ -331,9 +333,9 @@ def _validate_document_structure(
     issues: list[ValidationIssue],
     checks: list[ValidationCheckResult],
 ) -> None:
-    if metadata.document_structure is None:
+    if metadata.document_structure_proposal is None:
         return
-    d = metadata.document_structure
+    d = metadata.document_structure_proposal
 
     # Section count
     if props.section_count < 1:
@@ -451,13 +453,13 @@ def _validate_numbering(
             return m.group(1).rstrip('. ') if m else fmt
 
         expected_fig = _caption_prefix(ft.caption_format_figure)
-        _record_check(checks, issues, "figures_tables", "caption_format_figure",
+        _record_check(checks, issues, "figures_and_tables", "caption_format_figure",
                       expected_fig, props.figure_format, severity="warning",
                       message=f"Format keterangan gambar: diharapkan '{expected_fig}', ditemukan '{props.figure_format}'",
                       location="Keterangan gambar (Caption style)")
 
         expected_tbl = _caption_prefix(ft.caption_format_table)
-        _record_check(checks, issues, "figures_tables", "caption_format_table",
+        _record_check(checks, issues, "figures_and_tables", "caption_format_table",
                       expected_tbl, props.table_format, severity="warning",
                       message=f"Format keterangan tabel: diharapkan '{expected_tbl}', ditemukan '{props.table_format}'",
                       location="Keterangan tabel (Caption style)")

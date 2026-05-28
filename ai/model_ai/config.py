@@ -1,8 +1,9 @@
 """
 Fungsi: Memuat konfigurasi environment (ai/.env) dan konstanta global untuk layanan AI/pipeline.
-Digunakan oleh: model_ai/extractor/doc_extractor.py; model_ai/loader/supabase_ingest.py
+
+Digunakan oleh: model_ai/extractor/doc_extractor.py; model_ai/extractor/schema_differ.py; model_ai/loader/supabase_ingest.py; model_ai/docx/style_mapping_pipeline.py
+
 Tujuan: Memusatkan konfigurasi supaya modul lain tidak hardcode nilai environment.
-Keyword: automated document generation
 """
 import os
 from pathlib import Path
@@ -11,12 +12,24 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, SecretStr
 
 
+# ---------------------------------------------------------------------------
+# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
+# Blok konstanta `APP_DIR` untuk menyimpan konfigurasi/registry yang dipakai berulang.
+# ---------------------------------------------------------------------------
 APP_DIR = Path(__file__).resolve().parents[1]
+# ---------------------------------------------------------------------------
+# Digunakan oleh: Dipakai oleh fungsi-fungsi di modul ini dan modul terkait saat import runtime.
+# Blok konstanta `ENV_FILE` untuk menyimpan konfigurasi/registry yang dipakai berulang.
+# ---------------------------------------------------------------------------
 ENV_FILE = APP_DIR / ".env"
 
 load_dotenv(dotenv_path=ENV_FILE)
 
 
+# ---------------------------------------------------------------------------
+# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
+# Mendefinisikan class `AppConfig` untuk kebutuhan modul `config`.
+# ---------------------------------------------------------------------------
 class AppConfig(BaseModel):
     model_config = ConfigDict(frozen=False)  # allow mutation for key rotation state
 
@@ -27,12 +40,13 @@ class AppConfig(BaseModel):
     model_name: str
     temperature: float
     embedding_model_name: str
-    gemini_model_name: str
-    chat_host: str
-    chat_port: int
-    rag_top_k: int
-    rag_min_context_similarity: float
+    gemini_model_name: str = "gemini-2.5-flash"
+    chat_host: str = "127.0.0.1"
+    chat_port: int = 8000
+    rag_top_k: int = 5
+    rag_min_context_similarity: float = 0.45
 
+    # Rotation state
     _groq_index: int = 0
     _google_index: int = 0
     _groq_exhausted: bool = False  # True = semua Groq key limit, switch ke Gemini
@@ -63,6 +77,7 @@ class AppConfig(BaseModel):
         Strategy: Groq dulu, Gemini Flash 2.5 fallback.
         Jika semua Groq key limit/error → switch ke Gemini.
         """
+        # Phase 1: Coba Groq
         if not self._groq_exhausted:
             for _ in range(len(self.groq_api_keys)):
                 try:
@@ -71,8 +86,10 @@ class AppConfig(BaseModel):
                 except Exception:
                     if len(self.groq_api_keys) > 1:
                         self.rotate_groq_key()
+            # Semua Groq gagal
             self._groq_exhausted = True
 
+        # Phase 2: Gemini fallback
         for _ in range(len(self.google_api_keys)):
             try:
                 key = self.get_google_key()
@@ -96,11 +113,30 @@ class AppConfig(BaseModel):
 
         for key in proxy_keys:
             value = os.getenv(key, "").strip().lower()
+            # Sebagian environment menyetel localhost:9 sebagai proxy "buang trafik".
             if value in blackhole_proxy_targets:
                 os.environ.pop(key, None)
 
 
+# ---------------------------------------------------------------------------
+# Digunakan oleh: Dipakai internal di file ini atau dipanggil dari entrypoint runtime.
+# Menjalankan fungsi `_get_required_env` sebagai bagian alur `config`.
+# ---------------------------------------------------------------------------
+def _get_required_env(name: str) -> str:
+    value = os.getenv(name, "").strip()
+    if not value:
+        raise ValueError(f"{name} belum di-set di file ai/.env.")
+    return value
+
+
+
+
+# ---------------------------------------------------------------------------
+# Digunakan oleh: model_ai/extractor/doc_extractor.py; model_ai/extractor/schema_differ.py; model_ai/loader/supabase_ingest.py; model_ai/docx/style_mapping_pipeline.py; dst.
+# Menjalankan fungsi `get_config` sebagai bagian alur `config`.
+# ---------------------------------------------------------------------------
 def _load_api_key_list(prefix: str, suffix_max: int = 5) -> list[SecretStr]:
+    """Load all numbered API keys (GROQ_API_KEY, GROQ_API_KEY_2, ..., GOOGLE_API_KEY_5)."""
     keys: list[SecretStr] = []
     for i in range(1, suffix_max + 1):
         env_name = f"{prefix}_{i}" if i > 1 else prefix
@@ -110,28 +146,22 @@ def _load_api_key_list(prefix: str, suffix_max: int = 5) -> list[SecretStr]:
     return keys
 
 
-def _get_required_env(name: str) -> str:
-    value = os.environ.get(name)
-    if not value:
-        raise ValueError(f"Environment variable '{name}' is not set.")
-    return value
-
-
 def get_config() -> AppConfig:
-
-    _config = AppConfig(
+    return AppConfig(
         groq_api_keys=_load_api_key_list("GROQ_API_KEY"),
         google_api_keys=_load_api_key_list("GOOGLE_API_KEY"),
-        supabase_service_role_key=SecretStr(_get_required_env("SUPABASE_SERVICE_ROLE_KEY")),
+        supabase_service_role_key=SecretStr(
+            _get_required_env("SUPABASE_SERVICE_ROLE_KEY")
+        ),
         supabase_url=_get_required_env("SUPABASE_URL"),
         model_name=_get_required_env("MODEL_NAME"),
-        temperature=float(os.getenv("TEMPERATURE", "0.7")),
+        temperature=float(_get_required_env("TEMPERATURE")),
         embedding_model_name=_get_required_env("EMBEDDING_MODEL_NAME"),
-        gemini_model_name=_get_required_env("GEMINI_MODEL_NAME"),
-        chat_host=os.getenv("CHAT_HOST", "0.0.0.0"),
+        gemini_model_name=os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash").strip() or "gemini-2.5-flash",
+        chat_host=os.getenv("CHAT_HOST", "127.0.0.1").strip() or "127.0.0.1",
         chat_port=int(os.getenv("CHAT_PORT", "8000")),
-        rag_top_k=int(os.getenv("RAG_TOP_K", "8")),
-        rag_min_context_similarity=float(os.getenv("RAG_MIN_CONTEXT_SIMILARITY", "0.5")),
+        rag_top_k=int(os.getenv("RAG_TOP_K", "5")),
+        rag_min_context_similarity=float(
+            os.getenv("RAG_MIN_CONTEXT_SIMILARITY", "0.45")
+        ),
     )
-    _config.disable_blackhole_proxies()
-    return _config

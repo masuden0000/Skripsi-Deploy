@@ -1,8 +1,10 @@
 """
-Fungsi: Ekstrak properti formatting dari file DOCX menggunakan python-docx.
+Ekstrak properti formatting dari file DOCX menggunakan python-docx.
+
 Digunakan oleh: validator.py, rule_validator.py
-Tujuan: Membaca semua properti formatting (typography, page layout, spacing, dll.) dari DOCX.
-Keyword: automated document generation
+
+Tujuan: Membaca semua properti formatting (typography, page layout, spacing,
+document structure) dari file DOCX untuk dibandingkan dengan rules.
 """
 from pathlib import Path
 

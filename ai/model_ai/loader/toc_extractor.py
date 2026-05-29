@@ -1,0 +1,118 @@
+"""Mengekstrak daftar isi dari page_chunks untuk menentukan rentang halaman tiap BAB. Posisi pipeline: pdf_extractor → toc_extractor → chunk_builder."""
+import re
+from typing import Optional
+
+TOC_HEADING_VARIANTS = [
+    "DAFTAR ISI",
+    "DAFTAR ISI DAN TABEL",
+    "DAFTAR",
+    "TABLE OF CONTENTS",
+    "CONTENTS",
+    "ISI",
+    "DAFTAR HALAMAN",
+]
+
+DENYLIST = [
+    "DAFTAR PUSTAKA",
+    "DAFTAR GAMBAR",
+    "DAFTAR TABEL",
+    "DAFTAR LAMPIRAN",
+]
+
+TOC_PAGE_LIMIT = 5
+
+_ENTRY_WITH_DOTS = re.compile(r"^(.+?)\s*\.{4,}\s*(\d+)\s*$")
+_ENTRY_NO_DOTS = re.compile(r"^(.+?)\s{4,}(\d+)\s*$")
+_SUBBAB_PREFIX = re.compile(r"^(?:[A-Z]\.|[a-z]\.|[IVXLC]{1,5}\.|[0-9]+\.)[|\s]+")
+
+
+def _strip_markdown(line: str) -> str:
+    line = re.sub(r"\*\*(.*?)\*\*", r"\1", line)
+    line = re.sub(r"__(.*?)__", r"\1", line)
+    line = re.sub(r"^#{1,6}\s+", "", line)
+    return line.strip()
+
+
+def _strip_table_cell(line: str) -> str:
+    return re.sub(r"^\||\|$", "", line).strip()
+
+
+def _is_toc_heading(line: str) -> bool:
+    normalized = _strip_markdown(line)
+    if normalized in DENYLIST:
+        return False
+    return normalized in TOC_HEADING_VARIANTS
+
+
+def find_toc_page(page_chunks: list[dict]) -> tuple[Optional[dict], int]:
+    for i, page in enumerate(page_chunks[:TOC_PAGE_LIMIT]):
+        text = page.get("text", "")
+        for line in text.splitlines():
+            if _is_toc_heading(line):
+                return page, i
+    return None, 0
+
+
+def _is_subbab(heading: str) -> bool:
+    return bool(_SUBBAB_PREFIX.match(heading))
+
+
+def _parse_entries_with_dots(toc_text: str) -> list[tuple[str, int]]:
+    entries: list[tuple[str, int]] = []
+    for line in toc_text.splitlines():
+        line = _strip_table_cell(line)
+        match = _ENTRY_WITH_DOTS.match(line)
+        if match:
+            heading = match.group(1).strip()
+            if not _is_subbab(heading):
+                entries.append((heading, int(match.group(2))))
+    return entries
+
+
+def _parse_entries_no_dots(toc_text: str) -> list[tuple[str, int]]:
+    entries: list[tuple[str, int]] = []
+    for line in toc_text.splitlines():
+        line = _strip_table_cell(line)
+        match = _ENTRY_NO_DOTS.match(line)
+        if match:
+            heading = match.group(1).strip()
+            if not _is_subbab(heading):
+                entries.append((heading, int(match.group(2))))
+    return entries
+
+
+def _build_ranges(entries: list[tuple[str, int]]) -> list[dict]:
+    ranges = []
+    for i, (heading, start_page) in enumerate(entries):
+        end_page = entries[i + 1][1] - 1 if i + 1 < len(entries) else 9999
+        ranges.append({"heading": heading, "page_start": start_page, "page_end": end_page})
+    return ranges
+
+
+def extract_bab_ranges(
+    page_chunks: list[dict],
+) -> tuple[Optional[list[dict]], str, int]:
+    """Kembalikan (bab_ranges, jalur, toc_page_idx).
+
+    jalur:
+      'main'          — halaman TOC ditemukan + titik-titik berhasil diparsing
+      'fallback_2a'   — halaman TOC ditemukan tapi tanpa titik-titik
+      'fallback_total'— halaman TOC tidak ditemukan atau tidak ada entri yang valid
+    toc_page_idx: 0-indexed posisi fisik halaman TOC (0 jika tidak ditemukan)
+    """
+    toc_page, toc_page_idx = find_toc_page(page_chunks)
+    if toc_page is None:
+        return None, "fallback_total", 0
+
+    toc_text = toc_page.get("text", "")
+
+    if re.search(r"\.{4,}", toc_text):
+        entries = _parse_entries_with_dots(toc_text)
+        if entries:
+            return _build_ranges(entries), "main", toc_page_idx
+
+    entries = _parse_entries_no_dots(toc_text)
+    if entries:
+        return _build_ranges(entries), "fallback_2a", toc_page_idx
+
+    return None, "fallback_total", toc_page_idx

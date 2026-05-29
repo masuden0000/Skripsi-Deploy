@@ -158,16 +158,3 @@ def upsert_embeddings(project_id: str) -> int:
     return total_rows
 
 
-def main() -> None:
-    try:
-        total_rows = upsert_embeddings()
-        print(
-            f"Berhasil upsert {total_rows} chunk dari {CHUNKS_FILE.name} ke tabel document_chunks."
-        )
-    except Exception as exc:
-        print(f"Error saat mengirim embedding ke Supabase: {exc}")
-        raise SystemExit(1) from exc
-
-
-if __name__ == "__main__":
-    main()

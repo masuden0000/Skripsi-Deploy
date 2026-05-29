@@ -7,6 +7,14 @@ PREFACE_LABEL = "PREFACE"
 HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 DOC_PAGE_PATTERN = re.compile(r"^\s*(\d{1,3})\s*$")
 STRIKETHROUGH_PATTERN = re.compile(r"~~[^~]*~~")
+PICTURE_ARTIFACT_PATTERN = re.compile(
+    r"^\*\*\s*==>.*?<==\s*\*\*$"
+    r"|^\*\*-{4,}\s*(?:Start|End) of picture text\s*-{4,}\*\*"
+    r"|^-{4,}\s*(?:Start|End) of picture text\s*-{4,}$"
+)
+TABLE_SEPARATOR_PATTERN = re.compile(r"^\|[\s\-:|]+\|?$")
+TABLE_EMPTY_PATTERN = re.compile(r"^\|+$")
+TABLE_CONTENT_PATTERN = re.compile(r"^\|(.+)\|$")
 
 
 def normalize_heading(raw_heading: str) -> str:
@@ -25,7 +33,7 @@ def is_noise_heading(raw_heading: str) -> bool:
     words = re.findall(r"[a-zA-Z]+", plain)
     if words and all(len(w) <= 3 for w in words):
         return True
-    if len(plain) <= 10 and plain.replace(" ", "").isupper():
+    if len(plain) <= 7 and plain.replace(" ", "").isupper():
         return True
     return False
 
@@ -44,6 +52,15 @@ def iter_page_lines(page_chunks: list[dict]) -> list[dict]:
             if doc_page_match:
                 found_doc_page = int(doc_page_match.group(1))
                 continue
+            if PICTURE_ARTIFACT_PATTERN.match(line.strip()):
+                continue
+            if TABLE_SEPARATOR_PATTERN.match(line.strip()):
+                continue
+            if TABLE_EMPTY_PATTERN.match(line.strip()):
+                continue
+            table_content_match = TABLE_CONTENT_PATTERN.match(line.strip())
+            if table_content_match:
+                line = table_content_match.group(1).strip()
             cleaned = STRIKETHROUGH_PATTERN.sub("", line).rstrip()
             if line.strip() and not cleaned.strip():
                 continue
@@ -78,24 +95,11 @@ def build_sections(page_chunks: list[dict]) -> list[dict]:
         if not section_text:
             return
 
-        fragment_spans = []
-        cursor = 0
-        for index, line in enumerate(current_lines):
-            line_text = line["text"]
-            start = cursor
-            end = start + len(line_text)
-            fragment_spans.append(
-                {"page": line["page"], "start": start, "end": end}
-            )
-            cursor = end
-            if index < len(current_lines) - 1:
-                cursor += 1
-
         sections.append(
             {
                 "heading": current_heading,
                 "text": section_text,
-                "fragments": fragment_spans,
+                "fragments": _build_fragment_spans(current_lines),
             }
         )
 
@@ -123,6 +127,19 @@ def build_sections(page_chunks: list[dict]) -> list[dict]:
     return sections
 
 
+def _build_fragment_spans(lines: list[dict]) -> list[dict]:
+    spans: list[dict] = []
+    cursor = 0
+    for index, line in enumerate(lines):
+        start = cursor
+        end = start + len(line["text"])
+        spans.append({"page": line["page"], "start": start, "end": end})
+        cursor = end
+        if index < len(lines) - 1:
+            cursor += 1
+    return spans
+
+
 def locate_chunk(section_text: str, chunk_text: str, search_start: int) -> tuple[int, int]:
     start = section_text.find(chunk_text, search_start)
     if start == -1 and search_start > 0:
@@ -141,6 +158,55 @@ def resolve_page_range(fragments: list[dict], chunk_start: int, chunk_end: int) 
     if not touched_pages:
         raise ValueError("Chunk tidak memiliki halaman asal.")
     return {"start": min(touched_pages), "end": max(touched_pages)}
+
+
+def _find_first_arabic_page_idx(page_chunks: list[dict]) -> int:
+    for i, page in enumerate(page_chunks):
+        for line in page.get("text", "").splitlines():
+            if DOC_PAGE_PATTERN.match(line):
+                return i
+    return 0
+
+
+def build_sections_from_ranges(
+    page_chunks: list[dict],
+    bab_ranges: list[dict],
+    toc_page_idx: int = 0,
+) -> list[dict]:
+    # Halaman dari TOC page sampai penanda angka pertama — pakai heading detection
+    # (halaman cover sebelum TOC dilewati)
+    first_arabic_idx = _find_first_arabic_page_idx(page_chunks)
+    pre_start = min(toc_page_idx, first_arabic_idx)
+    pre_sections = build_sections(page_chunks[pre_start:first_arabic_idx]) if first_arabic_idx > pre_start else []
+
+    # Halaman konten utama — assign berdasarkan rentang halaman dari TOC
+    page_to_heading: dict[int, str] = {}
+    for r in bab_ranges:
+        for page in range(r["page_start"], r["page_end"] + 1):
+            page_to_heading[page] = r["heading"]
+
+    heading_lines: dict[str, list[dict]] = {r["heading"]: [] for r in bab_ranges}
+
+    for line in iter_page_lines(page_chunks[first_arabic_idx:]):
+        heading = page_to_heading.get(line["page"])
+        if heading:
+            heading_lines[heading].append(line)
+
+    main_sections: list[dict] = []
+    for r in bab_ranges:
+        heading = r["heading"]
+        lines = heading_lines[heading]
+        if not lines:
+            continue
+
+        content_lines = [line["text"] for line in lines]
+        section_text = "\n".join(content_lines).strip()
+        if not section_text:
+            continue
+
+        main_sections.append({"heading": heading, "text": section_text, "fragments": _build_fragment_spans(lines)})
+
+    return pre_sections + main_sections
 
 
 def build_payload(sections: list[dict], splitter: MarkdownTextSplitter) -> list[dict]:

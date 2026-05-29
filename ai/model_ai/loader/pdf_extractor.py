@@ -7,15 +7,16 @@ import pymupdf4llm
 from langchain_text_splitters import MarkdownTextSplitter
 
 if __package__:
-    from .chunk_builder import build_payload, build_sections
+    from .chunk_builder import build_payload, build_sections, build_sections_from_ranges
+    from .toc_extractor import extract_bab_ranges
 else:
     import sys
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from model_ai.loader.chunk_builder import build_payload, build_sections
+    from model_ai.loader.chunk_builder import build_payload, build_sections, build_sections_from_ranges
+    from model_ai.loader.toc_extractor import extract_bab_ranges
 
 APP_DIR = Path(__file__).resolve().parents[2]
-PROJECT_DIR = APP_DIR.parent
 
 
 def get_page_chunks(pdf_path: Path) -> list[dict]:
@@ -51,7 +52,14 @@ def extract_chunks(
 
     splitter = MarkdownTextSplitter(chunk_size=1000, chunk_overlap=150)
 
-    sections = build_sections(page_chunks)
+    bab_ranges, jalur, toc_page_idx = extract_bab_ranges(page_chunks)
+    if bab_ranges:
+        sections = build_sections_from_ranges(page_chunks, bab_ranges, toc_page_idx)
+        print(f"[setup] chunk_parent sumber: TOC ({jalur}), {len(bab_ranges)} entri ditemukan")
+    else:
+        sections = build_sections(page_chunks)
+        print("[setup] chunk_parent sumber: HEADING_PATTERN (fallback total)")
+
     payload = build_payload(sections, splitter)
 
     with open(output_path, "w", encoding="utf-8") as f:
@@ -60,10 +68,3 @@ def extract_chunks(
     return len(payload), output_path
 
 
-def main() -> None:
-    total_chunks, output_path = extract_chunks()
-    print(f"Berhasil menulis {total_chunks} chunk ke: {output_path}")
-
-
-if __name__ == "__main__":
-    main()

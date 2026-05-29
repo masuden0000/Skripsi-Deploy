@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from supabase import Client, create_client
 
 from model_ai.config import get_config
+from model_ai.constants import EXCLUDED_PARENTS
 from model_ai.extractor.models import (
     DocumentMetadata,
     DocumentStructureExtracted,
@@ -262,6 +263,43 @@ def _expand_to_full_headers(seed_chunks: list[dict], client: Client) -> list[dic
     return sorted(seen.values(), key=lambda c: c["chunk_index"])
 
 
+def _retrieve_by_section_focus(
+    section_focus: list[str],
+    project_id: str | None,
+) -> list[dict] | None:
+    """Ambil semua chunk dari chunk_parent yang cocok dengan salah satu keyword section_focus.
+
+    Returns None jika tidak ada parent yang cocok — caller harus fallback ke vector search.
+    """
+    client = _build_supabase()
+
+    query = client.table("document_chunks").select("chunk_parent")
+    if project_id:
+        query = query.eq("project_id", project_id)
+    rows = query.execute().data or []
+
+    parents: set[str] = {r["chunk_parent"] for r in rows if r.get("chunk_parent")}
+
+    matched: list[str] = []
+    for focus in section_focus:
+        focus_upper = focus.upper()
+        for p in parents:
+            if focus_upper in p.upper() and p not in matched:
+                matched.append(p)
+
+    if not matched:
+        return None
+
+    fetch = client.table("document_chunks").select(
+        "chunk_index, content, chunk_parent, chunk_prev, chunk_next, page_start, page_end, project_id"
+    ).in_("chunk_parent", matched)
+    if project_id:
+        fetch = fetch.eq("project_id", project_id)
+
+    chunks = fetch.execute().data or []
+    return sorted(chunks, key=lambda c: c["chunk_index"]) if chunks else None
+
+
 def _retrieve_chunks_multi(queries: list[str], top_k: int, project_id: str | None = None) -> list[dict]:
     """Embed setiap query, retrieve top-K chunks dari Supabase, lalu expand per header.
 
@@ -273,7 +311,11 @@ def _retrieve_chunks_multi(queries: list[str], top_k: int, project_id: str | Non
     """
     client = _build_supabase()
 
-    rpc_params: dict = {"query_embedding": None, "match_count": top_k}
+    rpc_params: dict = {
+        "query_embedding": None,
+        "match_count": top_k,
+        "excluded_parents": list(EXCLUDED_PARENTS),
+    }
     if project_id:
         rpc_params["filter_project_id"] = project_id
 
@@ -302,7 +344,16 @@ def _extract_key(
 ) -> Any:
     """Jalankan satu siklus ekstraksi: retrieve → prompt → LLM → merge sources."""
     top_k = prompt_cfg.top_k if prompt_cfg.top_k > 0 else CONFIG.rag_top_k
-    chunks = _retrieve_chunks_multi(prompt_cfg.queries, top_k, project_id=project_id)
+
+    chunks: list[dict] | None = None
+    if prompt_cfg.section_focus:
+        chunks = _retrieve_by_section_focus(prompt_cfg.section_focus, project_id)
+        if chunks is None:
+            print(f"[extract] section_focus {prompt_cfg.section_focus} tidak ditemukan di chunk_parent, fallback ke vector search.")
+
+    if chunks is None:
+        chunks = _retrieve_chunks_multi(prompt_cfg.queries, top_k, project_id=project_id)
+
     prompt = render_prompt(prompt_cfg.template, chunks)
 
     CONFIG.disable_blackhole_proxies()

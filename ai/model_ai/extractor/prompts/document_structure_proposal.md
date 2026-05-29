@@ -5,6 +5,9 @@ queries:
   - "format nama file PKM pengumpulan sistematika proposal"
   - "4.1 anggaran biaya 4.2 jadwal kegiatan sub bab BAB 4 proposal PKM-KC rekapitulasi"
 top_k: 10
+section_focus:
+  - "SISTEMATIKA PENULISAN PROPOSAL"
+  - "SISTEMATIKA PROPOSAL KEGIATAN"
 ---
 
 # Extraction Task: Document Structure (Proposal PKM)

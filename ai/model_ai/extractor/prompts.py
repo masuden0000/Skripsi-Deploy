@@ -12,6 +12,7 @@ class PromptConfig:
     queries: list[str]
     template: str
     top_k: int = 0
+    section_focus: list[str] | None = None
 
 
 def _load(filename: str) -> PromptConfig:
@@ -27,10 +28,19 @@ def _load(filename: str) -> PromptConfig:
     else:
         raise ValueError(f"{filename} wajib punya field 'query' atau 'queries'.")
 
+    raw_focus = meta.get("section_focus")
+    if raw_focus is None:
+        section_focus: list[str] | None = None
+    elif isinstance(raw_focus, str):
+        section_focus = [raw_focus]
+    else:
+        section_focus = [str(f) for f in raw_focus]
+
     return PromptConfig(
         queries=queries,
         template=str(post.content),
         top_k=int(meta.get("top_k", 0)),
+        section_focus=section_focus,
     )
 
 

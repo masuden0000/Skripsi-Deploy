@@ -299,13 +299,13 @@ def _retrieve_by_section_focus(
 
 
 def _retrieve_chunks_multi(queries: list[str], top_k: int, project_id: str | None = None) -> list[dict]:
-    """Embed setiap query, retrieve top-K chunks dari Supabase, lalu expand per header.
+    """Embed setiap query, retrieve top-K chunks dari Supabase.
 
     Alur:
     1. Untuk setiap query: embed → vector RPC → kumpulkan chunk unik (dedup by chunk_index)
-    2. Expand: untuk setiap chunk yang ditemukan, ambil semua chunk lain dalam
-       chunk_parent yang sama sehingga satu section selalu utuh.
-    3. Sort by chunk_index agar konteks berurutan.
+    2. Sort by chunk_index agar konteks berurutan.
+
+    Catatan: expand ke full chunk_parent dinonaktifkan — konteks dibatasi pada top_k chunk saja.
     """
     client = _build_supabase()
 
@@ -330,8 +330,7 @@ def _retrieve_chunks_multi(queries: list[str], top_k: int, project_id: str | Non
             if idx not in seen:
                 seen[idx] = chunk
 
-    seed_chunks = sorted(seen.values(), key=lambda c: c["chunk_index"])
-    return _expand_to_full_headers(seed_chunks, client)
+    return sorted(seen.values(), key=lambda c: c["chunk_index"])
 
 
 def _extract_key(

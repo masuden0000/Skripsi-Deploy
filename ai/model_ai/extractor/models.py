@@ -252,7 +252,6 @@ class PageCountInfo(PageCountExtracted):
 
 
 class DocumentMetadata(BaseModel):
-    document_type: str | None = None
     source_document: str | None = None
     typography: TypographyInfo
     page_layout: PageLayoutInfo

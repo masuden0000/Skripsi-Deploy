@@ -51,5 +51,3 @@ DOCUMENT_STRUCTURE_PROPOSAL = _load("document_structure_proposal.md")
 NUMBERING = _load("numbering.md")
 FIGURES_AND_TABLES = _load("figures_and_tables.md")
 PAGE_COUNT_LIMITS = _load("page_count_limits.md")
-
-DOCUMENT_TYPE = _load("document_type.md")

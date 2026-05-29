@@ -105,7 +105,6 @@ SAMPLE_PAYLOAD = {
             },
         ],
         "format_nama_file": "namaketua_namapt_PKM-KC.pdf",
-        "max_halaman_inti": 10,
     },
 }
 

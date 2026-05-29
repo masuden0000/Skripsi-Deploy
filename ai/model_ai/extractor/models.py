@@ -165,7 +165,6 @@ class SectionItem(BaseModel):
 
 class DocumentStructureExtracted(BaseModel):
     sections: list[SectionItem] = []
-    max_halaman_inti: int | None = None
     format_nama_file: str | None = None
 
 

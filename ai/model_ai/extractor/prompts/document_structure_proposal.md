@@ -63,7 +63,6 @@ Jika ada yang terlewat, tambahkan sebelum finalisasi output.
 
 ## Output Fields (top-level)
 - sections: daftar section berurutan (lihat format di bawah)
-- max_halaman_inti: batas maksimum halaman inti (integer)
 - format_nama_file: format nama file untuk pengumpulan (string)
 
 ## Format sections

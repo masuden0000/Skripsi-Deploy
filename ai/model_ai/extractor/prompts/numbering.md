@@ -1,39 +1,76 @@
 ---
 queries:
-  - "penomoran halaman romawi kecil arab sudut kanan atas bawah mulai dari halaman berapa"
-  - "format nomor sub bab BAB 1 BAB 2 penomoran bab chapter"
-  - "penomoran gambar Gambar 1 Gambar 2 tabel Tabel 1 format nomor keterangan"
-  - "Gambar 1. Gambar 4. contoh keterangan gambar dalam isi teks pendahuluan"
-  - "4.1 4.2 sub bab Anggaran Biaya Jadwal Kegiatan penomoran format sub bab"
+  - "penomoran halaman romawi kecil arab letak sudut kanan atas bawah mulai halaman pertama"
+  - "halaman preliminari romawi kecil daftar isi penomoran awal dokumen"
+  - "halaman isi arab dimulai bab pendahuluan penomoran konten"
+  - "format penulisan bab sub bab ketentuan penulisan tata cara PKM"
+  - "4.1 4.2 sub bab anggaran biaya jadwal kegiatan contoh penomoran format"
 top_k: 10
+section_focus:
+  - "KETENTUAN PENULISAN"
+  - "TATA CARA PENULISAN"
+  - "FORMAT PENULISAN"
 ---
 
-# Extraction Task: Numbering
+# Tugas Ekstraksi: Sistem Penomoran Dokumen
 
-## Context
+## Konteks
 {context}
 
-## Task
-Ekstrak informasi sistem penomoran halaman, bab, gambar, dan tabel dari konteks di atas.
-Jika tidak ditemukan, gunakan null (JSON null, BUKAN string "null").
+## Tugas
+Ekstrak sistem penomoran halaman, format bab, dan format sub-bab dari konteks di atas.
+
+## Langkah-Langkah Penalaran — Lakukan Secara Nalar Sebelum Menulis Output
+
+**Langkah 1 — Cari aturan penomoran halaman (explicit search):**
+Cari bagian yang membahas ketentuan atau tata cara penulisan. Bagian ini biasanya
+memuat aturan eksplisit seperti lokasi nomor halaman, format angka, dan titik mulai penomoran.
+
+Dari bagian tersebut, identifikasi:
+- Halaman preliminari (sebelum BAB I): format angka, letak, alignment, mulai dari section mana
+- Halaman isi (mulai BAB I): format angka, letak, alignment, mulai dari section mana
+
+Jika aturan tidak ditemukan secara eksplisit → lanjut ke Langkah 4 untuk default.
+
+**Langkah 2 — Inferensikan `chapter_format` dari pola heading BAB yang ditemukan:**
+Jangan mencari pernyataan eksplisit "format bab adalah...".
+Temukan contoh heading BAB yang nyata di konteks, lalu identifikasi komponennya:
+
+- Apakah ada prefix? (misalnya "BAB", "Bab", atau tidak ada sama sekali)
+- Format angkanya: Arab (1, 2, 3) atau Romawi (I, II, III)?
+- Apakah ada tanda baca setelah angka? (titik, tidak ada)
+- Apakah ada spasi antara prefix dan angka?
+
+Abstraksi pola tersebut menjadi template menggunakan `{n}` sebagai placeholder angka.
+Gunakan pola yang paling konsisten muncul di konteks — bukan mencocokkan ke daftar.
+
+**Langkah 3 — Inferensikan `sub_chapter_format` dari pola angka bertingkat:**
+Cari contoh penomoran sub-bab yang muncul di konteks (pola: angka titik angka).
+Dari contoh yang ditemukan, identifikasi komponennya:
+
+- Format angka tingkat pertama (bab): Arab atau Romawi?
+- Separator antara bab dan sub: titik atau karakter lain?
+- Apakah ada tanda baca penutup setelah angka sub?
+
+Abstraksi pola tersebut menjadi template menggunakan `{bab}` dan `{sub}` sebagai placeholder.
+Abaikan angka satu level (misal "1." tanpa sub) — fokus pada pola dua level atau lebih.
+Gunakan pola yang paling konsisten muncul di konteks — bukan mencocokkan ke daftar.
+
+**Langkah 4 — Terapkan default jika tidak ditemukan:**
+- `preliminary`: lowerRoman, FOOTER, CENTER, mulai dari daftar_isi
+- `content`: decimal, HEADER, RIGHT, mulai dari BAB I
+- `chapter_format`: `"BAB {n}"` (standar PKM tanpa titik)
+- `sub_chapter_format`: `"{bab}.{sub}"` (standar PKM)
 
 ## Normalization Rules
-- format halaman: gunakan nilai standar Word — "lowerRoman" (i, ii, iii), "upperRoman" (I, II, III), "decimal" (1, 2, 3)
-- location: "HEADER" jika nomor di atas halaman, "FOOTER" jika di bawah halaman
-- alignment: "RIGHT" untuk sudut kanan, "LEFT" untuk sudut kiri, "CENTER" untuk tengah
-- start_at_section: gunakan nama section yang sama persis dengan entries di `sections` list
-- chapter_format: gunakan template dengan placeholder {n} (contoh: "BAB {n}.") — perhatikan titik setelah nomor jika dokumen menggunakannya
-- sub_chapter_format: gunakan template dengan placeholder {bab} dan {sub} (contoh: "{bab}.{sub}") — inferensikan dari contoh sub-bab yang ada (misal: "4.1 Anggaran Biaya" → "{bab}.{sub}")
-**PENTING**: Jika aturan penomoran tidak dinyatakan secara eksplisit, **wajib inferensikan** dari contoh-contoh penomoran yang muncul dalam konteks. Dokumen akademik Indonesia umumnya menggunakan format "BAB {n}." untuk bab dan "{bab}.{sub}" untuk sub-bab.
+- `format`: `"lowerRoman"` (i, ii, iii) / `"upperRoman"` (I, II, III) / `"decimal"` (1, 2, 3)
+- `location`: `"HEADER"` atau `"FOOTER"`
+- `alignment`: `"RIGHT"`, `"LEFT"`, atau `"CENTER"`
+- `start_at_section`: nama section tempat penomoran dimulai (contoh: `"daftar_isi"`, `"bab_1"`)
+- Gunakan JSON null untuk nilai yang benar-benar tidak bisa diinferensikan
 
 ## Output Fields
-Keluarkan dua objek: `preliminary` (halaman awal/romawi) dan `content` (halaman isi/arab).
-Setiap objek memiliki:
-- format: format angka halaman ("lowerRoman", "decimal", dst.)
-- location: posisi di halaman ("HEADER" atau "FOOTER")
-- alignment: rata teks nomor ("RIGHT", "LEFT", "CENTER")
-- start_at_section: section tempat penomoran ini dimulai (contoh: "daftar_isi", "BAB 1 PENDAHULUAN")
-
-Field tambahan di luar objek:
-- chapter_format: template format BAB (contoh: "BAB {n}.")
-- sub_chapter_format: template format sub-bab (contoh: "{bab}.{sub}")
+- `preliminary`: `{format, location, alignment, start_at_section}` — halaman awal (romawi)
+- `content`: `{format, location, alignment, start_at_section}` — halaman isi (arab)
+- `chapter_format`: template format BAB (contoh: `"BAB {n}."`)
+- `sub_chapter_format`: template format sub-bab (contoh: `"{bab}.{sub}"`)

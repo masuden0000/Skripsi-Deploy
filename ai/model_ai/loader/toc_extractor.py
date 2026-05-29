@@ -2,9 +2,10 @@
 import re
 from typing import Optional
 
+from model_ai.constants import TOC_SECTION_DENYLIST
+
 TOC_HEADING_VARIANTS = [
     "DAFTAR ISI",
-    "DAFTAR ISI DAN TABEL",
     "DAFTAR",
     "TABLE OF CONTENTS",
     "CONTENTS",
@@ -12,14 +13,7 @@ TOC_HEADING_VARIANTS = [
     "DAFTAR HALAMAN",
 ]
 
-DENYLIST = [
-    "DAFTAR PUSTAKA",
-    "DAFTAR GAMBAR",
-    "DAFTAR TABEL",
-    "DAFTAR LAMPIRAN",
-]
-
-TOC_PAGE_LIMIT = 5
+TOC_PAGE_LIMIT = 3
 
 _ENTRY_WITH_DOTS = re.compile(r"^(.+?)\s*\.{4,}\s*(\d+)\s*$")
 _ENTRY_NO_DOTS = re.compile(r"^(.+?)\s{4,}(\d+)\s*$")
@@ -38,8 +32,8 @@ def _strip_table_cell(line: str) -> str:
 
 
 def _is_toc_heading(line: str) -> bool:
-    normalized = _strip_markdown(line)
-    if normalized in DENYLIST:
+    normalized = _strip_markdown(line).upper()
+    if normalized in TOC_SECTION_DENYLIST:
         return False
     return normalized in TOC_HEADING_VARIANTS
 

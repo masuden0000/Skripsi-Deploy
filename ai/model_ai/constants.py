@@ -7,3 +7,10 @@ EXCLUDED_PARENTS: frozenset[str] = frozenset({
     "DAFTAR LAMPIRAN",
     "DAFTAR PUSTAKA",
 })
+
+TOC_SECTION_DENYLIST: frozenset[str] = frozenset({
+    "DAFTAR PUSTAKA",
+    "DAFTAR GAMBAR",
+    "DAFTAR TABEL",
+    "DAFTAR LAMPIRAN",
+})

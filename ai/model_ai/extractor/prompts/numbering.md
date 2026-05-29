@@ -7,9 +7,8 @@ queries:
   - "4.1 4.2 sub bab anggaran biaya jadwal kegiatan contoh penomoran format"
 top_k: 10
 section_focus:
-  - "KETENTUAN PENULISAN"
-  - "TATA CARA PENULISAN"
-  - "FORMAT PENULISAN"
+  - "SISTEMATIKA PENULISAN PROPOSAL"
+  - "SISTEMATIKA PROPOSAL KEGIATAN"
 ---
 
 # Tugas Ekstraksi: Sistem Penomoran Dokumen

@@ -19,6 +19,7 @@ section_focus:
 ## Tugas
 Ekstrak struktur dokumen untuk jenis PROPOSAL PKM dari konteks di atas.
 Susun sections sesuai urutan kemunculannya dalam dokumen.
+Fokus HANYA pada ketentuan yang berlaku untuk proposal — abaikan informasi tentang laporan kemajuan atau laporan akhir.
 
 Catatan: Konteks yang diterima bisa berupa bagian spesifik sistematika maupun konteks
 yang lebih luas. Gunakan Langkah 1 untuk menemukan section yang relevan terlebih dahulu

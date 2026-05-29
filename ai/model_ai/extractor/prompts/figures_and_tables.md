@@ -17,8 +17,8 @@ section_focus:
 {context}
 
 ## Tugas
-Ekstrak aturan penulisan keterangan gambar, keterangan tabel, dan format anggaran biaya
-dari konteks di atas.
+Ekstrak aturan penulisan keterangan gambar, keterangan tabel, dan format anggaran biaya dari konteks di atas.
+Fokus HANYA pada ketentuan yang berlaku untuk proposal — abaikan informasi tentang laporan kemajuan atau laporan akhir.
 
 ## Langkah-Langkah Penalaran — Lakukan Secara Nalar Sebelum Menulis Output
 

@@ -23,7 +23,12 @@ Fokus HANYA pada ketentuan yang berlaku untuk proposal — abaikan informasi ten
 **Langkah 1 — Temukan section sumber kebenaran:**
 Gunakan prioritas bertingkat:
 
-- **[P1 — Exact match]** Cari section berjudul persis: `"Ketentuan Umum"`, `"Persyaratan Proposal"`, atau `"Batas Halaman"`
+- **[P1 — Exact match]** Cari section berjudul persis:
+  - `"Susunan Proposal"`
+  - `"Isi utama proposal"`
+  - `"Batas Halaman"`
+  - `"Sistematika Proposal Kegiatan"`, atau
+  - `"Sistematika Penulisan Proposal"`
   → Jika ditemukan, gunakan section itu sebagai sumber utama.
 
 - **[P2 — Keyword fallback]** Jika tidak ada, cari section yang memuat kata **"halaman"** DAN **"proposal"** (tidak harus persis, tidak case-sensitive).

@@ -23,7 +23,12 @@ Jangan gunakan pengetahuan umum — hanya berdasarkan konteks yang diberikan.
 **Langkah 1 — Temukan section sumber kebenaran:**
 Gunakan prioritas bertingkat:
 
-- **[P1 — Exact match]** Cari section dengan judul persis: `"Ketentuan Penulisan"`, `"Tata Cara Penulisan"`, atau `"Format Penulisan"`
+- **[P1 — Exact match]** Cari section dengan judul persis:
+  - `"Ketentuan Penulisan"`
+  - `"Tata Cara Penulisan"`
+  - `"Format Penulisan"`
+  - `"Sistematika Proposal Kegiatan"`
+  - `"Sistematika Penulisan Proposal"`
   → Jika ditemukan, gunakan section itu sebagai sumber utama.
 
 - **[P2 — Keyword fallback]** Jika tidak ada, cari section yang judulnya mengandung kata **"penulisan"** atau **"format"** (tidak case-sensitive).

@@ -18,6 +18,7 @@ section_focus:
 
 ## Tugas
 Ekstrak sistem penomoran halaman, format bab, dan format sub-bab dari konteks di atas.
+Fokus HANYA pada ketentuan yang berlaku untuk proposal — abaikan informasi tentang laporan kemajuan atau laporan akhir.
 
 ## Langkah-Langkah Penalaran — Lakukan Secara Nalar Sebelum Menulis Output
 

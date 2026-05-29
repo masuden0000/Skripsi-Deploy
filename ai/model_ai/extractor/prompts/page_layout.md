@@ -16,13 +16,18 @@ section_focus:
 
 ## Tugas
 Ekstrak informasi tata letak halaman dari konteks di atas.
+Fokus HANYA pada ketentuan yang berlaku untuk proposal — abaikan informasi tentang laporan kemajuan atau laporan akhir.
 
 ## Langkah-Langkah Penalaran — Lakukan Langkah Ini Secara Nalar Sebelum Menulis Output
 
 **Langkah 1 — Temukan section sumber kebenaran:**
 Gunakan prioritas bertingkat:
 
-- **[P1 — Exact match]** Cari section dengan judul persis: `"Ketentuan Penulisan"`, `"Tata Cara Penulisan"`, atau `"Format Penulisan"`
+- **[P1 — Exact match]** Cari section dengan judul persis:   - `"Susunan Proposal"`
+  - `"Sistematika Proposal Kegiatan"`
+  - `"Sistematika Penulisan Proposal"`
+  - `"Isi utama proposal"`
+  - `"Format Penulisan Proposal"`
   → Jika ditemukan, gunakan section itu sebagai sumber utama.
 
 - **[P2 — Keyword fallback]** Jika tidak ada, cari section yang judulnya mengandung kata **"penulisan"** atau **"format"** (tidak case-sensitive).

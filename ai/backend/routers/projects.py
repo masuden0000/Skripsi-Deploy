@@ -7,7 +7,7 @@ from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, Query
 from fastapi.responses import JSONResponse
 from typing import Optional, Any
 from services.database import get_supabase
-from services.storage import upload_file, delete_file, create_signed_upload_url, BUCKET_SOURCE, BUCKET_OUTPUT
+from services.storage import upload_file, delete_file, delete_folder, create_signed_upload_url, BUCKET_SOURCE, BUCKET_OUTPUT
 from services.pipeline import run_pipeline, run_docx_pipeline
 from schemas.project_schema import Project, ProjectStatus
 from datetime import datetime
@@ -432,8 +432,20 @@ async def delete_project(project_id: str):
         source_path = f"{project_id}/{project.get('source_file', 'file')}"
         await delete_file(BUCKET_SOURCE, source_path)
 
-    if project.get("result_url"):
-        await delete_file(BUCKET_OUTPUT, f"{project_id}/proposal_output.docx")
+    result_url = project.get("result_url")
+    if result_url:
+        # Ekstrak path dari URL: .../object/public/{bucket}/{path}
+        marker = f"/{BUCKET_OUTPUT}/"
+        idx = result_url.find(marker)
+        if idx != -1:
+            output_path = result_url[idx + len(marker):]
+            await delete_file(BUCKET_OUTPUT, output_path)
+        else:
+            # Fallback: hapus seluruh folder project di bucket output
+            await delete_folder(BUCKET_OUTPUT, project_id)
+    else:
+        # Belum ada result_url (status extracted/failed), tetap bersihkan folder output
+        await delete_folder(BUCKET_OUTPUT, project_id)
 
     supabase.table("projects").delete().eq("id", project_id).execute()
 

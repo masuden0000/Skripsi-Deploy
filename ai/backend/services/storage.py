@@ -75,6 +75,23 @@ async def create_signed_upload_url(bucket_name: str, file_path: str) -> dict:
     return dict(result)
 
 
+async def delete_folder(bucket_name: str, folder_prefix: str) -> bool:
+    """
+    Delete all files under a folder prefix in a bucket.
+    folder_prefix: e.g. "{project_id}/" — lists and removes every file inside.
+    """
+    try:
+        client = get_supabase_client()
+        files = client.storage.from_(bucket_name).list(folder_prefix)
+        if files:
+            paths = [f"{folder_prefix}/{f['name']}" for f in files]
+            client.storage.from_(bucket_name).remove(paths)
+        return True
+    except Exception as e:
+        print(f"Error deleting folder {folder_prefix}: {e}")
+        return False
+
+
 async def download_file(bucket_name: str, file_path: str) -> bytes:
     """
     Download file from Supabase Storage.

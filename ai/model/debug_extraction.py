@@ -51,8 +51,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from model_ai.config import get_config
 from model_ai.extractor.doc_extractor import (
     _build_llm,
+    _retrieve_by_section_focus,
     _retrieve_chunks_multi,
     render_prompt,
 )
@@ -66,6 +68,8 @@ from model_ai.extractor.prompts import (
     TYPOGRAPHY,
     PromptConfig,
 )
+
+_CONFIG = get_config()
 
 PROMPT_REGISTRY: dict[str, PromptConfig] = {
     "typography": TYPOGRAPHY,
@@ -93,9 +97,11 @@ def _collect_one(
             "key": key,
             "timestamp": timestamp,
             "project_id": project_id,
+            "retrieve_method": None,      # diisi setelah retrieval
+            "section_focus": prompt_cfg.section_focus,
         },
         "rag_queries": prompt_cfg.queries,
-        "top_k": prompt_cfg.top_k or "menggunakan RAG_TOP_K dari .env",
+        "top_k": None,  # diisi setelah retrieval (tidak berlaku jika section_focus)
         "chunks": [],
         "rendered_prompt": None,
         "llm_raw_response": None,
@@ -108,16 +114,40 @@ def _collect_one(
     }
 
     print(f"  [1/3] RAG retrieval untuk '{key}'...")
+    effective_top_k = prompt_cfg.top_k if prompt_cfg.top_k > 0 else _CONFIG.rag_top_k
+
+    retrieve_method = "vector_search"
     try:
-        chunks = _retrieve_chunks_multi(
-            prompt_cfg.queries,
-            prompt_cfg.top_k or 8,
-            project_id=project_id,
-        )
+        if prompt_cfg.section_focus:
+            chunks = _retrieve_by_section_focus(prompt_cfg.section_focus, project_id)
+            if chunks is None:
+                print(f"        → section_focus {prompt_cfg.section_focus} tidak ada match, fallback ke vector search")
+                chunks = _retrieve_chunks_multi(
+                    prompt_cfg.queries,
+                    effective_top_k,
+                    project_id=project_id,
+                )
+            else:
+                retrieve_method = "section_focus"
+                matched_parents = list(dict.fromkeys(c["chunk_parent"] for c in chunks))
+                print(f"        → section_focus matched {len(matched_parents)} parent(s): {matched_parents}")
+        else:
+            chunks = _retrieve_chunks_multi(
+                prompt_cfg.queries,
+                effective_top_k,
+                project_id=project_id,
+            )
     except Exception as e:
         result["summary"]["error"] = f"RAG retrieval gagal: {e}"
         print(f"  [ERROR] {result['summary']['error']}")
         return result
+
+    result["meta"]["retrieve_method"] = retrieve_method
+    result["top_k"] = (
+        "tidak berlaku (section_focus)"
+        if retrieve_method == "section_focus"
+        else effective_top_k
+    )
 
     for i, chunk in enumerate(chunks, 1):
         content = str(chunk.get("content", ""))

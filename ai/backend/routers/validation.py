@@ -15,19 +15,12 @@ yang harus cocok persis dengan kolom projects.skema di database.
 Digunakan oleh: backend/src/routes/pkm.routes.js (sebagai proxy)
 """
 import os
-import sys
 import tempfile
 from datetime import date
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from services.database import get_supabase
-
-# Tambah ai/ ke sys.path agar bisa import model_ai.validation
-_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-_AI_DIR = os.path.join(_PROJECT_ROOT, "ai")
-if _AI_DIR not in sys.path:
-    sys.path.insert(0, _AI_DIR)
 
 router = APIRouter()
 

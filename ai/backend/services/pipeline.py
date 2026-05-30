@@ -22,10 +22,10 @@ from .storage import download_file
 BUCKET_SOURCE = "ai-source-files"
 BUCKET_OUTPUT = "ai-output-files"
 
-# Root directory of this project (parent of ai-backend/)
+# Root of the ai/ service (parent of backend/)
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-# AI directory (where manage.py lives)
-AI_DIR = os.path.join(PROJECT_ROOT, "ai")
+# Model directory (where manage.py and model_ai/ live)
+AI_DIR = os.path.join(PROJECT_ROOT, "model")
 AI_PATH = Path(AI_DIR)
 
 PROJECT_LOGS_ENABLED = True

@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, SecretStr
 
 
 APP_DIR = Path(__file__).resolve().parents[1]
-ENV_FILE = APP_DIR / ".env"
+ENV_FILE = APP_DIR.parent / ".env"
 
 load_dotenv(dotenv_path=ENV_FILE)
 

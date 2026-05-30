@@ -179,18 +179,60 @@ def build_sections_from_ranges(
     pre_start = min(toc_page_idx, first_arabic_idx)
     pre_sections = build_sections(page_chunks[pre_start:first_arabic_idx]) if first_arabic_idx > pre_start else []
 
-    # Halaman konten utama — assign berdasarkan rentang halaman dari TOC
+    # Lapis 1: page-based range dari TOC → titik awal heading per page
     page_to_heading: dict[int, str] = {}
     for r in bab_ranges:
         for page in range(r["page_start"], r["page_end"] + 1):
             page_to_heading[page] = r["heading"]
 
+    # Lapis 2: lookup normalized heading → original heading string dari bab_ranges,
+    # untuk mendeteksi transisi heading di dalam page yang sama.
+    # Kasus: konten BAB A dan awal BAB B berada di page yang sama — page_to_heading
+    # mengirim seluruh page ke satu heading, padahal perlu dipotong lebih halus.
+    bab_heading_lookup: dict[str, str] = {
+        normalize_heading(r["heading"]).upper(): r["heading"]
+        for r in bab_ranges
+    }
+    # Lapis 2 hanya memicu switch jika salah satu dari dua kondisi terpenuhi:
+    # (1) halaman saat ini sudah mencapai atau melewati halaman ekspektasi dari daftar isi, ATAU
+    # (2) peta halaman lapisan 1 memang menetapkan halaman ini ke bagian yang sama.
+    # Kondisi (1) memanfaatkan fakta bahwa nomor halaman dokumen sinkron dengan daftar isi.
+    # Kondisi (2) menjadi jaring pengaman jika ada selisih kecil antara nomor halaman.
+    bab_expected_page: dict[str, int] = {
+        normalize_heading(r["heading"]).upper(): r["page_start"]
+        for r in bab_ranges
+    }
+
     heading_lines: dict[str, list[dict]] = {r["heading"]: [] for r in bab_ranges}
 
+    # current_heading: heading yang sedang aktif, diperbarui saat heading bab_ranges
+    # ditemukan di dalam konten (bukan reset per page).
+    # page_to_heading hanya dipakai sebagai bootstrap saat current_heading belum diset.
+    current_heading: str | None = None
+
     for line in iter_page_lines(page_chunks[first_arabic_idx:]):
-        heading = page_to_heading.get(line["page"])
-        if heading:
-            heading_lines[heading].append(line)
+        stripped = line["text"].strip()
+        heading_match = HEADING_PATTERN.match(stripped)
+
+        if heading_match:
+            raw = heading_match.group(2)
+            normalized = normalize_heading(raw).upper()
+            if normalized in bab_heading_lookup:
+                target_heading = bab_heading_lookup[normalized]
+                expected_page = bab_expected_page.get(normalized, 0)
+                sudah_di_zona = line["page"] >= expected_page
+                lapisan1_setuju = page_to_heading.get(line["page"]) == target_heading
+                if sudah_di_zona or lapisan1_setuju:
+                    current_heading = target_heading
+                    heading_lines[current_heading].append(line)
+                    continue
+
+        # Bootstrap: gunakan page_to_heading hanya jika current_heading belum diset
+        if current_heading is None:
+            current_heading = page_to_heading.get(line["page"])
+
+        if current_heading and current_heading in heading_lines:
+            heading_lines[current_heading].append(line)
 
     main_sections: list[dict] = []
     for r in bab_ranges:

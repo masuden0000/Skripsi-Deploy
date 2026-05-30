@@ -211,7 +211,7 @@ class BudgetFormatRules(BaseModel):
     """Rules for budget table extraction from document chunks via LLM."""
     budget_items: list[BudgetItem] = []
     sumber_dana_options: list[str] = []
-    additional_rules: str | None = None
+    additional_rules: list[str] | None = None
 
 
 class FiguresTablesInfo(FiguresTablesExtracted):

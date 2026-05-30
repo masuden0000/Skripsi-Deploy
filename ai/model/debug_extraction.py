@@ -16,8 +16,8 @@ Argumen:
   --all         Jalankan debug untuk SEMUA prompt sekaligus (mengabaikan --key)
   --project-id  UUID project di Supabase (opsional, tanpa filter jika tidak diisi)
   --save        Simpan output ke file JSON di debug_output/
-                  Mode --key  : satu file → debug_output/<key>_<timestamp>.json
-                  Mode --all  : satu file → debug_output/ALL_<timestamp>.json
+                  Mode --key  : satu file -> debug_output/<key>_<timestamp>.json
+                  Mode --all  : satu file -> debug_output/ALL_<timestamp>.json
 
 Struktur JSON output:
   {
@@ -32,8 +32,8 @@ Struktur JSON output:
         "page_start": int,
         "page_end": int,
         "content_length": int,
-        "content_snippet": str,   ← 300 karakter pertama
-        "content_full": str       ← isi lengkap
+        "content_snippet": str,   <- 300 karakter pertama
+        "content_full": str       <- isi lengkap
       }
     ],
     "rendered_prompt": str,
@@ -121,7 +121,7 @@ def _collect_one(
         if prompt_cfg.section_focus:
             chunks = _retrieve_by_section_focus(prompt_cfg.section_focus, project_id)
             if chunks is None:
-                print(f"        → section_focus {prompt_cfg.section_focus} tidak ada match, fallback ke vector search")
+                print(f"        -> section_focus {prompt_cfg.section_focus} tidak ada match, fallback ke vector search")
                 chunks = _retrieve_chunks_multi(
                     prompt_cfg.queries,
                     effective_top_k,
@@ -130,7 +130,7 @@ def _collect_one(
             else:
                 retrieve_method = "section_focus"
                 matched_parents = list(dict.fromkeys(c["chunk_parent"] for c in chunks))
-                print(f"        → section_focus matched {len(matched_parents)} parent(s): {matched_parents}")
+                print(f"        -> section_focus matched {len(matched_parents)} parent(s): {matched_parents}")
         else:
             chunks = _retrieve_chunks_multi(
                 prompt_cfg.queries,
@@ -163,13 +163,13 @@ def _collect_one(
         })
 
     result["summary"]["chunks_retrieved"] = len(chunks)
-    print(f"        → {len(chunks)} chunk ditemukan")
+    print(f"        -> {len(chunks)} chunk ditemukan")
 
     print(f"  [2/3] Render prompt...")
     rendered = render_prompt(prompt_cfg.template, chunks)
     result["rendered_prompt"] = rendered
     result["summary"]["prompt_length"] = len(rendered)
-    print(f"        → {len(rendered):,} karakter")
+    print(f"        -> {len(rendered):,} karakter")
 
     print(f"  [3/3] Memanggil LLM (raw, tanpa structured output)...")
     try:
@@ -183,7 +183,7 @@ def _collect_one(
 
     result["llm_raw_response"] = raw_text
     result["summary"]["response_length"] = len(raw_text)
-    print(f"        → {len(raw_text):,} karakter response")
+    print(f"        -> {len(raw_text):,} karakter response")
 
     return result
 
@@ -203,14 +203,15 @@ def run_debug(key: str, project_id: str | None, save: bool) -> None:
     result = _collect_one(key, PROMPT_REGISTRY[key], project_id, timestamp)
 
     s = result["summary"]
-    print(f"\n{'─' * 50}")
-    print(f"  RINGKASAN — '{key}'")
-    print(f"{'─' * 50}")
+    sep = "-" * 50
+    print(f"\n{sep}")
+    print(f"  RINGKASAN -- '{key}'")
+    print(sep)
     print(f"  Chunks retrieved : {s['chunks_retrieved']}")
     print(f"  Prompt length    : {s['prompt_length']:,} karakter")
     print(f"  Response length  : {s['response_length']:,} karakter")
     print(f"  Status           : {'ERROR: ' + s['error'] if s['error'] else 'OK'}")
-    print(f"{'─' * 50}")
+    print(sep)
 
     if save:
         out_dir = Path(__file__).parent / "debug_output"
@@ -256,13 +257,13 @@ def run_debug_all(project_id: str | None, save: bool) -> None:
     print(f"  RINGKASAN SEMUA PROMPT")
     print(f"{'=' * 60}")
     print(f"  {'KEY':<35} {'CHUNKS':>6}  {'PROMPT':>10}  {'RESPONSE':>10}  STATUS")
-    print(f"  {'─' * 58}")
+    print(f"  {'-' * 58}")
     for s in all_results["summary"]:
         print(
             f"  {s['key']:<35} {s['chunks_retrieved']:>6}  "
             f"{s['prompt_length']:>9,}  {s['response_length']:>9,}  {s['status']}"
         )
-    print(f"  {'─' * 58}")
+    print(f"  {'-' * 58}")
 
     if save:
         out_dir = Path(__file__).parent / "debug_output"

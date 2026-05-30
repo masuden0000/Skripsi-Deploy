@@ -971,7 +971,12 @@ def _add_budget_table(document: Document, bab_number: int, figures_tables: dict)
     if budget_rules:
         additional_rules = budget_rules.get("additional_rules")
     if additional_rules:
-        note_p = document.add_paragraph(additional_rules)
+        rules_text = (
+            "; ".join(additional_rules)
+            if isinstance(additional_rules, list)
+            else additional_rules
+        )
+        note_p = document.add_paragraph(rules_text)
         note_p.runs[0].italic = True
         note_p.runs[0].font.size = Pt(10)
         note_p.paragraph_format.space_after = Pt(0)

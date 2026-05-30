@@ -71,4 +71,4 @@ Jangan mencari pernyataan eksplisit. Cari contoh nyata di seluruh konteks:
 - `budget_format_rules`:
   - `budget_items`: array `{jenis_pengeluaran, persentase_maksimum, contoh}`
   - `sumber_dana_options`: array string opsi sumber dana
-  - `additional_rules`: aturan tambahan atau null
+  - `additional_rules`: array string aturan tambahan (item yang TIDAK diperkenankan, dll), atau null jika tidak ada

@@ -22,4 +22,4 @@ CLAUDE.md
 **/*.pdf
 
 # App-generated data
-ai/data/
+ai/model/data/

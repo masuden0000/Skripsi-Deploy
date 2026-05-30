@@ -4,7 +4,7 @@ from pathlib import Path
 
 import frontmatter as fm
 
-_PROMPTS_DIR = Path(__file__).parent / "prompts"
+_PROMPTS_DIR = Path(__file__).parent / "prompts" / "PKM-KC"
 
 
 @dataclass

@@ -1,27 +1,34 @@
-"""Orkestrator utama pembuatan DOCX proposal dari metadata, chunk, dan instructional placeholders. Posisi pipeline: instructional_placeholder_builder → generator → docx_renderer → DOCX output."""
+"""Orkestrator utama pembuatan DOCX dari metadata, chunk, dan instructional placeholders. Posisi pipeline: instructional_placeholder_builder → generator → docx_A_renderer / docx_B_renderer → DOCX output."""
 from pathlib import Path
 
 from model_ai.docx.chunk_loader import load_chunk_sources
-from model_ai.docx.docx_renderer import render_proposal_docx_bytes
+from model_ai.docx.docx_A_renderer import render_proposal_docx_bytes
+from model_ai.docx.docx_B_renderer import render_article_docx_bytes
 from model_ai.docx.instructional_placeholder_builder import (
     build_instructional_placeholder_map,
 )
 from model_ai.metadata_repository import load_document_metadata, save_generated_placeholders
+from model_ai.shared import SKEMA_TYPE_B
 
 
 def generate_proposal_docx_bytes(
     project_id: str,
+    skema: str = "PKM-KC",
     use_llm_instructional_placeholders: bool = True,
 ) -> tuple[bytes, str]:
-    """
-    Load metadata dari Supabase, chunks dari Supabase, generate DOCX bytes.
-    Tidak ada file yang disimpan ke filesystem lokal.
+    """Load metadata dari Supabase, chunks dari Supabase, generate DOCX bytes.
+
+    Routing:
+      Type A (semua PKM kecuali PKM-AI) → docx_A_renderer
+      Type B (PKM-AI)                   → docx_B_renderer
     """
     metadata = load_document_metadata(project_id)
 
-    file_name = f"{metadata.document_structure_proposal.format_nama_file or project_id}.docx"
-    if metadata.document_structure_proposal.format_nama_file:
-        file_name = f"{Path(metadata.document_structure_proposal.format_nama_file).stem}.docx"
+    doc_structure = metadata.document_structure_proposal
+    format_nama_file = doc_structure.format_nama_file if doc_structure else None
+    file_name = f"{format_nama_file or project_id}.docx"
+    if format_nama_file:
+        file_name = f"{Path(format_nama_file).stem}.docx"
 
     chunks = load_chunk_sources(project_id)
 
@@ -56,9 +63,21 @@ def generate_proposal_docx_bytes(
     if user_placeholders:
         instructional_placeholders = {**instructional_placeholders, **user_placeholders}
 
-    doc_bytes = render_proposal_docx_bytes(
-        output_data=metadata.model_dump(),
-        chunks=chunks,
-        instructional_placeholders=instructional_placeholders,
-    )
+    output_data = metadata.model_dump()
+
+    if skema.upper() in SKEMA_TYPE_B:
+        print(f"[docx] Skema {skema} -> Type B renderer (PKM-AI).", flush=True)
+        doc_bytes = render_article_docx_bytes(
+            output_data=output_data,
+            chunks=chunks,
+            instructional_placeholders=instructional_placeholders,
+        )
+    else:
+        print(f"[docx] Skema {skema} -> Type A renderer (proposal).", flush=True)
+        doc_bytes = render_proposal_docx_bytes(
+            output_data=output_data,
+            chunks=chunks,
+            instructional_placeholders=instructional_placeholders,
+        )
+
     return doc_bytes, file_name

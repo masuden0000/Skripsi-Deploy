@@ -1,4 +1,4 @@
-"""Renderer yang menulis konten terstruktur ke dokumen .docx (paragraph, style, tabel). Posisi pipeline: instructional_placeholder_builder → docx_renderer → DOCX output. Keyword: automated document generation."""
+"""Renderer Type A: menulis konten terstruktur ke dokumen .docx untuk semua skema PKM kecuali PKM-AI (proposal). Posisi pipeline: instructional_placeholder_builder → docx_A_renderer → DOCX output. Keyword: automated document generation."""
 from io import BytesIO
 from pathlib import Path
 

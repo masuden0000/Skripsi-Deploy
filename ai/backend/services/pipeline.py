@@ -75,6 +75,7 @@ async def stream_manage_command(
     """Run manage.py and stream stdout/stderr live to terminal and project_logs."""
     env = os.environ.copy()
     env["PYTHONUNBUFFERED"] = "1"
+    env["PYTHONIOENCODING"] = "utf-8"
 
     process = await asyncio.create_subprocess_exec(
         *command,
@@ -194,11 +195,22 @@ async def run_setup(project_id: str) -> bool:
     return True
 
 
-async def run_extraction(project_id: str) -> bool:
+def _get_project_skema(project_id: str) -> str:
+    """Ambil nilai skema dari tabel projects berdasarkan project_id."""
+    try:
+        supabase = get_supabase()
+        result = supabase.table("projects").select("skema").eq("id", project_id).single().execute()
+        return (result.data or {}).get("skema") or "PKM-KC"
+    except Exception as exc:
+        log_console("pipeline", f"Warning: Gagal baca skema dari DB, pakai default PKM-KC: {exc}")
+        return "PKM-KC"
+
+
+async def run_extraction(project_id: str, skema: str = "PKM-KC") -> bool:
     """
     Run the AI extraction pipeline (extract metadata from chunks).
     """
-    log_event("extraction", "Memulai ekstraksi metadata...", project_id)
+    log_event("extraction", f"Memulai ekstraksi metadata (skema: {skema})...", project_id)
 
     supabase = get_supabase()
     try:
@@ -212,6 +224,7 @@ async def run_extraction(project_id: str) -> bool:
     command = [
         sys.executable, "manage.py", "extract",
         "--project-id", project_id,
+        "--skema", skema,
     ]
     log_event("extraction", f"Menjalankan: {' '.join(command)}", project_id)
 
@@ -238,12 +251,12 @@ async def run_extraction(project_id: str) -> bool:
     return True
 
 
-async def run_docx_generation(project_id: str) -> bool:
+async def run_docx_generation(project_id: str, skema: str = "PKM-KC") -> bool:
     """
     Run DOCX generation. manage.py handles upload ke Supabase Storage langsung.
     Pipeline backend hanya perlu parse RESULT_URL dari stdout.
     """
-    log_event("docx", "Memulai generate DOCX...", project_id)
+    log_event("docx", f"Memulai generate DOCX (skema: {skema})...", project_id)
 
     try:
         supabase = get_supabase()
@@ -262,6 +275,8 @@ async def run_docx_generation(project_id: str) -> bool:
         "proposal",
         "--project-id",
         project_id,
+        "--skema",
+        skema,
     ]
     log_event("docx", f"Menjalankan: {' '.join(command)}", project_id)
 
@@ -327,6 +342,10 @@ async def run_pipeline(project_id: str, source_url: str, source_file: str) -> bo
     log_event("pipeline", f"MULAI PIPELINE untuk project: {project_id}", project_id)
     log_event("pipeline", "=" * 60, project_id)
 
+    # Baca skema dari DB sebelum memulai pipeline
+    skema = _get_project_skema(project_id)
+    log_event("pipeline", f"Skema PKM terdeteksi: {skema}", project_id)
+
     # Step 1: Download source file from storage
     try:
         log_event("pipeline", "Step 1/3: Download file dari Supabase Storage...", project_id)
@@ -354,7 +373,7 @@ async def run_pipeline(project_id: str, source_url: str, source_file: str) -> bo
 
     # Step 3: Run extraction
     log_event("pipeline", "Step 3/3: Ekstraksi metadata (RAG + LLM)...", project_id)
-    extraction_success = await run_extraction(project_id)
+    extraction_success = await run_extraction(project_id, skema=skema)
     if not extraction_success:
         log_event("pipeline", "Pipeline berhenti karena ekstraksi gagal.", project_id)
         return False
@@ -396,7 +415,10 @@ async def run_docx_pipeline(project_id: str) -> bool:
     log_event("pipeline", f"MULAI GENERATE DOCX untuk project: {project_id}", project_id)
     log_event("pipeline", "=" * 60, project_id)
 
-    docx_success = await run_docx_generation(project_id)
+    skema = _get_project_skema(project_id)
+    log_event("pipeline", f"Skema PKM terdeteksi: {skema}", project_id)
+
+    docx_success = await run_docx_generation(project_id, skema=skema)
     if docx_success:
         log_event("pipeline", "=" * 60, project_id)
         log_event("pipeline", "DOCX GENERATION SELESAI BERHASIL!", project_id)

@@ -1,6 +1,5 @@
 """Upload file DOCX ke Supabase Storage. Posisi pipeline: generator → storage (upload output akhir)."""
-from supabase import create_client
-from model_ai.config import get_config
+from model_ai.shared import get_supabase_client
 
 BUCKET_OUTPUT = "ai-output-files"
 
@@ -10,8 +9,7 @@ def upload_docx_to_storage(file_bytes: bytes, file_name: str, project_id: str) -
     Upload DOCX bytes langsung ke Supabase Storage.
     Bucket dibuat via migration SQL — tidak perlu dibuat di sini.
     """
-    config = get_config()
-    client = create_client(config.supabase_url, config.supabase_service_role_key.get_secret_value())
+    client = get_supabase_client()
 
     storage_path = f"{project_id}/{file_name}"
 

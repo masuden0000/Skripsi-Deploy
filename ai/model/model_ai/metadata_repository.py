@@ -4,22 +4,12 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from supabase import Client, create_client
-
-from model_ai.config import get_config
 from model_ai.extractor.models import DocumentMetadata
-
-
-def build_metadata_supabase_client() -> Client:
-    config = get_config()
-    return create_client(
-        config.supabase_url,
-        config.supabase_service_role_key.get_secret_value(),
-    )
+from model_ai.shared import get_supabase_client
 
 
 def get_document_metadata_row(project_id: str) -> dict[str, Any]:
-    client = build_metadata_supabase_client()
+    client = get_supabase_client()
     result = (
         client.table("document_metadata")
         .select("project_id, payload, extracted_at")
@@ -62,7 +52,7 @@ def load_document_metadata(project_id: str) -> DocumentMetadata:
 
 def upsert_document_metadata(metadata: DocumentMetadata, project_id: str | None = None) -> str:
     payload = metadata.model_dump(exclude_none=True)
-    client = build_metadata_supabase_client()
+    client = get_supabase_client()
 
     insert_data = {
         "payload": payload,
@@ -84,7 +74,7 @@ def save_generated_placeholders(project_id: str, generated: dict[str, str]) -> N
     Update hanya field document_structure_proposal.generated_placeholders di payload
     tanpa menyentuh field lain di document_metadata.
     """
-    client = build_metadata_supabase_client()
+    client = get_supabase_client()
 
     result = client.table("document_metadata") \
         .select("payload") \

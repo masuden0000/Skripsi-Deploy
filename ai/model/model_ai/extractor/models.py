@@ -252,10 +252,10 @@ class PageCountInfo(PageCountExtracted):
 
 class DocumentMetadata(BaseModel):
     source_document: str | None = None
-    typography: TypographyInfo
-    page_layout: PageLayoutInfo
-    spacing: SpacingInfo
-    document_structure_proposal: DocumentStructureInfo
-    numbering: NumberingInfo
-    figures_and_tables: FiguresTablesInfo
-    page_count_limits: PageCountInfo
+    typography: TypographyInfo | None = None
+    page_layout: PageLayoutInfo | None = None
+    spacing: SpacingInfo | None = None
+    document_structure_proposal: DocumentStructureInfo | None = None
+    numbering: NumberingInfo | None = None
+    figures_and_tables: FiguresTablesInfo | None = None
+    page_count_limits: PageCountInfo | None = None

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from pydantic import BaseModel
-from supabase import Client, create_client
+from supabase import Client
 
 from model_ai.config import get_config
 from model_ai.shared import (
@@ -13,6 +13,7 @@ from model_ai.shared import (
     EMBED_RATE_LIMIT_WAIT,
     EMBEDDING_DIMENSION,
     format_vector,
+    get_supabase_client,
 )
 
 APP_DIR = Path(__file__).resolve().parents[2]
@@ -53,10 +54,7 @@ def load_chunks(path: Path) -> list[ChunkRecord]:
 
 
 def build_supabase_client() -> Client:
-    return create_client(
-        CONFIG.supabase_url,
-        CONFIG.supabase_service_role_key.get_secret_value(),
-    )
+    return get_supabase_client()
 
 
 def build_embedder() -> GoogleGenerativeAIEmbeddings:

@@ -47,17 +47,18 @@ def run_setup(project_id: str, skip_ingest: bool = False) -> None:
     print(f"[setup] Berhasil upsert {total_rows} chunk ke Supabase.")
 
 
-def run_extract(project_id: str | None = None) -> None:
+def run_extract(project_id: str | None = None, skema: str = "PKM-KC") -> None:
     from model_ai.extractor.doc_extractor import run_extraction
 
-    run_extraction(project_id=project_id)
+    run_extraction(project_id=project_id, skema=skema)
 
 
-def run_docx(project_id: str, local_output: str | None = None) -> str | None:
+def run_docx(project_id: str, skema: str = "PKM-KC", local_output: str | None = None) -> str | None:
     from model_ai.docx.generator import generate_proposal_docx_bytes
 
     doc_bytes, file_name = generate_proposal_docx_bytes(
         project_id=project_id,
+        skema=skema,
     )
 
     if local_output:
@@ -84,7 +85,7 @@ def run_generate_placeholders(project_id: str) -> None:
     metadata = load_document_metadata(project_id)
     chunks = load_chunk_sources(project_id)
 
-    total = len(metadata.document_structure_proposal.sections)
+    total = len(metadata.document_structure_proposal.sections) if metadata.document_structure_proposal else 0
     print(f"[generate-placeholders] {total} section ditemukan. Memulai generate placeholder...", flush=True)
 
     generated = build_instructional_placeholder_map(
@@ -180,6 +181,11 @@ def main() -> None:
         "--project-id",
         help="Project ID untuk isolate extraction per-project.",
     )
+    extract_parser.add_argument(
+        "--skema",
+        default="PKM-KC",
+        help="Skema PKM project (contoh: PKM-KC, PKM-RE, PKM-AI). Default: PKM-KC.",
+    )
 
     docx_parser = subparsers.add_parser(
         "docx",
@@ -210,6 +216,11 @@ def main() -> None:
         "--output",
         default="data/proposal_template.docx",
         help="Path output DOCX (default: data/proposal_template.docx).",
+    )
+    docx_parser.add_argument(
+        "--skema",
+        default="PKM-KC",
+        help="Skema PKM project (contoh: PKM-KC, PKM-RE, PKM-AI). Default: PKM-KC.",
     )
     docx_parser.add_argument(
         "--local",
@@ -261,7 +272,7 @@ def main() -> None:
         return
 
     if args.command == "extract":
-        run_extract(project_id=args.project_id)
+        run_extract(project_id=args.project_id, skema=args.skema)
         return
 
     if args.command == "docx":
@@ -271,6 +282,7 @@ def main() -> None:
             raise SystemExit("--project-id wajib untuk perintah docx.")
         run_docx(
             project_id=args.project_id,
+            skema=args.skema,
             local_output=args.output if args.local else None,
         )
         return

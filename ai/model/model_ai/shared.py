@@ -1,6 +1,9 @@
 """Konstanta domain dan utilitas yang digunakan bersama di seluruh model_ai."""
+from supabase import Client, create_client
 
 # ─── Domain ───────────────────────────────────────────────────────────────────
+
+SKEMA_TYPE_B: frozenset[str] = frozenset({"PKM-AI"})
 
 EXCLUDED_PARENTS: frozenset[str] = frozenset({
     "DAFTAR ISI",
@@ -34,3 +37,15 @@ BATCH_PAUSE_SECONDS: int = 30  # detik
 def format_vector(values: list[float]) -> str:
     """Format embedding vector ke string PostgreSQL-compatible: [0.12345678,...]"""
     return "[" + ",".join(f"{v:.8f}" for v in values) + "]"
+
+
+# ─── Supabase ─────────────────────────────────────────────────────────────────
+
+def get_supabase_client() -> Client:
+    """Buat dan kembalikan Supabase client menggunakan konfigurasi aktif."""
+    from model_ai.config import get_config
+    config = get_config()
+    return create_client(
+        config.supabase_url,
+        config.supabase_service_role_key.get_secret_value(),
+    )

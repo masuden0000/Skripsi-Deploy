@@ -4,7 +4,19 @@ from pathlib import Path
 
 import frontmatter as fm
 
-_PROMPTS_DIR = Path(__file__).parent / "prompts" / "PKM-KC"
+from model_ai.shared import SKEMA_TYPE_B
+
+_PROMPTS_ROOT = Path(__file__).parent / "prompts"
+
+_PROMPT_FILES = [
+    "typography.md",
+    "page_layout.md",
+    "spacing.md",
+    "document_structure_proposal.md",
+    "numbering.md",
+    "figures_and_tables.md",
+    "page_count_limits.md",
+]
 
 
 @dataclass
@@ -15,9 +27,9 @@ class PromptConfig:
     section_focus: list[str] | None = None
 
 
-def _load(filename: str) -> PromptConfig:
-    """Muat satu prompt dari file .md di folder prompts/."""
-    post = fm.load(str(_PROMPTS_DIR / filename))
+def _load_from_dir(filename: str, folder: Path) -> PromptConfig:
+    """Muat satu prompt dari file .md di folder yang ditentukan."""
+    post = fm.load(str(folder / filename))
     meta: dict[str, object] = post.metadata
 
     if "queries" in meta:
@@ -44,10 +56,27 @@ def _load(filename: str) -> PromptConfig:
     )
 
 
-TYPOGRAPHY = _load("typography.md")
-PAGE_LAYOUT = _load("page_layout.md")
-SPACING = _load("spacing.md")
-DOCUMENT_STRUCTURE_PROPOSAL = _load("document_structure_proposal.md")
-NUMBERING = _load("numbering.md")
-FIGURES_AND_TABLES = _load("figures_and_tables.md")
-PAGE_COUNT_LIMITS = _load("page_count_limits.md")
+def load_prompts_for_skema(skema: str) -> dict[str, PromptConfig]:
+    """Muat semua PromptConfig untuk skema yang diberikan.
+
+    Type B (PKM-AI): kembalikan dict kosong — renderer-nya berbeda.
+    Type A (semua lainnya): muat dari folder skema. Error jika folder kosong atau tidak ada.
+    """
+    if skema.upper() in SKEMA_TYPE_B:
+        return {}
+
+    folder = _PROMPTS_ROOT / skema.upper()
+    if not folder.is_dir() or not any(folder.glob("*.md")):
+        raise FileNotFoundError(
+            f"Prompt untuk skema '{skema}' belum tersedia. "
+            f"Folder '{folder}' tidak ditemukan atau kosong."
+        )
+
+    result: dict[str, PromptConfig] = {}
+    for filename in _PROMPT_FILES:
+        if (folder / filename).exists():
+            key = filename.removesuffix(".md")
+            result[key] = _load_from_dir(filename, folder)
+    return result
+
+

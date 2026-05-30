@@ -50,8 +50,10 @@ def build_instructional_placeholder_map(
 ) -> dict[str, str]:
     placeholders: dict[str, str] = {}
     structure = metadata.document_structure_proposal
+    if structure is None:
+        return placeholders
 
-    chapter_fmt = metadata.numbering.chapter_format or "BAB {n}"
+    chapter_fmt = (metadata.numbering.chapter_format if metadata.numbering else None) or "BAB {n}"
 
     llm_call_count = 0
     total_sections = len(structure.sections)

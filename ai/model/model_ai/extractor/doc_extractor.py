@@ -9,7 +9,7 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_groq import ChatGroq
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel
-from supabase import Client, create_client
+from supabase import Client
 
 from model_ai.config import get_config
 from model_ai.shared import (
@@ -20,6 +20,7 @@ from model_ai.shared import (
     EMBEDDING_DIMENSION,
     EXCLUDED_PARENTS,
     format_vector,
+    get_supabase_client,
 )
 from model_ai.extractor.models import (
     DocumentMetadata,
@@ -41,14 +42,8 @@ from model_ai.extractor.models import (
 )
 from model_ai.metadata_repository import upsert_document_metadata
 from model_ai.extractor.prompts import (
-    DOCUMENT_STRUCTURE_PROPOSAL,
-    FIGURES_AND_TABLES,
-    NUMBERING,
-    PAGE_COUNT_LIMITS,
-    PAGE_LAYOUT,
-    SPACING,
-    TYPOGRAPHY,
     PromptConfig,
+    load_prompts_for_skema,
 )
 
 APP_DIR = Path(__file__).resolve().parents[2]
@@ -58,15 +53,30 @@ MAX_RATE_LIMIT_WAIT = 120
 CONFIG = get_config()
 LLM_MODEL = CONFIG.model_name
 
-KEY_REGISTRY: list[tuple[str, PromptConfig, Type[BaseModel], Type[BaseModel]]] = [
-    ("typography", TYPOGRAPHY, TypographyExtracted, TypographyInfo),
-    ("page_layout", PAGE_LAYOUT, PageLayoutExtracted, PageLayoutInfo),
-    ("spacing", SPACING, SpacingExtracted, SpacingInfo),
-    ("document_structure_proposal", DOCUMENT_STRUCTURE_PROPOSAL, DocumentStructureExtracted, DocumentStructureInfo),
-    ("numbering", NUMBERING, NumberingExtracted, NumberingInfo),
-    ("figures_and_tables", FIGURES_AND_TABLES, FiguresTablesExtracted, FiguresTablesInfo),
-    ("page_count_limits", PAGE_COUNT_LIMITS, PageCountExtracted, PageCountInfo),
+_MODEL_MAP: list[tuple[str, Type[BaseModel], Type[BaseModel]]] = [
+    ("typography",                  TypographyExtracted,        TypographyInfo),
+    ("page_layout",                 PageLayoutExtracted,        PageLayoutInfo),
+    ("spacing",                     SpacingExtracted,           SpacingInfo),
+    ("document_structure_proposal", DocumentStructureExtracted, DocumentStructureInfo),
+    ("numbering",                   NumberingExtracted,         NumberingInfo),
+    ("figures_and_tables",          FiguresTablesExtracted,     FiguresTablesInfo),
+    ("page_count_limits",           PageCountExtracted,         PageCountInfo),
 ]
+
+
+def _build_key_registry(
+    skema: str,
+) -> list[tuple[str, PromptConfig, Type[BaseModel], Type[BaseModel]]]:
+    """Bangun registry ekstraksi berdasarkan skema PKM.
+
+    Hanya key yang punya prompt tersedia yang dimasukkan ke registry.
+    """
+    prompts = load_prompts_for_skema(skema)
+    return [
+        (key, prompts[key], extracted_cls, info_cls)
+        for key, extracted_cls, info_cls in _MODEL_MAP
+        if key in prompts
+    ]
 
 
 _BOLD_HEADING_PATTERNS = (
@@ -224,10 +234,7 @@ def _embed_query_with_retry(query: str) -> list[float]:
 
 
 def _build_supabase() -> Client:
-    return create_client(
-        CONFIG.supabase_url,
-        CONFIG.supabase_service_role_key.get_secret_value(),
-    )
+    return get_supabase_client()
 
 
 def _expand_to_full_headers(seed_chunks: list[dict], client: Client) -> list[dict]:
@@ -415,10 +422,18 @@ def _pause_after_batch(processed_count: int, total_count: int) -> None:
     time.sleep(BATCH_PAUSE_SECONDS)
 
 
-def extract_document_metadata(project_id: str | None = None) -> DocumentMetadata:
+def extract_document_metadata(
+    project_id: str | None = None,
+    skema: str = "PKM-KC",
+) -> DocumentMetadata:
+    key_registry = _build_key_registry(skema)
+    if not key_registry:
+        print(f"[extract] Tidak ada prompt untuk skema '{skema}'. Metadata dikembalikan kosong.")
+        return DocumentMetadata(source_document=f"{project_id}/source.pdf" if project_id else None)
+
     results: dict[str, Any] = {}
-    total_keys = len(KEY_REGISTRY)
-    for index, (key, prompt_cfg, extracted_cls, info_cls) in enumerate(KEY_REGISTRY, start=1):
+    total_keys = len(key_registry)
+    for index, (key, prompt_cfg, extracted_cls, info_cls) in enumerate(key_registry, start=1):
         print(f"[extract] Memproses: {key} ...")
         results[key] = _extract_key(prompt_cfg, extracted_cls, info_cls, project_id=project_id)
         print(f"[extract] Selesai:   {key}")
@@ -433,6 +448,6 @@ def save_to_supabase(metadata: DocumentMetadata, project_id: str | None = None) 
     print(f"[extract] Supabase upsert: project_id={result}")
 
 
-def run_extraction(project_id: str | None = None) -> None:
-    metadata = extract_document_metadata(project_id=project_id)
+def run_extraction(project_id: str | None = None, skema: str = "PKM-KC") -> None:
+    metadata = extract_document_metadata(project_id=project_id, skema=skema)
     save_to_supabase(metadata, project_id)

@@ -58,28 +58,11 @@ from model_ai.extractor.doc_extractor import (
     _retrieve_chunks_multi,
     render_prompt,
 )
-from model_ai.extractor.prompts import (
-    DOCUMENT_STRUCTURE_PROPOSAL,
-    FIGURES_AND_TABLES,
-    NUMBERING,
-    PAGE_COUNT_LIMITS,
-    PAGE_LAYOUT,
-    SPACING,
-    TYPOGRAPHY,
-    PromptConfig,
-)
+from model_ai.extractor.prompts import PromptConfig, load_prompts_for_skema
 
 _CONFIG = get_config()
 
-PROMPT_REGISTRY: dict[str, PromptConfig] = {
-    "typography": TYPOGRAPHY,
-    "page_layout": PAGE_LAYOUT,
-    "spacing": SPACING,
-    "document_structure_proposal": DOCUMENT_STRUCTURE_PROPOSAL,
-    "numbering": NUMBERING,
-    "figures_and_tables": FIGURES_AND_TABLES,
-    "page_count_limits": PAGE_COUNT_LIMITS,
-}
+PROMPT_REGISTRY: dict[str, PromptConfig] = load_prompts_for_skema("PKM-KC")
 
 
 def _collect_one(

@@ -2,8 +2,7 @@
 import re
 from dataclasses import dataclass
 
-from supabase import create_client
-from model_ai.config import get_config
+from model_ai.shared import get_supabase_client
 
 
 @dataclass(frozen=True)
@@ -19,11 +18,7 @@ def load_chunk_sources(project_id: str) -> list[ChunkSource]:
     Load chunks dari Supabase document_chunks table.
     Menggantikan load dari file lokal output_chunks.json.
     """
-    config = get_config()
-    client = create_client(
-        config.supabase_url,
-        config.supabase_service_role_key.get_secret_value(),
-    )
+    client = get_supabase_client()
 
     result = client.table("document_chunks").select(
         "chunk_parent, page_start, page_end, content"

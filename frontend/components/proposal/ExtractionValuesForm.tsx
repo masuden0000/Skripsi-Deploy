@@ -73,7 +73,6 @@ export type ExtractionPayload = {
   }
   document_structure_proposal: {
     sections: SectionItem[]
-    max_halaman_inti: number | null
     format_nama_file: string | null
     user_placeholders?: Record<string, string>
   }
@@ -397,22 +396,15 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
       {/* ── 4. Struktur Dokumen ── */}
       <div>
         <SectionHeader title="4. Struktur Dokumen" />
-        <div className="mt-3 px-1 flex flex-col gap-4">
-          <FieldRow>
-            <NumberFieldInput
-              label="Maks. Halaman Inti"
-              value={data.document_structure_proposal.max_halaman_inti}
-              onChange={(v) => patch("document_structure_proposal", { max_halaman_inti: v })}
-            />
-            <TextFieldInput
-              label="Format Nama File"
-              value={data.document_structure_proposal.format_nama_file}
-              onChange={(v) => patch("document_structure_proposal", { format_nama_file: v })}
-            />
-          </FieldRow>
+        <div className="mt-3 px-1 gap-4">
+          <TextFieldInput
+            label="Format Nama File"
+            value={data.document_structure_proposal.format_nama_file}
+            onChange={(v) => patch("document_structure_proposal", { format_nama_file: v })}
+          />
 
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-2 mt-3">
               <p className="text-xs font-medium text-muted-foreground">Struktur Dokumen</p>
               <Button
                 size="xs"

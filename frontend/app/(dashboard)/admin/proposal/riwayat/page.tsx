@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select"
 import { YearPicker } from "@/components/ui/year-picker"
 import { DownloadIcon, Loader2Icon, ArrowLeftIcon } from "@/components/icons/public-icons"
+import { PKM_SCHEMES } from "@/lib/constants/pkm-schemes"
 
 
 type HistoryItem = {
@@ -22,23 +23,6 @@ type HistoryItem = {
   tahun: string
   result_url: string
 }
-
-const PKM_SCHEMES = [
-  { value: "pkm-re", label: "PKM-RE: Riset Eksakta" },
-  { value: "pkm-rsh", label: "PKM-RSH: Riset Sosial Humaniora" },
-  { value: "pkm-k", label: "PKM-K: Kewirausahaan" },
-  { value: "pkm-pm", label: "PKM-PM: Pengabdian Kepada Masyarakat" },
-  { value: "pkm-pi", label: "PKM-PI: Penerapan Iptek" },
-  { value: "pkm-kc", label: "PKM-KC: Karsa Cipta" },
-  { value: "pkm-ki", label: "PKM-KI: Karya Inovatif" },
-  { value: "pkm-vgk", label: "PKM-VGK: Video Gagasan Konstruktif" },
-  { value: "pkm-ai", label: "PKM-AI: Artikel Ilmiah" },
-  { value: "pkm-gft", label: "PKM-GFT: Gagasan Futuristik Tertulis" },
-]
-
-const SKEMA_LABEL: Record<string, string> = Object.fromEntries(
-  PKM_SCHEMES.map((s) => [s.value, s.value.toUpperCase()])
-)
 
 export default function RiwayatPage() {
   const router = useRouter()
@@ -144,7 +128,7 @@ export default function RiwayatPage() {
                   {data.map((item) => (
                     <tr key={item.id} className="hover:bg-gray-50/50">
                       <td className="px-4 py-3 font-medium text-gray-700">
-                        {SKEMA_LABEL[item.skema] ?? item.skema.toUpperCase()}
+                        {item.skema}
                       </td>
                       <td className="px-4 py-3 text-gray-600">{item.tahun}</td>
                       <td className="px-4 py-3 text-right">

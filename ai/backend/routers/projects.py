@@ -45,6 +45,7 @@ async def create_project(
     tahun: str = Form(...),
     file: Optional[UploadFile] = File(None),
 ):
+    skema = skema.upper()
     """
     Create or update a project.
     If a project with the same skema and tahun already exists, update it instead.
@@ -143,6 +144,7 @@ async def create_project_with_upload_url(
     tahun: str = Form(...),
     file_name: str = Form(...),
 ):
+    skema = skema.upper()
     """
     Create or update a project and return signed URL for direct upload to Supabase Storage.
     If a project with the same skema and tahun already exists, return its project_id.

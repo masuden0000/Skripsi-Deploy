@@ -17,7 +17,7 @@ TOC_PAGE_LIMIT = 3
 
 _ENTRY_WITH_DOTS = re.compile(r"^(.+?)\s*\.{4,}\s*(\d+)\s*$")
 _ENTRY_NO_DOTS = re.compile(r"^(.+?)\s{4,}(\d+)\s*$")
-_SUBBAB_PREFIX = re.compile(r"^(?:[A-Z]\.|[a-z]\.|[IVXLC]{1,5}\.|[0-9]+\.)[|\s]+")
+_SUBBAB_PREFIX = re.compile(r"^(?:[A-Z]\.|[a-z]\.|[IVXLC]{1,5}\.|[0-9]+\.|Lampiran\s+\d+\.)[|\s]+")
 
 
 def _strip_markdown(line: str) -> str:

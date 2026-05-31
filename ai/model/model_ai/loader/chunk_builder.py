@@ -44,7 +44,7 @@ def iter_page_lines(page_chunks: list[dict]) -> list[dict]:
     for page in page_chunks:
         physical_page: int = page["metadata"]["page_number"] + 1
         text = page.get("text", "")
-
+    
         page_lines: list[str] = []
         found_doc_page: int | None = None
         for line in text.splitlines():
@@ -194,12 +194,17 @@ def build_sections_from_ranges(
         for r in bab_ranges
     }
     # Lapis 2 hanya memicu switch jika salah satu dari dua kondisi terpenuhi:
-    # (1) halaman saat ini sudah mencapai atau melewati halaman ekspektasi dari daftar isi, ATAU
+    # (1) halaman saat ini tepat sama dengan halaman ekspektasi dari daftar isi, ATAU
     # (2) peta halaman lapisan 1 memang menetapkan halaman ini ke bagian yang sama.
-    # Kondisi (1) memanfaatkan fakta bahwa nomor halaman dokumen sinkron dengan daftar isi.
-    # Kondisi (2) menjadi jaring pengaman jika ada selisih kecil antara nomor halaman.
+    # Kondisi (1) menggunakan kecocokan tepat (==) agar heading yang muncul lebih awal
+    # di halaman lain (misalnya sebagai deskripsi sistematika) tidak salah diaktifkan.
+    # Kondisi (2) menjadi jaring pengaman untuk kasus di mana halaman sinkron dengan TOC.
     bab_expected_page: dict[str, int] = {
         normalize_heading(r["heading"]).upper(): r["page_start"]
+        for r in bab_ranges
+    }
+    bab_heading_end_page: dict[str, int] = {
+        normalize_heading(r["heading"]).upper(): r["page_end"]
         for r in bab_ranges
     }
 
@@ -220,7 +225,7 @@ def build_sections_from_ranges(
             if normalized in bab_heading_lookup:
                 target_heading = bab_heading_lookup[normalized]
                 expected_page = bab_expected_page.get(normalized, 0)
-                sudah_di_zona = line["page"] >= expected_page
+                sudah_di_zona = line["page"] == expected_page
                 lapisan1_setuju = page_to_heading.get(line["page"]) == target_heading
                 if sudah_di_zona or lapisan1_setuju:
                     current_heading = target_heading
@@ -230,6 +235,17 @@ def build_sections_from_ranges(
         # Bootstrap: gunakan page_to_heading hanya jika current_heading belum diset
         if current_heading is None:
             current_heading = page_to_heading.get(line["page"])
+        elif current_heading:
+            # Page-transition fallback: jika halaman saat ini sudah melewati akhir
+            # rentang section aktif, pindah ke section berikutnya dari page_to_heading.
+            # Menangani kasus heading pembuka section tidak muncul tepat di halaman TOC
+            # karena pada halaman sebelumnya muncul sebagai deskripsi sistematika.
+            normalized_current = normalize_heading(current_heading).upper()
+            current_end = bab_heading_end_page.get(normalized_current, 9999)
+            if line["page"] > current_end:
+                new_heading = page_to_heading.get(line["page"])
+                if new_heading and new_heading in heading_lines:
+                    current_heading = new_heading
 
         if current_heading and current_heading in heading_lines:
             heading_lines[current_heading].append(line)

@@ -424,12 +424,16 @@ def _pause_after_batch(processed_count: int, total_count: int) -> None:
 
 def extract_document_metadata(
     project_id: str | None = None,
-    skema: str = "PKM-KC",
+    skema: str | None = None,
 ) -> DocumentMetadata:
+    if not skema:
+        raise ValueError("[extract] Parameter 'skema' wajib diisi. Contoh: 'PKM-KC', 'PKM-VGK'.")
     key_registry = _build_key_registry(skema)
     if not key_registry:
-        print(f"[extract] Tidak ada prompt untuk skema '{skema}'. Metadata dikembalikan kosong.")
-        return DocumentMetadata(source_document=f"{project_id}/source.pdf" if project_id else None)
+        raise ValueError(
+            f"[extract] Skema '{skema}' tidak dikenali atau belum memiliki prompt. "
+            f"Pastikan folder prompts/{skema}/ tersedia dan berisi file yang valid."
+        )
 
     results: dict[str, Any] = {}
     total_keys = len(key_registry)
@@ -448,6 +452,6 @@ def save_to_supabase(metadata: DocumentMetadata, project_id: str | None = None) 
     print(f"[extract] Supabase upsert: project_id={result}")
 
 
-def run_extraction(project_id: str | None = None, skema: str = "PKM-KC") -> None:
+def run_extraction(project_id: str | None = None, skema: str | None = None) -> None:
     metadata = extract_document_metadata(project_id=project_id, skema=skema)
     save_to_supabase(metadata, project_id)

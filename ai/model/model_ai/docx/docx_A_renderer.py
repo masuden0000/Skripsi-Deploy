@@ -168,7 +168,7 @@ def render_proposal_docx(
 
     has_preliminary = _has_preliminary_pages(doc_structure)
     if has_preliminary:
-        _render_preliminary_pages(document, doc_structure, page_layout, typography, spacing, instructional_placeholders, figures_tables)
+        _render_preliminary_pages(document, doc_structure, page_layout, typography, instructional_placeholders, figures_tables)
         _apply_page_numbering(
             first_section,
             _build_page_num_position(prelim_num.get("location", "FOOTER"), prelim_num.get("alignment", "RIGHT")),
@@ -251,9 +251,6 @@ def _apply_base_styles(document: Document, typography: dict, spacing: dict) -> N
     normal_style.paragraph_format.space_before = Pt(0)
     normal_style.paragraph_format.space_after  = Pt(0)
 
-    heading_align_str = (spacing.get("heading_alignment") or "CENTER").strip().upper()
-    heading_align     = _map_alignment(heading_align_str)
-
     for style_name in ("Heading 1", "Heading 2", "Heading 3", "Heading 4"):
         try:
             h = document.styles[style_name]
@@ -264,7 +261,7 @@ def _apply_base_styles(document: Document, typography: dict, spacing: dict) -> N
         h.font.bold      = heading_bold
         h.font.all_caps = heading_caps if style_name == "Heading 1" else False
         h.font.color.rgb = RGBColor(0, 0, 0)
-        h.paragraph_format.alignment = heading_align
+        h.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
         h.paragraph_format.space_before = Pt(0)
         h.paragraph_format.space_after  = Pt(0)
 
@@ -313,7 +310,6 @@ def _render_preliminary_pages(
     doc_structure: dict,
     page_layout: dict,
     typography: dict,
-    spacing: dict,
     instructional_placeholders: dict[str, str],
     figures_tables: dict | None = None,
 ) -> None:
@@ -325,10 +321,9 @@ def _render_preliminary_pages(
             title = (section.get("title") or fallback).strip()
             prelim_entries.append((make_instruction_key(section["type"], title), title, section["type"]))
 
-    _heading_align = _map_alignment((spacing.get("heading_alignment") or "CENTER").strip().upper())
     for index, (instruction_key, title, sec_type) in enumerate(prelim_entries):
         heading = document.add_heading(title, level=1)
-        heading.alignment = _heading_align
+        heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
         _force_paragraph_runs_black(heading)
         _add_bookmark_to_paragraph(heading, _bookmark_id(sec_type), _bookmark_name(sec_type))
 
@@ -609,7 +604,7 @@ def _render_bab_section(
     _apply_line_spacing(sep.paragraph_format, spacing)
 
     heading = document.add_heading(heading_text, level=1)
-    heading.alignment = _map_alignment((spacing.get("heading_alignment") or "CENTER").strip().upper())
+    heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
     _force_paragraph_runs_black(heading)
     _add_bookmark_to_paragraph(heading, _bookmark_id("bab", num), _bookmark_name("bab", num))
 
@@ -685,7 +680,7 @@ def _render_named_section(
     sep.paragraph_format.space_after  = Pt(0)
 
     heading = document.add_heading(title, level=1)
-    heading.alignment = _map_alignment((spacing.get("heading_alignment") or "CENTER").strip().upper())
+    heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
     _force_paragraph_runs_black(heading)
     _add_bookmark_to_paragraph(heading, _bookmark_id(section_type), _bookmark_name(section_type))
 

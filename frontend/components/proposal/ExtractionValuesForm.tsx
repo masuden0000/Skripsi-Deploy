@@ -70,7 +70,6 @@ export type ExtractionPayload = {
     line_spacing_rule: string | null
     paragraph_alignment: string | null
     first_line_indent_cm: number | null
-    heading_alignment: string | null
   }
   document_structure_proposal: {
     sections: SectionItem[]
@@ -396,16 +395,6 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
                     { value: "RIGHT",   label: "Right" },
                   ]}
                   onChange={(v) => patch("spacing", { paragraph_alignment: v })}
-                />
-                <SelectFieldInput
-                  label="Alignment Heading"
-                  value={(data.spacing.heading_alignment ?? "CENTER").toUpperCase()}
-                  options={[
-                    { value: "CENTER", label: "Center" },
-                    { value: "LEFT",   label: "Left" },
-                    { value: "RIGHT",  label: "Right" },
-                  ]}
-                  onChange={(v) => patch("spacing", { heading_alignment: v })}
                 />
               </FieldRow>
             </div>

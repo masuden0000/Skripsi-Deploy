@@ -224,6 +224,15 @@ function BoolFieldInput({
 }
 
 
+/**
+ * Ekivalen Python str.title() — dipakai renderer docx untuk lampiran & sub-bab.
+ * Frontend menampilkan transformasi yang sama agar preview sesuai dokumen.
+ */
+function toTitleCase(str: string | null | undefined): string {
+  if (!str) return ""
+  return str.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 const TYPE_LABEL_MAP: Record<string, string> = {
   daftar_isi: "Daftar Isi",
   daftar_gambar: "Daftar Gambar",
@@ -432,17 +441,25 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
                   <span className="w-28 shrink-0">Jenis</span>
                   <span>Nilai</span>
                 </div>
-                {data.document_structure_proposal.sections.map((s, i) => (
-                  <div key={i} className="flex gap-2 px-3 py-1 text-foreground/80 odd:bg-transparent even:bg-muted/20">
-                    <span className="w-28 shrink-0 text-muted-foreground">{TYPE_LABEL_MAP[s.type] ?? s.type}</span>
-                    <span>
-                      {s.type === "bab" && s.number != null ? `BAB ${s.number}` : ""}
-                      {s.sub_number ? s.sub_number : ""}
-                      {s.lampiran_number ? s.lampiran_number : ""}
-                      {s.title ? ` ${s.title}` : ""}
-                    </span>
-                  </div>
-                ))}
+                {data.document_structure_proposal.sections.map((s, i) => {
+                  // Renderer docx menerapkan .title() pada item_lampiran dan sub_bab
+                  // agar preview frontend sesuai dengan tampilan di dokumen
+                  const usesTitleCase = s.type === "item_lampiran" || s.type === "sub_bab"
+                  const displayTitle = usesTitleCase ? toTitleCase(s.title) : (s.title ?? "")
+                  const displayLampiranNum = usesTitleCase ? toTitleCase(s.lampiran_number) : (s.lampiran_number ?? "")
+
+                  return (
+                    <div key={i} className="flex gap-2 px-3 py-1 text-foreground/80 odd:bg-transparent even:bg-muted/20">
+                      <span className="w-28 shrink-0 text-muted-foreground">{TYPE_LABEL_MAP[s.type] ?? s.type}</span>
+                      <span>
+                        {s.type === "bab" && s.number != null ? `BAB ${s.number}` : ""}
+                        {s.sub_number ? s.sub_number : ""}
+                        {displayLampiranNum ? displayLampiranNum : ""}
+                        {displayTitle ? ` ${displayTitle}` : ""}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             ) : (
               <p className="text-xs text-muted-foreground">Belum ada section.</p>

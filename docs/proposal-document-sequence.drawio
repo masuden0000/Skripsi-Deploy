@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mxGraphModel dx="1422" dy="762" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1060" pageHeight="2000" math="0" shadow="0">
+<mxGraphModel dx="1422" dy="762" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1060" pageHeight="2200" math="0" shadow="0">
   <root>
     <mxCell id="0" />
     <mxCell id="1" parent="0" />
@@ -32,22 +32,22 @@
     <!-- LIFELINES                                                  -->
     <!-- ======================================================== -->
     <mxCell id="ll1" value="" style="endArrow=none;dashed=1;strokeColor=#b8860b;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="90" as="sourcePoint"/><mxPoint x="55" y="1970" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="90" as="sourcePoint"/><mxPoint x="55" y="2170" as="targetPoint"/></mxGeometry>
     </mxCell>
     <mxCell id="ll2" value="" style="endArrow=none;dashed=1;strokeColor=#6c8ebf;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="70" as="sourcePoint"/><mxPoint x="215" y="1970" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="70" as="sourcePoint"/><mxPoint x="215" y="2170" as="targetPoint"/></mxGeometry>
     </mxCell>
     <mxCell id="ll3" value="" style="endArrow=none;dashed=1;strokeColor=#82b366;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="70" as="sourcePoint"/><mxPoint x="385" y="1970" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="70" as="sourcePoint"/><mxPoint x="385" y="2170" as="targetPoint"/></mxGeometry>
     </mxCell>
     <mxCell id="ll4" value="" style="endArrow=none;dashed=1;strokeColor=#d79b00;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="70" as="sourcePoint"/><mxPoint x="555" y="1970" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="70" as="sourcePoint"/><mxPoint x="555" y="2170" as="targetPoint"/></mxGeometry>
     </mxCell>
     <mxCell id="ll5" value="" style="endArrow=none;dashed=1;strokeColor=#b46504;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="70" as="sourcePoint"/><mxPoint x="725" y="1970" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="70" as="sourcePoint"/><mxPoint x="725" y="2170" as="targetPoint"/></mxGeometry>
     </mxCell>
     <mxCell id="ll6" value="" style="endArrow=none;dashed=1;strokeColor=#666666;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="70" as="sourcePoint"/><mxPoint x="905" y="1970" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="70" as="sourcePoint"/><mxPoint x="905" y="2170" as="targetPoint"/></mxGeometry>
     </mxCell>
 
     <!-- ======================================================== -->
@@ -60,11 +60,11 @@
     </mxCell>
     <!-- Frontend: review/generate [Lanjutkan] (msg 25–35) -->
     <mxCell id="ab_fe2" value="" style="rounded=0;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-      <mxGeometry x="210" y="996" width="10" height="374" as="geometry" />
+      <mxGeometry x="210" y="1200" width="10" height="368" as="geometry" />
     </mxCell>
     <!-- Frontend: [Tolak] path -->
     <mxCell id="ab_fe3" value="" style="rounded=0;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
-      <mxGeometry x="210" y="1778" width="10" height="96" as="geometry" />
+      <mxGeometry x="210" y="2008" width="10" height="96" as="geometry" />
     </mxCell>
 
     <!-- Backend: upload phase (msg 3–11) -->
@@ -73,33 +73,33 @@
     </mxCell>
     <!-- Backend: generate [Lanjutkan] (msg 32–35) -->
     <mxCell id="ab_be2" value="" style="rounded=0;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
-      <mxGeometry x="380" y="1274" width="10" height="96" as="geometry" />
+      <mxGeometry x="380" y="1472" width="10" height="96" as="geometry" />
     </mxCell>
     <!-- Backend: [Tolak] path -->
     <mxCell id="ab_be3" value="" style="rounded=0;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
-      <mxGeometry x="380" y="1810" width="10" height="64" as="geometry" />
+      <mxGeometry x="380" y="2040" width="10" height="64" as="geometry" />
     </mxCell>
 
     <!-- Pipeline: entire background (msg 11–41) -->
     <mxCell id="ab_pl1" value="" style="rounded=0;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
-      <mxGeometry x="550" y="460" width="10" height="1106" as="geometry" />
+      <mxGeometry x="550" y="460" width="10" height="1336" as="geometry" />
     </mxCell>
 
     <!-- manage.py: setup (msg 14–17) -->
     <mxCell id="ab_mg1" value="" style="rounded=0;fillColor=#ffd966;strokeColor=#b46504;" vertex="1" parent="1">
-      <mxGeometry x="720" y="586" width="10" height="96" as="geometry" />
+      <mxGeometry x="720" y="648" width="10" height="96" as="geometry" />
     </mxCell>
     <!-- manage.py: extract (msg 19–23) -->
     <mxCell id="ab_mg2" value="" style="rounded=0;fillColor=#ffd966;strokeColor=#b46504;" vertex="1" parent="1">
-      <mxGeometry x="720" y="770" width="10" height="160" as="geometry" />
+      <mxGeometry x="720" y="832" width="10" height="136" as="geometry" />
     </mxCell>
-    <!-- manage.py: placeholders (msg 27–29) -->
-    <mxCell id="ab_mg3" value="" style="rounded=0;fillColor=#ffd966;strokeColor=#b46504;" vertex="1" parent="1">
-      <mxGeometry x="720" y="1060" width="10" height="64" as="geometry" />
+    <!-- manage.py: generate-placeholders (FASE 3 pipeline, NEW) -->
+    <mxCell id="ab_mg_gph" value="" style="rounded=0;fillColor=#ffd966;strokeColor=#b46504;" vertex="1" parent="1">
+      <mxGeometry x="720" y="1016" width="10" height="96" as="geometry" />
     </mxCell>
     <!-- manage.py: docx (msg 37–40) -->
     <mxCell id="ab_mg4" value="" style="rounded=0;fillColor=#ffd966;strokeColor=#b46504;" vertex="1" parent="1">
-      <mxGeometry x="720" y="1438" width="10" height="96" as="geometry" />
+      <mxGeometry x="720" y="1636" width="10" height="128" as="geometry" />
     </mxCell>
 
     <!-- ======================================================== -->
@@ -109,62 +109,50 @@
       <mxGeometry x="30" y="104" width="990" height="20" as="geometry" />
     </mxCell>
 
-    <!-- m01: user action — no function call -->
     <mxCell id="m01" value="1: pilih skema, tahun, dan file PDF" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
       <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="132" as="sourcePoint"/><mxPoint x="210" y="132" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m02: user action — no function call -->
     <mxCell id="m02" value="2: klik &quot;Buat Dokumen&quot;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
       <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="164" as="sourcePoint"/><mxPoint x="210" y="164" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m03: FE → BE — create_project_with_upload_url() -->
     <mxCell id="m03" value="3: POST /projects/upload-url  {skema, tahun, file_name}&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ create_project_with_upload_url() · routers/projects.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
       <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="196" as="sourcePoint"/><mxPoint x="380" y="196" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m04: BE → SB — supabase.select().eq("skema").eq("tahun") -->
     <mxCell id="m04" value="4: cek project (skema + tahun)&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ supabase.table(&apos;projects&apos;).select().eq(&apos;skema&apos;).eq(&apos;tahun&apos;)&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
       <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="228" as="sourcePoint"/><mxPoint x="905" y="228" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m05: BE → SB — supabase.table("projects").insert() -->
     <mxCell id="m05" value="5: insert project  (status: pending_upload)&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ supabase.table(&apos;projects&apos;).insert(project_data)&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
       <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="260" as="sourcePoint"/><mxPoint x="905" y="260" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m06: BE → SB — create_signed_upload_url() -->
     <mxCell id="m06" value="6: buat signed upload URL&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ create_signed_upload_url(BUCKET_SOURCE, storage_path) · storage.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
       <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="292" as="sourcePoint"/><mxPoint x="905" y="292" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m07: return — no function name needed -->
     <mxCell id="m07" value="7: return  {project_id, signed_url}" style="endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
       <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="324" as="sourcePoint"/><mxPoint x="215" y="324" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m08: FE → SB direct — HTTP PUT via signed URL -->
     <mxCell id="m08" value="8: PUT file langsung ke Storage  (via signed_url — bypass Backend)&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ HTTP PUT {signed_url} · Supabase Storage REST API&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#d79b00;fontSize=10;fontStyle=1;html=1;" edge="1" parent="1">
       <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="364" as="sourcePoint"/><mxPoint x="905" y="364" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m09: FE → BE — confirm_upload() -->
     <mxCell id="m09" value="9: POST /projects/confirm-upload  {project_id, file_name}&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ confirm_upload() · routers/projects.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
       <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="396" as="sourcePoint"/><mxPoint x="380" y="396" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m10: BE → SB — supabase.update() -->
     <mxCell id="m10" value="10: update  source_file, status=uploading&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ supabase.table(&apos;projects&apos;).update({status: &apos;uploading&apos;})&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
       <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="428" as="sourcePoint"/><mxPoint x="905" y="428" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m11: BE → PL async — background_tasks.add_task(run_pipeline) -->
     <mxCell id="m11" value="11: jalankan run_pipeline()  «async»&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ background_tasks.add_task(run_pipeline, project_id, source_url, file_name)&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#d79b00;dashed=1;fontSize=10;html=1;" edge="1" parent="1">
       <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="460" as="sourcePoint"/><mxPoint x="550" y="460" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m12: return -->
     <mxCell id="m12" value="12: return 200 OK" style="endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
       <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="492" as="sourcePoint"/><mxPoint x="215" y="492" as="targetPoint"/></mxGeometry>
     </mxCell>
@@ -176,257 +164,254 @@
       <mxGeometry x="30" y="520" width="990" height="20" as="geometry" />
     </mxCell>
 
-    <!-- m13: PL → SB — download_source_file() -->
+    <!-- NEW: Baca skema dari DB di awal pipeline -->
+    <mxCell id="msg_skema" value="00a: baca skema project&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ _get_project_skema(project_id) · pipeline.py  — query projects.skema untuk routing pipeline&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#7b68ee;fontSize=10;html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="548" as="sourcePoint"/><mxPoint x="905" y="548" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="msg_skema_ret" value="00b: return skema  (contoh: &quot;PKM-KC&quot;)" style="endArrow=open;endFill=0;dashed=1;strokeColor=#7b68ee;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="572" as="sourcePoint"/><mxPoint x="555" y="572" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
     <mxCell id="m13" value="13: download  ai-source-files/{id}/source.pdf&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ download_source_file(project_id, source_url) · pipeline.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="554" as="sourcePoint"/><mxPoint x="905" y="554" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="612" as="sourcePoint"/><mxPoint x="905" y="612" as="targetPoint"/></mxGeometry>
     </mxCell>
     <mxCell id="note_m13" value="«simpan ke ai/data/{id}/source.pdf»" style="text;html=1;align=center;fontSize=9;fontColor=#888888;fontStyle=2;" vertex="1" parent="1">
-      <mxGeometry x="530" y="562" width="230" height="16" as="geometry" />
+      <mxGeometry x="530" y="622" width="230" height="16" as="geometry" />
     </mxCell>
 
-    <!-- m14: PL → MG — run_setup() / stream_manage_command("setup") -->
     <mxCell id="m14" value="14: manage.py setup  --project-id {id}&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ run_setup(project_id) → stream_manage_command(&apos;setup&apos;, ...) · pipeline.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="586" as="sourcePoint"/><mxPoint x="720" y="586" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="648" as="sourcePoint"/><mxPoint x="720" y="648" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m15: MG → SB — extract_chunks() -->
     <mxCell id="m15" value="15: extract_chunks()  PDF → chunks bertanda header&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ extract_chunks(project_id) · setup.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="618" as="sourcePoint"/><mxPoint x="905" y="618" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="680" as="sourcePoint"/><mxPoint x="905" y="680" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m16: MG → SB — upsert_embeddings() -->
     <mxCell id="m16" value="16: upsert_embeddings()  embed + simpan ke Supabase&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ upsert_embeddings(project_id) · setup.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="650" as="sourcePoint"/><mxPoint x="905" y="650" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="712" as="sourcePoint"/><mxPoint x="905" y="712" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m17: return -->
     <mxCell id="m17" value="17: selesai" style="endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="720" y="682" as="sourcePoint"/><mxPoint x="555" y="682" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="720" y="744" as="sourcePoint"/><mxPoint x="555" y="744" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m18: PL → SB — supabase.update(status=extracting) -->
     <mxCell id="m18" value="18: update status=extracting  + streaming log&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ supabase.table(&apos;projects&apos;).update({status: &apos;extracting&apos;})&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="714" as="sourcePoint"/><mxPoint x="905" y="714" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="776" as="sourcePoint"/><mxPoint x="905" y="776" as="targetPoint"/></mxGeometry>
     </mxCell>
 
     <!-- ======================================================== -->
-    <!-- FASE 3 — EKSTRAKSI METADATA                               -->
+    <!-- FASE 3 — EKSTRAKSI METADATA + GENERATE PLACEHOLDER        -->
     <!-- ======================================================== -->
-    <mxCell id="f3" value="FASE 3 — Pipeline: Ekstraksi Metadata  (Background)" style="text;html=1;fillColor=#fff0f0;strokeColor=#b85450;align=left;fontStyle=1;fontSize=10;fontColor=#7a0000;" vertex="1" parent="1">
-      <mxGeometry x="30" y="742" width="990" height="20" as="geometry" />
+    <mxCell id="f3" value="FASE 3 — Pipeline: Ekstraksi Metadata + Generate Placeholder  (Background)" style="text;html=1;fillColor=#fff0f0;strokeColor=#b85450;align=left;fontStyle=1;fontSize=10;fontColor=#7a0000;" vertex="1" parent="1">
+      <mxGeometry x="30" y="804" width="990" height="20" as="geometry" />
     </mxCell>
 
-    <!-- m19: PL → MG — run_extraction() / stream_manage_command("extract") -->
-    <mxCell id="m19" value="19: manage.py extract  --project-id {id}&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ run_extraction(project_id) → stream_manage_command(&apos;extract&apos;, ...) · pipeline.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="770" as="sourcePoint"/><mxPoint x="720" y="770" as="targetPoint"/></mxGeometry>
+    <mxCell id="m19" value="19: manage.py extract  --project-id {id}  --skema {skema}&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ run_extraction(project_id, skema) → stream_manage_command(&apos;extract&apos;, ...) · pipeline.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="832" as="sourcePoint"/><mxPoint x="720" y="832" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m20: MG → SB — match_document_chunks() -->
     <mxCell id="m20" value="20: muat semua chunks project&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ match_document_chunks(project_id) · database.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="802" as="sourcePoint"/><mxPoint x="905" y="802" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="864" as="sourcePoint"/><mxPoint x="905" y="864" as="targetPoint"/></mxGeometry>
     </mxCell>
     <mxCell id="loop_lbl" value="«ulangi per domain metadata»" style="text;html=1;strokeColor=#b85450;fillColor=#fff0f0;align=center;fontStyle=2;fontSize=9;fontColor=#b85450;" vertex="1" parent="1">
-      <mxGeometry x="686" y="818" width="230" height="16" as="geometry" />
+      <mxGeometry x="686" y="880" width="230" height="16" as="geometry" />
     </mxCell>
 
-    <!-- m21: MG → SB — vector search + LLM extraction -->
     <mxCell id="m21" value="21: vector search → cari chunks relevan&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ supabase.rpc(&apos;match_document_chunks&apos;, {query_embedding, ...})&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="842" as="sourcePoint"/><mxPoint x="905" y="842" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="904" as="sourcePoint"/><mxPoint x="905" y="904" as="targetPoint"/></mxGeometry>
     </mxCell>
     <mxCell id="note_m21" value="«kirim ke LLM → ekstrak nilai Pydantic»" style="text;html=1;align=center;fontSize=9;fontColor=#888888;fontStyle=2;" vertex="1" parent="1">
-      <mxGeometry x="686" y="852" width="230" height="16" as="geometry" />
+      <mxGeometry x="686" y="914" width="230" height="16" as="geometry" />
     </mxCell>
 
-    <!-- m22: MG → SB — metadata_repository.upsert() -->
     <mxCell id="m22" value="22: simpan DocumentMetadata&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ metadata_repository.upsert(project_id, metadata) · metadata_repository.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="874" as="sourcePoint"/><mxPoint x="905" y="874" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="936" as="sourcePoint"/><mxPoint x="905" y="936" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m23: return -->
     <mxCell id="m23" value="23: selesai" style="endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="720" y="906" as="sourcePoint"/><mxPoint x="555" y="906" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="720" y="968" as="sourcePoint"/><mxPoint x="555" y="968" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m24: PL → SB — supabase.update(status=extracted) -->
-    <mxCell id="m24" value="24: update status=extracted  + streaming log&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ supabase.table(&apos;projects&apos;).update({status: &apos;extracted&apos;})&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="938" as="sourcePoint"/><mxPoint x="905" y="938" as="targetPoint"/></mxGeometry>
+    <!-- Step 4/4: Generate Instructional Placeholder (auto, bagian pipeline) -->
+    <mxCell id="f3b" value="Step 4/4 — Generate Instructional Placeholder (otomatis, sebelum status=extracted)" style="text;html=1;fillColor=#e8f4fd;strokeColor=#1e88e5;align=left;fontStyle=2;fontSize=9;fontColor=#0d47a1;" vertex="1" parent="1">
+      <mxGeometry x="30" y="996" width="990" height="18" as="geometry" />
+    </mxCell>
+
+    <mxCell id="msg_gph" value="24a: manage.py generate-placeholders  --project-id {id}&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ stream_manage_command(&apos;generate-placeholders&apos;, ...) · pipeline.py  (timeout: 600s)&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="1016" as="sourcePoint"/><mxPoint x="720" y="1016" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <mxCell id="msg_gph_db1" value="24b: muat document_metadata + chunks, generate via LLM per section&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ load_document_metadata() + load_chunk_sources() → build_instructional_placeholder_map(use_llm=True)&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="1048" as="sourcePoint"/><mxPoint x="905" y="1048" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <mxCell id="msg_gph_db2" value="24c: simpan generated_placeholders ke document_structure_proposal&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ save_generated_placeholders(project_id, generated) · metadata_repository.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="1080" as="sourcePoint"/><mxPoint x="905" y="1080" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <mxCell id="msg_gph_ret" value="24d: selesai  (warning jika gagal — pipeline tetap lanjut)" style="endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="720" y="1112" as="sourcePoint"/><mxPoint x="555" y="1112" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <mxCell id="m24" value="24e: update status=extracted  + streaming log&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ supabase.table(&apos;projects&apos;).update({status: &apos;extracted&apos;})&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="1144" as="sourcePoint"/><mxPoint x="905" y="1144" as="targetPoint"/></mxGeometry>
     </mxCell>
 
     <!-- ======================================================== -->
-    <!-- FASE 4 — REVIEW &amp; GENERATE / TOLAK                    -->
+    <!-- FASE 4 — REVIEW HASIL EKSTRAKSI                           -->
     <!-- ======================================================== -->
     <mxCell id="f4" value="FASE 4 — Review Hasil Ekstraksi" style="text;html=1;fillColor=#f0fff0;strokeColor=#82b366;align=left;fontStyle=1;fontSize=10;fontColor=#003300;" vertex="1" parent="1">
-      <mxGeometry x="30" y="966" width="990" height="20" as="geometry" />
+      <mxGeometry x="30" y="1172" width="990" height="20" as="geometry" />
     </mxCell>
 
-    <!-- m25: polling via GET /api/projects/{id} -->
     <mxCell id="m25" value="25: polling → dapat status=extracted&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ GET /api/projects/{id}  setiap 3 detik · Frontend polling loop&lt;/font&gt;" style="endArrow=open;endFill=0;dashed=1;strokeColor=#6c8ebf;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="996" as="sourcePoint"/><mxPoint x="215" y="996" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="1200" as="sourcePoint"/><mxPoint x="215" y="1200" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m26: FE → BE — get_placeholders() -->
     <mxCell id="m26" value="26: GET /projects/{id}/placeholders&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ get_placeholders(project_id) · routers/projects.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="1028" as="sourcePoint"/><mxPoint x="380" y="1028" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="1232" as="sourcePoint"/><mxPoint x="380" y="1232" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m27: BE → MG — build_instructional_placeholder_map() -->
-    <mxCell id="m27" value="27: manage.py placeholders  --project-id {id} --use-llm&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ build_instructional_placeholder_map(project_id) · instructional_placeholder_builder.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="1060" as="sourcePoint"/><mxPoint x="720" y="1060" as="targetPoint"/></mxGeometry>
+    <!-- m27 DIPERBARUI: sekarang BE baca langsung dari DB, bukan panggil manage.py -->
+    <mxCell id="m27" value="27: baca generated_placeholders dari document_structure_proposal&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ metadata_repository.load_document_metadata(project_id) · routers/projects.py  [sudah tersimpan di DB]&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="1264" as="sourcePoint"/><mxPoint x="905" y="1264" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m28: MG → SB — baca document_metadata, generate via LLM -->
-    <mxCell id="m28" value="28: buat instructional placeholder  dari document_metadata&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ supabase.table(&apos;document_metadata&apos;).select() → LLM call per section&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="1092" as="sourcePoint"/><mxPoint x="905" y="1092" as="targetPoint"/></mxGeometry>
+    <!-- m28 DIPERBARUI: return dari Supabase ke Backend -->
+    <mxCell id="m28" value="28: return  document_metadata  (berisi generated_placeholders)" style="endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="1296" as="sourcePoint"/><mxPoint x="385" y="1296" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m29: return placeholder data -->
     <mxCell id="m29" value="29: return  {generated, user_overrides}" style="endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="720" y="1124" as="sourcePoint"/><mxPoint x="215" y="1124" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="380" y="1328" as="sourcePoint"/><mxPoint x="215" y="1328" as="targetPoint"/></mxGeometry>
     </mxCell>
     <mxCell id="note_form" value="«tampilkan ExtractionValuesForm + nilai hasil ekstraksi»" style="text;html=1;align=center;fontSize=9;fontColor=#6c8ebf;fontStyle=2;" vertex="1" parent="1">
-      <mxGeometry x="152" y="1134" width="265" height="16" as="geometry" />
+      <mxGeometry x="152" y="1338" width="265" height="16" as="geometry" />
     </mxCell>
 
-    <!-- m30: user action -->
     <mxCell id="m30" value="30: periksa dan edit nilai ekstraksi  (opsional)" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="1160" as="sourcePoint"/><mxPoint x="210" y="1160" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="1360" as="sourcePoint"/><mxPoint x="210" y="1360" as="targetPoint"/></mxGeometry>
     </mxCell>
 
     <!-- ======================================================== -->
     <!-- ALT FRAME: [Lanjutkan] vs [Tolak]                         -->
     <!-- ======================================================== -->
-
-    <!-- Alt frame border -->
     <mxCell id="alt_frame" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#333333;strokeWidth=1.5;" vertex="1" parent="1">
-      <mxGeometry x="30" y="1190" width="990" height="760" as="geometry" />
+      <mxGeometry x="30" y="1392" width="990" height="760" as="geometry" />
     </mxCell>
-    <!-- Alt label pentagon -->
     <mxCell id="alt_label" value="alt" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontStyle=1;fontSize=11;" vertex="1" parent="1">
-      <mxGeometry x="30" y="1190" width="36" height="22" as="geometry" />
+      <mxGeometry x="30" y="1392" width="36" height="22" as="geometry" />
     </mxCell>
 
     <!-- ── [Lanjutkan] section ── -->
     <mxCell id="guard_lanjut" value="[Lanjutkan]" style="text;html=1;fontStyle=3;fontSize=10;fontColor=#006600;" vertex="1" parent="1">
-      <mxGeometry x="38" y="1216" width="100" height="18" as="geometry" />
+      <mxGeometry x="38" y="1418" width="100" height="18" as="geometry" />
     </mxCell>
 
-    <!-- m31: user action -->
     <mxCell id="m31" value="31: klik &quot;Generate Dokumen&quot;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="1242" as="sourcePoint"/><mxPoint x="210" y="1242" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="1444" as="sourcePoint"/><mxPoint x="210" y="1444" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m32: FE → BE — generate_document() -->
     <mxCell id="m32" value="32: POST /projects/{id}/generate&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ generate_document(project_id) · routers/projects.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="1274" as="sourcePoint"/><mxPoint x="380" y="1274" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="1472" as="sourcePoint"/><mxPoint x="380" y="1472" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m33: BE → SB — verifikasi status -->
     <mxCell id="m33" value="33: verifikasi status=extracted&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ supabase.table(&apos;projects&apos;).select(&apos;id, status&apos;).eq(&apos;id&apos;, project_id)&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="1306" as="sourcePoint"/><mxPoint x="905" y="1306" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="1504" as="sourcePoint"/><mxPoint x="905" y="1504" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m34: BE → PL async — background_tasks.add_task(run_docx_pipeline) -->
     <mxCell id="m34" value="34: jalankan run_docx_pipeline()  «async»&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ background_tasks.add_task(run_docx_pipeline, project_id) · pipeline.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#d79b00;dashed=1;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="1338" as="sourcePoint"/><mxPoint x="550" y="1338" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="1536" as="sourcePoint"/><mxPoint x="550" y="1536" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m35: return -->
     <mxCell id="m35" value="35: return 200 OK" style="endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="1370" as="sourcePoint"/><mxPoint x="215" y="1370" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="1568" as="sourcePoint"/><mxPoint x="215" y="1568" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m36: PL → SB — update status=generating -->
-    <mxCell id="m36" value="36: update status=generating&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ supabase.table(&apos;projects&apos;).update({status: &apos;generating&apos;})&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="1406" as="sourcePoint"/><mxPoint x="905" y="1406" as="targetPoint"/></mxGeometry>
+    <mxCell id="m36" value="36: baca skema + update status=generating&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ _get_project_skema(project_id) + supabase.table(&apos;projects&apos;).update({status: &apos;generating&apos;})&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="1604" as="sourcePoint"/><mxPoint x="905" y="1604" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m37: PL → MG — generate_proposal_docx_bytes() + upload_docx_to_storage() -->
-    <mxCell id="m37" value="37: manage.py docx  --type proposal --project-id {id}&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ generate_proposal_docx_bytes() + upload_docx_to_storage() · generator.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="1438" as="sourcePoint"/><mxPoint x="720" y="1438" as="targetPoint"/></mxGeometry>
+    <!-- m37 DIPERBARUI: tambah parameter skema -->
+    <mxCell id="m37" value="37: manage.py docx  --type proposal --project-id {id}  --skema {skema}&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ run_docx_generation(project_id, skema) → stream_manage_command(&apos;docx&apos;, ...) · pipeline.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="1636" as="sourcePoint"/><mxPoint x="720" y="1636" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m38: MG → SB — metadata_repository.load() -->
     <mxCell id="m38" value="38: muat document_metadata&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ metadata_repository.load(project_id) · metadata_repository.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="1470" as="sourcePoint"/><mxPoint x="905" y="1470" as="targetPoint"/></mxGeometry>
-    </mxCell>
-    <mxCell id="note_m38" value="«generate_proposal_docx_bytes(): susun isi dokumen»" style="text;html=1;align=center;fontSize=9;fontColor=#888888;fontStyle=2;" vertex="1" parent="1">
-      <mxGeometry x="686" y="1480" width="230" height="16" as="geometry" />
+      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="1668" as="sourcePoint"/><mxPoint x="905" y="1668" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m39: MG → SB — upload_docx_to_storage() -->
-    <mxCell id="m39" value="39: upload DOCX  ke ai-output-files/{id}/proposal_output.docx&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ upload_docx_to_storage(project_id, docx_bytes) · storage.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="1502" as="sourcePoint"/><mxPoint x="905" y="1502" as="targetPoint"/></mxGeometry>
+    <!-- NEW: query pkm_schemas untuk renderer routing -->
+    <mxCell id="msg_renderer" value="38b: query renderer_type untuk skema {skema}&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ get_renderer_type(skema) · shared.py  — query pkm_schemas.renderer_type&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#7b68ee;fontSize=10;html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="1700" as="sourcePoint"/><mxPoint x="905" y="1700" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="note_renderer" value="«Type A (semua PKM kecuali PKM-AI) → docx_A_renderer;  Type B (PKM-AI) → docx_B_renderer»" style="text;html=1;align=center;fontSize=9;fontColor=#7b68ee;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="530" y="1712" width="380" height="16" as="geometry" />
     </mxCell>
 
-    <!-- m40: return RESULT_URL — stdout parse -->
+    <mxCell id="m39" value="39: upload DOCX  ke ai-output-files/{id}/{file_name}.docx&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ upload_docx_to_storage(project_id, docx_bytes) · storage.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="1732" as="sourcePoint"/><mxPoint x="905" y="1732" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
     <mxCell id="m40" value="40: return RESULT_URL&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ stdout: RESULT_URL={url}  (di-parse oleh Pipeline)&lt;/font&gt;" style="endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="720" y="1534" as="sourcePoint"/><mxPoint x="555" y="1534" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="720" y="1764" as="sourcePoint"/><mxPoint x="555" y="1764" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m41: PL → SB — update status=completed + cleanup -->
-    <mxCell id="m41" value="41: update status=completed, result_url&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ supabase.table(&apos;projects&apos;).update({status: &apos;completed&apos;, result_url})&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="1566" as="sourcePoint"/><mxPoint x="905" y="1566" as="targetPoint"/></mxGeometry>
+    <mxCell id="m41" value="41: update status=completed, result_url  + cleanup lokal&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ supabase.table(&apos;projects&apos;).update({status: &apos;completed&apos;, result_url})&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="1796" as="sourcePoint"/><mxPoint x="905" y="1796" as="targetPoint"/></mxGeometry>
     </mxCell>
-    <mxCell id="note_m41" value="«hapus ai/data/{id}/ dari disk lokal»" style="text;html=1;align=center;fontSize=9;fontColor=#888888;fontStyle=2;" vertex="1" parent="1">
-      <mxGeometry x="530" y="1576" width="220" height="16" as="geometry" />
+    <mxCell id="note_m41" value="«hapus ai/data/{id}/ dari disk lokal  via _cleanup_project_data()»" style="text;html=1;align=center;fontSize=9;fontColor=#888888;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="530" y="1806" width="280" height="16" as="geometry" />
     </mxCell>
 
     <!-- FASE 5 inside [Lanjutkan] -->
     <mxCell id="f5_inner" value="FASE 5 — Unduh Dokumen" style="text;html=1;fillColor=#f0f4ff;strokeColor=#6c8ebf;align=left;fontStyle=1;fontSize=10;fontColor=#003366;" vertex="1" parent="1">
-      <mxGeometry x="38" y="1598" width="976" height="18" as="geometry" />
+      <mxGeometry x="38" y="1828" width="976" height="18" as="geometry" />
     </mxCell>
 
-    <!-- m42: polling -->
     <mxCell id="m42" value="42: polling → dapat status=completed + result_url&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ GET /api/projects/{id}  setiap 3 detik · Frontend polling loop&lt;/font&gt;" style="endArrow=open;endFill=0;dashed=1;strokeColor=#6c8ebf;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="1624" as="sourcePoint"/><mxPoint x="215" y="1624" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="1852" as="sourcePoint"/><mxPoint x="215" y="1852" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m43: user action -->
     <mxCell id="m43" value="43: klik unduh dokumen" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="1656" as="sourcePoint"/><mxPoint x="210" y="1656" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="1884" as="sourcePoint"/><mxPoint x="210" y="1884" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m44: FE → SB — buka result_url -->
     <mxCell id="m44" value="44: buka result_url ke Supabase Storage&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ window.open(result_url) · browser native download&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="1688" as="sourcePoint"/><mxPoint x="905" y="1688" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="1916" as="sourcePoint"/><mxPoint x="905" y="1916" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- m45: return DOCX -->
-    <mxCell id="m45" value="45: terima proposal_output.docx" style="endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="1720" as="sourcePoint"/><mxPoint x="55" y="1720" as="targetPoint"/></mxGeometry>
+    <mxCell id="m45" value="45: terima {file_name}.docx" style="endArrow=open;endFill=0;dashed=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="1948" as="sourcePoint"/><mxPoint x="55" y="1948" as="targetPoint"/></mxGeometry>
     </mxCell>
 
     <!-- ── [Tolak] separator ── -->
     <mxCell id="alt_sep" value="" style="endArrow=none;dashed=1;strokeColor=#333333;strokeWidth=1.5;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="30" y="1748" as="sourcePoint"/><mxPoint x="1020" y="1748" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="30" y="1980" as="sourcePoint"/><mxPoint x="1020" y="1980" as="targetPoint"/></mxGeometry>
     </mxCell>
 
     <!-- ── [Tolak] section ── -->
     <mxCell id="guard_tolak" value="[Tolak]" style="text;html=1;fontStyle=3;fontSize=10;fontColor=#cc0000;" vertex="1" parent="1">
-      <mxGeometry x="38" y="1752" width="80" height="18" as="geometry" />
+      <mxGeometry x="38" y="1984" width="80" height="18" as="geometry" />
     </mxCell>
 
-    <!-- t01: user action -->
     <mxCell id="t01" value="T1: klik &quot;Tolak Hasil Ekstraksi&quot;" style="endArrow=block;endFill=1;strokeColor=#b85450;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="1778" as="sourcePoint"/><mxPoint x="210" y="1778" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="2008" as="sourcePoint"/><mxPoint x="210" y="2008" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- t02: FE → BE — delete_project() -->
     <mxCell id="t02" value="T2: DELETE /projects/{id}&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ delete_project(project_id) · routers/projects.py&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#b85450;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="1810" as="sourcePoint"/><mxPoint x="380" y="1810" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="2040" as="sourcePoint"/><mxPoint x="380" y="2040" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- t03: BE → SB — delete cascade -->
     <mxCell id="t03" value="T3: hapus document_metadata + project&lt;br/&gt;&lt;font color=&quot;#9e9e9e&quot; style=&quot;font-size:8px;font-style:italic;&quot;&gt;→ supabase.table(&apos;projects&apos;).delete().eq(&apos;id&apos;, project_id)&lt;/font&gt;" style="endArrow=block;endFill=1;strokeColor=#b85450;fontSize=10;html=1;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="1842" as="sourcePoint"/><mxPoint x="905" y="1842" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="2072" as="sourcePoint"/><mxPoint x="905" y="2072" as="targetPoint"/></mxGeometry>
     </mxCell>
 
-    <!-- t04: return -->
     <mxCell id="t04" value="T4: return 200 OK" style="endArrow=open;endFill=0;dashed=1;strokeColor=#b85450;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="1874" as="sourcePoint"/><mxPoint x="215" y="1874" as="targetPoint"/></mxGeometry>
+      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="2104" as="sourcePoint"/><mxPoint x="215" y="2104" as="targetPoint"/></mxGeometry>
     </mxCell>
     <mxCell id="note_t" value="«reset form — kembali ke form kosong»" style="text;html=1;align=center;fontSize=9;fontColor=#b85450;fontStyle=2;" vertex="1" parent="1">
-      <mxGeometry x="152" y="1884" width="230" height="16" as="geometry" />
+      <mxGeometry x="152" y="2114" width="230" height="16" as="geometry" />
     </mxCell>
 
   </root>

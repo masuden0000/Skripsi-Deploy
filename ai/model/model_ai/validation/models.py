@@ -80,6 +80,14 @@ class ValidationIssue(BaseModel):
         default=None,
         description="Lokasi issue dalam dokumen (e.g., 'Seluruh dokumen', 'BAB 1 PENDAHULUAN', 'Paragraf ke-5')"
     )
+    occurrences: list[dict] | None = Field(
+        default=None,
+        description=(
+            "List lokasi spesifik setiap kejadian masalah ini. "
+            "Setiap item berisi: page (int), bab (str|None), para_idx (int), "
+            "style (str), text (str), actual (str|None), expected (str|None)."
+        ),
+    )
 
     def __str__(self) -> str:
         return f"[{self.severity.upper()}] {self.category}.{self.field}: {self.message}"

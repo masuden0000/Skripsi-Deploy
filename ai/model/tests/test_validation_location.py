@@ -73,3 +73,40 @@ def test_bab_is_none_before_first_heading():
         assert first["page"] == 1
     finally:
         os.unlink(tmp.name)
+
+
+from model_ai.validation.models import ValidationIssue
+
+
+def test_validation_issue_accepts_occurrences():
+    issue = ValidationIssue(
+        category="typography",
+        field="font_per_paragraph",
+        severity="error",
+        message="Font mismatch",
+        occurrences=[
+            {
+                "page": 3,
+                "bab": "BAB 1 PENDAHULUAN",
+                "para_idx": 4,
+                "style": "Normal",
+                "text": "Latar belakang...",
+                "actual": "11.0pt, Times New Roman",
+                "expected": "12pt, Times New Roman",
+            }
+        ],
+    )
+    assert issue.occurrences is not None
+    assert len(issue.occurrences) == 1
+    assert issue.occurrences[0]["page"] == 3
+    assert issue.occurrences[0]["bab"] == "BAB 1 PENDAHULUAN"
+
+
+def test_validation_issue_occurrences_defaults_to_none():
+    issue = ValidationIssue(
+        category="typography",
+        field="font_per_paragraph",
+        severity="error",
+        message="Font mismatch",
+    )
+    assert issue.occurrences is None

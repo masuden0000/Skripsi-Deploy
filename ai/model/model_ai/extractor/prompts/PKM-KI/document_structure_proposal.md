@@ -40,11 +40,11 @@ Jangan scan seluruh konteks secara acak. Gunakan prioritas bertingkat berikut:
 
 - **[P3 — Last resort]** Jika P1 dan P2 tidak menghasilkan apapun, baru baca konteks secara umum.
 
-Contoh mental: *"Saya menemukan section 'Sistematika Penulisan Proposal' → saya gunakan section itu."*
+Contoh penalaran: *"Saya menemukan section 'Sistematika Penulisan Proposal' → saya gunakan section itu."*
 
 **Langkah 2 — Identifikasi semua sub-BAB dari section sistematika penulisan proposal yang ditemukan di Langkah 1:**
 Dari section sistematika tersebut, catat seluruh sub-BAB yang disebutkan beserta nomor dan judulnya.
-Contoh mental: *"Dari section 'Sistematika Penulisan Proposal', saya menemukan sub-BAB: 4.1 Anggaran Biaya, 4.2 Jadwal Kegiatan."*
+Contoh penalaran: *"Dari section 'Sistematika Penulisan Proposal', saya menemukan sub-BAB: 4.1 Anggaran Biaya, 4.2 Jadwal Kegiatan."*
 
 **Langkah 3 — Hitung dan daftarkan SEMUA lampiran dari section yang ditemukan:**
 Buat daftar semua lampiran yang disebutkan, terurut dari Lampiran 1 sampai lampiran terakhir.

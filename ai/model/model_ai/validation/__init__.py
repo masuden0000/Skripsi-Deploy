@@ -1,14 +1,9 @@
-"""Paket validasi untuk automated document validation. Posisi pipeline: DOCX output → docx_property_extractor → rule_validator → validator."""
+"""Paket validasi dokumen DOCX berbasis engine validocx. Posisi pipeline: DOCX output → validocx_adapter → validocx_runner → validator."""
 from model_ai.validation.models import (
-    DocxProperties,
+    ValidationCheckResult,
     ValidationIssue,
     ValidationResult,
 )
-from model_ai.validation.docx_property_extractor import (
-    extract_docx_properties,
-    extract_docx_properties_dict,
-)
-from model_ai.validation.rule_validator import compare_properties
 from model_ai.validation.validator import (
     validate_document,
     validate_document_simple,
@@ -17,12 +12,9 @@ from model_ai.validation.validator import (
 )
 
 __all__ = [
-    "DocxProperties",
+    "ValidationCheckResult",
     "ValidationIssue",
     "ValidationResult",
-    "extract_docx_properties",
-    "extract_docx_properties_dict",
-    "compare_properties",
     "validate_document",
     "validate_document_simple",
     "validate_and_print",

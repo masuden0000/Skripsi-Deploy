@@ -13,6 +13,7 @@ yang harus cocok persis dengan kolom projects.skema di database.
 
 Digunakan oleh: backend/src/routes/pkm.routes.js (sebagai proxy)
 """
+import json
 import os
 import tempfile
 
@@ -80,6 +81,8 @@ async def run_validation(
                 detail="Metadata format dokumen belum tersedia. Pastikan pipeline ekstraksi sudah selesai.",
             )
         payload = metadata_result.data[0]["payload"]
+        if isinstance(payload, str):
+            payload = json.loads(payload)
 
     except HTTPException:
         raise
@@ -113,4 +116,18 @@ async def run_validation(
     # 4. Ubah ValidationResult ke dict dengan field `valid` tambahan
     result_dict = result.to_dict()
     result_dict["valid"] = result_dict.get("status") == "pass"
+
+    # Ubah summary string → object sesuai validationSummarySchema di frontend
+    passed = result_dict.pop("passed_count", 0)
+    failed = result_dict.pop("error_count", 0)
+    warnings = result_dict.pop("warning_count", 0)
+    skipped = result_dict.pop("skipped_count", 0)
+    result_dict["summary"] = {
+        "total_checks": passed + failed + warnings + skipped,
+        "passed": passed,
+        "failed": failed,
+        "warnings": warnings,
+        "errors": failed,
+    }
+
     return result_dict

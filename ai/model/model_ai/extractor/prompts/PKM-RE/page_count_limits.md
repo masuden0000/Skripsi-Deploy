@@ -39,7 +39,7 @@ Gunakan prioritas bertingkat:
 Dari section yang ditemukan, cari angka eksplisit untuk jumlah maksimum halaman proposal.
 Perhatikan: informasi mungkin berupa tabel (mis. kolom "Proposal" vs "Laporan"), atau kalimat narasi.
 Ambil HANYA nilai untuk "proposal" — abaikan baris/kalimat untuk laporan kemajuan atau laporan akhir.
-Contoh mental: *"Saya menemukan tabel dengan baris 'Proposal PKM-RE: 10 halaman' → proposal_halaman_inti_maks = 10."*
+Contoh penalaran: *"Saya menemukan tabel dengan baris 'Proposal PKM-RE: 10 halaman' → proposal_halaman_inti_maks = 10."*
 Jika tidak ada angka eksplisit → `null`.
 
 **Langkah 3 — Tentukan cakupan halaman inti:**

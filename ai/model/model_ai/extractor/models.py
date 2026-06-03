@@ -1,5 +1,6 @@
-"""Definisi schema Pydantic untuk hasil ekstraksi dokumen dan validasi turunannya. Posisi pipeline: dipakai oleh doc_extractor, metadata_loader, dan rule_validator."""
+"""Definisi schema Pydantic untuk hasil ekstraksi dokumen dan validasi turunannya. Posisi pipeline: dipakai oleh doc_extractor, metadata_loader, dan validocx_adapter."""
 import re
+from typing import Literal
 
 from pydantic import BaseModel, model_validator
 
@@ -12,12 +13,17 @@ class Source(BaseModel):
     snippet: str
 
 
+_VALID_CASE_STYLES = frozenset({"UPPERCASE", "LOWERCASE", "SENTENCE_CASE", "TOGGLE_CASE"})
+
+
 class TypographyExtracted(BaseModel):
     font_family: str | None = None
     font_size_body_pt: int | None = None
     font_size_heading_pt: int | None = None
     heading_bold: bool | None = True
     heading_all_caps: bool | None = True
+    heading_1_case: Literal["UPPERCASE", "LOWERCASE", "SENTENCE_CASE", "TOGGLE_CASE"] | None = None
+    heading_2_case: Literal["UPPERCASE", "LOWERCASE", "SENTENCE_CASE", "TOGGLE_CASE"] | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -35,6 +41,12 @@ class TypographyExtracted(BaseModel):
             normalized["heading_bold"] = True
         if normalized.get("heading_all_caps") is None:
             normalized["heading_all_caps"] = True
+        for field in ("heading_1_case", "heading_2_case"):
+            val = normalized.get(field)
+            if isinstance(val, str):
+                normalized[field] = val.strip().upper()
+            if normalized.get(field) not in _VALID_CASE_STYLES:
+                normalized[field] = None
         return normalized
 
 

@@ -1,8 +1,8 @@
-import { proxyToBackend } from "@/lib/backend-api"
+import { proxyToAiBackend } from "@/lib/backend-api"
 
 export async function POST(request: Request) {
   const formData = await request.formData()
-  return proxyToBackend("/api/pkm/validation/run", {
+  return proxyToAiBackend("/api/validation/run", {
     method: "POST",
     body: formData,
   })

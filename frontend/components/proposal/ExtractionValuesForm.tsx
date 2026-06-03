@@ -56,6 +56,8 @@ export type ExtractionPayload = {
     font_size_heading_pt: number | null
     heading_bold: boolean | null
     heading_all_caps: boolean | null
+    heading_1_case: "UPPERCASE" | "LOWERCASE" | "SENTENCE_CASE" | "TOGGLE_CASE" | null
+    heading_2_case: "UPPERCASE" | "LOWERCASE" | "SENTENCE_CASE" | "TOGGLE_CASE" | null
   }
   page_layout: {
     margin_top_cm: number | null
@@ -176,16 +178,12 @@ function SelectFieldInput({
   onChange: (v: string) => void
   disabled?: boolean
 }) {
-  const selectedLabel = options.find((opt) => opt.value === value)?.label
-
   return (
     <div className="flex flex-col gap-1.5">
       <Label className="text-xs text-muted-foreground">{label}</Label>
       <Select value={value ?? ""} onValueChange={onChange} disabled={disabled}>
         <SelectTrigger className="h-8 text-sm">
-          <SelectValue placeholder="—">
-            {selectedLabel}
-          </SelectValue>
+          <SelectValue placeholder="—" />
         </SelectTrigger>
         <SelectContent>
           {options.map((opt) => (
@@ -231,6 +229,13 @@ function toTitleCase(str: string | null | undefined): string {
   if (!str) return ""
   return str.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
 }
+
+const HEADING_CASE_OPTIONS = [
+  { value: "UPPERCASE",     label: "Uppercase — SEMUA KAPITAL" },
+  { value: "LOWERCASE",     label: "Lowercase — semua kecil" },
+  { value: "SENTENCE_CASE", label: "Sentence case — Huruf pertama besar" },
+  { value: "TOGGLE_CASE",   label: "tOGGLE cASE — Balik huruf" },
+]
 
 const TYPE_LABEL_MAP: Record<string, string> = {
   daftar_isi: "Daftar Isi",
@@ -675,6 +680,22 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
       {/* ── 7. Pengaturan Format ── */}
       <div>
         <SectionHeader title="7. Pengaturan Format" />
+        <div className="mt-3 px-1">
+          <FieldRow>
+            <SelectFieldInput
+              label="Style Huruf Heading 1"
+              value={data.typography.heading_1_case ?? ""}
+              options={HEADING_CASE_OPTIONS}
+              onChange={(v) => patch("typography", { heading_1_case: (v || null) as ExtractionPayload["typography"]["heading_1_case"] })}
+            />
+            <SelectFieldInput
+              label="Style Huruf Heading 2"
+              value={data.typography.heading_2_case ?? ""}
+              options={HEADING_CASE_OPTIONS}
+              onChange={(v) => patch("typography", { heading_2_case: (v || null) as ExtractionPayload["typography"]["heading_2_case"] })}
+            />
+          </FieldRow>
+        </div>
         <div className="px-1 flex flex-col">
           <BoolFieldInput
             label="Heading Bold"
@@ -682,7 +703,7 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
             onChange={(v) => patch("typography", { heading_bold: v })}
           />
           <BoolFieldInput
-            label="Heading All Caps"
+            label="Heading All Caps (lama)"
             value={data.typography.heading_all_caps}
             onChange={(v) => patch("typography", { heading_all_caps: v })}
           />

@@ -48,7 +48,7 @@ Identifikasi kata kunci dan petakan ke enum berikut:
 | "Minimum X pt", "Sedikitnya X pt"        | `"AT_LEAST"`         | nilai X dalam pt (float)     |
 | "Tepat X pt", "Exactly X pt"             | `"EXACTLY"`          | nilai X dalam pt (float)     |
 
-Contoh mental: *"Konteks menyebut 'spasi 1,15' → ini angka desimal bebas → MULTIPLE, line_spacing = 1.15."*
+Contoh penalaran: *"Konteks menyebut 'spasi 1,15' → ini angka desimal bebas → MULTIPLE, line_spacing = 1.15."*
 
 **Langkah 3 — Identifikasi rata paragraf (`paragraph_alignment`):**
 Cari pernyataan tentang rata paragraf:

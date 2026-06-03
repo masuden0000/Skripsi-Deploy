@@ -1,30 +1,8 @@
-"""Schema Pydantic untuk hasil validasi dokumen dan properti DOCX. Posisi pipeline: dipakai oleh docx_property_extractor, rule_validator, dan validator."""
+"""Schema Pydantic untuk hasil validasi dokumen. Posisi pipeline: dipakai oleh validocx_runner dan validator."""
 from datetime import datetime, timezone
 from typing import Literal
 
 from pydantic import BaseModel, Field
-
-
-class HeadingCapsAnomaly(BaseModel):
-    """Satu pelanggaran aturan kapitalisasi pada sebuah heading."""
-
-    text: str = Field(description="Teks heading asli")
-    level: int = Field(description="Level heading: 1 (BAB/DAFTAR) atau 2 (sub-bab)")
-    issue: Literal["not_all_caps", "not_title_case"] = Field(
-        description="Jenis pelanggaran: not_all_caps untuk H1, not_title_case untuk H2"
-    )
-    expected_form: str | None = Field(default=None, description="Bentuk yang benar (uppercase / title case)")
-    location: str = Field(default="", description="Konteks lokasi heading dalam dokumen")
-
-
-class SpacingAnomaly(BaseModel):
-    """Satu paragraf yang memiliki line spacing berbeda dari mayoritas dokumen."""
-
-    location: str = Field(description="Lokasi hierarkis: 'BAB 4 > 4.1 Anggaran Biaya'")
-    paragraph_index: int = Field(description="Indeks paragraf dalam doc.paragraphs")
-    expected: float = Field(description="Nilai line spacing yang diharapkan (mayoritas dokumen)")
-    actual: float = Field(description="Nilai line spacing yang ditemukan")
-    text_preview: str = Field(default="", description="60 karakter pertama teks paragraf")
 
 
 VALIDATION_CATEGORIES = (
@@ -178,66 +156,3 @@ class ValidationResult(BaseModel):
             "report": report,
             "issues": [issue.model_dump() for issue in self.issues],
         }
-
-
-class DocxProperties(BaseModel):
-    """Represents extracted properties from a DOCX file.
-
-    This mirrors the structure of DocumentMetadata for easy comparison.
-    """
-
-    font_family: str | None = Field(default=None, description="Primary font family")
-    font_size_body_pt: int | None = Field(default=None, description="Body font size in points")
-    font_size_heading_pt: int | None = Field(default=None, description="Heading font size in points")
-    heading_bold: bool | None = Field(default=None, description="Whether headings are bold")
-    heading_all_caps: bool | None = Field(default=None, description="Whether headings are ALL CAPS")
-
-    margin_top_cm: float | None = Field(default=None, description="Top margin in cm")
-    margin_bottom_cm: float | None = Field(default=None, description="Bottom margin in cm")
-    margin_left_cm: float | None = Field(default=None, description="Left margin in cm")
-    margin_right_cm: float | None = Field(default=None, description="Right margin in cm")
-    paper_size: str | None = Field(default=None, description="Paper size (A4, F4, etc.)")
-    orientation: str | None = Field(default=None, description="Portrait or Landscape")
-    columns: int | None = Field(default=None, description="Number of text columns per page")
-
-    line_spacing: float | None = Field(default=None, description="Nilai spasi: None untuk Grup A, desimal untuk MULTIPLE, pt untuk AT_LEAST/EXACTLY")
-    line_spacing_rule: str | None = Field(default=None, description="Aturan spasi: SINGLE | ONE_POINT_FIVE | DOUBLE | MULTIPLE | AT_LEAST | EXACTLY")
-    paragraph_alignment: str | None = Field(default=None, description="Default paragraph alignment")
-    first_line_indent_cm: float | None = Field(default=None, description="First line indent in cm")
-
-    heading_count: int = Field(default=0, description="Number of headings in document")
-    section_count: int = Field(default=0, description="Number of sections in document")
-
-    chapter_format: str | None = Field(default=None, description="Chapter number format")
-    sub_chapter_format: str | None = Field(default=None, description="Sub-chapter number format")
-    preliminary_page_format: str | None = Field(default=None, description="Preliminary pages numbering format")
-    preliminary_page_location: str | None = Field(default=None, description="Preliminary page number location")
-    preliminary_page_alignment: str | None = Field(default=None, description="Preliminary page number alignment")
-    content_page_format: str | None = Field(default=None, description="Content pages numbering format")
-    content_page_location: str | None = Field(default=None, description="Content page number location")
-    content_page_alignment: str | None = Field(default=None, description="Content page number alignment")
-
-    table_caption_position: str | None = Field(default=None, description="Table caption position (above/below)")
-    figure_caption_position: str | None = Field(default=None, description="Figure caption position (above/below)")
-    table_count: int = Field(default=0, description="Number of tables in document")
-    figure_count: int = Field(default=0, description="Number of figures in document")
-    figure_format: str | None = Field(default=None, description="Detected figure caption format (e.g. 'Gambar {n}')")
-    table_format: str | None = Field(default=None, description="Detected table caption format (e.g. 'Tabel {n}')")
-
-    has_daftar_isi: bool = Field(default=False, description="Whether document has Daftar Isi")
-    has_daftar_pustaka: bool = Field(default=False, description="Whether document has Daftar Pustaka")
-    has_daftar_tabel: bool = Field(default=False, description="Whether document has Daftar Tabel")
-    has_daftar_gambar: bool = Field(default=False, description="Whether document has Daftar Gambar")
-
-    heading_caps_anomalies: list[HeadingCapsAnomaly] = Field(
-        default_factory=list,
-        description="List of heading paragraphs that violate ALL CAPS (H1) or title case (H2) rules",
-    )
-    spacing_anomalies: list[SpacingAnomaly] = Field(
-        default_factory=list,
-        description="List of body paragraphs with line spacing different from document majority",
-    )
-
-    def to_dict(self) -> dict:
-        """Convert to dictionary for JSON serialization."""
-        return self.model_dump()

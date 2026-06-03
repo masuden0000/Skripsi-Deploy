@@ -105,6 +105,21 @@ def _get_bibliography_placeholder(style: str | None) -> str:
 _SECTION_DELETE_NOTE = "(Catatan: bagian ini boleh dihapus)"
 
 
+def _apply_heading_case(text: str, case_style: str | None) -> str:
+    if not case_style:
+        return text
+    s = case_style.upper()
+    if s == "UPPERCASE":
+        return text.upper()
+    if s == "LOWERCASE":
+        return text.lower()
+    if s == "SENTENCE_CASE":
+        return text.capitalize()
+    if s == "TOGGLE_CASE":
+        return text.swapcase()
+    return text
+
+
 _BOOKMARK_IDS: dict[str, int] = {
     "daftar_isi": 4,    "daftar_gambar": 5,      "daftar_tabel": 6,
     "daftar_lampiran": 7, "daftar_pustaka": 20,  "lampiran": 21,
@@ -191,7 +206,7 @@ def render_proposal_docx(
             start=1,
         )
 
-    _render_proposal_body(document, doc_structure, page_layout, spacing, numbering, figures_tables, chunks, instructional_placeholders)
+    _render_proposal_body(document, doc_structure, page_layout, spacing, numbering, figures_tables, chunks, instructional_placeholders, typography)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -237,6 +252,8 @@ def _apply_base_styles(document: Document, typography: dict, spacing: dict) -> N
     heading_size  = typography.get("font_size_heading_pt", body_size)
     heading_bold  = typography.get("heading_bold", True)
     heading_caps  = typography.get("heading_all_caps", True)
+    h1_case = (typography.get("heading_1_case") or "").upper()
+    h2_case = (typography.get("heading_2_case") or "").upper()
     line_spacing  = spacing.get("line_spacing", 1.15)
     alignment_str = (spacing.get("paragraph_alignment") or "JUSTIFY").upper()
 
@@ -259,7 +276,12 @@ def _apply_base_styles(document: Document, typography: dict, spacing: dict) -> N
         h.font.name      = body_font
         h.font.size      = Pt(heading_size)
         h.font.bold      = heading_bold
-        h.font.all_caps = heading_caps if style_name == "Heading 1" else False
+        if style_name == "Heading 1":
+            h.font.all_caps = (h1_case == "UPPERCASE") or (not h1_case and heading_caps)
+        elif style_name == "Heading 2":
+            h.font.all_caps = (h2_case == "UPPERCASE")
+        else:
+            h.font.all_caps = False
         h.font.color.rgb = RGBColor(0, 0, 0)
         h.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
         h.paragraph_format.space_before = Pt(0)
@@ -322,7 +344,7 @@ def _render_preliminary_pages(
             prelim_entries.append((make_instruction_key(section["type"], title), title, section["type"]))
 
     for index, (instruction_key, title, sec_type) in enumerate(prelim_entries):
-        heading = document.add_heading(title, level=1)
+        heading = document.add_heading(_apply_heading_case(title, typography.get("heading_1_case")), level=1)
         heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
         _force_paragraph_runs_black(heading)
         _add_bookmark_to_paragraph(heading, _bookmark_id(sec_type), _bookmark_name(sec_type))
@@ -366,28 +388,31 @@ def _render_daftar_isi_example(
     prelim_counter = 1
 
 
+    h1_case = typography.get("heading_1_case")
+    h2_case = typography.get("heading_2_case")
+
     body_counter = 1
     for sec in doc_structure.get("sections", []):
         sec_type = sec["type"]
         title    = sec.get("title") or sec_type.upper().replace("_", " ")
 
         if sec_type in ("daftar_isi", "daftar_gambar", "daftar_tabel", "daftar_lampiran"):
-            entries.append((title, _to_roman(prelim_counter), _bookmark_name(sec_type)))
+            entries.append((_apply_heading_case(title, h1_case), _to_roman(prelim_counter), _bookmark_name(sec_type)))
             prelim_counter += 1
         elif sec_type == "bab":
             num = sec.get("number", "")
             label = f"BAB {num}. {title}".strip() if num else f"BAB {title}".strip()
-            entries.append((label, str(body_counter), _bookmark_name("bab", num)))
+            entries.append((_apply_heading_case(label, h1_case), str(body_counter), _bookmark_name("bab", num)))
             body_counter += 2
         elif sec_type == "sub_bab":
             sub_num = sec.get("sub_number") or ""
-            sub_title = (sec.get("title") or "").title()
-            label = f"{sub_num} {sub_title}".strip()
+            raw_sub_title = (sec.get("title") or "").title()
+            label = _apply_heading_case(f"{sub_num} {raw_sub_title}".strip(), h2_case)
             bookmark = _bookmark_name("sub_bab", sub_num)
             entries.append((label, str(body_counter), bookmark))
             body_counter += 1
         elif sec_type in ("daftar_pustaka", "lampiran"):
-            entries.append((title, str(body_counter), _bookmark_name(sec_type)))
+            entries.append((_apply_heading_case(title, h1_case), str(body_counter), _bookmark_name(sec_type)))
             body_counter += 1
 
     for entry_text, page_num, anchor in entries:
@@ -558,28 +583,30 @@ def _render_proposal_body(
     figures_tables: dict,
     chunks: list[ChunkSource],
     instructional_placeholders: dict[str, str],
+    typography: dict | None = None,
 ) -> None:
+    typography = typography or {}
     for section in doc_structure.get("sections", []):
         if section["type"] == "bab":
-            _render_bab_section(document, section, page_layout, spacing, numbering, figures_tables, chunks, instructional_placeholders)
+            _render_bab_section(document, section, page_layout, spacing, numbering, figures_tables, chunks, instructional_placeholders, typography)
         elif section["type"] == "daftar_pustaka":
             _render_named_section(
                 document, section["type"],
                 section.get("title") or "DAFTAR PUSTAKA",
                 spacing, chunks, instructional_placeholders,
-                doc_structure,
+                doc_structure, typography,
             )
         elif section["type"] == "lampiran":
             _render_named_section(
                 document, section["type"],
                 section.get("title") or "LAMPIRAN",
                 spacing, chunks, instructional_placeholders,
-                doc_structure,
+                doc_structure, typography,
             )
         elif section["type"] == "sub_bab":
-            _render_sub_bab_section(document, section, page_layout, spacing, figures_tables, instructional_placeholders)
+            _render_sub_bab_section(document, section, page_layout, spacing, figures_tables, instructional_placeholders, typography)
         elif section["type"] == "item_lampiran":
-            _render_item_lampiran_section(document, section, page_layout, spacing, instructional_placeholders)
+            _render_item_lampiran_section(document, section, page_layout, spacing, instructional_placeholders, typography)
 
 
 def _render_bab_section(
@@ -591,12 +618,14 @@ def _render_bab_section(
     figures_tables: dict,
     chunks: list[ChunkSource],
     instructional_placeholders: dict[str, str],
+    typography: dict | None = None,
 ) -> None:
+    typography = typography or {}
     chapter_fmt  = numbering.get("chapter_format", "BAB {n}")
     title        = section.get("title") or "[JUDUL_BAB_BELUM_TERDETEKSI]"
     num          = section.get("number")
     bab_label    = chapter_fmt.replace("{n}", str(num)) if num else "BAB"
-    heading_text = f"{bab_label} {title}".strip()
+    heading_text = _apply_heading_case(f"{bab_label} {title}".strip(), typography.get("heading_1_case"))
 
     sep = document.add_paragraph()
     sep.paragraph_format.space_before = Pt(0)
@@ -674,12 +703,12 @@ def _render_named_section(
     chunks: list[ChunkSource],
     instructional_placeholders: dict[str, str],
     doc_structure: dict | None = None,
+    typography: dict | None = None,
 ) -> None:
-    sep = document.add_paragraph()
-    sep.paragraph_format.space_before = Pt(0)
-    sep.paragraph_format.space_after  = Pt(0)
+    typography = typography or {}
+    document.add_page_break()
 
-    heading = document.add_heading(title, level=1)
+    heading = document.add_heading(_apply_heading_case(title, typography.get("heading_1_case")), level=1)
     heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
     _force_paragraph_runs_black(heading)
     _add_bookmark_to_paragraph(heading, _bookmark_id(section_type), _bookmark_name(section_type))
@@ -729,10 +758,12 @@ def _render_sub_bab_section(
     spacing: dict,
     figures_tables: dict,
     instructional_placeholders: dict[str, str],
+    typography: dict | None = None,
 ) -> None:
+    typography = typography or {}
     sub_num  = section.get("sub_number") or "?"
-    title = (section.get("title") or "[SUB_BAB_TANPA_JUDUL]").title()
-    heading_text = f"{sub_num} {title}".strip()
+    raw_title = (section.get("title") or "[SUB_BAB_TANPA_JUDUL]").title()
+    heading_text = _apply_heading_case(f"{sub_num} {raw_title}".strip(), typography.get("heading_2_case"))
 
     sep = document.add_paragraph()
     sep.paragraph_format.space_before = Pt(0)
@@ -839,10 +870,12 @@ def _render_item_lampiran_section(
     page_layout: dict,
     spacing: dict,
     instructional_placeholders: dict[str, str],
+    typography: dict | None = None,
 ) -> None:
+    typography = typography or {}
     lampiran_number = (section.get("lampiran_number") or "Lampiran ?").title()
     title           = (section.get("title") or "[LAMPIRAN_TANPA_JUDUL]").title()
-    heading_text    = f"{lampiran_number}. {title}".strip()
+    heading_text    = _apply_heading_case(f"{lampiran_number}. {title}".strip(), typography.get("heading_2_case"))
 
     sep = document.add_paragraph()
     sep.paragraph_format.space_before = Pt(0)
@@ -1261,7 +1294,7 @@ def render_proposal_docx_bytes(
 
     has_preliminary = _has_preliminary_pages(doc_structure)
     if has_preliminary:
-        _render_preliminary_pages(doc, doc_structure, page_layout, typography, spacing, instructional_placeholders, figures_tables)
+        _render_preliminary_pages(doc, doc_structure, page_layout, typography, instructional_placeholders, figures_tables)
         _apply_page_numbering(
             first_section,
             _build_page_num_position(prelim_num.get("location", "FOOTER"), prelim_num.get("alignment", "RIGHT")),
@@ -1284,7 +1317,7 @@ def render_proposal_docx_bytes(
             start=1,
         )
 
-    _render_proposal_body(doc, doc_structure, page_layout, spacing, numbering, figures_tables, chunks, instructional_placeholders)
+    _render_proposal_body(doc, doc_structure, page_layout, spacing, numbering, figures_tables, chunks, instructional_placeholders, typography)
 
     format_nama_file = doc_structure.get("format_nama_file")
     if format_nama_file:

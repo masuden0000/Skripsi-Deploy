@@ -240,9 +240,17 @@ def build_sections_from_ranges(
             # rentang section aktif, pindah ke section berikutnya dari page_to_heading.
             # Menangani kasus heading pembuka section tidak muncul tepat di halaman TOC
             # karena pada halaman sebelumnya muncul sebagai deskripsi sistematika.
+            #
+            # PENTING: fallback hanya aktif mulai halaman ke-2 setelah batas section
+            # (current_end + 2, bukan current_end + 1). Halaman tepat di batas transisi
+            # (current_end + 1 = page_start section berikutnya) dibiarkan ditangani oleh
+            # Lapis 2 (deteksi heading # / ##) agar teks sebelum heading tetap masuk
+            # ke section sebelumnya. Contoh: Sistematika ends page 11, Seleksi starts
+            # page 12 — pada page 12 fallback tidak aktif, Lapis 2 memotong tepat di
+            # heading "# Seleksi dan Penilaian Proposal".
             normalized_current = normalize_heading(current_heading).upper()
             current_end = bab_heading_end_page.get(normalized_current, 9999)
-            if line["page"] > current_end:
+            if line["page"] > current_end + 1:
                 new_heading = page_to_heading.get(line["page"])
                 if new_heading and new_heading in heading_lines:
                     current_heading = new_heading

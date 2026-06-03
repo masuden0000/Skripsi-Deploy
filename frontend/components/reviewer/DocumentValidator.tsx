@@ -72,7 +72,7 @@ export function DocumentValidator() {
   // Pipeline validasi (dipanggil saat tombol "Validasi Dokumen" ditekan):
   //   Frontend → POST /api/pkm/validation/run (Express proxy)
   //   → POST /api/validation/run (FastAPI ai-backend)
-  //   → validator.py: extract DOCX properties → compare_properties → ValidationResult
+  //   → validator.py: validocx_adapter → validocx_runner → ValidationResult
   //   → Result dikembalikan sebagai JSON { valid, status, issues, checks, summary }
   const handleValidate = async () => {
     if (!selectedSchemaId || !selectedYear || !file) {

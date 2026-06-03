@@ -2,7 +2,6 @@
 import os
 import tempfile
 
-import pytest
 from docx import Document as DocxDocument
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn

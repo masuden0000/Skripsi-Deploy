@@ -96,6 +96,10 @@ def _get_para_details(docx_path):
                 for br in para_xml.findall(".//" + qn("w:br"))
             )
 
+            # Catatan: page break dideteksi pada paragraf yang *mengandung* marker,
+            # bukan paragraf berikutnya. Untuk dokumen PKM dengan explicit paragraph-level
+            # breaks, ini akurat. Edge case: jika teks dan break ada di paragraf yang sama,
+            # teks tersebut akan diberi nomor halaman baru (bukan halaman sebelumnya).
             if has_page_break and idx > 0:
                 current_page += 1
 

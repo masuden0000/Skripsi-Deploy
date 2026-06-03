@@ -31,6 +31,16 @@ export const activePeriodSchema = z.object({
   updatedAt: z.string(),
 })
 
+const validationOccurrenceSchema = z.object({
+  page: z.number().nullable().optional(),
+  bab: z.string().nullable().optional(),
+  para_idx: z.number().nullable().optional(),
+  style: z.string().nullable().optional(),
+  text: z.string().nullable().optional(),
+  actual: z.string().nullable().optional(),
+  expected: z.string().nullable().optional(),
+})
+
 export const validationIssueSchema = z.object({
   severity: z.enum(["error", "warning", "info"]),
   category: z.string(),
@@ -38,6 +48,7 @@ export const validationIssueSchema = z.object({
   message: z.string(),
   expected: z.string().optional().nullable(),
   actual: z.string().optional().nullable(),
+  occurrences: z.array(validationOccurrenceSchema).optional().nullable(),
 })
 
 export const validationSummarySchema = z.object({
@@ -62,6 +73,7 @@ export const validationResultSchema = z.object({
 export type PkmSchema = z.infer<typeof pkmSchemaSchema>
 export type ActivePeriod = z.infer<typeof activePeriodSchema>
 export type ValidationIssue = z.infer<typeof validationIssueSchema>
+export type ValidationOccurrence = z.infer<typeof validationOccurrenceSchema>
 export type ValidationResult = z.infer<typeof validationResultSchema>
 
 // ============================================================================

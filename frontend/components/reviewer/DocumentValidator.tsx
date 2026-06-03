@@ -18,25 +18,276 @@ import {
   AlertCircleIcon,
   FileTextIcon,
 } from "@/components/icons/public-icons"
-import { runDocumentValidation, type ValidationResult } from "@/lib/api/pkm"
+import {
+  runDocumentValidation,
+  type ValidationResult,
+  type ValidationIssue,
+  type ValidationOccurrence,
+} from "@/lib/api/pkm"
 import { PKM_SCHEMES } from "@/lib/constants/pkm-schemes"
 import { YearPicker } from "@/components/ui/year-picker"
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
+// Konfigurasi label dan ikon per kategori masalah validasi.
+// Kategori ini sama dengan yang dikirim oleh backend (typography, page_layout, dst.)
+const CATEGORY_CONFIG: Record<string, { label: string; icon: string }> = {
+  typography        : { label: "Typography",       icon: "🔤" },
+  page_layout       : { label: "Page Layout",      icon: "📐" },
+  spacing           : { label: "Spacing",          icon: "↕"  },
+  document_structure: { label: "Struktur Dokumen", icon: "📋" },
+  numbering         : { label: "Penomoran",        icon: "🔢" },
+  figures_tables    : { label: "Gambar & Tabel",   icon: "📊" },
+}
+
+// SummaryBar: empat kotak angka ringkasan di atas dua panel.
+// Menampilkan jumlah Error, Peringatan, Lulus, dan Dilewati.
+function SummaryBar({ result }: { result: ValidationResult }) {
+  const errors   = result.issues?.filter((i) => i.severity === "error").length   ?? 0
+  const warnings = result.issues?.filter((i) => i.severity === "warning").length ?? 0
+
+  const items = [
+    { count: errors,                         label: "Error",      color: "text-red-600"    },
+    { count: warnings,                       label: "Peringatan", color: "text-yellow-600" },
+    { count: result.summary?.passed  ?? 0,  label: "Lulus",      color: "text-green-600"  },
+    { count: result.summary?.errors  ?? 0,  label: "Dilewati",   color: "text-slate-400"  },
+  ]
+
+  return (
+    <div className="grid grid-cols-4 border-t border-border">
+      {items.map(({ count, label, color }, i) => (
+        <div
+          key={label}
+          className={[
+            "flex flex-col items-center py-3",
+            i < items.length - 1 ? "border-r border-border" : "",
+          ].join(" ")}
+        >
+          <span className={`text-2xl font-bold ${color}`}>{count}</span>
+          <span className="text-xs text-muted-foreground mt-0.5">{label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// OccurrenceCard: satu kartu = satu lokasi spesifik sebuah masalah.
+// Menampilkan nomor halaman, nama BAB, nomor paragraf, cuplikan teks,
+// dan badge merah/hijau untuk nilai salah vs nilai yang seharusnya.
+function OccurrenceCard({ occ }: { occ: ValidationOccurrence }) {
+  return (
+    <div className="rounded-lg border border-border bg-white p-3 space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {occ.page != null && (
+          <span className="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+            📄 Halaman {occ.page}
+          </span>
+        )}
+        {occ.bab && (
+          <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded">
+            📂 {occ.bab}
+          </span>
+        )}
+        {occ.para_idx != null && (
+          <span className="text-xs text-muted-foreground">
+            Paragraf ke-{occ.para_idx + 1}
+          </span>
+        )}
+        {occ.style && (
+          <span className="text-xs text-muted-foreground">· Style: {occ.style}</span>
+        )}
+      </div>
+
+      {occ.text && (
+        <p className="text-xs italic text-slate-600 bg-slate-50 px-3 py-2 rounded border-l-2 border-slate-300">
+          &ldquo;{occ.text}&rdquo;
+        </p>
+      )}
+
+      {(occ.actual || occ.expected) && (
+        <div className="flex flex-wrap gap-2">
+          {occ.actual && (
+            <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">
+              ❌ Ditemukan: {occ.actual}
+            </span>
+          )}
+          {occ.expected && (
+            <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
+              ✓ Harus: {occ.expected}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// IssueListPanel: panel kiri berisi daftar semua masalah dikelompokkan per kategori.
+// `selectedIdx` adalah index dari allIssues flat list yang sedang aktif.
+// `onSelect` dipanggil saat baris diklik untuk memperbarui selectedIdx.
+function IssueListPanel({
+  issues,
+  selectedIdx,
+  onSelect,
+}: {
+  issues: ValidationIssue[]
+  selectedIdx: number | null
+  onSelect: (idx: number) => void
+}) {
+  // Kelompokkan issues per kategori, pertahankan urutan kemunculan asli
+  const grouped = issues.reduce<Record<string, Array<{ issue: ValidationIssue; idx: number }>>>(
+    (acc, issue, idx) => {
+      const cat = issue.category ?? "other"
+      if (!acc[cat]) acc[cat] = []
+      acc[cat].push({ issue, idx })
+      return acc
+    },
+    {}
+  )
+
+  return (
+    <div className="border-r border-border overflow-y-auto">
+      <div className="px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/50 border-b border-border">
+        Detail Masalah ({issues.length})
+      </div>
+
+      {Object.entries(grouped).map(([cat, items]) => {
+        const config = CATEGORY_CONFIG[cat] ?? { label: cat, icon: "•" }
+        return (
+          <div key={cat}>
+            <div className="px-4 py-1.5 text-xs font-bold text-muted-foreground/70 uppercase tracking-widest bg-muted/30 border-b border-border/50">
+              {config.icon} {config.label}
+            </div>
+
+            {items.map(({ issue, idx }) => {
+              const isActive = selectedIdx === idx
+              const isError  = issue.severity === "error"
+              return (
+                <button
+                  key={idx}
+                  onClick={() => onSelect(idx)}
+                  className={[
+                    "w-full text-left px-4 py-2.5 border-b border-border/50 flex items-start gap-2.5 transition-colors",
+                    isActive
+                      ? "bg-blue-50 border-l-2 border-l-blue-500"
+                      : "hover:bg-muted/40",
+                  ].join(" ")}
+                >
+                  <div
+                    className={[
+                      "shrink-0 size-4 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5",
+                      isError
+                        ? "bg-red-100 text-red-700"
+                        : "bg-yellow-100 text-yellow-700",
+                    ].join(" ")}
+                  >
+                    {isError ? "!" : "i"}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{issue.field ?? issue.category}</p>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">{issue.message}</p>
+                  </div>
+
+                  {(issue.occurrences?.length ?? 0) > 0 && (
+                    <span
+                      className={[
+                        "shrink-0 text-xs font-semibold px-1.5 py-0.5 rounded-full",
+                        isError
+                          ? "bg-red-100 text-red-700"
+                          : "bg-yellow-100 text-yellow-700",
+                      ].join(" ")}
+                    >
+                      {issue.occurrences!.length}×
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// LocationPanel: panel kanan menampilkan detail lokasi masalah yang dipilih.
+// Jika `issue` null (belum ada yang diklik), tampilkan empty state.
+// Jika issue punya occurrences, tampilkan OccurrenceCard per lokasi.
+// Jika tidak punya occurrences (masalah level dokumen), tampilkan info actual/expected saja.
+function LocationPanel({ issue }: { issue: ValidationIssue | null }) {
+  if (!issue) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[300px] text-muted-foreground bg-muted/20">
+        <FileTextIcon className="size-8 mb-3 opacity-30" />
+        <p className="text-sm">Klik salah satu masalah di kiri untuk melihat lokasi</p>
+      </div>
+    )
+  }
+
+  const occurrences = issue.occurrences ?? []
+
+  return (
+    <div className="overflow-y-auto bg-muted/10">
+      <div className="px-5 py-3 border-b border-border bg-white sticky top-0">
+        <p className="text-sm font-semibold">
+          {issue.field ?? issue.category}
+          {occurrences.length > 0 && (
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              — {occurrences.length} lokasi ditemukan
+            </span>
+          )}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">{issue.message}</p>
+      </div>
+
+      <div className="p-4 space-y-3">
+        {occurrences.length > 0 ? (
+          occurrences.map((occ, i) => <OccurrenceCard key={i} occ={occ} />)
+        ) : (
+          <div className="rounded-lg border border-border bg-white p-4">
+            <p className="text-sm text-muted-foreground">
+              Masalah ini berlaku untuk seluruh dokumen, bukan paragraf tertentu.
+            </p>
+            {(issue.expected || issue.actual) && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {issue.actual && (
+                  <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">
+                    ❌ Ditemukan: {issue.actual}
+                  </span>
+                )}
+                {issue.expected && (
+                  <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
+                    ✓ Harus: {issue.expected}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Komponen utama halaman validasi.
+// Mengelola state upload, proses validasi, dan state UI (masalah yang dipilih di panel kiri).
 export function DocumentValidator() {
   const [selectedSchemaId, setSelectedSchemaId] = useState<string>("")
-  const [selectedYear, setSelectedYear] = useState<string>("")
-  const [file, setFile] = useState<File | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<ValidationResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [selectedYear, setSelectedYear]         = useState<string>("")
+  const [file, setFile]                         = useState<File | null>(null)
+  const [loading, setLoading]                   = useState(false)
+  const [result, setResult]                     = useState<ValidationResult | null>(null)
+  const [error, setError]                       = useState<string | null>(null)
+  // selectedIssueIdx: index masalah di allIssues yang sedang diklik di panel kiri.
+  // null = belum ada yang dipilih (panel kanan menampilkan empty state).
+  const [selectedIssueIdx, setSelectedIssueIdx] = useState<number | null>(null)
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0]
     if (selected) {
       if (selected.size > MAX_FILE_SIZE) {
-        setError(`Ukuran file terlalu besar. Maksimal 10MB.`)
+        setError("Ukuran file terlalu besar. Maksimal 10MB.")
         setFile(null)
         return
       }
@@ -51,6 +302,7 @@ export function DocumentValidator() {
       setError(null)
       setFile(selected)
       setResult(null)
+      setSelectedIssueIdx(null)
     }
   }, [])
 
@@ -58,9 +310,7 @@ export function DocumentValidator() {
     e.preventDefault()
     const dropped = e.dataTransfer.files?.[0]
     if (dropped) {
-      const fakeEvent = {
-        target: { files: [dropped] },
-      } as unknown as React.ChangeEvent<HTMLInputElement>
+      const fakeEvent = { target: { files: [dropped] } } as unknown as React.ChangeEvent<HTMLInputElement>
       handleFileChange(fakeEvent)
     }
   }, [handleFileChange])
@@ -69,35 +319,22 @@ export function DocumentValidator() {
     e.preventDefault()
   }, [])
 
-  // Pipeline validasi (dipanggil saat tombol "Validasi Dokumen" ditekan):
-  //   Frontend → POST /api/pkm/validation/run (Express proxy)
-  //   → POST /api/validation/run (FastAPI ai-backend)
-  //   → validator.py: validocx_adapter → validocx_runner → ValidationResult
-  //   → Result dikembalikan sebagai JSON { valid, status, issues, checks, summary }
   const handleValidate = async () => {
     if (!selectedSchemaId || !selectedYear || !file) {
       setError("Pilih skema PKM, tahun, dan upload file proposal terlebih dahulu.")
       return
     }
-
     setLoading(true)
     setError(null)
     setResult(null)
+    setSelectedIssueIdx(null)
 
-    const res = await runDocumentValidation({
-      schemaId: selectedSchemaId,
-      year: selectedYear,
-      file,
-    })
-
+    const res = await runDocumentValidation({ schemaId: selectedSchemaId, year: selectedYear, file })
     setLoading(false)
 
     if (res.error) {
       setError(res.error)
     } else {
-      // result.valid = true jika semua pengecekan lulus (status === "pass")
-      // result.issues = array ValidationIssue dengan severity error/warning/info
-      // result.summary = ringkasan jumlah passed/total checks
       setResult(res.data)
     }
   }
@@ -108,10 +345,15 @@ export function DocumentValidator() {
     setFile(null)
     setResult(null)
     setError(null)
+    setSelectedIssueIdx(null)
   }
+
+  // allIssues: flat list semua masalah — dipakai untuk index-based selection antara panel kiri dan kanan
+  const allIssues = result?.issues ?? []
 
   return (
     <ReviewerSurfaceCard>
+      {/* Header */}
       <div className="px-6 pt-6 pb-4">
         <h3 className="text-base font-semibold flex items-center gap-2">
           <FileTextIcon className="size-5 text-primary" />
@@ -119,33 +361,34 @@ export function DocumentValidator() {
         </h3>
       </div>
 
+      {/* Form upload */}
       <div className="px-6 pb-6 space-y-4">
         <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">1. Pilih Skema PKM</label>
-          <Select value={selectedSchemaId} onValueChange={setSelectedSchemaId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Pilih jenis PKM" />
-            </SelectTrigger>
-            <SelectContent>
-              {PKM_SCHEMES.map((schema) => (
-                <SelectItem key={schema.value} value={schema.value}>
-                  {schema.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">1. Pilih Skema PKM</label>
+            <Select value={selectedSchemaId} onValueChange={setSelectedSchemaId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih jenis PKM" />
+              </SelectTrigger>
+              <SelectContent>
+                {PKM_SCHEMES.map((schema) => (
+                  <SelectItem key={schema.value} value={schema.value}>
+                    {schema.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">2. Pilih Tahun</label>
-          <YearPicker
-            value={selectedYear}
-            onChange={setSelectedYear}
-            placeholder="Pilih tahun"
-            disabled={loading}
-          />
-        </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">2. Pilih Tahun</label>
+            <YearPicker
+              value={selectedYear}
+              onChange={setSelectedYear}
+              placeholder="Pilih tahun"
+              disabled={loading}
+            />
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -177,11 +420,7 @@ export function DocumentValidator() {
                   </p>
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setFile(null)
-                      setResult(null)
-                    }}
+                    onClick={(e) => { e.stopPropagation(); setFile(null); setResult(null) }}
                     className="mt-2 text-xs text-destructive hover:underline"
                   >
                     Hapus file
@@ -193,9 +432,7 @@ export function DocumentValidator() {
                   <p className="text-sm text-muted-foreground">
                     Seret file ke sini atau klik untuk memilih
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Format: DOCX, maks 10MB
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">Format: DOCX, maks 10MB</p>
                 </>
               )}
             </div>
@@ -235,9 +472,13 @@ export function DocumentValidator() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
+      </div>
 
-        {result && (
-          <div className="space-y-3">
+      {/* Hasil validasi */}
+      {result && (
+        <>
+          {/* Alert status overall */}
+          <div className="px-6 pb-4">
             {result.valid ? (
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircleIcon className="size-4 text-green-600" />
@@ -256,69 +497,31 @@ export function DocumentValidator() {
                 <AlertCircleIcon className="size-4" />
                 <AlertTitle>Ditemukan Masalah Format</AlertTitle>
                 <AlertDescription>
-                  {result.issues?.filter((i) => i.severity === "error").length ?? 0} error,{" "}
-                  {result.issues?.filter((i) => i.severity === "warning").length ?? 0} peringatan ditemukan.
+                  {allIssues.filter((i) => i.severity === "error").length} error,{" "}
+                  {allIssues.filter((i) => i.severity === "warning").length} peringatan ditemukan.
                 </AlertDescription>
               </Alert>
             )}
-
-            {result.issues && result.issues.length > 0 && (
-              <div className="rounded-lg bg-gray-50">
-                <div className="px-4 py-3 bg-gray-100 rounded-t-lg">
-                  <h4 className="text-sm font-medium">
-                    Detail Masalah ({result.issues.length})
-                  </h4>
-                </div>
-                <div className="divide-y">
-                  {result.issues.map((issue, idx) => (
-                    <div key={idx} className="px-4 py-3 flex items-start gap-3">
-                      <div
-                        className={[
-                          "shrink-0 size-5 rounded-full flex items-center justify-center text-xs font-medium mt-0.5",
-                          issue.severity === "error"
-                            ? "bg-red-100 text-red-700"
-                            : issue.severity === "warning"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-blue-100 text-blue-700",
-                        ].join(" ")}
-                      >
-                        {issue.severity === "error" ? "!" : "i"}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            {issue.category}
-                          </span>
-                          {issue.field && (
-                            <span className="text-xs text-muted-foreground">· {issue.field}</span>
-                          )}
-                        </div>
-                        <p className="text-sm">{issue.message}</p>
-                        {(issue.expected || issue.actual) && (
-                          <div className="mt-1 flex gap-3 text-xs text-muted-foreground">
-                            {issue.expected && (
-                              <span>
-                                Diharapkan:{" "}
-                                <span className="font-medium text-foreground">{issue.expected}</span>
-                              </span>
-                            )}
-                            {issue.actual && (
-                              <span>
-                                Ditemukan:{" "}
-                                <span className="font-medium text-foreground">{issue.actual}</span>
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
-        )}
-      </div>
+
+          {/* Summary bar + dua panel */}
+          {allIssues.length > 0 && (
+            <div className="border-t border-border">
+              <SummaryBar result={result} />
+              <div className="grid grid-cols-[320px_1fr] border-t border-border min-h-[360px] max-h-[600px]">
+                <IssueListPanel
+                  issues={allIssues}
+                  selectedIdx={selectedIssueIdx}
+                  onSelect={setSelectedIssueIdx}
+                />
+                <LocationPanel
+                  issue={selectedIssueIdx !== null ? allIssues[selectedIssueIdx] : null}
+                />
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </ReviewerSurfaceCard>
   )
 }

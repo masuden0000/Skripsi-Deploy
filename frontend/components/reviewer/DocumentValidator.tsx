@@ -50,7 +50,7 @@ function SummaryBar({ result }: { result: ValidationResult }) {
     { count: errors,                         label: "Error",      color: "text-red-600"    },
     { count: warnings,                       label: "Peringatan", color: "text-yellow-600" },
     { count: result.summary?.passed  ?? 0,  label: "Lulus",      color: "text-green-600"  },
-    { count: result.summary?.errors  ?? 0,  label: "Dilewati",   color: "text-slate-400"  },
+    { count: result.issues?.filter((i) => i.severity === "info").length ?? 0, label: "Dilewati", color: "text-slate-400" },
   ]
 
   return (

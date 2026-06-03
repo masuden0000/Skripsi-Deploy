@@ -68,12 +68,44 @@ def parse_entries_from_file(path):
 
 
 def _get_para_details(docx_path):
-    """Muat semua paragraf dari docx, kembalikan dict {idx: detail}."""
+    """Muat semua paragraf dari docx, kembalikan dict {idx: detail}.
+
+    Setiap entri sekarang menyertakan:
+      - page : nomor halaman (dihitung dari page-break marker di XML)
+      - bab  : teks Heading 1 terakhir sebelum paragraf ini (atau None)
+    """
     try:
         from docx import Document
+        from docx.oxml.ns import qn
+
         doc = Document(docx_path)
         result = {}
+        current_page = 1
+        current_bab = None
+
         for idx, para in enumerate(doc.paragraphs):
+            para_xml = para._p
+
+            # ── Deteksi page break ───────────────────────────────────────
+            # w:lastRenderedPageBreak → page break dari hasil render Word
+            # w:br w:type="page"      → explicit manual page break
+            has_page_break = bool(
+                para_xml.findall(".//" + qn("w:lastRenderedPageBreak"))
+            ) or any(
+                br.get(qn("w:type")) == "page"
+                for br in para_xml.findall(".//" + qn("w:br"))
+            )
+
+            if has_page_break and idx > 0:
+                current_page += 1
+
+            # ── Deteksi nama BAB dari Heading 1 ─────────────────────────
+            style_name = para.style.name
+            text = para.text.strip()
+            if style_name == "Heading 1" and text:
+                current_bab = text
+
+            # ── Data paragraf (sama seperti sebelumnya + page + bab) ────
             pf    = para.paragraph_format
             ls    = pf.line_spacing
             rule  = str(pf.line_spacing_rule) if pf.line_spacing_rule else "inherited"
@@ -93,13 +125,16 @@ def _get_para_details(docx_path):
                 })
 
             result[idx] = {
-                "style"       : para.style.name,
+                "style"       : style_name,
                 "alignment"   : align,
                 "line_spacing": float(ls) if ls is not None else None,
                 "spacing_rule": rule,
-                "text"        : para.text.strip()[:100],
+                "text"        : text[:100],
                 "runs"        : runs,
+                "page"        : current_page,   # BARU
+                "bab"         : current_bab,    # BARU
             }
+
         return result
     except Exception:
         return {}

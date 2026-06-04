@@ -41,16 +41,16 @@ const CATEGORY_CONFIG: Record<string, { label: string; icon: string }> = {
 }
 
 // SummaryBar: empat kotak angka ringkasan di atas dua panel.
-// Menampilkan jumlah Error, Peringatan, Lulus, dan Dilewati.
+// Warna: red = error, amber = peringatan, pkm-600 = lulus (PKM brand), gray = dilewati
 function SummaryBar({ result }: { result: ValidationResult }) {
   const errors   = result.issues?.filter((i) => i.severity === "error").length   ?? 0
   const warnings = result.issues?.filter((i) => i.severity === "warning").length ?? 0
 
   const items = [
-    { count: errors,                         label: "Error",      color: "text-red-600"    },
-    { count: warnings,                       label: "Peringatan", color: "text-yellow-600" },
-    { count: result.summary?.passed  ?? 0,  label: "Lulus",      color: "text-green-600"  },
-    { count: result.issues?.filter((i) => i.severity === "info").length ?? 0, label: "Dilewati", color: "text-slate-400" },
+    { count: errors,                                                             label: "Error",      color: "text-red-600"   },
+    { count: warnings,                                                           label: "Peringatan", color: "text-amber-600" },
+    { count: result.summary?.passed ?? 0,                                       label: "Lulus",      color: "text-pkm-600"   },
+    { count: result.issues?.filter((i) => i.severity === "info").length ?? 0,  label: "Dilewati",   color: "text-gray-400"  },
   ]
 
   return (
@@ -73,19 +73,21 @@ function SummaryBar({ result }: { result: ValidationResult }) {
 
 // OccurrenceCard: satu kartu = satu lokasi spesifik sebuah masalah.
 // Menampilkan nomor halaman, nama BAB, nomor paragraf, cuplikan teks,
-// dan badge merah/hijau untuk nilai salah vs nilai yang seharusnya.
+// dan badge untuk nilai salah vs nilai yang seharusnya.
 function OccurrenceCard({ occ }: { occ: ValidationOccurrence }) {
   return (
     <div className="rounded-lg border border-border bg-white p-3 space-y-2">
       <div className="flex flex-wrap items-center gap-2">
+        {/* Halaman: gray netral — label lokasi bukan status */}
         {occ.page != null && (
-          <span className="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-            📄 Halaman {occ.page}
+          <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+            Halaman {occ.page}
           </span>
         )}
+        {/* BAB: pkm-100/700 — identitas struktur dokumen pakai PKM brand */}
         {occ.bab && (
-          <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded">
-            📂 {occ.bab}
+          <span className="text-xs font-medium bg-pkm-100 text-pkm-700 px-2 py-0.5 rounded">
+            {occ.bab}
           </span>
         )}
         {occ.para_idx != null && (
@@ -98,22 +100,24 @@ function OccurrenceCard({ occ }: { occ: ValidationOccurrence }) {
         )}
       </div>
 
+      {/* Cuplikan teks: bg-gray-50 konsisten dengan pola inset area di komponen lain */}
       {occ.text && (
-        <p className="text-xs italic text-slate-600 bg-slate-50 px-3 py-2 rounded border-l-2 border-slate-300">
+        <p className="text-xs italic text-gray-600 bg-gray-50 px-3 py-2 rounded border-l-2 border-gray-200">
           &ldquo;{occ.text}&rdquo;
         </p>
       )}
 
+      {/* Badge nilai: merah = ditemukan (salah), pkm = harus (benar) */}
       {(occ.actual || occ.expected) && (
         <div className="flex flex-wrap gap-2">
           {occ.actual && (
-            <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">
-              ❌ Ditemukan: {occ.actual}
+            <span className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded">
+              Ditemukan: {occ.actual}
             </span>
           )}
           {occ.expected && (
-            <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
-              ✓ Harus: {occ.expected}
+            <span className="text-xs bg-pkm-50 text-pkm-700 px-2 py-0.5 rounded">
+              Harus: {occ.expected}
             </span>
           )}
         </div>
@@ -134,7 +138,6 @@ function IssueListPanel({
   selectedIdx: number | null
   onSelect: (idx: number) => void
 }) {
-  // Kelompokkan issues per kategori, pertahankan urutan kemunculan asli
   const grouped = issues.reduce<Record<string, Array<{ issue: ValidationIssue; idx: number }>>>(
     (acc, issue, idx) => {
       const cat = issue.category ?? "other"
@@ -147,7 +150,7 @@ function IssueListPanel({
 
   return (
     <div className="border-r border-border overflow-y-auto">
-      <div className="px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/50 border-b border-border">
+      <div className="px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 border-b border-border">
         Detail Masalah ({issues.length})
       </div>
 
@@ -155,7 +158,7 @@ function IssueListPanel({
         const config = CATEGORY_CONFIG[cat] ?? { label: cat, icon: "•" }
         return (
           <div key={cat}>
-            <div className="px-4 py-1.5 text-xs font-bold text-muted-foreground/70 uppercase tracking-widest bg-muted/30 border-b border-border/50">
+            <div className="px-4 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-border/50">
               {config.icon} {config.label}
             </div>
 
@@ -168,9 +171,10 @@ function IssueListPanel({
                   onClick={() => onSelect(idx)}
                   className={[
                     "w-full text-left px-4 py-2.5 border-b border-border/50 flex items-start gap-2.5 transition-colors",
+                    // Active: pkm-50 bg + pkm-600 left border — konsisten dengan PKM brand color
                     isActive
-                      ? "bg-blue-50 border-l-2 border-l-blue-500"
-                      : "hover:bg-muted/40",
+                      ? "bg-pkm-50 border-l-2 border-l-pkm-600"
+                      : "hover:bg-gray-50",
                   ].join(" ")}
                 >
                   <div
@@ -178,7 +182,7 @@ function IssueListPanel({
                       "shrink-0 size-4 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5",
                       isError
                         ? "bg-red-100 text-red-700"
-                        : "bg-yellow-100 text-yellow-700",
+                        : "bg-amber-100 text-amber-700",
                     ].join(" ")}
                   >
                     {isError ? "!" : "i"}
@@ -195,7 +199,7 @@ function IssueListPanel({
                         "shrink-0 text-xs font-semibold px-1.5 py-0.5 rounded-full",
                         isError
                           ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700",
+                          : "bg-amber-100 text-amber-700",
                       ].join(" ")}
                     >
                       {issue.occurrences!.length}×
@@ -212,13 +216,10 @@ function IssueListPanel({
 }
 
 // LocationPanel: panel kanan menampilkan detail lokasi masalah yang dipilih.
-// Jika `issue` null (belum ada yang diklik), tampilkan empty state.
-// Jika issue punya occurrences, tampilkan OccurrenceCard per lokasi.
-// Jika tidak punya occurrences (masalah level dokumen), tampilkan info actual/expected saja.
 function LocationPanel({ issue }: { issue: ValidationIssue | null }) {
   if (!issue) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[300px] text-muted-foreground bg-muted/20">
+      <div className="flex flex-col items-center justify-center min-h-[300px] text-muted-foreground bg-gray-50">
         <FileTextIcon className="size-8 mb-3 opacity-30" />
         <p className="text-sm">Klik salah satu masalah di kiri untuk melihat lokasi</p>
       </div>
@@ -228,7 +229,7 @@ function LocationPanel({ issue }: { issue: ValidationIssue | null }) {
   const occurrences = issue.occurrences ?? []
 
   return (
-    <div className="overflow-y-auto bg-muted/10">
+    <div className="overflow-y-auto bg-gray-50/50">
       <div className="px-5 py-3 border-b border-border bg-white sticky top-0">
         <p className="text-sm font-semibold">
           {issue.field ?? issue.category}
@@ -243,7 +244,9 @@ function LocationPanel({ issue }: { issue: ValidationIssue | null }) {
 
       <div className="p-4 space-y-3">
         {occurrences.length > 0 ? (
-          occurrences.map((occ, i) => <OccurrenceCard key={i} occ={occ} />)
+          occurrences.map((occ, i) => (
+            <OccurrenceCard key={`${occ.page}-${occ.para_idx}-${i}`} occ={occ} />
+          ))
         ) : (
           <div className="rounded-lg border border-border bg-white p-4">
             <p className="text-sm text-muted-foreground">
@@ -252,13 +255,13 @@ function LocationPanel({ issue }: { issue: ValidationIssue | null }) {
             {(issue.expected || issue.actual) && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {issue.actual && (
-                  <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">
-                    ❌ Ditemukan: {issue.actual}
+                  <span className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded">
+                    Ditemukan: {issue.actual}
                   </span>
                 )}
                 {issue.expected && (
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
-                    ✓ Harus: {issue.expected}
+                  <span className="text-xs bg-pkm-50 text-pkm-700 px-2 py-0.5 rounded">
+                    Harus: {issue.expected}
                   </span>
                 )}
               </div>
@@ -271,7 +274,6 @@ function LocationPanel({ issue }: { issue: ValidationIssue | null }) {
 }
 
 // Komponen utama halaman validasi.
-// Mengelola state upload, proses validasi, dan state UI (masalah yang dipilih di panel kiri).
 export function DocumentValidator() {
   const [selectedSchemaId, setSelectedSchemaId] = useState<string>("")
   const [selectedYear, setSelectedYear]         = useState<string>("")
@@ -279,8 +281,6 @@ export function DocumentValidator() {
   const [loading, setLoading]                   = useState(false)
   const [result, setResult]                     = useState<ValidationResult | null>(null)
   const [error, setError]                       = useState<string | null>(null)
-  // selectedIssueIdx: index masalah di allIssues yang sedang diklik di panel kiri.
-  // null = belum ada yang dipilih (panel kanan menampilkan empty state).
   const [selectedIssueIdx, setSelectedIssueIdx] = useState<number | null>(null)
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -348,7 +348,6 @@ export function DocumentValidator() {
     setSelectedIssueIdx(null)
   }
 
-  // allIssues: flat list semua masalah — dipakai untuk index-based selection antara panel kiri dan kanan
   const allIssues = result?.issues ?? []
 
   return (
@@ -477,13 +476,13 @@ export function DocumentValidator() {
       {/* Hasil validasi */}
       {result && (
         <>
-          {/* Alert status overall */}
+          {/* Alert status — valid: pkm-50/100 (brand green), invalid: destructive */}
           <div className="px-6 pb-4">
             {result.valid ? (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircleIcon className="size-4 text-green-600" />
-                <AlertTitle className="text-green-800">Dokumen Valid</AlertTitle>
-                <AlertDescription className="text-green-700">
+              <Alert className="border-pkm-100 bg-pkm-50">
+                <CheckCircleIcon className="size-4 text-pkm-600" />
+                <AlertTitle className="text-pkm-900">Dokumen Valid</AlertTitle>
+                <AlertDescription className="text-pkm-700">
                   Dokumen proposal telah memenuhi semua persyaratan format.
                   {result.summary && (
                     <span className="ml-1">

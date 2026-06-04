@@ -122,13 +122,13 @@ function OccurrenceCard({
             {occ.actual && (
               <span className="inline-flex items-center gap-1.5 text-xs bg-red-50 text-red-700 px-2.5 py-1 rounded-md border border-red-100">
                 <span className="size-1.5 rounded-full bg-red-400 shrink-0" />
-                {occ.actual}
+                <span className="font-medium">Ditemukan:</span>&nbsp;{occ.actual}
               </span>
             )}
             {occ.expected && (
               <span className="inline-flex items-center gap-1.5 text-xs bg-pkm-50 text-pkm-700 px-2.5 py-1 rounded-md border border-pkm-100">
                 <span className="size-1.5 rounded-full bg-pkm-400 shrink-0" />
-                {occ.expected}
+                <span className="font-medium">Seharusnya:</span>&nbsp;{occ.expected}
               </span>
             )}
           </div>
@@ -293,13 +293,13 @@ function LocationPanel({ issue }: { issue: ValidationIssue | null }) {
                 {issue.actual && (
                   <span className="inline-flex items-center gap-1.5 text-xs bg-red-50 text-red-700 px-2.5 py-1 rounded-md border border-red-100">
                     <span className="size-1.5 rounded-full bg-red-400 shrink-0" />
-                    {issue.actual}
+                    <span className="font-medium">Ditemukan:</span>&nbsp;{issue.actual}
                   </span>
                 )}
                 {issue.expected && (
                   <span className="inline-flex items-center gap-1.5 text-xs bg-pkm-50 text-pkm-700 px-2.5 py-1 rounded-md border border-pkm-100">
                     <span className="size-1.5 rounded-full bg-pkm-400 shrink-0" />
-                    {issue.expected}
+                    <span className="font-medium">Seharusnya:</span>&nbsp;{issue.expected}
                   </span>
                 )}
               </div>

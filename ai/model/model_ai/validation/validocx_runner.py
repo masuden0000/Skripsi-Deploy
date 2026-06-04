@@ -128,8 +128,14 @@ def _build_occurrences(
 
 def _build_issues_checks(
     report: dict,
+    known_styles: list[str] | None = None,
 ) -> tuple[list[ValidationIssue], list[ValidationCheckResult]]:
-    """Konversi report dict dari build_report ke issues + checks."""
+    """Konversi report dict dari build_report ke issues + checks.
+
+    known_styles: daftar style yang terdaftar di requirements (mis. ['Normal', 'Heading 1', ...]).
+                  Jika diberikan, dipakai sebagai nilai 'expected' untuk warning undefined_style
+                  supaya user tahu style mana yang seharusnya dipakai.
+    """
     issues: list[ValidationIssue] = []
     checks: list[ValidationCheckResult] = []
 
@@ -207,6 +213,11 @@ def _build_issues_checks(
         ))
 
     # ── Undefined styles ─────────────────────────────────────────────────────
+    # Bentuk label "Seharusnya" secara dinamis dari daftar style yang dikenali requirements.
+    # Jika known_styles tersedia (mis. ["Normal", "Heading 1", "Heading 2", "Heading 3"]),
+    # tampilkan sebagai pilihan style yang valid. Jika tidak ada, biarkan None.
+    known_styles_label = ", ".join(known_styles) if known_styles else None
+
     for item in report["warnings"].get("undefined_styles", []):
         style = item.get("style", "?")
         count = item.get("count", 1)
@@ -214,7 +225,7 @@ def _build_issues_checks(
         msg = f"Style tidak terdefinisi di requirements: '{style}' ({count}x paragraf)"
 
         valid_paras = paras if isinstance(paras, list) and paras and isinstance(paras[0], dict) else []
-        occurrences = _build_occurrences(valid_paras, actual_str=style, expected_str=None) or None
+        occurrences = _build_occurrences(valid_paras, actual_str=style, expected_str=known_styles_label) or None
 
         issues.append(ValidationIssue(
             category="typography", field="undefined_style",
@@ -1208,7 +1219,12 @@ def run_validocx(
     entries = parse_entries(log_text)
     report = build_report(entries, docx_path=str(path))
 
-    issues, checks = _build_issues_checks(report)
+    # Ekstrak daftar style yang dikenali dari requirements untuk ditampilkan
+    # sebagai nilai "Seharusnya" pada warning undefined_style.
+    # Contoh hasil: ["Normal", "Heading 1", "Heading 2", "Heading 3"]
+    known_styles = list(requirements.get("styles", {}).keys())
+
+    issues, checks = _build_issues_checks(report, known_styles=known_styles)
     case_issues, case_checks = _check_heading_case(path, metadata)
     struct_issues, struct_checks = _check_document_structure(path, metadata)
     fig_issues, fig_checks = _check_figures_tables(path, metadata)

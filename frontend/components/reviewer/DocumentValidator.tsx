@@ -27,108 +27,111 @@ import {
 import { PKM_SCHEMES } from "@/lib/constants/pkm-schemes"
 import { YearPicker } from "@/components/ui/year-picker"
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024
 
-// Konfigurasi label dan ikon per kategori masalah validasi.
-// Kategori ini sama dengan yang dikirim oleh backend (typography, page_layout, dst.)
-const CATEGORY_CONFIG: Record<string, { label: string; icon: string }> = {
-  typography        : { label: "Typography",       icon: "🔤" },
-  page_layout       : { label: "Page Layout",      icon: "📐" },
-  spacing           : { label: "Spacing",          icon: "↕"  },
-  document_structure: { label: "Struktur Dokumen", icon: "📋" },
-  numbering         : { label: "Penomoran",        icon: "🔢" },
-  figures_tables    : { label: "Gambar & Tabel",   icon: "📊" },
+const CATEGORY_CONFIG: Record<string, string> = {
+  typography        : "Typography",
+  page_layout       : "Page Layout",
+  spacing           : "Spacing",
+  document_structure: "Struktur Dokumen",
+  numbering         : "Penomoran",
+  figures_tables    : "Gambar & Tabel",
 }
 
-// SummaryBar: empat kotak angka ringkasan di atas dua panel.
-// Warna: red = error, amber = peringatan, pkm-600 = lulus (PKM brand), gray = dilewati
+// ── SummaryBar ───────────────────────────────────────────────────────────────
 function SummaryBar({ result }: { result: ValidationResult }) {
   const errors   = result.issues?.filter((i) => i.severity === "error").length   ?? 0
   const warnings = result.issues?.filter((i) => i.severity === "warning").length ?? 0
-
-  const items = [
-    { count: errors,                                                             label: "Error",      color: "text-red-600"   },
-    { count: warnings,                                                           label: "Peringatan", color: "text-amber-600" },
-    { count: result.summary?.passed ?? 0,                                       label: "Lulus",      color: "text-pkm-600"   },
-    { count: result.issues?.filter((i) => i.severity === "info").length ?? 0,  label: "Dilewati",   color: "text-gray-400"  },
-  ]
+  const passed   = result.summary?.passed ?? 0
+  const skipped  = result.issues?.filter((i) => i.severity === "info").length ?? 0
 
   return (
-    <div className="grid grid-cols-4 border-t border-border">
-      {items.map(({ count, label, color }, i) => (
-        <div
-          key={label}
-          className={[
-            "flex flex-col items-center py-3",
-            i < items.length - 1 ? "border-r border-border" : "",
-          ].join(" ")}
-        >
-          <span className={`text-2xl font-bold ${color}`}>{count}</span>
-          <span className="text-xs text-muted-foreground mt-0.5">{label}</span>
+    <div className="grid grid-cols-4 divide-x divide-border border-t border-border">
+      {[
+        { count: errors,   label: "Error",      num: "text-red-600",  bg: "bg-red-50"   },
+        { count: warnings, label: "Peringatan", num: "text-amber-600", bg: "bg-amber-50" },
+        { count: passed,   label: "Lulus",      num: "text-pkm-600",  bg: "bg-pkm-50"   },
+        { count: skipped,  label: "Dilewati",   num: "text-gray-400", bg: ""            },
+      ].map(({ count, label, num, bg }) => (
+        <div key={label} className={`flex flex-col items-center py-4 ${bg}`}>
+          <span className={`text-2xl font-bold tabular-nums ${num}`}>{count}</span>
+          <span className="mt-0.5 text-[11px] font-medium text-gray-400 uppercase tracking-wide">{label}</span>
         </div>
       ))}
     </div>
   )
 }
 
-// OccurrenceCard: satu kartu = satu lokasi spesifik sebuah masalah.
-// Menampilkan nomor halaman, nama BAB, nomor paragraf, cuplikan teks,
-// dan badge untuk nilai salah vs nilai yang seharusnya.
-function OccurrenceCard({ occ }: { occ: ValidationOccurrence }) {
+// ── OccurrenceCard ───────────────────────────────────────────────────────────
+function OccurrenceCard({
+  occ,
+  severity,
+}: {
+  occ: ValidationOccurrence
+  severity?: string
+}) {
+  const accentColor = severity === "error" ? "border-l-red-300" : "border-l-amber-300"
+
   return (
-    <div className="rounded-lg border border-border bg-white p-3 space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
-        {/* Halaman: gray netral — label lokasi bukan status */}
+    <div className={`rounded-lg border border-border bg-white border-l-4 ${accentColor} overflow-hidden`}>
+      {/* Metadata row */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 bg-gray-50/60 border-b border-border/50">
         {occ.page != null && (
-          <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+          <span className="text-[11px] font-medium text-gray-500">
             Halaman {occ.page}
           </span>
         )}
-        {/* BAB: pkm-100/700 — identitas struktur dokumen pakai PKM brand */}
         {occ.bab && (
-          <span className="text-xs font-medium bg-pkm-100 text-pkm-700 px-2 py-0.5 rounded">
-            {occ.bab}
-          </span>
+          <>
+            <span className="text-gray-300 text-xs">·</span>
+            <span className="text-[11px] font-semibold text-pkm-700 bg-pkm-100 px-2 py-0.5 rounded-full">
+              {occ.bab}
+            </span>
+          </>
         )}
         {occ.para_idx != null && (
-          <span className="text-xs text-muted-foreground">
-            Paragraf ke-{occ.para_idx + 1}
-          </span>
+          <>
+            <span className="text-gray-300 text-xs">·</span>
+            <span className="text-[11px] text-gray-500">Paragraf ke-{occ.para_idx + 1}</span>
+          </>
         )}
         {occ.style && (
-          <span className="text-xs text-muted-foreground">· Style: {occ.style}</span>
+          <>
+            <span className="text-gray-300 text-xs">·</span>
+            <span className="text-[11px] text-gray-400">{occ.style}</span>
+          </>
         )}
       </div>
 
-      {/* Cuplikan teks: bg-gray-50 konsisten dengan pola inset area di komponen lain */}
-      {occ.text && (
-        <p className="text-xs italic text-gray-600 bg-gray-50 px-3 py-2 rounded border-l-2 border-gray-200">
-          &ldquo;{occ.text}&rdquo;
-        </p>
-      )}
-
-      {/* Badge nilai: merah = ditemukan (salah), pkm = harus (benar) */}
-      {(occ.actual || occ.expected) && (
-        <div className="flex flex-wrap gap-2">
-          {occ.actual && (
-            <span className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded">
-              Ditemukan: {occ.actual}
-            </span>
-          )}
-          {occ.expected && (
-            <span className="text-xs bg-pkm-50 text-pkm-700 px-2 py-0.5 rounded">
-              Harus: {occ.expected}
-            </span>
-          )}
-        </div>
-      )}
+      {/* Body */}
+      <div className="px-4 py-3 space-y-2.5">
+        {occ.text && (
+          <p className="text-xs text-gray-600 italic leading-relaxed border-l-2 border-gray-200 pl-3">
+            &ldquo;{occ.text}&rdquo;
+          </p>
+        )}
+        {(occ.actual || occ.expected) && (
+          <div className="flex flex-wrap gap-2 pt-0.5">
+            {occ.actual && (
+              <span className="inline-flex items-center gap-1.5 text-xs bg-red-50 text-red-700 px-2.5 py-1 rounded-md border border-red-100">
+                <span className="size-1.5 rounded-full bg-red-400 shrink-0" />
+                {occ.actual}
+              </span>
+            )}
+            {occ.expected && (
+              <span className="inline-flex items-center gap-1.5 text-xs bg-pkm-50 text-pkm-700 px-2.5 py-1 rounded-md border border-pkm-100">
+                <span className="size-1.5 rounded-full bg-pkm-400 shrink-0" />
+                {occ.expected}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
-// IssueListPanel: panel kiri berisi daftar semua masalah dikelompokkan per kategori.
-// `selectedIdx` adalah index dari allIssues flat list yang sedang aktif.
-// `onSelect` dipanggil saat baris diklik untuk memperbarui selectedIdx.
+// ── IssueListPanel ───────────────────────────────────────────────────────────
 function IssueListPanel({
   issues,
   selectedIdx,
@@ -149,79 +152,95 @@ function IssueListPanel({
   )
 
   return (
-    <div className="border-r border-border overflow-y-auto">
-      <div className="px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 border-b border-border">
-        Detail Masalah ({issues.length})
+    <div className="border-r border-border overflow-y-auto flex flex-col">
+      {/* Panel header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-border sticky top-0 z-10">
+        <span className="text-sm font-semibold text-gray-700">Detail Masalah</span>
+        <span className="text-xs font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+          {issues.length}
+        </span>
       </div>
 
-      {Object.entries(grouped).map(([cat, items]) => {
-        const config = CATEGORY_CONFIG[cat] ?? { label: cat, icon: "•" }
-        return (
-          <div key={cat}>
-            <div className="px-4 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-border/50">
-              {config.icon} {config.label}
-            </div>
+      <div className="flex-1">
+        {Object.entries(grouped).map(([cat, items]) => {
+          const label = CATEGORY_CONFIG[cat] ?? cat
+          return (
+            <div key={cat}>
+              {/* Category divider — subtle, no emoji */}
+              <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border-b border-border/40">
+                <span className="size-1.5 rounded-full bg-gray-300 shrink-0" />
+                <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.07em]">
+                  {label}
+                </span>
+              </div>
 
-            {items.map(({ issue, idx }) => {
-              const isActive = selectedIdx === idx
-              const isError  = issue.severity === "error"
-              return (
-                <button
-                  key={idx}
-                  onClick={() => onSelect(idx)}
-                  className={[
-                    "w-full text-left px-4 py-2.5 border-b border-border/50 flex items-start gap-2.5 transition-colors",
-                    // Active: pkm-50 bg + pkm-600 left border — konsisten dengan PKM brand color
-                    isActive
-                      ? "bg-pkm-50 border-l-2 border-l-pkm-600"
-                      : "hover:bg-gray-50",
-                  ].join(" ")}
-                >
-                  <div
+              {items.map(({ issue, idx }) => {
+                const isActive = selectedIdx === idx
+                const isError  = issue.severity === "error"
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => onSelect(idx)}
                     className={[
-                      "shrink-0 size-4 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5",
-                      isError
-                        ? "bg-red-100 text-red-700"
-                        : "bg-amber-100 text-amber-700",
+                      "w-full text-left px-4 py-3 border-b border-border/40 flex items-start gap-3 transition-colors duration-100",
+                      isActive
+                        ? "bg-pkm-50 border-l-[3px] border-l-pkm-600"
+                        : "hover:bg-gray-50/80 border-l-[3px] border-l-transparent",
                     ].join(" ")}
                   >
-                    {isError ? "!" : "i"}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{issue.field ?? issue.category}</p>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">{issue.message}</p>
-                  </div>
-
-                  {(issue.occurrences?.length ?? 0) > 0 && (
+                    {/* Severity pill */}
                     <span
                       className={[
-                        "shrink-0 text-xs font-semibold px-1.5 py-0.5 rounded-full",
+                        "shrink-0 mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded",
                         isError
-                          ? "bg-red-100 text-red-700"
-                          : "bg-amber-100 text-amber-700",
+                          ? "bg-red-100 text-red-600"
+                          : "bg-amber-100 text-amber-600",
                       ].join(" ")}
                     >
-                      {issue.occurrences!.length}×
+                      {isError ? "ERR" : "WARN"}
                     </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        )
-      })}
+
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm truncate ${isActive ? "font-semibold text-pkm-900" : "font-medium text-gray-800"}`}>
+                        {issue.field ?? issue.category}
+                      </p>
+                      <p className="text-[11px] text-gray-400 truncate mt-0.5 leading-tight">
+                        {issue.message}
+                      </p>
+                    </div>
+
+                    {(issue.occurrences?.length ?? 0) > 0 && (
+                      <span
+                        className={[
+                          "shrink-0 text-[11px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums",
+                          isError
+                            ? "bg-red-100 text-red-600"
+                            : "bg-amber-100 text-amber-600",
+                        ].join(" ")}
+                      >
+                        {issue.occurrences!.length}×
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
 
-// LocationPanel: panel kanan menampilkan detail lokasi masalah yang dipilih.
+// ── LocationPanel ────────────────────────────────────────────────────────────
 function LocationPanel({ issue }: { issue: ValidationIssue | null }) {
   if (!issue) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[300px] text-muted-foreground bg-gray-50">
-        <FileTextIcon className="size-8 mb-3 opacity-30" />
-        <p className="text-sm">Klik salah satu masalah di kiri untuk melihat lokasi</p>
+      <div className="flex flex-col items-center justify-center min-h-[320px] bg-gray-50/60 gap-3">
+        <div className="size-10 rounded-full bg-gray-100 flex items-center justify-center">
+          <FileTextIcon className="size-5 text-gray-300" />
+        </div>
+        <p className="text-sm text-gray-400">Pilih masalah di kiri untuk melihat lokasi</p>
       </div>
     )
   }
@@ -229,39 +248,51 @@ function LocationPanel({ issue }: { issue: ValidationIssue | null }) {
   const occurrences = issue.occurrences ?? []
 
   return (
-    <div className="overflow-y-auto bg-gray-50/50">
-      <div className="px-5 py-3 border-b border-border bg-white sticky top-0">
-        <p className="text-sm font-semibold">
-          {issue.field ?? issue.category}
+    <div className="flex flex-col overflow-y-auto">
+      {/* Sticky header */}
+      <div className="px-5 py-3.5 border-b border-border bg-white sticky top-0 z-10">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-gray-800 truncate">
+              {issue.field ?? issue.category}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{issue.message}</p>
+          </div>
           {occurrences.length > 0 && (
-            <span className="ml-2 text-xs font-normal text-muted-foreground">
-              — {occurrences.length} lokasi ditemukan
+            <span className="shrink-0 text-xs font-medium text-pkm-700 bg-pkm-100 px-2.5 py-1 rounded-full whitespace-nowrap">
+              {occurrences.length} lokasi
             </span>
           )}
-        </p>
-        <p className="text-xs text-muted-foreground mt-0.5">{issue.message}</p>
+        </div>
       </div>
 
-      <div className="p-4 space-y-3">
+      {/* Content */}
+      <div className="flex-1 p-4 space-y-3 bg-gray-50/40">
         {occurrences.length > 0 ? (
           occurrences.map((occ, i) => (
-            <OccurrenceCard key={`${occ.page}-${occ.para_idx}-${i}`} occ={occ} />
+            <OccurrenceCard
+              key={`${occ.page}-${occ.para_idx}-${i}`}
+              occ={occ}
+              severity={issue.severity}
+            />
           ))
         ) : (
           <div className="rounded-lg border border-border bg-white p-4">
-            <p className="text-sm text-muted-foreground">
-              Masalah ini berlaku untuk seluruh dokumen, bukan paragraf tertentu.
+            <p className="text-sm text-gray-500">
+              Masalah ini berlaku untuk seluruh dokumen, bukan pada paragraf tertentu.
             </p>
             {(issue.expected || issue.actual) && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {issue.actual && (
-                  <span className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded">
-                    Ditemukan: {issue.actual}
+                  <span className="inline-flex items-center gap-1.5 text-xs bg-red-50 text-red-700 px-2.5 py-1 rounded-md border border-red-100">
+                    <span className="size-1.5 rounded-full bg-red-400 shrink-0" />
+                    {issue.actual}
                   </span>
                 )}
                 {issue.expected && (
-                  <span className="text-xs bg-pkm-50 text-pkm-700 px-2 py-0.5 rounded">
-                    Harus: {issue.expected}
+                  <span className="inline-flex items-center gap-1.5 text-xs bg-pkm-50 text-pkm-700 px-2.5 py-1 rounded-md border border-pkm-100">
+                    <span className="size-1.5 rounded-full bg-pkm-400 shrink-0" />
+                    {issue.expected}
                   </span>
                 )}
               </div>
@@ -273,7 +304,7 @@ function LocationPanel({ issue }: { issue: ValidationIssue | null }) {
   )
 }
 
-// Komponen utama halaman validasi.
+// ── DocumentValidator (komponen utama) ───────────────────────────────────────
 export function DocumentValidator() {
   const [selectedSchemaId, setSelectedSchemaId] = useState<string>("")
   const [selectedYear, setSelectedYear]         = useState<string>("")
@@ -360,7 +391,7 @@ export function DocumentValidator() {
         </h3>
       </div>
 
-      {/* Form upload */}
+      {/* Form */}
       <div className="px-6 pb-6 space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -370,23 +401,15 @@ export function DocumentValidator() {
                 <SelectValue placeholder="Pilih jenis PKM" />
               </SelectTrigger>
               <SelectContent>
-                {PKM_SCHEMES.map((schema) => (
-                  <SelectItem key={schema.value} value={schema.value}>
-                    {schema.label}
-                  </SelectItem>
+                {PKM_SCHEMES.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-
           <div className="space-y-2">
             <label className="text-sm font-medium">2. Pilih Tahun</label>
-            <YearPicker
-              value={selectedYear}
-              onChange={setSelectedYear}
-              placeholder="Pilih tahun"
-              disabled={loading}
-            />
+            <YearPicker value={selectedYear} onChange={setSelectedYear} placeholder="Pilih tahun" disabled={loading} />
           </div>
         </div>
 
@@ -414,9 +437,7 @@ export function DocumentValidator() {
                 <>
                   <FileTextIcon className="size-8 text-primary mb-2" />
                   <p className="text-sm font-medium">{file.name}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleReset() }}
@@ -428,9 +449,7 @@ export function DocumentValidator() {
               ) : (
                 <>
                   <UploadIcon className="size-8 text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Seret file ke sini atau klik untuk memilih
-                  </p>
+                  <p className="text-sm text-muted-foreground">Seret file ke sini atau klik untuk memilih</p>
                   <p className="text-xs text-muted-foreground mt-1">Format: DOCX, maks 10MB</p>
                 </>
               )}
@@ -445,23 +464,12 @@ export function DocumentValidator() {
             className="flex-1 sm:flex-none"
           >
             {loading ? (
-              <>
-                <Loader2Icon className="size-4 animate-spin" />
-                <span>Memvalidasi...</span>
-              </>
+              <><Loader2Icon className="size-4 animate-spin" /><span>Memvalidasi...</span></>
             ) : (
-              <>
-                <CheckCircleIcon className="size-4" />
-                <span>Validasi Dokumen</span>
-              </>
+              <><CheckCircleIcon className="size-4" /><span>Validasi Dokumen</span></>
             )}
           </Button>
-
-          {result && (
-            <Button variant="outline" onClick={handleReset}>
-              Reset
-            </Button>
-          )}
+          {result && <Button variant="outline" onClick={handleReset}>Reset</Button>}
         </div>
 
         {error && (
@@ -476,18 +484,15 @@ export function DocumentValidator() {
       {/* Hasil validasi */}
       {result && (
         <>
-          {/* Alert status — valid: pkm-50/100 (brand green), invalid: destructive */}
           <div className="px-6 pb-4">
             {result.valid ? (
               <Alert className="border-pkm-100 bg-pkm-50">
                 <CheckCircleIcon className="size-4 text-pkm-600" />
                 <AlertTitle className="text-pkm-900">Dokumen Valid</AlertTitle>
                 <AlertDescription className="text-pkm-700">
-                  Dokumen proposal telah memenuhi semua persyaratan format.
+                  Semua persyaratan format terpenuhi.
                   {result.summary && (
-                    <span className="ml-1">
-                      ({result.summary.passed ?? 0} dari {result.summary.total_checks ?? 0} pemeriksaan lulus)
-                    </span>
+                    <span className="ml-1">({result.summary.passed ?? 0} dari {result.summary.total_checks ?? 0} pemeriksaan lulus)</span>
                   )}
                 </AlertDescription>
               </Alert>
@@ -503,11 +508,10 @@ export function DocumentValidator() {
             )}
           </div>
 
-          {/* Summary bar + dua panel */}
           {allIssues.length > 0 && (
             <div className="border-t border-border">
               <SummaryBar result={result} />
-              <div className="grid grid-cols-[320px_1fr] border-t border-border min-h-[360px] max-h-[600px]">
+              <div className="grid grid-cols-[300px_1fr] border-t border-border" style={{ minHeight: 400, maxHeight: 600 }}>
                 <IssueListPanel
                   issues={allIssues}
                   selectedIdx={selectedIssueIdx}

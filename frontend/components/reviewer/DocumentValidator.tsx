@@ -530,7 +530,7 @@ export function DocumentValidator() {
           {allIssues.length > 0 && (
             <div className="border-t border-border">
               <SummaryBar result={result} />
-              <div className="grid grid-cols-[300px_1fr] border-t border-border" style={{ minHeight: 400, maxHeight: 680 }}>
+              <div className="grid grid-cols-[300px_1fr] border-t border-border overflow-hidden" style={{ height: 680 }}>
                 <IssueListPanel
                   issues={allIssues}
                   selectedIdx={selectedIssueIdx}

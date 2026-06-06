@@ -926,7 +926,7 @@ def _render_item_lampiran_section(
     heading.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     _force_paragraph_runs_black(heading)
     bm_id = _bookmark_id("lampiran")
-    bm_name = _bookmark_name("lampiran", lampiran_number)
+    bm_name = _bookmark_name("lampiran", lampiran_number_raw)
     _add_bookmark_to_paragraph(heading, bm_id, bm_name)
 
     note = document.add_paragraph(_SECTION_DELETE_NOTE)

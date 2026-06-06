@@ -64,6 +64,15 @@ async def create_project(
         is_update = True
         project_id = existing.data[0]["id"]
 
+        # Hapus file lama dari storage agar upload baru tidak terkena error Duplicate
+        if file:
+            old_source_file = existing.data[0].get("source_file")
+            if old_source_file:
+                try:
+                    await delete_file(BUCKET_SOURCE, f"{project_id}/{old_source_file}")
+                except Exception:
+                    pass
+
         # Reset status to pending if it's completed or failed (allow re-run)
         current_status = existing.data[0].get("status", "")
         if current_status in ("completed", "failed", "completed_with_errors"):

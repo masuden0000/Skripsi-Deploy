@@ -379,65 +379,30 @@ export default function ProposalDocumentPage() {
     setLogs([])
 
     try {
-      // Step 1: Create project and get signed upload URL
-      setUploadProgress(10)
+      // Upload file beserta metadata ke backend — backend meneruskan ke AI backend,
+      // AI backend menyimpan file ke Supabase Storage dan memulai pipeline secara otomatis.
+      setUploadProgress(20)
+
       const formData = new FormData()
       formData.append("skema", skema)
       formData.append("tahun", tahun)
-      formData.append("file_name", selectedFile.name)
+      formData.append("file", selectedFile)
 
       const response = await fetch("/api/projects", {
-        method: "PUT",
+        method: "POST",
         body: formData,
       })
 
-      setUploadProgress(20)
+      setUploadProgress(80)
 
       if (!response.ok) {
         const errorText = await response.text()
         throw new Error(errorText || "Gagal membuat project")
       }
 
-      const data = await response.json()
-      const { project_id, signed_url } = data.data
-
-      if (!signed_url) {
-        throw new Error("Tidak dapat membuat signed URL")
-      }
-
-      // Step 2: Upload file directly to Supabase Storage using signed URL
-      setUploadProgress(40)
-
-      const uploadResponse = await fetch(signed_url, {
-        method: "PUT",
-        body: selectedFile,
-        headers: {
-          "Content-Type": selectedFile.type || "application/octet-stream",
-        },
-      })
-
-      if (!uploadResponse.ok) {
-        throw new Error("Gagal upload file ke Supabase Storage")
-      }
-
-      setUploadProgress(75)
-
-      // Step 3: Confirm upload so AI backend starts the pipeline
-      const confirmResponse = await fetch("/api/projects/confirm-upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id, file_name: selectedFile.name }),
-      })
-
-      setUploadProgress(90)
-
-      if (!confirmResponse.ok) {
-        const errorText = await confirmResponse.text()
-        throw new Error(errorText || "Gagal mengonfirmasi upload file")
-      }
-
-      const confirmData: ProjectResponse = await confirmResponse.json()
-      const confirmedProject = confirmData.data
+      const data: ProjectResponse = await response.json()
+      const project = data.data
+      const project_id = project.id
 
       // Initialize result state — store since_id so SSE & restore only show this run's logs
       localStorage.setItem(RUN_SINCE_KEY, String(runSinceId))
@@ -446,14 +411,14 @@ export default function ProposalDocumentPage() {
       setCurrentProjectId(project_id)
       setResult({
         projectId: project_id,
-        fileName: confirmedProject.source_file ?? selectedFile.name,
-        skema: getPkmSchemeLabel(confirmedProject.skema),
-        tahun: confirmedProject.tahun,
-        sourceUrl: confirmedProject.source_url,
-        resultUrl: confirmedProject.result_url,
-        status: confirmedProject.status,
-        errorMessage: confirmedProject.error_message,
-        createdAt: confirmedProject.created_at,
+        fileName: project.source_file ?? selectedFile.name,
+        skema: getPkmSchemeLabel(project.skema),
+        tahun: project.tahun,
+        sourceUrl: project.source_url,
+        resultUrl: project.result_url,
+        status: project.status,
+        errorMessage: project.error_message,
+        createdAt: project.created_at,
       })
 
       setUploadProgress(100)

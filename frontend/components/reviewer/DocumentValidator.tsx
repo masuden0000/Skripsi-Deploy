@@ -37,6 +37,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   document_structure: "Struktur Dokumen",
   numbering         : "Penomoran",
   figures_tables    : "Gambar & Tabel",
+  page_count        : "Jumlah Halaman",
 }
 
 // Peta nama field teknis (dari backend) → label Indonesia yang ramah dibaca.

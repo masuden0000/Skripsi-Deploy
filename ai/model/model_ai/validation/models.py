@@ -12,6 +12,7 @@ VALIDATION_CATEGORIES = (
     "document_structure",
     "numbering",
     "figures_tables",
+    "page_count",
 )
 
 
@@ -25,6 +26,7 @@ class ValidationCheckResult(BaseModel):
         "document_structure",
         "numbering",
         "figures_tables",
+        "page_count",
     ]
     field: str = Field(description="Nama properti yang dicek")
     status: Literal["passed", "failed", "warning", "skipped"] = Field(
@@ -54,6 +56,7 @@ class ValidationIssue(BaseModel):
         "document_structure",
         "numbering",
         "figures_tables",
+        "page_count",
     ] = Field(
         description="Category of the validation issue"
     )

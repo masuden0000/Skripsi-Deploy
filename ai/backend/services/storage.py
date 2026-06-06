@@ -35,11 +35,22 @@ async def upload_file(bucket_name: str, file_content: bytes, file_name: str, pro
     try:
         client = get_supabase_client()
         storage_path = f"{project_id}/{file_name}"
-        client.storage.from_(bucket_name).upload(
-            path=storage_path,
-            file=file_content,
-            file_options={"content-type": "application/octet-stream"}
-        )
+        try:
+            client.storage.from_(bucket_name).upload(
+                path=storage_path,
+                file=file_content,
+                file_options={"content-type": "application/octet-stream"}
+            )
+        except Exception as e:
+            if "Duplicate" in str(e) or "already exists" in str(e):
+                client.storage.from_(bucket_name).remove([storage_path])
+                client.storage.from_(bucket_name).upload(
+                    path=storage_path,
+                    file=file_content,
+                    file_options={"content-type": "application/octet-stream"}
+                )
+            else:
+                raise
         public_url = client.storage.from_(bucket_name).get_public_url(storage_path)
         return public_url
     except Exception as e:

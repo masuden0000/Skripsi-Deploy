@@ -1,300 +1,371 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<mxGraphModel dx="1422" dy="762" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1160" pageHeight="1300" math="0" shadow="0">
-  <root>
-    <mxCell id="0" />
-    <mxCell id="1" parent="0" />
-
-    <!-- ======================================================== -->
-    <!-- PARTICIPANT HEADERS                                       -->
-    <!-- Skema warna: fill=#f5f5f5, stroke=#555555, text=hitam    -->
-    <!-- ======================================================== -->
-
-    <mxCell id="h_admin" value="Admin" style="shape=umlActor;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#555555;fontStyle=1;fontSize=11;verticalLabelPosition=bottom;verticalAlign=top;fontColor=#000000;" vertex="1" parent="1">
-      <mxGeometry x="30" y="16" width="50" height="60" as="geometry" />
-    </mxCell>
-    <mxCell id="h_fe" value=":Frontend" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#555555;fontStyle=1;fontSize=11;fontColor=#000000;" vertex="1" parent="1">
-      <mxGeometry x="160" y="30" width="110" height="40" as="geometry" />
-    </mxCell>
-    <mxCell id="h_be" value=":Backend" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#555555;fontStyle=1;fontSize=11;fontColor=#000000;" vertex="1" parent="1">
-      <mxGeometry x="330" y="30" width="110" height="40" as="geometry" />
-    </mxCell>
-    <mxCell id="h_pl" value=":AI Backend" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#555555;fontStyle=1;fontSize=11;fontColor=#000000;" vertex="1" parent="1">
-      <mxGeometry x="500" y="30" width="110" height="40" as="geometry" />
-    </mxCell>
-    <mxCell id="h_mg" value=":Model" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#555555;fontStyle=1;fontSize=11;fontColor=#000000;" vertex="1" parent="1">
-      <mxGeometry x="670" y="30" width="110" height="40" as="geometry" />
-    </mxCell>
-    <mxCell id="h_sb" value=":Supabase" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#555555;fontStyle=1;fontSize=11;fontColor=#000000;" vertex="1" parent="1">
-      <mxGeometry x="845" y="30" width="120" height="40" as="geometry" />
-    </mxCell>
-
-    <!-- ======================================================== -->
-    <!-- LIFELINES                                                 -->
-    <!-- ======================================================== -->
-    <mxCell id="ll1" value="" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="90" as="sourcePoint"/><mxPoint x="55" y="1270" as="targetPoint"/></mxGeometry>
-    </mxCell>
-    <mxCell id="ll2" value="" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="70" as="sourcePoint"/><mxPoint x="215" y="1270" as="targetPoint"/></mxGeometry>
-    </mxCell>
-    <mxCell id="ll3" value="" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="70" as="sourcePoint"/><mxPoint x="385" y="1270" as="targetPoint"/></mxGeometry>
-    </mxCell>
-    <mxCell id="ll4" value="" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="70" as="sourcePoint"/><mxPoint x="555" y="1270" as="targetPoint"/></mxGeometry>
-    </mxCell>
-    <mxCell id="ll5" value="" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="725" y="70" as="sourcePoint"/><mxPoint x="725" y="1270" as="targetPoint"/></mxGeometry>
-    </mxCell>
-    <mxCell id="ll6" value="" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="70" as="sourcePoint"/><mxPoint x="905" y="1270" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <!-- ======================================================== -->
-    <!-- ACTIVATION BARS                                          -->
-    <!-- Semua seragam: fill=#e0e0e0, stroke=#666666             -->
-    <!-- ======================================================== -->
-
-    <mxCell id="ab_fe1" value="" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" vertex="1" parent="1">
-      <mxGeometry x="210" y="200" width="10" height="200" as="geometry" />
-    </mxCell>
-    <mxCell id="ab_be1" value="" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" vertex="1" parent="1">
-      <mxGeometry x="380" y="200" width="10" height="200" as="geometry" />
-    </mxCell>
-    <mxCell id="ab_pl" value="" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" vertex="1" parent="1">
-      <mxGeometry x="550" y="372" width="10" height="680" as="geometry" />
-    </mxCell>
-    <mxCell id="ab_mg1" value="" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" vertex="1" parent="1">
-      <mxGeometry x="720" y="504" width="10" height="32" as="geometry" />
-    </mxCell>
-    <mxCell id="ab_mg2" value="" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" vertex="1" parent="1">
-      <mxGeometry x="720" y="540" width="10" height="32" as="geometry" />
-    </mxCell>
-    <mxCell id="ab_mg3" value="" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" vertex="1" parent="1">
-      <mxGeometry x="720" y="576" width="10" height="32" as="geometry" />
-    </mxCell>
-    <mxCell id="ab_mg4" value="" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" vertex="1" parent="1">
-      <mxGeometry x="720" y="1016" width="10" height="36" as="geometry" />
-    </mxCell>
-    <mxCell id="ab_fe2" value="" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" vertex="1" parent="1">
-      <mxGeometry x="210" y="680" width="10" height="408" as="geometry" />
-    </mxCell>
-    <mxCell id="ab_be2" value="" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" vertex="1" parent="1">
-      <mxGeometry x="380" y="928" width="10" height="52" as="geometry" />
-    </mxCell>
-    <mxCell id="ab_fe3" value="" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" vertex="1" parent="1">
-      <mxGeometry x="210" y="1156" width="10" height="64" as="geometry" />
-    </mxCell>
-    <mxCell id="ab_be3" value="" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" vertex="1" parent="1">
-      <mxGeometry x="380" y="1188" width="10" height="32" as="geometry" />
-    </mxCell>
-
-    <!-- ======================================================== -->
-    <!-- LEGENDA PANAH                                            -->
-    <!-- ======================================================== -->
-    <mxCell id="legend_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#aaaaaa;fontSize=9;" vertex="1" parent="1">
-      <mxGeometry x="800" y="88" width="230" height="72" as="geometry" />
-    </mxCell>
-    <mxCell id="legend_title" value="Keterangan Panah" style="text;html=1;align=left;fontSize=9;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
-      <mxGeometry x="808" y="92" width="140" height="14" as="geometry" />
-    </mxCell>
-    <mxCell id="legend_sync_arrow" value="" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="808" y="116" as="sourcePoint"/><mxPoint x="848" y="116" as="targetPoint"/></mxGeometry>
-    </mxCell>
-    <mxCell id="legend_sync_label" value="Pemanggilan sinkron" style="text;html=1;align=left;fontSize=9;fontColor=#333333;" vertex="1" parent="1">
-      <mxGeometry x="854" y="109" width="170" height="14" as="geometry" />
-    </mxCell>
-    <mxCell id="legend_async_arrow" value="" style="endArrow=open;endFill=0;strokeColor=#000000;fontSize=9;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="808" y="134" as="sourcePoint"/><mxPoint x="848" y="134" as="targetPoint"/></mxGeometry>
-    </mxCell>
-    <mxCell id="legend_async_label" value="Pemanggilan asinkron" style="text;html=1;align=left;fontSize=9;fontColor=#333333;" vertex="1" parent="1">
-      <mxGeometry x="854" y="127" width="170" height="14" as="geometry" />
-    </mxCell>
-    <mxCell id="legend_return_arrow" value="" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=9;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="808" y="152" as="sourcePoint"/><mxPoint x="848" y="152" as="targetPoint"/></mxGeometry>
-    </mxCell>
-    <mxCell id="legend_return_label" value="Kembalian / respons" style="text;html=1;align=left;fontSize=9;fontColor=#333333;" vertex="1" parent="1">
-      <mxGeometry x="854" y="145" width="170" height="14" as="geometry" />
-    </mxCell>
-
-    <!-- ======================================================== -->
-    <!-- FASE 1: PENGISIAN FORM & UNGGAH BERKAS                   -->
-    <!-- ======================================================== -->
-    <mxCell id="f1" value="Pengisian Form &amp; Unggah Berkas" style="text;html=1;fillColor=#f0f0f0;strokeColor=#999999;align=left;fontStyle=1;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
-      <mxGeometry x="30" y="100" width="740" height="20" as="geometry" />
-    </mxCell>
-
-    <mxCell id="m01" value="1: pilih skema, tahun, dan file PDF" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="128" as="sourcePoint"/><mxPoint x="210" y="128" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m02" value="2: klik &quot;Buat Dokumen&quot;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="164" as="sourcePoint"/><mxPoint x="210" y="164" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m03" value="3: POST /projects/upload-url  {skema, tahun, file_name}" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="200" as="sourcePoint"/><mxPoint x="380" y="200" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m04" value="4: buat project baru + signed upload URL" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="236" as="sourcePoint"/><mxPoint x="905" y="236" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m05" value="5: return {project_id, signed_url}" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="272" as="sourcePoint"/><mxPoint x="215" y="272" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m06" value="6: PUT file PDF langsung ke Storage  (bypass Backend)" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="312" as="sourcePoint"/><mxPoint x="905" y="312" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m07" value="7: POST /projects/confirm-upload" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="348" as="sourcePoint"/><mxPoint x="380" y="348" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m07b" value="run_pipeline()  «async»" style="endArrow=open;endFill=0;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="372" as="sourcePoint"/><mxPoint x="550" y="372" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m08" value="8: return 200 OK" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="400" as="sourcePoint"/><mxPoint x="215" y="400" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <!-- ======================================================== -->
-    <!-- FASE 2: PRAPEMROSESAN DOKUMEN                            -->
-    <!-- ======================================================== -->
-    <mxCell id="f2" value="Prapemrosesan Dokumen" style="text;html=1;fillColor=#f0f0f0;strokeColor=#999999;align=left;fontStyle=1;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
-      <mxGeometry x="30" y="440" width="990" height="20" as="geometry" />
-    </mxCell>
-
-    <mxCell id="m09" value="9: download source PDF + baca skema dari DB" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="468" as="sourcePoint"/><mxPoint x="905" y="468" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m10" value="10: setup — chunk PDF + embed ke Supabase" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="504" as="sourcePoint"/><mxPoint x="720" y="504" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <!-- ======================================================== -->
-    <!-- FASE 3: EKSTRAKSI ATURAN BERBASIS AI                     -->
-    <!-- ======================================================== -->
-    <mxCell id="f3" value="Ekstraksi Aturan Berbasis AI  (LLM Based Structured Extraction)" style="text;html=1;fillColor=#f0f0f0;strokeColor=#999999;align=left;fontStyle=1;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
-      <mxGeometry x="30" y="524" width="990" height="20" as="geometry" />
-    </mxCell>
-
-    <mxCell id="m11" value="11: ekstraksi metadata  (RAG + LLM, skema-aware)" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="540" as="sourcePoint"/><mxPoint x="720" y="540" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m12" value="12: generate instructional placeholders  (LLM)" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="576" as="sourcePoint"/><mxPoint x="720" y="576" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m13" value="13: update status=extracted" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="612" as="sourcePoint"/><mxPoint x="905" y="612" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <!-- ======================================================== -->
-    <!-- FASE 4: PENINJAUAN HASIL & GENERASI                      -->
-    <!-- ======================================================== -->
-    <mxCell id="f4" value="Peninjauan Hasil &amp; Generasi" style="text;html=1;fillColor=#f0f0f0;strokeColor=#999999;align=left;fontStyle=1;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
-      <mxGeometry x="30" y="652" width="990" height="20" as="geometry" />
-    </mxCell>
-
-    <mxCell id="m14" value="14: polling → status=extracted" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="680" as="sourcePoint"/><mxPoint x="215" y="680" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m15" value="15: GET /projects/{id}/placeholders" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="716" as="sourcePoint"/><mxPoint x="380" y="716" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m16" value="16: baca generated_placeholders dari DB" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="748" as="sourcePoint"/><mxPoint x="905" y="748" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m17" value="17: return {generated_placeholders, user_overrides}" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="780" as="sourcePoint"/><mxPoint x="215" y="780" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m18" value="18: review + edit nilai ekstraksi  (opsional)" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="812" as="sourcePoint"/><mxPoint x="210" y="812" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <!-- ======================================================== -->
-    <!-- ALT FRAME: [Lanjutkan] vs [Tolak]                        -->
-    <!-- ======================================================== -->
-    <mxCell id="alt_frame" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#555555;strokeWidth=1.5;" vertex="1" parent="1">
-      <mxGeometry x="30" y="848" width="990" height="408" as="geometry" />
-    </mxCell>
-    <mxCell id="alt_label" value="alt" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#555555;fontStyle=1;fontSize=11;fontColor=#000000;" vertex="1" parent="1">
-      <mxGeometry x="30" y="848" width="36" height="22" as="geometry" />
-    </mxCell>
-
-    <!-- [Lanjutkan] -->
-    <mxCell id="guard_lanjut" value="[Lanjutkan]" style="text;html=1;fontStyle=3;fontSize=10;fontColor=#333333;" vertex="1" parent="1">
-      <mxGeometry x="38" y="874" width="100" height="18" as="geometry" />
-    </mxCell>
-
-    <mxCell id="m19" value="19: klik &quot;Generate Dokumen&quot;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="898" as="sourcePoint"/><mxPoint x="210" y="898" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m20" value="20: POST /projects/{id}/generate" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="928" as="sourcePoint"/><mxPoint x="380" y="928" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m20b" value="run_docx_pipeline()  «async»" style="endArrow=open;endFill=0;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="952" as="sourcePoint"/><mxPoint x="550" y="952" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m21" value="21: return 200 OK" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="385" y="980" as="sourcePoint"/><mxPoint x="215" y="980" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m22" value="22: generate DOCX  (skema-aware: Type A / Type B)" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="1016" as="sourcePoint"/><mxPoint x="720" y="1016" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="m23" value="23: upload DOCX + update status=completed" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="1052" as="sourcePoint"/><mxPoint x="905" y="1052" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <!-- ======================================================== -->
-    <!-- FASE 5: UNDUH DOKUMEN                                    -->
-    <!-- ======================================================== -->
-    <mxCell id="f5" value="Unduh Dokumen" style="text;html=1;fillColor=#f0f0f0;strokeColor=#999999;align=left;fontStyle=1;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
-      <mxGeometry x="30" y="1072" width="990" height="20" as="geometry" />
-    </mxCell>
-
-    <mxCell id="m24" value="24: polling → completed → unduh dokumen" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="1092" as="sourcePoint"/><mxPoint x="55" y="1092" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <!-- separator -->
-    <mxCell id="alt_sep" value="" style="endArrow=none;dashed=1;strokeColor=#555555;strokeWidth=1.5;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="30" y="1120" as="sourcePoint"/><mxPoint x="1020" y="1120" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <!-- [Tolak] -->
-    <mxCell id="guard_tolak" value="[Tolak]" style="text;html=1;fontStyle=3;fontSize=10;fontColor=#333333;" vertex="1" parent="1">
-      <mxGeometry x="38" y="1124" width="80" height="18" as="geometry" />
-    </mxCell>
-
-    <mxCell id="t01" value="T1: klik &quot;Tolak Hasil Ekstraksi&quot;" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="55" y="1156" as="sourcePoint"/><mxPoint x="210" y="1156" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="t02" value="T2: DELETE /projects/{id} → hapus project + metadata" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="215" y="1188" as="sourcePoint"/><mxPoint x="905" y="1188" as="targetPoint"/></mxGeometry>
-    </mxCell>
-
-    <mxCell id="t03" value="T3: return 200 OK" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=10;" edge="1" parent="1">
-      <mxGeometry relative="1" as="geometry"><mxPoint x="905" y="1220" as="sourcePoint"/><mxPoint x="215" y="1220" as="targetPoint"/></mxGeometry>
-    </mxCell>
-    <mxCell id="note_t" value="«reset form — kembali ke form kosong»" style="text;html=1;align=center;fontSize=9;fontColor=#777777;fontStyle=2;" vertex="1" parent="1">
-      <mxGeometry x="152" y="1230" width="230" height="16" as="geometry" />
-    </mxCell>
-
-  </root>
-</mxGraphModel>
+<mxfile host="app.diagrams.net">
+  <diagram name="Halaman-1" id="iW2EjuQTicvDXi7dvHuX">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2PvkbEf-X1PfQ685CYn7-5" edge="1" parent="1" source="ZNZTmUTaMOIlNoCC0G4E-61" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="ZNZTmUTaMOIlNoCC0G4E-81" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="595" y="374" as="sourcePoint" />
+            <mxPoint x="595" y="1594" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-114" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#555555;strokeWidth=1.5;" value="" vertex="1">
+          <mxGeometry height="408" width="960" x="410" y="1172" as="geometry" />
+        </mxCell>
+        <mxCell id="2PvkbEf-X1PfQ685CYn7-2" edge="1" parent="1" source="ZNZTmUTaMOIlNoCC0G4E-64" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="ZNZTmUTaMOIlNoCC0G4E-76" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1105" y="374" as="sourcePoint" />
+            <mxPoint x="1105" y="1594" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-60" parent="1" style="shape=umlActor;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#555555;fontStyle=1;fontSize=11;verticalLabelPosition=bottom;verticalAlign=top;fontColor=#000000;" value="Admin" vertex="1">
+          <mxGeometry height="60" width="50" x="410" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-61" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#555555;fontStyle=1;fontSize=11;fontColor=#000000;" value=":Frontend" vertex="1">
+          <mxGeometry height="40" width="110" x="540" y="334" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-62" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#555555;fontStyle=1;fontSize=11;fontColor=#000000;" value=":Backend" vertex="1">
+          <mxGeometry height="40" width="110" x="710" y="334" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-63" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#555555;fontStyle=1;fontSize=11;fontColor=#000000;" value=":AI Backend" vertex="1">
+          <mxGeometry height="40" width="110" x="880" y="334" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-64" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#555555;fontStyle=1;fontSize=11;fontColor=#000000;" value=":AI Model" vertex="1">
+          <mxGeometry height="40" width="110" x="1050" y="334" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-65" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#555555;fontStyle=1;fontSize=11;fontColor=#000000;" value=":Supabase" vertex="1">
+          <mxGeometry height="40" width="120" x="1225" y="334" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-66" edge="1" parent="1" source="ZNZTmUTaMOIlNoCC0G4E-60" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="435" y="414" as="sourcePoint" />
+            <mxPoint x="435" y="1580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-67" edge="1" parent="1" source="ZNZTmUTaMOIlNoCC0G4E-81" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="595" y="394" as="sourcePoint" />
+            <mxPoint x="595" y="1580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-68" edge="1" parent="1" source="ZNZTmUTaMOIlNoCC0G4E-62" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="765" y="394" as="sourcePoint" />
+            <mxPoint x="765" y="1580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-69" edge="1" parent="1" source="ZNZTmUTaMOIlNoCC0G4E-63" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="935" y="394" as="sourcePoint" />
+            <mxPoint x="935" y="1580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-70" edge="1" parent="1" source="ZNZTmUTaMOIlNoCC0G4E-77" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.724;entryY=1.003;entryDx=0;entryDy=0;entryPerimeter=0;" target="ZNZTmUTaMOIlNoCC0G4E-114" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1105" y="394" as="sourcePoint" />
+            <mxPoint x="1105" y="1594" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-71" edge="1" parent="1" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;entryX=0.911;entryY=1.001;entryDx=0;entryDy=0;entryPerimeter=0;" target="ZNZTmUTaMOIlNoCC0G4E-114" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1285" y="394" as="sourcePoint" />
+            <mxPoint x="1285" y="1594" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- Activation bar Frontend Fase1: height 206→172 -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-72" parent="1" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" value="" vertex="1">
+          <mxGeometry height="172" width="10" x="590" y="524" as="geometry" />
+        </mxCell>
+        <!-- Activation bar Backend Fase1: height 206→172 -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-73" parent="1" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" value="" vertex="1">
+          <mxGeometry height="172" width="10" x="760" y="524" as="geometry" />
+        </mxCell>
+        <!-- Activation bar AI Backend Fase2+ -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-74" parent="1" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" value="" vertex="1">
+          <mxGeometry height="686" width="10" x="930" y="690" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-75" parent="1" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" value="" vertex="1">
+          <mxGeometry height="30" width="10" x="1100" y="820" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-78" parent="1" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" value="" vertex="1">
+          <mxGeometry height="36" width="10" x="1100" y="1340" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-79" parent="1" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" value="" vertex="1">
+          <mxGeometry height="408" width="10" x="590" y="1004" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-80" parent="1" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" value="" vertex="1">
+          <mxGeometry height="52" width="10" x="760" y="1252" as="geometry" />
+        </mxCell>
+        <!-- NEW: Activation bar AI Backend Fase1 (upload) -->
+        <mxCell id="fase1_ab_aib" parent="1" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" value="" vertex="1">
+          <mxGeometry height="136" width="10" x="930" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-91" parent="1" style="text;html=1;fillColor=#f0f0f0;strokeColor=#999999;align=left;fontStyle=1;fontSize=10;fontColor=#000000;verticalAlign=middle;" value="Fase 1: Pengisian Form &amp;amp; Unggah Berkas" vertex="1">
+          <mxGeometry height="20" width="960" x="410" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-92" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="1: pilih skema, &#xa;tahun, dan file PDF">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="435" y="452" as="sourcePoint" />
+            <mxPoint x="590" y="452" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-93" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="2: klik &quot;Buat Dokumen&quot;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="435" y="488" as="sourcePoint" />
+            <mxPoint x="590" y="488" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 3: POST /projects dengan file -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-94" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="3: POST /projects &#xa;{skema, tahun, file PDF}">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="595" y="524" as="sourcePoint" />
+            <mxPoint x="760" y="524" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 4: Backend → AI Backend -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-95" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="4: teruskan ke AI Backend">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="765" y="560" as="sourcePoint" />
+            <mxPoint x="930" y="560" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 5: AI Backend → Supabase simpan file -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-96" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="5: simpan file ke Storage">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="935" y="596" as="sourcePoint" />
+            <mxPoint x="1285" y="596" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- run_pipeline async (internal AI Backend) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-97" edge="1" parent="1" style="endArrow=open;endFill=0;strokeColor=#000000;fontSize=10;" value="run_pipeline()  «async»">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="935" y="636" as="sourcePoint" />
+            <mxPoint x="975" y="636" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 6: return project data ke Frontend -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-98" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=10;" value="6: return {project_id, status, ...}">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="765" y="672" as="sourcePoint" />
+            <mxPoint x="595" y="672" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-101" parent="1" style="text;html=1;fillColor=#f0f0f0;strokeColor=#999999;align=left;fontStyle=1;fontSize=10;fontColor=#000000;verticalAlign=middle;" value="Fase 2: Prapemrosesan Dokumen" vertex="1">
+          <mxGeometry height="20" width="960" x="410" y="760" as="geometry" />
+        </mxCell>
+        <!-- msg 7 (was 9) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-102" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="7: download source PDF + baca skema dari DB">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="935" y="792" as="sourcePoint" />
+            <mxPoint x="1285" y="792" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 8 (was 10) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-103" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="8: setup — &#xa;chunk PDF + embed &#xa;ke Supabase">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="935" y="828" as="sourcePoint" />
+            <mxPoint x="1100" y="828" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-104" parent="1" style="text;html=1;fillColor=#f0f0f0;strokeColor=#999999;align=left;fontStyle=1;fontSize=10;fontColor=#000000;verticalAlign=middle;" value="Fase 3: Ekstraksi Aturan Berbasis AI  (&lt;i&gt;LLM Based Structured Extraction&lt;/i&gt;)" vertex="1">
+          <mxGeometry height="20" width="960" x="410" y="852" as="geometry" />
+        </mxCell>
+        <!-- msg 9 (was 11) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-105" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="9: ekstraksi metadata &#xa; (RAG + LLM, skema-aware)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="935" y="890" as="sourcePoint" />
+            <mxPoint x="1100" y="890" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 10 (was 12) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-106" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="10: generate instructional &#xa;placeholders  (LLM)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="935" y="930" as="sourcePoint" />
+            <mxPoint x="1100" y="930" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 11 (was 13) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-107" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="11: update status=extracted">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="935" y="960" as="sourcePoint" />
+            <mxPoint x="1285" y="960" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-108" parent="1" style="text;html=1;fillColor=#f0f0f0;strokeColor=#999999;align=left;fontStyle=1;fontSize=10;fontColor=#000000;verticalAlign=middle;" value="Fase 4: Peninjauan Hasil &amp;amp; Generasi" vertex="1">
+          <mxGeometry height="20" width="960" x="410" y="976" as="geometry" />
+        </mxCell>
+        <!-- msg 12 (was 14) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-109" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=10;" value="12: polling → status=extracted">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1284" y="1010" as="sourcePoint" />
+            <mxPoint x="594" y="1010" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 13 (was 15) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-110" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="13: GET /projects/{id}/placeholders">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="595" y="1040" as="sourcePoint" />
+            <mxPoint x="760" y="1040" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 14 (was 16) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-111" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="14: baca generated_placeholders dari DB">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="765" y="1072" as="sourcePoint" />
+            <mxPoint x="1285" y="1072" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 15 (was 17) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-112" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=10;" value="15: return {generated_placeholders, user_overrides}">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1285" y="1104" as="sourcePoint" />
+            <mxPoint x="595" y="1104" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 16 (was 18) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-113" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="16: review + edit nilai ekstraksi  (opsional)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="435" y="1136" as="sourcePoint" />
+            <mxPoint x="590" y="1136" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-115" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#555555;fontStyle=1;fontSize=11;fontColor=#000000;" value="alt" vertex="1">
+          <mxGeometry height="22" width="36" x="410" y="1172" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-116" parent="1" style="text;html=1;fontStyle=3;fontSize=10;fontColor=#333333;" value="[Lanjutkan]" vertex="1">
+          <mxGeometry height="18" width="100" x="418" y="1198" as="geometry" />
+        </mxCell>
+        <!-- msg 17 (was 19) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-117" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="17: klik &quot;Generate Dokumen&quot;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="435" y="1222" as="sourcePoint" />
+            <mxPoint x="590" y="1222" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 18 (was 20) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-118" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="18: POST /projects/{id}/generate">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="595" y="1252" as="sourcePoint" />
+            <mxPoint x="760" y="1252" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-119" edge="1" parent="1" style="endArrow=open;endFill=0;strokeColor=#000000;fontSize=10;" value="run_docx_pipeline()  «async»">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="765" y="1276" as="sourcePoint" />
+            <mxPoint x="930" y="1276" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 19 (was 21) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-120" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=10;" value="19: return 200 OK">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="765" y="1304" as="sourcePoint" />
+            <mxPoint x="595" y="1304" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 20 (was 22) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-121" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="20: generate DOCX  (skema-aware: Type A / Type B)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="935" y="1340" as="sourcePoint" />
+            <mxPoint x="1100" y="1340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <!-- msg 21 (was 23) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-122" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="21: upload DOCX + update status=completed">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="935" y="1376" as="sourcePoint" />
+            <mxPoint x="1285" y="1376" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-123" parent="1" style="text;html=1;fillColor=#f0f0f0;strokeColor=#999999;align=left;fontStyle=1;fontSize=10;fontColor=#000000;verticalAlign=middle;" value="Fase 5: Unduh Dokumen" vertex="1">
+          <mxGeometry height="20" width="960" x="410" y="1396" as="geometry" />
+        </mxCell>
+        <!-- msg 22 (was 24) -->
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-124" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=10;" value="22: polling → completed → unduh dokumen">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1285" y="1430" as="sourcePoint" />
+            <mxPoint x="435" y="1430" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-125" edge="1" parent="1" style="endArrow=none;dashed=1;strokeColor=#555555;strokeWidth=1.5;entryX=0.999;entryY=0.665;entryDx=0;entryDy=0;entryPerimeter=0;" target="ZNZTmUTaMOIlNoCC0G4E-114" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="410" y="1444" as="sourcePoint" />
+            <mxPoint x="1360" y="1444" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-126" parent="1" style="text;html=1;fontStyle=3;fontSize=10;fontColor=#333333;" value="[Tolak]" vertex="1">
+          <mxGeometry height="18" width="80" x="418" y="1448" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-127" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="T1: klik &#xa;&quot;Tolak Hasil Ekstraksi&quot;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="435" y="1480" as="sourcePoint" />
+            <mxPoint x="590" y="1480" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-128" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=10;" value="T2: DELETE /projects/{id} → hapus project + metadata">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="595" y="1512" as="sourcePoint" />
+            <mxPoint x="1285" y="1512" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-129" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=10;" value="T3: return 200 OK">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1285" y="1544" as="sourcePoint" />
+            <mxPoint x="595" y="1544" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="2PvkbEf-X1PfQ685CYn7-1" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="78" width="230" x="414" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-83" parent="2PvkbEf-X1PfQ685CYn7-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#aaaaaa;fontSize=9;verticalAlign=middle;" value="" vertex="1">
+          <mxGeometry height="78" width="230" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-84" parent="2PvkbEf-X1PfQ685CYn7-1" style="text;html=1;align=left;fontSize=9;fontStyle=1;fontColor=#333333;verticalAlign=middle;" value="Keterangan Panah" vertex="1">
+          <mxGeometry height="14" width="140" x="8" y="4" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-85" edge="1" parent="2PvkbEf-X1PfQ685CYn7-1" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;verticalAlign=middle;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="8" y="28" as="sourcePoint" />
+            <mxPoint x="48" y="28" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-86" parent="2PvkbEf-X1PfQ685CYn7-1" style="text;html=1;align=left;fontSize=9;fontColor=#333333;verticalAlign=middle;" value="Pemanggilan sinkron" vertex="1">
+          <mxGeometry height="14" width="170" x="54" y="21" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-87" edge="1" parent="2PvkbEf-X1PfQ685CYn7-1" style="endArrow=open;endFill=0;strokeColor=#000000;fontSize=9;verticalAlign=middle;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="8" y="46" as="sourcePoint" />
+            <mxPoint x="48" y="46" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-88" parent="2PvkbEf-X1PfQ685CYn7-1" style="text;html=1;align=left;fontSize=9;fontColor=#333333;verticalAlign=middle;" value="Pemanggilan asinkron" vertex="1">
+          <mxGeometry height="14" width="170" x="54" y="39" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-89" edge="1" parent="2PvkbEf-X1PfQ685CYn7-1" style="endArrow=open;endFill=0;dashed=1;strokeColor=#555555;fontSize=9;verticalAlign=middle;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="8" y="64" as="sourcePoint" />
+            <mxPoint x="48" y="64" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-90" parent="2PvkbEf-X1PfQ685CYn7-1" style="text;html=1;align=left;fontSize=9;fontColor=#333333;verticalAlign=middle;" value="Kembalian / respons" vertex="1">
+          <mxGeometry height="14" width="170" x="54" y="57" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-76" parent="1" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" value="" vertex="1">
+          <mxGeometry height="32" width="10" x="1100" y="877" as="geometry" />
+        </mxCell>
+        <mxCell id="2PvkbEf-X1PfQ685CYn7-3" edge="1" parent="1" source="ZNZTmUTaMOIlNoCC0G4E-76" style="endArrow=none;dashed=1;strokeColor=#aaaaaa;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="ZNZTmUTaMOIlNoCC0G4E-77" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1105" y="902" as="sourcePoint" />
+            <mxPoint x="1105" y="1594" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-77" parent="1" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" value="" vertex="1">
+          <mxGeometry height="32" width="10" x="1100" y="916" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNZTmUTaMOIlNoCC0G4E-81" parent="1" style="rounded=0;fillColor=#e0e0e0;strokeColor=#666666;" value="" vertex="1">
+          <mxGeometry height="74" width="10" x="590" y="1470" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

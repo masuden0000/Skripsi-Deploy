@@ -1731,18 +1731,77 @@ def _check_page_count(
 
         doc = DocxDocument(str(docx_path))
 
-        # ── Bangun peta halaman per paragraf ──────────────────────────────
+        # ── Identifikasi section content (BAB) vs preliminary (romawi) ────
+        # _scan_numbering_zones sudah membedakan section berdasarkan posisi BAB 1.
+        # Kita gunakan informasi ini untuk:
+        #   1. Tahu apakah document punya section preliminary (romawi) sebelum BAB
+        #   2. Agar page counting dimulai dari awal section content, bukan awal doc
+        _, content_info = _scan_numbering_zones(doc)
+
+        # ── Kumpulkan semua elemen body + identifikasi batas section ─────
+        body = doc.element.body
+        qn_p = qn("w:p")
+        qn_pPr = qn("w:pPr")
+        qn_sectPr = qn("w:sectPr")
+        qn_type = qn("w:type")
+        qn_val = qn("w:val")
+
+        # Cari sectPr content section (section yang mengandung BAB 1)
+        # untuk menentukan paragraf awal content section
+        content_sectPr = None
+        if content_info is not None:
+            # Cari sectPr yang cocok dengan content_info
+            for child in body:
+                pPr = child.find(qn_pPr) if child.tag == qn_p else None
+                if pPr is not None:
+                    sp = pPr.find(qn_sectPr)
+                    if sp is not None:
+                        fmt = _get_pgnum_fmt(sp)
+                        if fmt == content_info.get("fmt", "decimal"):
+                            content_sectPr = sp
+                            break
+            if content_sectPr is None:
+                body_spr = body.find(qn_sectPr)
+                if body_spr is not None:
+                    content_sectPr = body_spr
+
+        # ── Bangun peta halaman per paragraf (seluruh dokumen) ────────────
+        # Nomor halaman di sini adalah nomor sekuensial dari awal dokumen.
+        # Setelah peta dibangun, kita hitung SELISIH antara halaman mulai
+        # dan halaman selesai agar preliminary section tidak mempengaruhi hasil.
         current_page = 1
         para_pages: list[tuple[int, str, str]] = []  # (page, style, text)
 
         for para in doc.paragraphs:
             para_xml = para._p
-            has_break = bool(
+
+            # Deteksi section break (nextPage/oddPage/evenPage).
+            # Section break ada di paragraf TERAKHIR section sebelumnya,
+            # artinya paragraf BERIKUTNYA mulai di halaman baru.
+            pPr = para_xml.find(qn("w:pPr"))
+            sect_pr = pPr.find(qn("w:sectPr")) if pPr is not None else None
+            has_section_break = False
+            if sect_pr is not None:
+                type_el = sect_pr.find(qn("w:type"))
+                sect_type_val = type_el.get(qn("w:val")) if type_el is not None else None
+                if sect_type_val in ("nextPage", "oddPage", "evenPage", None):
+                    has_section_break = True
+
+            has_rendered_break = bool(
                 para_xml.findall(".//" + qn("w:lastRenderedPageBreak"))
-            ) or any(
+            )
+            has_explicit_break = any(
                 br.get(qn("w:type")) == "page"
                 for br in para_xml.findall(".//" + qn("w:br"))
             )
+            has_break = has_rendered_break or has_explicit_break
+
+            if has_section_break and para_pages:
+                # Tambah paragraf ini dulu (masih halaman lama), baru pindah halaman
+                para_pages.append((current_page, para.style.name, para.text.strip()))
+                current_page += 1
+                continue
+
             if has_break and para_pages:
                 current_page += 1
             para_pages.append((current_page, para.style.name, para.text.strip()))
@@ -1783,6 +1842,9 @@ def _check_page_count(
         if page_selesai is None:
             page_selesai = para_pages[-1][0] if para_pages else page_mulai
 
+        # jumlah_halaman = selisih halaman sekuensial antara mulai dan selesai + 1.
+        # Preliminary pages (romawi) otomatis ter-cancel karena kita hitung SELISIH,
+        # bukan posisi absolut. Misal: BAB=5, DAFTAR PUSTAKA=13 → 13-5+1=9 halaman inti.
         jumlah_halaman = page_selesai - page_mulai + 1
 
         if jumlah_halaman > maks:

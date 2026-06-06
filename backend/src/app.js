@@ -34,7 +34,8 @@ app.use(cookieParser())
 
 // Special middleware for projects route - keep raw body for multipart
 app.use("/api/projects", express.raw({ type: "multipart/form-data", limit: "50mb" }))
-app.use("/api/pkm/validation/run", express.raw({ type: "multipart/form-data", limit: "20mb" }))
+app.use("/api/pkm/validation/run",  express.raw({ type: "multipart/form-data", limit: "20mb"  }))
+app.use("/api/pkm/validation/bulk", express.raw({ type: "multipart/form-data", limit: "200mb" }))
 
 app.get("/", (_req, res) => {
   res.status(200).json({

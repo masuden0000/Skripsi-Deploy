@@ -142,6 +142,35 @@ export interface ValidationPayload {
   file: File
 }
 
+// ── Tipe untuk validasi bulk (banyak dokumen sekaligus) ──────────────────────
+
+export interface BulkValidationItem {
+  schemaId: string
+  year: string
+  file: File
+}
+
+export interface JobItemStatus {
+  id: string
+  position: number
+  file_name: string
+  schema_id: string
+  tahun: string
+  status: "pending" | "processing" | "completed" | "failed"
+  result: ValidationResult | null
+  error_message: string | null
+}
+
+export interface JobStatus {
+  id: string
+  status: "pending" | "processing" | "completed" | "failed"
+  total_items: number
+  completed_items: number
+  created_at: string
+  updated_at: string
+  items: JobItemStatus[]
+}
+
 export async function runDocumentValidation(
   payload: ValidationPayload
 ): Promise<{
@@ -188,6 +217,91 @@ export async function runDocumentValidation(
         ? "Tidak dapat menjangkau server."
         : "Terjadi kesalahan tidak terduga."
 
+    return { data: null, error: message }
+  }
+}
+
+// ── runBulkValidation ────────────────────────────────────────────────────────
+export async function runBulkValidation(
+  items: BulkValidationItem[]
+): Promise<{ data: { job_id: string } | null; error: string | null }> {
+  const formData = new FormData()
+  formData.append("count", String(items.length))
+
+  for (let i = 0; i < items.length; i++) {
+    formData.append(`schema_id_${i}`, items[i].schemaId)
+    formData.append(`tahun_${i}`,     items[i].year)
+    formData.append(`file_${i}`,      items[i].file, items[i].file.name)
+  }
+
+  try {
+    const response = await fetch("/api/pkm/validation/bulk", {
+      method:      "POST",
+      body:        formData,
+      credentials: "include",
+    })
+
+    const json = await response.json()
+
+    if (!response.ok) {
+      return { data: null, error: json.error || `Request gagal (${response.status})` }
+    }
+
+    if (!json.job_id) {
+      return { data: null, error: "Response tidak mengandung job_id." }
+    }
+
+    return { data: { job_id: json.job_id }, error: null }
+  } catch (err) {
+    const message =
+      err instanceof TypeError && err.message.includes("fetch")
+        ? "Tidak dapat menjangkau server."
+        : "Terjadi kesalahan tidak terduga."
+    return { data: null, error: message }
+  }
+}
+
+// ── checkJobStatus ───────────────────────────────────────────────────────────
+export async function checkJobStatus(
+  jobId: string
+): Promise<{ data: JobStatus | null; error: string | null }> {
+  try {
+    const response = await fetch(`/api/pkm/validation/jobs/${encodeURIComponent(jobId)}`, {
+      credentials: "include",
+    })
+
+    const json = await response.json()
+
+    if (!response.ok) {
+      return { data: null, error: json.error || `Request gagal (${response.status})` }
+    }
+
+    // Pastikan result di setiap item di-parse dengan validationResultSchema
+    const items: JobItemStatus[] = (json.items ?? []).map((item: JobItemStatus) => {
+      if (item.result) {
+        const parsed = validationResultSchema.safeParse(item.result)
+        return { ...item, result: parsed.success ? parsed.data : item.result }
+      }
+      return item
+    })
+
+    return {
+      data: {
+        id:              json.id,
+        status:          json.status,
+        total_items:     json.total_items,
+        completed_items: json.completed_items,
+        created_at:      json.created_at,
+        updated_at:      json.updated_at,
+        items,
+      },
+      error: null,
+    }
+  } catch (err) {
+    const message =
+      err instanceof TypeError && err.message.includes("fetch")
+        ? "Tidak dapat menjangkau server."
+        : "Terjadi kesalahan tidak terduga."
     return { data: null, error: message }
   }
 }

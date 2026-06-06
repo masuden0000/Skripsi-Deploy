@@ -276,3 +276,29 @@ export function DownloadIcon({ className }: IconProps) {
     </svg>
   )
 }
+
+export function ChevronDownIcon({ className }: IconProps) {
+  return (
+    <svg className={`size-4 ${className ?? ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  )
+}
+
+export function ChevronRightIcon({ className }: IconProps) {
+  return (
+    <svg className={`size-4 ${className ?? ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  )
+}
+
+export function LayersIcon({ className }: IconProps) {
+  return (
+    <svg className={`size-4 ${className ?? ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
+      <path d="m22 12.5-8.58 3.91a2 2 0 0 1-1.66 0L3 12.5" />
+      <path d="m22 17.5-8.58 3.91a2 2 0 0 1-1.66 0L3 17.5" />
+    </svg>
+  )
+}

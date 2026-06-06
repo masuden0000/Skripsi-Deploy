@@ -76,4 +76,43 @@ router.post("/validation/run", async (req, res, next) => {
   }
 })
 
+// POST /api/pkm/validation/bulk - Proxy multipart (banyak file) ke FastAPI ai-backend
+// Body diteruskan as-is (raw Buffer) agar boundary multipart tidak rusak saat di-forward
+router.post("/validation/bulk", async (req, res, next) => {
+  try {
+    const rawBody    = req.body
+    const contentType = req.headers["content-type"] || ""
+
+    const aiResponse = await fetch(`${env.AI_BACKEND_URL}/api/validation/bulk`, {
+      method:  "POST",
+      body:    rawBody,
+      headers: { "Content-Type": contentType },
+    })
+
+    const { data, status } = await parseAiResponse(aiResponse)
+    res.status(status).json(data)
+  } catch (error) {
+    console.error("[PkmRoute] Error proxying bulk validation:", error)
+    res.status(500).json({
+      error: error instanceof Error ? error.message : "Gagal terhubung ke AI backend.",
+    })
+  }
+})
+
+// GET /api/pkm/validation/jobs/:jobId - Proxy status polling ke FastAPI ai-backend
+router.get("/validation/jobs/:jobId", async (req, res, next) => {
+  try {
+    const aiResponse = await fetch(
+      `${env.AI_BACKEND_URL}/api/validation/jobs/${req.params.jobId}`
+    )
+    const { data, status } = await parseAiResponse(aiResponse)
+    res.status(status).json(data)
+  } catch (error) {
+    console.error("[PkmRoute] Error polling job status:", error)
+    res.status(500).json({
+      error: error instanceof Error ? error.message : "Gagal terhubung ke AI backend.",
+    })
+  }
+})
+
 export default router

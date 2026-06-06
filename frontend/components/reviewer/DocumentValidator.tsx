@@ -1170,6 +1170,10 @@ export function DocumentValidator() {
               <><CheckCircleIcon className="size-4" /><span>Validasi Dokumen</span></>
             )}
           </Button>
+          <Button variant="outline" onClick={switchToBulk} disabled={loading} className="gap-1.5">
+            <LayersIcon className="size-4" />
+            Upload Sekaligus
+          </Button>
           {singleResult && <Button variant="outline" onClick={handleSingleReset}>Reset</Button>}
         </div>
 
@@ -1231,6 +1235,14 @@ export function DocumentValidator() {
           ) : (
             <><CheckCircleIcon className="size-4" /><span>Validasi Semua</span></>
           )}
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={switchToSingle}
+          disabled={bulkSubmitting}
+          className="ml-auto text-xs text-muted-foreground"
+        >
+          ← Validasi Satu Dokumen
         </Button>
       </div>
     </div>
@@ -1326,27 +1338,11 @@ export function DocumentValidator() {
   return (
     <ReviewerSurfaceCard>
       {/* Header */}
-      <div className="px-6 pt-6 pb-4 flex items-center justify-between">
+      <div className="px-6 pt-6 pb-4">
         <h3 className="text-base font-semibold flex items-center gap-2">
           <FileTextIcon className="size-5 text-primary" />
           Validasi Dokumen Otomatis
         </h3>
-
-        {/* Toggle mode — hanya tampil kalau tidak ada job aktif */}
-        {!jobId && (
-          <div className="flex items-center gap-2">
-            {mode === "single" ? (
-              <Button variant="outline" size="sm" onClick={switchToBulk} className="gap-1.5 text-xs">
-                <LayersIcon className="size-3.5" />
-                Upload Sekaligus
-              </Button>
-            ) : (
-              <Button variant="ghost" size="sm" onClick={switchToSingle} className="text-xs text-gray-500">
-                ← Validasi Satu Dokumen
-              </Button>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Konten berdasarkan mode */}

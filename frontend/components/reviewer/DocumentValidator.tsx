@@ -1196,20 +1196,6 @@ export function DocumentValidator() {
 
   const renderBulkForm = () => (
     <div className="px-6 pb-6 space-y-3">
-      {/* Tombol kembali — style sama seperti admin riwayat */}
-      <div>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={switchToSingle}
-          disabled={bulkSubmitting}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-800 px-0 hover:bg-transparent"
-        >
-          <ArrowLeftIcon className="size-4" />
-          Kembali
-        </Button>
-      </div>
-
       {bulkItems.map((item, idx) => (
         <BulkItemForm
           key={item.id}
@@ -1343,22 +1329,41 @@ export function DocumentValidator() {
   // ── Render utama ──────────────────────────────────────────────────────────
 
   return (
-    <ReviewerSurfaceCard>
-      {/* Header */}
-      <div className="px-6 pt-6 pb-4">
-        <h3 className="text-base font-semibold flex items-center gap-2">
-          <FileTextIcon className="size-5 text-primary" />
-          Validasi Dokumen Otomatis
-        </h3>
-      </div>
+    <>
+      {/* Tombol kembali — hanya di mode bulk (form), di atas card.
+          Posisi dan style identik dengan halaman riwayat di role admin. */}
+      {mode === "bulk" && !jobId && (
+        <div className="mb-6">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={switchToSingle}
+            disabled={bulkSubmitting}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 px-0 hover:bg-transparent"
+          >
+            <ArrowLeftIcon className="size-4" />
+            Kembali
+          </Button>
+        </div>
+      )}
 
-      {/* Konten berdasarkan mode */}
-      {mode === "single"
-        ? renderSingleMode()
-        : jobId
-        ? renderBulkProgress()
-        : renderBulkForm()
-      }
-    </ReviewerSurfaceCard>
+      <ReviewerSurfaceCard>
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4">
+          <h3 className="text-base font-semibold flex items-center gap-2">
+            <FileTextIcon className="size-5 text-primary" />
+            Validasi Dokumen Otomatis
+          </h3>
+        </div>
+
+        {/* Konten berdasarkan mode */}
+        {mode === "single"
+          ? renderSingleMode()
+          : jobId
+          ? renderBulkProgress()
+          : renderBulkForm()
+        }
+      </ReviewerSurfaceCard>
+    </>
   )
 }

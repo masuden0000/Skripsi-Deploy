@@ -22,6 +22,7 @@ import {
   PlusIcon,
   TrashIcon,
   LayersIcon,
+  ArrowLeftIcon,
 } from "@/components/icons/public-icons"
 import {
   runDocumentValidation,
@@ -1195,6 +1196,20 @@ export function DocumentValidator() {
 
   const renderBulkForm = () => (
     <div className="px-6 pb-6 space-y-3">
+      {/* Tombol kembali — style sama seperti admin riwayat */}
+      <div>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={switchToSingle}
+          disabled={bulkSubmitting}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-800 px-0 hover:bg-transparent"
+        >
+          <ArrowLeftIcon className="size-4" />
+          Kembali
+        </Button>
+      </div>
+
       {bulkItems.map((item, idx) => (
         <BulkItemForm
           key={item.id}
@@ -1235,14 +1250,6 @@ export function DocumentValidator() {
           ) : (
             <><CheckCircleIcon className="size-4" /><span>Validasi Semua</span></>
           )}
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={switchToSingle}
-          disabled={bulkSubmitting}
-          className="ml-auto text-xs text-muted-foreground"
-        >
-          ← Validasi Satu Dokumen
         </Button>
       </div>
     </div>

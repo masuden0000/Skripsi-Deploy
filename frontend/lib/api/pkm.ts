@@ -76,6 +76,15 @@ export const validationCheckSchema = z.object({
   actual: _coerceStr,
   location: z.string().nullable().optional(),
   skip_reason: z.string().nullable().optional(),
+  occurrences: z.array(z.object({
+    page      : z.number().nullable().optional(),
+    bab       : z.string().nullable().optional(),
+    para_idx  : z.number().nullable().optional(),
+    style     : z.string().nullable().optional(),
+    text      : z.string().optional().default(""),
+    actual    : z.string().nullable().optional(),
+    expected  : z.string().nullable().optional(),
+  })).nullable().optional(),
 })
 
 export const validationResultSchema = z.object({
@@ -150,7 +159,7 @@ export interface BulkValidationItem {
   file: File
 }
 
-export interface JobItemStatus {
+export interface ValidationResultItem {
   id: string
   position: number
   file_name: string
@@ -161,14 +170,15 @@ export interface JobItemStatus {
   error_message: string | null
 }
 
-export interface JobStatus {
+export interface ValidationSession {
   id: string
+  type: "single" | "bulk"
   status: "pending" | "processing" | "completed" | "failed"
   total_items: number
   completed_items: number
   created_at: string
   updated_at: string
-  items: JobItemStatus[]
+  items: ValidationResultItem[]
 }
 
 export async function runDocumentValidation(
@@ -224,7 +234,7 @@ export async function runDocumentValidation(
 // ── runBulkValidation ────────────────────────────────────────────────────────
 export async function runBulkValidation(
   items: BulkValidationItem[]
-): Promise<{ data: { job_id: string } | null; error: string | null }> {
+): Promise<{ data: { session_id: string } | null; error: string | null }> {
   const formData = new FormData()
   formData.append("count", String(items.length))
 
@@ -247,11 +257,11 @@ export async function runBulkValidation(
       return { data: null, error: json.error || `Request gagal (${response.status})` }
     }
 
-    if (!json.job_id) {
-      return { data: null, error: "Response tidak mengandung job_id." }
+    if (!json.session_id) {
+      return { data: null, error: "Response tidak mengandung session_id." }
     }
 
-    return { data: { job_id: json.job_id }, error: null }
+    return { data: { session_id: json.session_id }, error: null }
   } catch (err) {
     const message =
       err instanceof TypeError && err.message.includes("fetch")
@@ -261,12 +271,12 @@ export async function runBulkValidation(
   }
 }
 
-// ── checkJobStatus ───────────────────────────────────────────────────────────
-export async function checkJobStatus(
-  jobId: string
-): Promise<{ data: JobStatus | null; error: string | null }> {
+// ── checkSessionStatus ───────────────────────────────────────────────────────
+export async function checkSessionStatus(
+  sessionId: string
+): Promise<{ data: ValidationSession | null; error: string | null }> {
   try {
-    const response = await fetch(`/api/pkm/validation/jobs/${encodeURIComponent(jobId)}`, {
+    const response = await fetch(`/api/pkm/validation/sessions/${encodeURIComponent(sessionId)}`, {
       credentials: "include",
     })
 
@@ -277,7 +287,7 @@ export async function checkJobStatus(
     }
 
     // Pastikan result di setiap item di-parse dengan validationResultSchema
-    const items: JobItemStatus[] = (json.items ?? []).map((item: JobItemStatus) => {
+    const items: ValidationResultItem[] = (json.items ?? []).map((item: ValidationResultItem) => {
       if (item.result) {
         const parsed = validationResultSchema.safeParse(item.result)
         return { ...item, result: parsed.success ? parsed.data : item.result }
@@ -288,6 +298,7 @@ export async function checkJobStatus(
     return {
       data: {
         id:              json.id,
+        type:            json.type ?? "bulk",
         status:          json.status,
         total_items:     json.total_items,
         completed_items: json.completed_items,

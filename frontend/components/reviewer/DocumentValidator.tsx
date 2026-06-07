@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ReviewerSurfaceCard } from "./shared"
@@ -27,13 +27,13 @@ import {
 import {
   runDocumentValidation,
   runBulkValidation,
-  checkJobStatus,
+  checkSessionStatus,
   type ValidationResult,
   type ValidationIssue,
   type ValidationOccurrence,
   type ValidationCheck,
-  type JobStatus,
-  type JobItemStatus,
+  type ValidationSession,
+  type ValidationResultItem,
 } from "@/lib/api/pkm"
 import { PKM_SCHEMES } from "@/lib/constants/pkm-schemes"
 import { YearPicker } from "@/components/ui/year-picker"
@@ -41,7 +41,7 @@ import { YearPicker } from "@/components/ui/year-picker"
 // ─── Konstanta ───────────────────────────────────────────────────────────────
 
 const MAX_FILE_SIZE     = 10 * 1024 * 1024   // 10 MB
-const JOB_STORAGE_KEY  = "validation_bulk_job_id"
+const SESSION_STORAGE_KEY = "validation_bulk_session_id"
 const POLL_INTERVAL_MS = 3000
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -501,6 +501,9 @@ function PassedListPanel({
                       {formatFieldLabel(check.field)}
                     </p>
                     <p className="text-[11px] text-gray-400 truncate mt-0.5 leading-tight">{check.message}</p>
+                    {check.actual && (
+                      <p className="text-[11px] text-pkm-600 truncate mt-0.5 leading-tight font-medium">✓ {check.actual}</p>
+                    )}
                   </div>
                 </button>
               )
@@ -526,25 +529,39 @@ function PassedDetailPanel({ check }: { check: ValidationCheck | null }) {
     )
   }
 
+  const occurrences = check.occurrences ?? []
+
   return (
-    <div className="flex flex-col overflow-y-auto bg-gray-50/40">
+    <div className="flex flex-col overflow-y-auto">
+      {/* Header */}
       <div className="px-5 py-3.5 border-b border-border bg-white sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <span className="size-4 rounded-full bg-pkm-100 flex items-center justify-center shrink-0">
-            <CheckCircleIcon className="size-3 text-pkm-600" />
-          </span>
-          <p className="text-sm font-semibold text-gray-800">{formatFieldLabel(check.field)}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="size-4 rounded-full bg-pkm-100 flex items-center justify-center shrink-0">
+                <CheckCircleIcon className="size-3 text-pkm-600" />
+              </span>
+              <p className="text-sm font-semibold text-gray-800 truncate">{formatFieldLabel(check.field)}</p>
+            </div>
+            <p className="text-xs text-gray-400 mt-0.5 ml-6 line-clamp-1">{check.message}</p>
+          </div>
+          {occurrences.length > 0 && (
+            <span className="shrink-0 text-xs font-medium text-pkm-700 bg-pkm-100 px-2.5 py-1 rounded-full whitespace-nowrap">
+              {occurrences.length} elemen
+            </span>
+          )}
         </div>
-        <p className="text-xs text-gray-400 mt-1 ml-6">{check.message}</p>
       </div>
-      <div className="p-4 space-y-3">
-        <div className="rounded-lg border border-pkm-100 bg-white p-4 space-y-3">
+
+      <div className="flex-1 p-4 space-y-3 bg-gray-50/40">
+        {/* Ringkasan nilai */}
+        <div className="rounded-lg border border-pkm-100 bg-white p-4 space-y-2.5">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold bg-pkm-100 text-pkm-700 px-2 py-0.5 rounded-full">Lolos ✓</span>
+            <span className="text-xs font-semibold bg-pkm-100 text-pkm-700 px-2 py-0.5 rounded-full">Lolos &#x2713;</span>
             <span className="text-xs text-gray-500">Pengecekan ini sesuai dengan aturan</span>
           </div>
           {(check.expected || check.actual) && (
-            <div className="flex flex-wrap gap-2 pt-1">
+            <div className="flex flex-wrap gap-2 pt-0.5">
               {check.actual && (
                 <span className="inline-flex items-center gap-1.5 text-xs bg-pkm-50 text-pkm-700 px-2.5 py-1 rounded-md border border-pkm-100">
                   <span className="size-1.5 rounded-full bg-pkm-400 shrink-0" />
@@ -559,12 +576,67 @@ function PassedDetailPanel({ check }: { check: ValidationCheck | null }) {
               )}
             </div>
           )}
+          {check.location && (
+            <div className="border-t border-pkm-50 pt-2.5 mt-0.5">
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Lokasi</p>
+              <p className="text-xs text-gray-600 bg-gray-50 rounded px-3 py-2 border border-border/60">{check.location}</p>
+            </div>
+          )}
         </div>
+
+        {/* Daftar elemen per-paragraf */}
+        {occurrences.length > 0 ? (
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.07em] mb-2">
+              Elemen yang diperiksa &mdash; {occurrences.length} lokasi
+            </p>
+            <div className="space-y-2">
+              {occurrences.map((occ, i) => (
+                <div
+                  key={`${occ.para_idx}-${i}`}
+                  className="rounded-lg border border-pkm-100 bg-white border-l-4 border-l-pkm-300 overflow-hidden"
+                >
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 bg-pkm-50/50 border-b border-pkm-100/60">
+                    {occ.page != null && (
+                      <span className="text-[11px] font-medium text-gray-500">Halaman {occ.page}</span>
+                    )}
+                    {occ.bab && (
+                      <>
+                        <span className="text-gray-300 text-xs">&middot;</span>
+                        <span className="text-[11px] font-semibold text-pkm-700 bg-pkm-100 px-2 py-0.5 rounded-full">
+                          {occ.bab}
+                        </span>
+                      </>
+                    )}
+                    {occ.style && (
+                      <>
+                        <span className="text-gray-300 text-xs">&middot;</span>
+                        <span className="text-[11px] text-gray-400 italic">{occ.style}</span>
+                      </>
+                    )}
+                  </div>
+                  {occ.text && (
+                    <div className="px-4 py-3">
+                      <p className="text-xs text-gray-600 italic leading-relaxed border-l-2 border-pkm-200 pl-3">
+                        &ldquo;{occ.text}&rdquo;
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border bg-white p-4">
+            <p className="text-sm text-gray-500">
+              Pengecekan ini berlaku untuk seluruh dokumen, bukan pada elemen tertentu.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )
 }
-
 // ─── Sub-komponen: ValidationResultView ──────────────────────────────────────
 // Menampilkan hasil validasi satu dokumen (sama seperti tampilan lama).
 
@@ -819,19 +891,19 @@ function BulkItemForm({
 
 // ─── Sub-komponen: JobProgressRow ─────────────────────────────────────────────
 
-function JobProgressRow({ item }: { item: JobItemStatus }) {
+function JobProgressRow({ item }: { item: ValidationResultItem }) {
   const { ketua, scheme } = parseFileName(item.file_name)
 
   const statusConfig = {
     pending:    { icon: "○", color: "text-gray-400", label: "Menunggu" },
-    processing: { icon: "⟳", color: "text-amber-500 animate-spin", label: "Sedang diproses..." },
+    processing: { icon: "⟳", color: "text-amber-500", label: "Sedang diproses..." },
     completed:  { icon: "✓", color: "text-pkm-600", label: "Selesai" },
     failed:     { icon: "✗", color: "text-red-500",  label: "Gagal" },
   }[item.status]
 
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border/40 last:border-0">
-      <span className={`text-base font-bold shrink-0 ${statusConfig.color}`}>
+      <span className={`text-base font-bold shrink-0 ${statusConfig.color}${item.status === "processing" ? " animate-spin inline-block" : ""}`}>
         {statusConfig.icon}
       </span>
       <div className="flex-1 min-w-0">
@@ -854,7 +926,7 @@ function DocSelectorTab({
   selectedIdx,
   onSelect,
 }: {
-  items: JobItemStatus[]
+  items: ValidationResultItem[]
   selectedIdx: number
   onSelect: (idx: number) => void
 }) {
@@ -918,32 +990,32 @@ export function DocumentValidator() {
   const [bulkSubmitting, setBulkSubmitting] = useState(false)
   const [bulkError, setBulkError]           = useState<string | null>(null)
 
-  // ── State bulk — job tracking ─────────────────────────────────────────────
-  const [jobId, setJobId]         = useState<string | null>(null)
-  const [jobStatus, setJobStatus] = useState<JobStatus | null>(null)
-  const [isPolling, setIsPolling] = useState(false)
+  // ── State bulk — session tracking ────────────────────────────────────────
+  const [sessionId, setSessionId]         = useState<string | null>(null)
+  const [sessionStatus, setSessionStatus] = useState<ValidationSession | null>(null)
+  const [isPolling, setIsPolling]         = useState(false)
   const [selectedDocIdx, setSelectedDocIdx] = useState<number>(0)
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // ── Restore job dari localStorage saat mount ──────────────────────────────
+  // ── Restore session dari localStorage saat mount ──────────────────────────
   useEffect(() => {
-    const saved = localStorage.getItem(JOB_STORAGE_KEY)
+    const saved = localStorage.getItem(SESSION_STORAGE_KEY)
     if (saved) {
       setMode("bulk")
-      setJobId(saved)
+      setSessionId(saved)
       setIsPolling(true)
     }
   }, [])
 
-  // ── Polling status job ────────────────────────────────────────────────────
+  // ── Polling status session ────────────────────────────────────────────────
   useEffect(() => {
-    if (!jobId || !isPolling) return
+    if (!sessionId || !isPolling) return
 
     const poll = async () => {
-      const { data } = await checkJobStatus(jobId)
+      const { data } = await checkSessionStatus(sessionId)
       if (data) {
-        setJobStatus(data)
+        setSessionStatus(data)
         if (data.status === "completed" || data.status === "failed") {
           setIsPolling(false)
           // Pilih otomatis dokumen pertama yang selesai
@@ -958,7 +1030,7 @@ export function DocumentValidator() {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current)
     }
-  }, [jobId, isPolling])
+  }, [sessionId, isPolling])
 
   // ── Handlers mode single ──────────────────────────────────────────────────
 
@@ -1059,19 +1131,19 @@ export function DocumentValidator() {
       return
     }
 
-    const newJobId = res.data!.job_id
-    localStorage.setItem(JOB_STORAGE_KEY, newJobId)
-    setJobId(newJobId)
-    setJobStatus(null)
+    const newSessionId = res.data!.session_id
+    localStorage.setItem(SESSION_STORAGE_KEY, newSessionId)
+    setSessionId(newSessionId)
+    setSessionStatus(null)
     setSelectedDocIdx(0)
     setIsPolling(true)
   }
 
   const handleClearJob = () => {
     if (pollingRef.current) clearInterval(pollingRef.current)
-    localStorage.removeItem(JOB_STORAGE_KEY)
-    setJobId(null)
-    setJobStatus(null)
+    localStorage.removeItem(SESSION_STORAGE_KEY)
+    setSessionId(null)
+    setSessionStatus(null)
     setIsPolling(false)
     setSelectedDocIdx(0)
     setBulkItems([makeBulkItem()])
@@ -1081,6 +1153,11 @@ export function DocumentValidator() {
   const switchToSingle = () => {
     setMode("single")
     handleSingleReset()
+  }
+
+  const handleFinishSession = () => {
+    handleClearJob()
+    setMode("single")
   }
 
   const switchToBulk = () => {
@@ -1093,102 +1170,135 @@ export function DocumentValidator() {
 
   const renderSingleMode = () => (
     <>
-      {/* Form */}
-      <div className="px-6 pb-6 space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">1. Pilih Skema PKM</label>
-            <Select value={selectedSchemaId} onValueChange={setSelectedSchemaId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih jenis PKM" />
-              </SelectTrigger>
-              <SelectContent>
-                {PKM_SCHEMES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">2. Pilih Tahun</label>
-            <YearPicker value={selectedYear} onChange={setSelectedYear} placeholder="Pilih tahun" disabled={loading} />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">3. Upload Proposal</label>
-          <div
-            className={[
-              "relative rounded-lg border-2 border-dashed p-6 transition-colors",
-              file
-                ? "border-primary bg-primary/5"
-                : "border-muted-foreground/25 hover:border-muted-foreground/50",
-            ].join(" ")}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-          >
-            <input
-              type="file"
-              accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              onChange={handleFileChange}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              disabled={loading}
-            />
-            <div className="flex flex-col items-center text-center">
-              {file ? (
-                <>
-                  <FileTextIcon className="size-8 text-primary mb-2" />
-                  <p className="text-sm font-medium">{file.name}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); handleSingleReset() }}
-                    className="mt-2 text-xs text-destructive hover:underline"
-                  >
-                    Hapus file
-                  </button>
-                </>
-              ) : (
-                <>
-                  <UploadIcon className="size-8 text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">Seret file ke sini atau klik untuk memilih</p>
-                  <p className="text-xs text-muted-foreground mt-1">Format: DOCX, maks 10MB</p>
-                </>
-              )}
+      {singleResult ? (
+        <>
+          {/* Info dokumen */}
+          <div className="px-6 pb-4">
+            <div className="rounded-lg border border-border bg-gray-50/60 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <FileTextIcon className="size-4 text-primary" />
+                <span className="text-sm font-semibold text-gray-700">Informasi Dokumen</span>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-xs text-gray-400 mb-0.5">Nama Pengusul</p>
+                  <p className="text-sm font-medium text-gray-800">{file ? parseFileName(file.name).ketua : "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-0.5">Skema PKM</p>
+                  <p className="text-sm font-medium text-gray-800">
+                    {PKM_SCHEMES.find((s) => s.value === selectedSchemaId)?.label ?? selectedSchemaId}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-0.5">Tahun</p>
+                  <p className="text-sm font-medium text-gray-800">{selectedYear}</p>
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* Hasil validasi */}
+          <ValidationResultView result={singleResult} />
+
+          {/* Tombol Selesai */}
+          <div className="px-6 pt-4 pb-6">
+            <Button className="w-full" onClick={handleSingleReset}>Selesai</Button>
+          </div>
+        </>
+      ) : (
+        <div className="px-6 pb-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">1. Pilih Skema PKM</label>
+              <Select value={selectedSchemaId} onValueChange={setSelectedSchemaId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih jenis PKM" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PKM_SCHEMES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">2. Pilih Tahun</label>
+              <YearPicker value={selectedYear} onChange={setSelectedYear} placeholder="Pilih tahun" disabled={loading} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">3. Upload Proposal</label>
+            <div
+              className={[
+                "relative rounded-lg border-2 border-dashed p-6 transition-colors",
+                file
+                  ? "border-primary bg-primary/5"
+                  : "border-muted-foreground/25 hover:border-muted-foreground/50",
+              ].join(" ")}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+            >
+              <input
+                type="file"
+                accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={handleFileChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                disabled={loading}
+              />
+              <div className="flex flex-col items-center text-center">
+                {file ? (
+                  <>
+                    <FileTextIcon className="size-8 text-primary mb-2" />
+                    <p className="text-sm font-medium">{file.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleSingleReset() }}
+                      className="mt-2 text-xs text-destructive hover:underline"
+                    >
+                      Hapus file
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <UploadIcon className="size-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Seret file ke sini atau klik untuk memilih</p>
+                    <p className="text-xs text-muted-foreground mt-1">Format: DOCX, maks 10MB</p>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleSingleValidate}
+              disabled={!selectedSchemaId || !selectedYear || !file || loading}
+              className="flex-1 sm:flex-none"
+            >
+              {loading ? (
+                <><Loader2Icon className="size-4 animate-spin" /><span>Memvalidasi...</span></>
+              ) : (
+                <><CheckCircleIcon className="size-4" /><span>Validasi Dokumen</span></>
+              )}
+            </Button>
+            <Button variant="outline" onClick={switchToBulk} disabled={loading} className="gap-1.5">
+              <LayersIcon className="size-4" />
+              Upload Sekaligus
+            </Button>
+          </div>
+
+          {singleError && (
+            <Alert variant="destructive">
+              <AlertCircleIcon className="size-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{singleError}</AlertDescription>
+            </Alert>
+          )}
         </div>
-
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={handleSingleValidate}
-            disabled={!selectedSchemaId || !selectedYear || !file || loading}
-            className="flex-1 sm:flex-none"
-          >
-            {loading ? (
-              <><Loader2Icon className="size-4 animate-spin" /><span>Memvalidasi...</span></>
-            ) : (
-              <><CheckCircleIcon className="size-4" /><span>Validasi Dokumen</span></>
-            )}
-          </Button>
-          <Button variant="outline" onClick={switchToBulk} disabled={loading} className="gap-1.5">
-            <LayersIcon className="size-4" />
-            Upload Sekaligus
-          </Button>
-          {singleResult && <Button variant="outline" onClick={handleSingleReset}>Reset</Button>}
-        </div>
-
-        {singleError && (
-          <Alert variant="destructive">
-            <AlertCircleIcon className="size-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{singleError}</AlertDescription>
-          </Alert>
-        )}
-      </div>
-
-      {/* Hasil validasi mode single */}
-      {singleResult && <ValidationResultView result={singleResult} />}
+      )}
     </>
   )
 
@@ -1244,10 +1354,10 @@ export function DocumentValidator() {
   // ── Render: mode bulk — progress + hasil ─────────────────────────────────
 
   const renderBulkProgress = () => {
-    const isDone    = jobStatus?.status === "completed" || jobStatus?.status === "failed"
-    const items     = jobStatus?.items ?? []
-    const total     = jobStatus?.total_items     ?? 0
-    const completed = jobStatus?.completed_items ?? 0
+    const isDone    = sessionStatus?.status === "completed" || sessionStatus?.status === "failed"
+    const items     = sessionStatus?.items ?? []
+    const total     = sessionStatus?.total_items     ?? 0
+    const completed = sessionStatus?.completed_items ?? 0
     const selectedItem = items[selectedDocIdx]
 
     return (
@@ -1261,11 +1371,6 @@ export function DocumentValidator() {
                 : `Memvalidasi ${total} dokumen... (${completed}/${total})`
               }
             </span>
-            {isDone && (
-              <Button variant="outline" size="sm" onClick={handleClearJob}>
-                Validasi Baru
-              </Button>
-            )}
           </div>
 
           {/* Progress bar */}
@@ -1322,6 +1427,15 @@ export function DocumentValidator() {
             )}
           </>
         )}
+
+        {/* Tombol Selesai — muncul setelah semua dokumen selesai diproses */}
+        {isDone && (
+          <div className="px-6 pt-6">
+            <Button className="w-full" onClick={handleFinishSession}>
+              Selesai
+            </Button>
+          </div>
+        )}
       </div>
     )
   }
@@ -1332,7 +1446,7 @@ export function DocumentValidator() {
     <>
       {/* Tombol kembali — hanya di mode bulk (form), di atas card.
           Posisi dan style identik dengan halaman riwayat di role admin. */}
-      {mode === "bulk" && !jobId && (
+      {mode === "bulk" && !sessionId && (
         <div className="mb-6">
           <Button
             type="button"
@@ -1359,7 +1473,7 @@ export function DocumentValidator() {
         {/* Konten berdasarkan mode */}
         {mode === "single"
           ? renderSingleMode()
-          : jobId
+          : sessionId
           ? renderBulkProgress()
           : renderBulkForm()
         }

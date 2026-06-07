@@ -344,11 +344,14 @@ def _build_issues_checks(
     # ── Parameter summary sebagai check passed ───────────────────────────────
     for ps in report.get("parameter_summary", []):
         if ps["status"] == "lolos semua":
+            raw_details = ps.get("paragraph_details_pass", [])
+            occs = _build_occurrences(raw_details) or None
             checks.append(ValidationCheckResult(
                 category="typography",
                 field=f"validocx_param.{ps['parameter'].replace(' ', '_')}",
                 status="passed",
                 message=f"{ps['parameter']}: {ps['pass']} elemen lolos",
+                occurrences=occs,
             ))
 
     # ── Summary check ────────────────────────────────────────────────────────

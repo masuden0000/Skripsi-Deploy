@@ -44,6 +44,13 @@ class ValidationCheckResult(BaseModel):
         default=None,
         description="Alasan dilewati: 'Tidak ada nilai di metadata' atau 'Tidak terdeteksi di dokumen'",
     )
+    occurrences: list[dict] | None = Field(
+        default=None,
+        description=(
+            "Daftar paragraf yang melewati pengecekan ini (hanya untuk status passed). "
+            "Setiap item berisi: page, bab, para_idx, style, text."
+        ),
+    )
 
 
 class ValidationIssue(BaseModel):

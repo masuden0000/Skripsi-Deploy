@@ -2,9 +2,9 @@
 Fungsi: FastAPI router untuk validasi format dokumen DOCX proposal mahasiswa.
 
 Endpoint:
-  POST /run   — validasi satu dokumen (synchronous, hasil langsung dikembalikan)
-  POST /bulk  — validasi banyak dokumen (async, kembalikan job_id, proses di background)
-  GET  /jobs/{job_id} — cek status + hasil validasi bulk
+  POST /run              — validasi satu dokumen (synchronous, hasil langsung dikembalikan)
+  POST /bulk             — validasi banyak dokumen (async, kembalikan session_id, proses di background)
+  GET  /sessions/{id}    — cek status + hasil validasi bulk
 
 Digunakan oleh: backend/src/routes/pkm.routes.js (sebagai proxy)
 """
@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Request, UploadFile
 
 from services.database import get_supabase
-from services.job_processor import process_bulk_job, save_temp_file
+from services.job_processor import process_bulk_session, save_temp_file
 
 router = APIRouter()
 
@@ -129,7 +129,44 @@ async def run_validation(
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
 
-    return _build_result_dict(result)
+    result_dict = _build_result_dict(result)
+
+    # Simpan hasil ke Supabase (session tunggal)
+    try:
+        supabase = get_supabase()
+        now = _utcnow()
+
+        session_row = (
+            supabase.table("validation_sessions")
+            .insert({
+                "type":            "single",
+                "status":          "completed",
+                "total_items":     1,
+                "completed_items": 1,
+                "created_at":      now,
+                "updated_at":      now,
+            })
+            .execute()
+        )
+
+        if session_row.data:
+            session_id = session_row.data[0]["id"]
+            supabase.table("validation_results").insert({
+                "session_id":  session_id,
+                "position":    0,
+                "file_name":   file.filename or "dokumen.docx",
+                "schema_id":   schema_id.strip(),
+                "tahun":       tahun.strip(),
+                "status":      "completed",
+                "result":      result_dict,
+                "created_at":  now,
+                "updated_at":  now,
+            }).execute()
+    except Exception:
+        # Gagal menyimpan ke DB tidak boleh menggagalkan response ke frontend
+        pass
+
+    return result_dict
 
 
 # ─── POST /bulk — validasi banyak dokumen (async) ────────────────────────────
@@ -137,7 +174,7 @@ async def run_validation(
 @router.post("/bulk")
 async def run_bulk_validation(request: Request, background_tasks: BackgroundTasks):
     """
-    Terima sejumlah file DOCX beserta metadata-nya, buat validation job,
+    Terima sejumlah file DOCX beserta metadata-nya, buat validation session,
     simpan file ke storage sementara, dan jalankan validasi di background.
 
     Frontend mengirim FormData dengan field:
@@ -146,7 +183,7 @@ async def run_bulk_validation(request: Request, background_tasks: BackgroundTask
       tahun_{i}      : tahun dokumen ke-i
       file_{i}       : UploadFile dokumen ke-i
 
-    Kembalikan: { job_id: string }
+    Kembalikan: { session_id: string }
     """
     try:
         form = await request.form()
@@ -160,7 +197,7 @@ async def run_bulk_validation(request: Request, background_tasks: BackgroundTask
     if count > 20:
         raise HTTPException(status_code=400, detail="Maksimal 20 dokumen per batch.")
 
-    # Validasi dan baca semua file sebelum membuat job
+    # Validasi dan baca semua file sebelum membuat session
     items_bytes: list[dict] = []
     for i in range(count):
         schema_id = str(form.get(f"schema_id_{i}") or "").strip()
@@ -190,45 +227,46 @@ async def run_bulk_validation(request: Request, background_tasks: BackgroundTask
             "content":   content,
         })
 
-    # Buat job + items di Supabase
+    # Buat session + result rows di Supabase
     supabase = get_supabase()
     now = _utcnow()
 
-    job_row = (
-        supabase.table("validation_jobs")
+    session_row = (
+        supabase.table("validation_sessions")
         .insert({
-            "status":         "pending",
-            "total_items":    count,
+            "type":            "bulk",
+            "status":          "pending",
+            "total_items":     count,
             "completed_items": 0,
-            "created_at":     now,
-            "updated_at":     now,
+            "created_at":      now,
+            "updated_at":      now,
         })
         .execute()
     )
-    if not job_row.data:
-        raise HTTPException(status_code=500, detail="Gagal membuat validation job di database.")
+    if not session_row.data:
+        raise HTTPException(status_code=500, detail="Gagal membuat validation session di database.")
 
-    job_id = job_row.data[0]["id"]
+    session_id = session_row.data[0]["id"]
 
-    # Buat baris per item
-    item_rows = [
+    # Buat baris per item di validation_results
+    result_rows = [
         {
-            "job_id":    job_id,
-            "position":  item["position"],
-            "file_name": item["file_name"],
-            "schema_id": item["schema_id"],
-            "tahun":     item["tahun"],
-            "status":    "pending",
+            "session_id": session_id,
+            "position":   item["position"],
+            "file_name":  item["file_name"],
+            "schema_id":  item["schema_id"],
+            "tahun":      item["tahun"],
+            "status":     "pending",
             "created_at": now,
             "updated_at": now,
         }
         for item in items_bytes
     ]
-    supabase.table("validation_job_items").insert(item_rows).execute()
+    supabase.table("validation_results").insert(result_rows).execute()
 
     # Simpan file ke storage sementara
     for item in items_bytes:
-        save_temp_file(job_id, item["position"], item["content"])
+        save_temp_file(session_id, item["position"], item["content"])
 
     # Jadwalkan background task
     items_meta = [
@@ -240,48 +278,49 @@ async def run_bulk_validation(request: Request, background_tasks: BackgroundTask
         }
         for item in items_bytes
     ]
-    background_tasks.add_task(process_bulk_job, job_id, items_meta)
+    background_tasks.add_task(process_bulk_session, session_id, items_meta)
 
-    return {"job_id": job_id}
+    return {"session_id": session_id}
 
 
-# ─── GET /jobs/{job_id} — status + hasil validasi bulk ───────────────────────
+# ─── GET /sessions/{session_id} — status + hasil validasi bulk ───────────────
 
-@router.get("/jobs/{job_id}")
-async def get_job_status(job_id: str):
+@router.get("/sessions/{session_id}")
+async def get_session_status(session_id: str):
     """
-    Kembalikan status job dan semua item-nya.
+    Kembalikan status session dan semua result-nya.
     Frontend polling endpoint ini setiap beberapa detik untuk update progres.
     """
     supabase = get_supabase()
 
-    job_row = (
-        supabase.table("validation_jobs")
+    session_row = (
+        supabase.table("validation_sessions")
         .select("*")
-        .eq("id", job_id)
+        .eq("id", session_id)
         .limit(1)
         .execute()
     )
-    if not job_row.data:
-        raise HTTPException(status_code=404, detail="Job tidak ditemukan.")
+    if not session_row.data:
+        raise HTTPException(status_code=404, detail="Session tidak ditemukan.")
 
-    job = job_row.data[0]
+    session = session_row.data[0]
 
-    items_row = (
-        supabase.table("validation_job_items")
+    results_row = (
+        supabase.table("validation_results")
         .select("*")
-        .eq("job_id", job_id)
+        .eq("session_id", session_id)
         .order("position", desc=False)
         .execute()
     )
 
     return {
-        "id":              job["id"],
-        "status":          job["status"],
-        "total_items":     job["total_items"],
-        "completed_items": job["completed_items"],
-        "created_at":      job["created_at"],
-        "updated_at":      job["updated_at"],
+        "id":              session["id"],
+        "type":            session["type"],
+        "status":          session["status"],
+        "total_items":     session["total_items"],
+        "completed_items": session["completed_items"],
+        "created_at":      session["created_at"],
+        "updated_at":      session["updated_at"],
         "items": [
             {
                 "id":            item["id"],
@@ -293,6 +332,6 @@ async def get_job_status(job_id: str):
                 "result":        item["result"],
                 "error_message": item["error_message"],
             }
-            for item in items_row.data
+            for item in results_row.data
         ],
     }

@@ -190,17 +190,21 @@ def _build_parameter_summary(check_msgs):
       CHECK [para#N] alignment (Style) FAIL actual=V expected=W
       CHECK [para#N] line_spacing (Style) INHERITED
     """
-    # key = "parameter (Style)", value = {pass, fail, inherited}
-    summary = defaultdict(lambda: {"pass": 0, "fail": 0, "inherited": 0})
+    # key = "parameter (Style)", value = {pass, fail, inherited, paragraphs_pass}
+    summary = defaultdict(lambda: {"pass": 0, "fail": 0, "inherited": 0, "paragraphs_pass": []})
 
     for msg in check_msgs:
-        # Ambil parameter dan style
-        m = re.search(r"CHECK \[para#\d+\] (\S+) \(([^)]+)\) (PASS|FAIL|INHERITED)", msg)
+        # Ambil para_idx, parameter, style, dan hasil
+        m = re.search(r"CHECK \[para#(\d+)\] (\S+) \(([^)]+)\) (PASS|FAIL|INHERITED)", msg)
         if not m:
             continue
-        param, style, result = m.group(1), m.group(2), m.group(3)
+        para_idx_str, param, style, result = m.group(1), m.group(2), m.group(3), m.group(4)
         key = f"{param} ({style})"
         summary[key][result.lower()] += 1
+        if result == "PASS":
+            para_idx = int(para_idx_str)
+            if para_idx not in summary[key]["paragraphs_pass"]:
+                summary[key]["paragraphs_pass"].append(para_idx)
 
     result_list = []
     for key, counts in sorted(summary.items()):
@@ -209,12 +213,13 @@ def _build_parameter_summary(check_msgs):
                   else "lolos semua (ada inherited)" if counts["fail"] == 0
                   else "ada yang gagal")
         result_list.append({
-            "parameter" : key,
-            "status"    : status,
-            "total"     : total,
-            "pass"      : counts["pass"],
-            "fail"      : counts["fail"],
-            "inherited" : counts["inherited"],
+            "parameter"      : key,
+            "status"         : status,
+            "total"          : total,
+            "pass"           : counts["pass"],
+            "fail"           : counts["fail"],
+            "inherited"      : counts["inherited"],
+            "paragraphs_pass": counts["paragraphs_pass"],
         })
 
     return result_list
@@ -312,6 +317,12 @@ def build_report(entries, docx_path=None):
         font_mismatch   = _inject_para_details(font_mismatch,   para_map)
         undefined_styles= _inject_para_details(undefined_styles,para_map)
         attr_inherited  = _inject_para_details(attr_inherited,  para_map)
+        for item in parameter_summary:
+            details = []
+            for idx in item.get("paragraphs_pass", []):
+                if idx in para_map:
+                    details.append({"para_idx": idx, **para_map[idx]})
+            item["paragraph_details_pass"] = details
 
     report = {
         "summary": {

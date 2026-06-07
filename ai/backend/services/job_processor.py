@@ -3,15 +3,15 @@ Background job processor untuk validasi dokumen bulk.
 
 Alur:
   1. Caller menyimpan file ke jobs_temp via save_temp_file()
-  2. Caller membuat baris di validation_jobs + validation_job_items via Supabase
-  3. FastAPI BackgroundTasks memanggil process_bulk_job()
-  4. process_bulk_job() memproses setiap item secara berurut:
+  2. Caller membuat baris di validation_sessions + validation_results via Supabase
+  3. FastAPI BackgroundTasks memanggil process_bulk_session()
+  4. process_bulk_session() memproses setiap item secara berurut:
      - Update status item → 'processing'
      - Ambil metadata dari Supabase (sama seperti validasi tunggal)
      - Jalankan validasi di thread terpisah (CPU-bound)
      - Simpan hasil / pesan error ke DB
      - Hapus file sementara
-  5. Update completed_items dan status job setelah semua selesai
+  5. Update completed_items dan status session setelah semua selesai
 """
 import asyncio
 import json
@@ -28,18 +28,18 @@ def _utcnow() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _temp_path(job_id: str, position: int) -> Path:
-    return JOBS_TEMP_DIR / f"{job_id}_{position}.docx"
+def _temp_path(session_id: str, position: int) -> Path:
+    return JOBS_TEMP_DIR / f"{session_id}_{position}.docx"
 
 
-def save_temp_file(job_id: str, position: int, content: bytes) -> None:
+def save_temp_file(session_id: str, position: int, content: bytes) -> None:
     """Simpan bytes file ke folder sementara sebelum diproses background task."""
     JOBS_TEMP_DIR.mkdir(parents=True, exist_ok=True)
-    _temp_path(job_id, position).write_bytes(content)
+    _temp_path(session_id, position).write_bytes(content)
 
 
-def _delete_temp(job_id: str, position: int) -> None:
-    p = _temp_path(job_id, position)
+def _delete_temp(session_id: str, position: int) -> None:
+    p = _temp_path(session_id, position)
     if p.exists():
         p.unlink()
 
@@ -69,7 +69,7 @@ def _run_validation_sync(tmp_path: str, payload: dict) -> dict:
     return d
 
 
-async def process_bulk_job(job_id: str, items_meta: list[dict]) -> None:
+async def process_bulk_session(session_id: str, items_meta: list[dict]) -> None:
     """
     Background task: validasi setiap item secara berurut.
 
@@ -77,38 +77,38 @@ async def process_bulk_job(job_id: str, items_meta: list[dict]) -> None:
     """
     sb = get_supabase()
 
-    def _upd_job(fields: dict) -> None:
-        sb.table("validation_jobs").update(
+    def _upd_session(fields: dict) -> None:
+        sb.table("validation_sessions").update(
             {**fields, "updated_at": _utcnow()}
-        ).eq("id", job_id).execute()
+        ).eq("id", session_id).execute()
 
-    def _upd_item(position: int, fields: dict) -> None:
-        sb.table("validation_job_items").update(
+    def _upd_result(position: int, fields: dict) -> None:
+        sb.table("validation_results").update(
             {**fields, "updated_at": _utcnow()}
-        ).eq("job_id", job_id).eq("position", position).execute()
+        ).eq("session_id", session_id).eq("position", position).execute()
 
     def _refresh_completed_count() -> None:
         rows = (
-            sb.table("validation_job_items")
+            sb.table("validation_results")
             .select("status")
-            .eq("job_id", job_id)
+            .eq("session_id", session_id)
             .execute()
         )
         done = sum(
             1 for r in rows.data
             if r["status"] in ("completed", "failed")
         )
-        _upd_job({"completed_items": done})
+        _upd_session({"completed_items": done})
 
     try:
-        _upd_job({"status": "processing"})
+        _upd_session({"status": "processing"})
 
         for meta in sorted(items_meta, key=lambda x: x["position"]):
             pos       = meta["position"]
             schema_id = meta["schema_id"]
             tahun     = meta["tahun"]
 
-            _upd_item(pos, {"status": "processing"})
+            _upd_result(pos, {"status": "processing"})
 
             try:
                 # 1. Cari project referensi
@@ -142,22 +142,22 @@ async def process_bulk_job(job_id: str, items_meta: list[dict]) -> None:
                     payload = json.loads(payload)
 
                 # 3. Jalankan validasi di thread terpisah
-                tmp = str(_temp_path(job_id, pos))
+                tmp = str(_temp_path(session_id, pos))
                 if not os.path.exists(tmp):
                     raise ValueError("File sementara tidak ditemukan di server.")
 
                 result = await asyncio.to_thread(_run_validation_sync, tmp, payload)
-                _upd_item(pos, {"status": "completed", "result": result})
+                _upd_result(pos, {"status": "completed", "result": result})
 
             except Exception as exc:
-                _upd_item(pos, {"status": "failed", "error_message": str(exc)})
+                _upd_result(pos, {"status": "failed", "error_message": str(exc)})
 
             finally:
-                _delete_temp(job_id, pos)
+                _delete_temp(session_id, pos)
 
             _refresh_completed_count()
 
-        _upd_job({"status": "completed"})
+        _upd_session({"status": "completed"})
 
     except Exception:
-        _upd_job({"status": "failed"})
+        _upd_session({"status": "failed"})

@@ -94,7 +94,6 @@ const PARAM_LABELS: Record<string, string> = {
   font              : "Jenis huruf",
   alignment         : "Rata teks",
   line_spacing      : "Spasi baris",
-  first_line_indent : "Indentasi baris pertama",
   space_before      : "Jarak sebelum",
   space_after       : "Jarak sesudah",
   left_indent       : "Indentasi kiri",

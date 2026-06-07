@@ -33,7 +33,6 @@ class RequirementsSchema(object):
                                 "type": "object",
                                 "properties": {
                                     "alignment": {"type": "number"},
-                                    "first_line_indent": {"type": "number"},
                                     "keep_together": {"type": "number"},
                                     "keep_with_next": {"type": "number"},
                                     "left_indent": {"type": "number"},

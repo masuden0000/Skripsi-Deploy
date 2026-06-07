@@ -126,7 +126,7 @@ class DocumentWrapper(object):
              Ini mencegah false-positive "inherited" warning pada style kustom
              (mis. 'Lampiran') yang mewarisi JUSTIFY dari Normal secara implisit.
         """
-        _except_attributes = ('tab_stops',)
+        _except_attributes = ('tab_stops', 'first_line_indent')
 
         fetched_attributes = {}
         for attr, member in type(paragraph.paragraph_format).__dict__.items():

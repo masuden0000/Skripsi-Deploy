@@ -155,7 +155,7 @@ def _vm_category(key: str) -> tuple[str, str]:
     attr = key.split(".")[1].split(":")[0].strip() if "." in key else key
     if attr in _SECTION_ATTR_KEYS or key.lstrip().startswith("'Section"):
         return "page_layout", "section_attribute"
-    spacing_attrs = {"alignment", "line_spacing", "first_line_indent", "space_before", "space_after"}
+    spacing_attrs = {"alignment", "line_spacing", "space_before", "space_after"}
     if any(a in attr.lower() for a in spacing_attrs):
         return "spacing", "paragraph_attribute"
     return "typography", "paragraph_attribute"

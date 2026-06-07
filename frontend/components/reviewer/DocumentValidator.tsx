@@ -259,13 +259,41 @@ function SummaryBar({
 }
 
 // ─── Sub-komponen: OccurrenceCard ─────────────────────────────────────────────
+// Digunakan di semua section: error, warning, dan lulus (passed).
+// Prop `passed` mengubah warna aksen menjadi hijau pkm.
+// Tombol expand/collapse muncul jika `full_text` lebih panjang dari `text`.
 
-function OccurrenceCard({ occ, severity }: { occ: ValidationOccurrence; severity?: string }) {
-  const accentColor = severity === "error" ? "border-l-red-300" : "border-l-amber-300"
+function OccurrenceCard({
+  occ,
+  severity,
+  passed = false,
+}: {
+  occ: ValidationOccurrence
+  severity?: string
+  passed?: boolean
+}) {
+  const [expanded, setExpanded] = useState(false)
+
+  const accentColor = passed
+    ? "border-l-pkm-300"
+    : severity === "error"
+    ? "border-l-red-300"
+    : "border-l-amber-300"
+
+  const cardBorder  = passed ? "border-pkm-100"      : "border-border"
+  const headerBg    = passed ? "bg-pkm-50/50"         : "bg-gray-50/60"
+  const headerBorder= passed ? "border-pkm-100/60"    : "border-border/50"
+
+  // Tampilkan tombol expand jika teks penuh lebih panjang dari preview 100 karakter
+  const fullText  = occ.full_text ?? ""
+  const previewText = occ.text ?? ""
+  const hasMore   = fullText.length > previewText.length
+  const displayText = expanded && hasMore ? fullText : previewText
 
   return (
-    <div className={`rounded-lg border border-border bg-white border-l-4 ${accentColor} overflow-hidden`}>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 bg-gray-50/60 border-b border-border/50">
+    <div className={`rounded-lg border ${cardBorder} bg-white border-l-4 ${accentColor} overflow-hidden`}>
+      {/* ── Header: halaman · BAB · style ── */}
+      <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 ${headerBg} border-b ${headerBorder}`}>
         {occ.page != null && (
           <span className="text-[11px] font-medium text-gray-500">Halaman {occ.page}</span>
         )}
@@ -277,13 +305,36 @@ function OccurrenceCard({ occ, severity }: { occ: ValidationOccurrence; severity
             </span>
           </>
         )}
+        {occ.style && (
+          <>
+            <span className="text-gray-300 text-xs">·</span>
+            <span className="text-[11px] text-gray-400 italic">{occ.style}</span>
+          </>
+        )}
       </div>
-      <div className="px-4 py-3 space-y-2.5">
-        {occ.text && (
+
+      {/* ── Body: kutipan teks + tombol expand + actual/expected ── */}
+      <div className="px-4 py-3 space-y-2">
+        {displayText && (
           <p className="text-xs text-gray-600 italic leading-relaxed border-l-2 border-gray-200 pl-3">
-            &ldquo;{occ.text}&rdquo;
+            &ldquo;{displayText}&rdquo;
           </p>
         )}
+
+        {hasMore && (
+          <button
+            type="button"
+            onClick={() => setExpanded((e) => !e)}
+            className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-pkm-600 transition-colors"
+          >
+            {expanded ? (
+              <><ChevronDownIcon className="size-3" /> Sembunyikan</>
+            ) : (
+              <><ChevronRightIcon className="size-3" /> Tampilkan selengkapnya</>
+            )}
+          </button>
+        )}
+
         {(occ.actual || occ.expected) && (
           <div className="flex flex-wrap gap-2 pt-0.5">
             {occ.actual && (
@@ -505,9 +556,6 @@ function PassedListPanel({
                       {formatFieldLabel(check.field)}
                     </p>
                     <p className="text-[11px] text-gray-400 truncate mt-0.5 leading-tight">{check.message}</p>
-                    {check.actual && (
-                      <p className="text-[11px] text-pkm-600 truncate mt-0.5 leading-tight font-medium">✓ {check.actual}</p>
-                    )}
                   </div>
                 </button>
               )
@@ -596,37 +644,11 @@ function PassedDetailPanel({ check }: { check: ValidationCheck | null }) {
             </p>
             <div className="space-y-2">
               {occurrences.map((occ, i) => (
-                <div
+                <OccurrenceCard
                   key={`${occ.para_idx}-${i}`}
-                  className="rounded-lg border border-pkm-100 bg-white border-l-4 border-l-pkm-300 overflow-hidden"
-                >
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 bg-pkm-50/50 border-b border-pkm-100/60">
-                    {occ.page != null && (
-                      <span className="text-[11px] font-medium text-gray-500">Halaman {occ.page}</span>
-                    )}
-                    {occ.bab && (
-                      <>
-                        <span className="text-gray-300 text-xs">&middot;</span>
-                        <span className="text-[11px] font-semibold text-pkm-700 bg-pkm-100 px-2 py-0.5 rounded-full">
-                          {occ.bab}
-                        </span>
-                      </>
-                    )}
-                    {occ.style && (
-                      <>
-                        <span className="text-gray-300 text-xs">&middot;</span>
-                        <span className="text-[11px] text-gray-400 italic">{occ.style}</span>
-                      </>
-                    )}
-                  </div>
-                  {occ.text && (
-                    <div className="px-4 py-3">
-                      <p className="text-xs text-gray-600 italic leading-relaxed border-l-2 border-pkm-200 pl-3">
-                        &ldquo;{occ.text}&rdquo;
-                      </p>
-                    </div>
-                  )}
-                </div>
+                  occ={occ}
+                  passed={true}
+                />
               ))}
             </div>
           </div>

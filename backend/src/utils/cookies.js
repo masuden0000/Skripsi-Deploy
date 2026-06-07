@@ -5,7 +5,6 @@ export function getSessionCookieOptions() {
     httpOnly: true,
     sameSite: "lax",
     secure: env.NODE_ENV === "production",
-    maxAge: env.SESSION_MAX_AGE_SECONDS * 1000,
     path: "/",
   }
 }

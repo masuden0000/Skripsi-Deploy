@@ -15,7 +15,7 @@ from docx.oxml.ns import qn
 from model_ai.extractor.models import DocumentMetadata
 from model_ai.validation.models import ValidationCheckResult, ValidationIssue
 from model_ai.validation.validocx.validator import validate as validocx_validate
-from model_ai.validation.validocx.debug_report import parse_entries, build_report
+from model_ai.validation.validocx.debug_report import parse_entries, build_report, count_body_pages
 from model_ai.validation.validocx_adapter import (
     enrich_requirements_with_docx_styles,
     metadata_to_requirements,
@@ -210,14 +210,18 @@ def _build_occurrences(
     for detail in para_details:
         if not isinstance(detail, dict):
             continue
+        # Lewati paragraf kosong (misal heading tanpa teks yang tidak sengaja diberi style)
+        if not (detail.get("text") or "").strip():
+            continue
         result.append({
-            "page"     : detail.get("page"),
-            "bab"      : detail.get("bab"),
-            "para_idx" : detail.get("para_idx"),
-            "style"    : detail.get("style"),
-            "text"     : (detail.get("text") or "")[:100],
-            "actual"   : actual_str,
-            "expected" : expected_str,
+            "page"      : detail.get("page"),
+            "bab"       : detail.get("bab"),
+            "para_idx"  : detail.get("para_idx"),
+            "style"     : detail.get("style"),
+            "text"      : (detail.get("text") or "")[:100],
+            "full_text" : detail.get("full_text") or "",
+            "actual"    : actual_str,
+            "expected"  : expected_str,
         })
     return result
 
@@ -227,15 +231,101 @@ def _coerce_paras(paras) -> list[dict]:
     return paras if isinstance(paras, list) and paras and isinstance(paras[0], dict) else []
 
 
+_ALIGN_LABEL: dict[int, str] = {0: "LEFT", 1: "CENTER", 2: "RIGHT", 3: "JUSTIFY"}
+
+
+def _lookup_expected(requirements: dict, param: str, style: str) -> str | None:
+    """Ambil nilai expected untuk satu parameter dari requirements dict.
+
+    Dipakai saat membangun passed checks agar field 'expected' terisi
+    dan bisa ditampilkan di frontend section Lulus.
+
+    Jika style tidak terdaftar di requirements (mis. 'List Paragraph',
+    'table of figures'), gunakan 'Normal' sebagai fallback — sesuai perilaku
+    validator.py yang melakukan hal yang sama saat memvalidasi paragraf.
+    """
+    styles = requirements.get("styles", {})
+    style_req = styles.get(style)
+    if not isinstance(style_req, dict):
+        # Fallback ke Normal — validator.py juga pakai Normal untuk style tak dikenal
+        style_req = styles.get("Normal")
+    if not isinstance(style_req, dict):
+        return None
+
+    if param == "alignment":
+        attrs = style_req.get("paragraph", {}).get("attributes", {})
+        val = attrs.get("alignment") if isinstance(attrs, dict) else None
+        return _ALIGN_LABEL.get(val) if val is not None else None
+
+    if param == "line_spacing":
+        attrs = style_req.get("paragraph", {}).get("attributes", {})
+        val = attrs.get("line_spacing") if isinstance(attrs, dict) else None
+        return str(val) if val is not None else None
+
+    if param == "font":
+        font_attrs = style_req.get("font", {}).get("attributes") or []
+        if font_attrs:
+            return ", ".join(str(a) for a in font_attrs if a is not None)
+        return None
+
+    return None
+
+
+def _normal_formatting_label(requirements: dict) -> str | None:
+    """Bangun label human-readable dari nilai formatting style Normal.
+
+    Dipakai sebagai 'expected' pada warning undefined_style agar reviewer tahu
+    nilai yang seharusnya ada pada paragraf (mengacu aturan Normal sebagai fallback).
+
+    Contoh output: "Font: 12pt Times New Roman | Spasi: 1.15 | Rata: JUSTIFY"
+    """
+    normal = requirements.get("styles", {}).get("Normal")
+    if not isinstance(normal, dict):
+        return None
+
+    parts: list[str] = []
+
+    # ── Font ──────────────────────────────────────────────────────────────────
+    font_block = normal.get("font", {})
+    font_size  = font_block.get("size")
+    font_name  = font_block.get("name")
+    if font_size or font_name:
+        font_str = "Font:"
+        if font_size:
+            font_str += f" {font_size}pt"
+        if font_name:
+            font_str += f" {font_name}"
+        parts.append(font_str)
+
+    # ── Line spacing ──────────────────────────────────────────────────────────
+    para_attrs = normal.get("paragraph", {}).get("attributes", {})
+    if isinstance(para_attrs, dict):
+        ls = para_attrs.get("line_spacing")
+        if ls is not None:
+            parts.append(f"Spasi: {ls}")
+
+        # ── Alignment ─────────────────────────────────────────────────────────
+        align = para_attrs.get("alignment")
+        if align is not None:
+            label = _ALIGN_LABEL.get(align, str(align))
+            parts.append(f"Rata: {label}")
+
+    return " | ".join(parts) if parts else None
+
+
 def _build_issues_checks(
     report: dict,
     known_styles: list[str] | None = None,
+    requirements: dict | None = None,
 ) -> tuple[list[ValidationIssue], list[ValidationCheckResult]]:
     """Konversi report dict dari build_report ke issues + checks.
 
-    known_styles: daftar style yang terdaftar di requirements (mis. ['Normal', 'Heading 1', ...]).
-                  Jika diberikan, dipakai sebagai nilai 'expected' untuk warning undefined_style
-                  supaya user tahu style mana yang seharusnya dipakai.
+    known_styles:  daftar style yang terdaftar di requirements (mis. ['Normal', 'Heading 1', ...]).
+                   Jika diberikan, dipakai sebagai nilai 'expected' untuk warning undefined_style
+                   supaya user tahu style mana yang seharusnya dipakai.
+    requirements:  dict requirements lengkap (dari metadata_to_requirements). Jika diberikan,
+                   dipakai untuk mengisi field 'expected' pada passed checks sehingga
+                   frontend section Lulus bisa menampilkan nilai yang diharapkan.
     """
     issues: list[ValidationIssue] = []
     checks: list[ValidationCheckResult] = []
@@ -322,10 +412,10 @@ def _build_issues_checks(
         ))
 
     # ── Undefined styles ─────────────────────────────────────────────────────
-    # Bentuk label "Seharusnya" secara dinamis dari daftar style yang dikenali requirements.
-    # Jika known_styles tersedia (mis. ["Normal", "Heading 1", "Heading 2", "Heading 3"]),
-    # tampilkan sebagai pilihan style yang valid. Jika tidak ada, biarkan None.
-    known_styles_label = ", ".join(known_styles) if known_styles else None
+    # Nilai "Seharusnya" pada occurrence undefined_style menggunakan nilai formatting
+    # dari style Normal (fallback yang juga dipakai validator.py), bukan daftar nama style.
+    # Contoh: "Font: 12pt Times New Roman | Spasi: 1.15 | Rata: JUSTIFY"
+    normal_fmt_label = _normal_formatting_label(requirements) if requirements else None
 
     for item in report["warnings"].get("undefined_styles", []):
         style = item.get("style", "?")
@@ -334,7 +424,7 @@ def _build_issues_checks(
         msg = f"Style tidak terdefinisi di requirements: '{style}' ({count}x elemen)"
 
         valid_paras = _coerce_paras(paras)
-        occurrences = _build_occurrences(valid_paras, actual_str=style, expected_str=known_styles_label) or None
+        occurrences = _build_occurrences(valid_paras, actual_str=style, expected_str=normal_fmt_label) or None
 
         issues.append(ValidationIssue(
             category="typography", field="undefined_style",
@@ -371,11 +461,21 @@ def _build_issues_checks(
         if ps["status"] in ("lolos semua", "lolos semua (ada inherited)"):
             raw_details = ps.get("paragraph_details_pass", [])
             occs = _build_occurrences(raw_details) or None
+
+            # Cari expected value dari requirements: "param (Style Name)" → parse → lookup
+            expected_val: str | None = None
+            if requirements:
+                m = re.match(r'^(\S+)\s+\((.+)\)$', ps["parameter"])
+                if m:
+                    expected_val = _lookup_expected(requirements, m.group(1), m.group(2))
+
             checks.append(ValidationCheckResult(
                 category="typography",
                 field=f"validocx_param.{ps['parameter'].replace(' ', '_')}",
                 status="passed",
                 message=f"{ps['parameter']}: {ps['pass']} elemen lolos",
+                expected=expected_val,
+                actual=expected_val,  # sama dengan expected karena semua lolos
                 occurrences=occs,
             ))
 
@@ -578,11 +678,11 @@ def _check_document_structure(
             msg = f"Section wajib '{label}' tidak ditemukan di dokumen"
             issues.append(ValidationIssue(
                 category="document_structure", field="required_section",
-                severity="error", message=msg, expected=t,
+                severity="error", message=msg, expected=label,
             ))
             checks.append(ValidationCheckResult(
                 category="document_structure", field="required_section",
-                status="failed", message=msg, expected=t,
+                status="failed", message=msg, expected=label,
             ))
 
         if not missing_required:
@@ -630,6 +730,8 @@ def _check_document_structure(
                         category="document_structure", field="bab_order",
                         status="passed",
                         message=f"BAB berurutan dengan benar: {bab_numbers}",
+                        expected=str(expected_bab_numbers),
+                        actual=str(bab_numbers),
                     ))
 
         # 3. Cek urutan major section secara keseluruhan
@@ -665,16 +767,22 @@ def _check_document_structure(
             issues.append(ValidationIssue(
                 category="document_structure", field="section_order",
                 severity="warning", message=msg,
+                expected=' → '.join(expected_filtered),
+                actual=' → '.join(actual_filtered),
             ))
             checks.append(ValidationCheckResult(
                 category="document_structure", field="section_order",
                 status="warning", message=msg,
+                expected=' → '.join(expected_filtered),
+                actual=' → '.join(actual_filtered),
             ))
         elif expected_filtered:
             checks.append(ValidationCheckResult(
                 category="document_structure", field="section_order",
                 status="passed",
                 message=f"Urutan section sesuai: {' → '.join(actual_filtered)}",
+                expected=' → '.join(expected_filtered),
+                actual=' → '.join(actual_filtered),
             ))
 
     except Exception as exc:
@@ -1934,6 +2042,185 @@ def _check_start_section(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Page Number Display Map
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _int_to_roman_lower(n: int) -> str:
+    """Konversi integer positif ke angka romawi huruf kecil."""
+    val  = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
+    syms = ['m', 'cm', 'd', 'cd', 'c', 'xc', 'l', 'xl', 'x', 'ix', 'v', 'iv', 'i']
+    result = ''
+    for i in range(len(val)):
+        while n >= val[i]:
+            result += syms[i]
+            n -= val[i]
+    return result
+
+
+def _read_pgNumType(sectPr) -> tuple[str, int]:
+    """Baca format dan nomor awal dari elemen w:pgNumType dalam sectPr.
+
+    Returns:
+        (fmt, start_num)
+        fmt       → "lowerRoman", "upperRoman", "decimal", dsb.
+        start_num → nomor halaman awal section (default 1)
+    """
+    pgNumType = sectPr.find(qn("w:pgNumType"))
+    fmt       = "decimal"
+    start_num = 1
+    if pgNumType is not None:
+        fmt = pgNumType.get(qn("w:fmt"), "decimal") or "decimal"
+        s   = pgNumType.get(qn("w:start"), "1")
+        try:
+            start_num = int(s)
+        except (TypeError, ValueError):
+            start_num = 1
+    return fmt, start_num
+
+
+def _build_page_display_map(docx_path: Path) -> dict[int, str]:
+    """Bangun peta nomor halaman fisik → label display sesuai penomoran dokumen.
+
+    Langkah:
+    1. Hitung halaman fisik via count_body_pages (hanya pakai w:lastRenderedPageBreak,
+       tabel dihitung per baris bukan per sel)
+    2. Baca section properties (w:pgNumType) untuk menentukan format penomoran
+       (Romawi/Arab) dan nomor awal per section
+    3. Jika section properties tidak tersedia atau tidak jelas → fallback ke
+       deteksi teks "BAB 1"
+    """
+    try:
+        doc = DocxDocument(str(docx_path))
+
+        # ── 1. Hitung halaman fisik ──────────────────────────────────────────
+        para_page_map, total_pages = count_body_pages(doc.element.body)
+
+        # ── 2. Baca section properties ───────────────────────────────────────
+        # Setiap section dalam dokumen punya format penomoran (Romawi/Arab) dan
+        # nomor awal. Section break tersimpan di w:pPr/w:sectPr pada paragraf
+        # TERAKHIR tiap section. Section paling akhir ada di w:body/w:sectPr.
+        #
+        # Struktur 'sections': list yang sudah diurutkan berdasarkan kemunculan,
+        # setiap item berisi:
+        #   start_page : halaman fisik pertama section ini
+        #   fmt        : format angka ("lowerRoman", "upperRoman", "decimal", ...)
+        #   start_num  : nomor halaman awal section ini
+        raw_sections: list[dict] = []   # [{fmt, start_num, next_start}, ...]
+
+        for para in doc.paragraphs:
+            pPr    = para._p.find(qn("w:pPr"))
+            if pPr is None:
+                continue
+            sectPr = pPr.find(qn("w:sectPr"))
+            if sectPr is None:
+                continue
+
+            fmt, start_num = _read_pgNumType(sectPr)
+            sect_page      = para_page_map.get(id(para._p), 1)
+
+            t   = sectPr.find(qn("w:type"))
+            val = t.get(qn("w:val"), "nextPage") if t is not None else "nextPage"
+
+            # Section berikutnya mulai satu halaman setelah section break ini
+            # (kecuali continuous yang tidak pindah halaman)
+            next_start = sect_page + 1 if val in ("nextPage", "evenPage", "oddPage") else sect_page
+
+            raw_sections.append({"fmt": fmt, "start_num": start_num, "next_start": next_start})
+
+        # Tambahkan section terakhir (w:body/w:sectPr)
+        last_sectPr = doc.element.body.find(qn("w:sectPr"))
+        if last_sectPr is not None:
+            fmt, start_num = _read_pgNumType(last_sectPr)
+            raw_sections.append({"fmt": fmt, "start_num": start_num, "next_start": total_pages + 1})
+
+        # Hitung start_page untuk setiap section dalam satu pass
+        sections: list[dict] = []
+        current_start = 1
+        for rs in raw_sections:
+            sections.append({
+                "start_page": current_start,
+                "fmt"       : rs["fmt"],
+                "start_num" : rs["start_num"],
+            })
+            current_start = rs["next_start"]
+
+        # ── 3. Bangun peta halaman → label ───────────────────────────────────
+        page_map: dict[int, str] = {}
+
+        roman_fmts        = {"lowerRoman", "upperRoman"}
+        has_clear_sections = (
+            len(sections) >= 2
+            and any(s["fmt"] in roman_fmts for s in sections[:-1])
+            and sections[-1]["fmt"] not in roman_fmts
+        )
+
+        def _page_label(page: int, fmt: str, start_num: int, section_start: int) -> str:
+            num = start_num + (page - section_start)
+            if fmt == "lowerRoman":
+                return _int_to_roman_lower(max(num, 1))
+            if fmt == "upperRoman":
+                return _int_to_roman_lower(max(num, 1)).upper()
+            return str(max(num, 1))
+
+        if has_clear_sections:
+            # Gunakan section properties
+            for p in range(1, total_pages + 1):
+                active = sections[0]
+                for s in sections:
+                    if s["start_page"] <= p:
+                        active = s
+                page_map[p] = _page_label(p, active["fmt"], active["start_num"], active["start_page"])
+
+        else:
+            # Fallback: deteksi BAB 1 (Heading 1 yang teksnya diawali "BAB")
+            bab1_page: int | None = None
+            for para in doc.paragraphs:
+                if "Heading" in para.style.name and _BAB_RE.match(para.text.strip().upper()):
+                    bab1_page = para_page_map.get(id(para._p))
+                    break
+
+            if bab1_page is None or bab1_page <= 1:
+                for p in range(1, total_pages + 1):
+                    page_map[p] = str(p)
+            else:
+                for p in range(1, bab1_page):
+                    page_map[p] = _int_to_roman_lower(p)
+                for p in range(bab1_page, total_pages + 1):
+                    page_map[p] = str(p - bab1_page + 1)
+
+        return page_map
+    except Exception:
+        return {}
+
+
+def _patch_report_pages(report: dict, page_map: dict[int, str]) -> None:
+    """Konversi field 'page' di semua paragraph_details dari nomor fisik ke label display.
+
+    Iterasi seluruh paragraph_details dan paragraph_details_pass di setiap
+    bucket report, lalu ganti nilai integer fisik dengan label dari page_map.
+    """
+    if not page_map:
+        return
+
+    def _patch_items(items: list[dict]) -> None:
+        for item in items:
+            for detail in item.get("paragraph_details", []):
+                phys = detail.get("page")
+                if isinstance(phys, int):
+                    detail["page"] = page_map.get(phys, str(phys))
+            for detail in item.get("paragraph_details_pass", []):
+                phys = detail.get("page")
+                if isinstance(phys, int):
+                    detail["page"] = page_map.get(phys, str(phys))
+
+    _patch_items(report["errors"].get("value_mismatch", []))
+    _patch_items(report["errors"].get("font_mismatch", []))
+    _patch_items(report["warnings"].get("undefined_styles", []))
+    _patch_items(report["warnings"].get("attr_inherited", []))
+    _patch_items(report.get("parameter_summary", []))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Main entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1959,12 +2246,17 @@ def run_validocx(
     entries = parse_entries(log_text)
     report = build_report(entries, docx_path=str(path))
 
+    # Konversi nomor halaman fisik → label display (romawi / angka arab)
+    # sesuai penomoran dokumen aktual, sebelum laporan diproses lebih lanjut.
+    page_map = _build_page_display_map(path)
+    _patch_report_pages(report, page_map)
+
     # Ekstrak daftar style yang dikenali dari requirements untuk ditampilkan
     # sebagai nilai "Seharusnya" pada warning undefined_style.
     # Contoh hasil: ["Normal", "Heading 1", "Heading 2", "Heading 3"]
     known_styles = list(requirements.get("styles", {}).keys())
 
-    issues, checks = _build_issues_checks(report, known_styles=known_styles)
+    issues, checks = _build_issues_checks(report, known_styles=known_styles, requirements=requirements)
     case_issues, case_checks         = _check_heading_case(path, metadata)
     struct_issues, struct_checks     = _check_document_structure(path, metadata)
     fig_issues, fig_checks           = _check_figures_tables(path, metadata)

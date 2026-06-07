@@ -30,11 +30,12 @@ export const activePeriodSchema = z.object({
 })
 
 const validationOccurrenceSchema = z.object({
-  page: z.number().nullable().optional(),
+  page: z.union([z.string(), z.number()]).nullable().optional(),
   bab: z.string().nullable().optional(),
   para_idx: z.number().nullable().optional(),
   style: z.string().nullable().optional(),
   text: z.string().nullable().optional(),
+  full_text: z.string().nullable().optional(),
   actual: z.string().nullable().optional(),
   expected: z.string().nullable().optional(),
 })
@@ -75,11 +76,12 @@ export const validationCheckSchema = z.object({
   location: z.string().nullable().optional(),
   skip_reason: z.string().nullable().optional(),
   occurrences: z.array(z.object({
-    page      : z.number().nullable().optional(),
+    page      : z.union([z.string(), z.number()]).nullable().optional(),
     bab       : z.string().nullable().optional(),
     para_idx  : z.number().nullable().optional(),
     style     : z.string().nullable().optional(),
     text      : z.string().optional().default(""),
+    full_text : z.string().nullable().optional(),
     actual    : z.string().nullable().optional(),
     expected  : z.string().nullable().optional(),
   })).nullable().optional(),

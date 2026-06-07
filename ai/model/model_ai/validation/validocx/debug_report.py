@@ -67,49 +67,98 @@ def parse_entries_from_file(path):
         return parse_entries(f.read())
 
 
+def count_body_pages(body):
+    """Hitung halaman fisik untuk setiap paragraf di seluruh body dokumen.
+
+    Strategi: gunakan HANYA w:lastRenderedPageBreak sebagai penanda perpindahan.
+    Penanda ini ditulis Word saat dokumen disimpan dan sudah mencakup semua jenis
+    perpindahan halaman (manual Ctrl+Enter, section break, maupun konten penuh).
+
+    Keunggulan dibanding pendekatan lain:
+    - Tidak ada double-count (tidak menggabungkan dua jenis penanda berbeda)
+    - Tabel ditangani per BARIS, bukan per sel, sehingga tabel multi-kolom
+      tidak menggandakan hitungan
+
+    Returns:
+        tuple(dict, int):
+            dict  → {id(para_xml): nomor_halaman_fisik}  (top-level paragraf saja)
+            int   → total halaman fisik dokumen
+    """
+    from docx.oxml.ns import qn
+
+    _LR   = qn("w:lastRenderedPageBreak")
+    _W_P  = qn("w:p")
+    _W_TR = qn("w:tr")
+    _W_TC = qn("w:tc")
+
+    current_page  = 1
+    para_page_map = {}   # id(para_xml) → halaman fisik
+    first         = True
+
+    def _has_break(xml_el) -> bool:
+        return bool(xml_el.findall(".//" + _LR))
+
+    def _process_para(para_xml) -> None:
+        nonlocal current_page, first
+        if _has_break(para_xml) and not first:
+            current_page += 1
+        para_page_map[id(para_xml)] = current_page
+        first = False
+
+    def _process_table(tbl_xml) -> None:
+        """Hitung perpindahan halaman dalam tabel: satu kali per baris tabel.
+
+        Setiap baris yang dimulai di halaman baru punya w:lastRenderedPageBreak
+        di paragraf pertama sel pertamanya. Kita cek satu sel saja per baris
+        untuk menghindari penghitungan ganda pada tabel multi-kolom.
+        """
+        nonlocal current_page
+        for row in tbl_xml.findall(_W_TR):          # baris langsung (bukan bersarang)
+            for cell in row.findall(_W_TC):          # sel langsung
+                first_para = cell.find(_W_P)         # paragraf pertama di sel ini
+                if first_para is not None:
+                    if _has_break(first_para):
+                        current_page += 1
+                    break                            # cukup cek sel pertama yang punya paragraf
+
+    for child in body:
+        tag = child.tag
+        if tag == _W_P:
+            _process_para(child)
+        elif tag == qn("w:tbl"):
+            _process_table(child)
+
+    return para_page_map, current_page
+
+
 def _get_para_details(docx_path):
     """Muat semua paragraf dari docx, kembalikan dict {idx: detail}.
 
-    Setiap entri sekarang menyertakan:
-      - page : nomor halaman (dihitung dari page-break marker di XML)
+    Setiap entri menyertakan:
+      - page : nomor halaman fisik (dihitung via count_body_pages)
       - bab  : teks Heading 1 terakhir sebelum paragraf ini (atau None)
     """
     try:
         from docx import Document
-        from docx.oxml.ns import qn
 
         doc = Document(docx_path)
-        result = {}
-        current_page = 1
+
+        # Hitung halaman untuk seluruh body — termasuk paragraf di dalam tabel
+        para_page_map, _ = count_body_pages(doc.element.body)
+
+        result      = {}
         current_bab = None
 
         for idx, para in enumerate(doc.paragraphs):
-            para_xml = para._p
-
-            # ── Deteksi page break ───────────────────────────────────────
-            # w:lastRenderedPageBreak → page break dari hasil render Word
-            # w:br w:type="page"      → explicit manual page break
-            has_page_break = bool(
-                para_xml.findall(".//" + qn("w:lastRenderedPageBreak"))
-            ) or any(
-                br.get(qn("w:type")) == "page"
-                for br in para_xml.findall(".//" + qn("w:br"))
-            )
-
-            # Catatan: page break dideteksi pada paragraf yang *mengandung* marker,
-            # bukan paragraf berikutnya. Untuk dokumen PKM dengan explicit paragraph-level
-            # breaks, ini akurat. Edge case: jika teks dan break ada di paragraf yang sama,
-            # teks tersebut akan diberi nomor halaman baru (bukan halaman sebelumnya).
-            if has_page_break and idx > 0:
-                current_page += 1
-
-            # ── Deteksi nama BAB dari Heading 1 ─────────────────────────
             style_name = para.style.name
-            text = para.text.strip()
+            text       = para.text.strip()
+
             if style_name == "Heading 1" and text:
                 current_bab = text
 
-            # ── Data paragraf (sama seperti sebelumnya + page + bab) ────
+            # Ambil halaman dari peta; default 1 jika tidak ditemukan
+            page = para_page_map.get(id(para._p), 1)
+
             pf    = para.paragraph_format
             ls    = pf.line_spacing
             rule  = str(pf.line_spacing_rule) if pf.line_spacing_rule else "inherited"
@@ -134,9 +183,10 @@ def _get_para_details(docx_path):
                 "line_spacing": float(ls) if ls is not None else None,
                 "spacing_rule": rule,
                 "text"        : text[:100],
+                "full_text"   : text,
                 "runs"        : runs,
-                "page"        : current_page,   # BARU
-                "bab"         : current_bab,    # BARU
+                "page"        : page,
+                "bab"         : current_bab,
             }
 
         return result

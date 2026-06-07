@@ -10,10 +10,7 @@ export function createSessionToken({ userId, email, role }) {
       email,
       role,
     },
-    env.SESSION_SECRET,
-    {
-      expiresIn: env.SESSION_MAX_AGE_SECONDS,
-    }
+    env.SESSION_SECRET
   )
 }
 

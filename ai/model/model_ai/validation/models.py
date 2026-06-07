@@ -5,16 +5,6 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-VALIDATION_CATEGORIES = (
-    "typography",
-    "page_layout",
-    "spacing",
-    "document_structure",
-    "numbering",
-    "figures_tables",
-    "page_count",
-)
-
 
 class ValidationCheckResult(BaseModel):
     """Hasil satu pengecekan properti: passed, failed, warning, atau skipped."""

@@ -8,6 +8,10 @@ import logging
 import re
 from pathlib import Path
 
+from docx import Document as DocxDocument
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+
 from model_ai.extractor.models import DocumentMetadata
 from model_ai.validation.models import ValidationCheckResult, ValidationIssue
 from model_ai.validation.validocx.validator import validate as validocx_validate
@@ -44,6 +48,22 @@ _SUB_BAB_RE = re.compile(r'^(\d+)\.(\d+)\b')
 # Default: wajib ada titik+spasi setelah nomor ("Lampiran 1. Judul").
 # Diperbarui secara dinamis via _build_lampiran_re() saat metadata tersedia.
 _LAMPIRAN_ITEM_RE = re.compile(r'^Lampiran\s+\d+\.\s', re.IGNORECASE)
+# Broad: menangkap SEMUA paragraf berawalan "Lampiran <angka>" (dipakai _check_lampiran_format)
+_LAMPIRAN_BROAD_RE = re.compile(r'^Lampiran\s+\d+', re.IGNORECASE)
+
+# Inverse dari _HEADING_TITLE_MAP: tipe section → teks heading
+_HEADING_TITLE_MAP_INV: dict[str, str] = {v: k for k, v in _HEADING_TITLE_MAP.items()}
+
+# Regex per tipe section untuk deteksi halaman pertama di _check_page_count
+_SECTION_HEADING_MAP: dict[str, re.Pattern] = {
+    "bab":            _BAB_RE,
+    "daftar_isi":     re.compile(r"^DAFTAR\s+ISI$",       re.IGNORECASE),
+    "daftar_gambar":  re.compile(r"^DAFTAR\s+GAMBAR$",     re.IGNORECASE),
+    "daftar_tabel":   re.compile(r"^DAFTAR\s+TABEL$",      re.IGNORECASE),
+    "daftar_lampiran":re.compile(r"^DAFTAR\s+LAMPIRAN$",   re.IGNORECASE),
+    "daftar_pustaka": re.compile(r"^DAFTAR\s+PUSTAKA$",    re.IGNORECASE),
+    "lampiran":       re.compile(r"^LAMPIRAN$",             re.IGNORECASE),
+}
 
 
 def _build_lampiran_re(separator: str | None) -> re.Pattern:
@@ -202,6 +222,11 @@ def _build_occurrences(
     return result
 
 
+def _coerce_paras(paras) -> list[dict]:
+    """Kembalikan paras sebagai list[dict] yang valid, atau [] jika bukan."""
+    return paras if isinstance(paras, list) and paras and isinstance(paras[0], dict) else []
+
+
 def _build_issues_checks(
     report: dict,
     known_styles: list[str] | None = None,
@@ -253,7 +278,7 @@ def _build_issues_checks(
         vm_actual_str   = _humanize_attr_value(attr_name, vm_actual_raw)
         vm_expected_str = _humanize_attr_value(attr_name, vm_expected_raw)
 
-        valid_paras = paras if isinstance(paras, list) and paras and isinstance(paras[0], dict) else []
+        valid_paras = _coerce_paras(paras)
         occurrences = _build_occurrences(valid_paras, vm_actual_str, vm_expected_str) or None
 
         issues.append(ValidationIssue(
@@ -283,7 +308,7 @@ def _build_issues_checks(
         fm_actual_str = fm_actual.group(1) if fm_actual else None
         fm_expected_str = fm_expected.group(1) if fm_expected else None
 
-        valid_paras = paras if isinstance(paras, list) and paras and isinstance(paras[0], dict) else []
+        valid_paras = _coerce_paras(paras)
         occurrences = _build_occurrences(valid_paras, fm_actual_str, fm_expected_str) or None
 
         issues.append(ValidationIssue(
@@ -308,7 +333,7 @@ def _build_issues_checks(
         paras = item.get("paragraph_details", []) or []
         msg = f"Style tidak terdefinisi di requirements: '{style}' ({count}x elemen)"
 
-        valid_paras = paras if isinstance(paras, list) and paras and isinstance(paras[0], dict) else []
+        valid_paras = _coerce_paras(paras)
         occurrences = _build_occurrences(valid_paras, actual_str=style, expected_str=known_styles_label) or None
 
         issues.append(ValidationIssue(
@@ -328,7 +353,7 @@ def _build_issues_checks(
         paras = item.get("paragraph_details", []) or []
         msg = f"Atribut '{attr}' tidak di-set eksplisit (diwarisi dari Word default), {count}x"
 
-        valid_paras = paras if isinstance(paras, list) and paras and isinstance(paras[0], dict) else []
+        valid_paras = _coerce_paras(paras)
         occurrences = _build_occurrences(valid_paras, actual_str="inherited", expected_str="explicit") or None
 
         issues.append(ValidationIssue(
@@ -343,7 +368,7 @@ def _build_issues_checks(
 
     # ── Parameter summary sebagai check passed ───────────────────────────────
     for ps in report.get("parameter_summary", []):
-        if ps["status"] == "lolos semua":
+        if ps["status"] in ("lolos semua", "lolos semua (ada inherited)"):
             raw_details = ps.get("paragraph_details_pass", [])
             occs = _build_occurrences(raw_details) or None
             checks.append(ValidationCheckResult(
@@ -423,7 +448,6 @@ def _check_heading_case(
         return issues, checks
 
     try:
-        from docx import Document as DocxDocument
         doc = DocxDocument(str(docx_path))
 
         mismatches_per_level: dict[int, list[str]] = {lvl: [] for lvl in case_per_level}
@@ -526,7 +550,6 @@ def _check_document_structure(
         return issues, checks
 
     try:
-        from docx import Document as DocxDocument
         doc = DocxDocument(str(docx_path))
 
         # Ekstrak heading dari docx dan klasifikasikan
@@ -687,7 +710,6 @@ def _template_to_regex(template: str) -> re.Pattern:
 
 def _para_contains_image(para) -> bool:
     """Cek apakah paragraf mengandung gambar inline."""
-    from docx.oxml.ns import qn
     el = para._element
     return (
         el.find('.//' + qn('w:drawing')) is not None
@@ -706,7 +728,6 @@ def _build_content_elements(doc) -> tuple[list[tuple[str, object]], str]:
     Returns:
         (elements, source) di mana source menjelaskan metode yang dipakai.
     """
-    from docx.oxml.ns import qn
     body = doc.element.body
     para_by_el = {id(p._element): p for p in doc.paragraphs}
     tbl_by_el  = {id(t._element): t for t in doc.tables}
@@ -799,14 +820,7 @@ def _check_lampiran_format(
     # Regex format yang DIHARAPKAN (dari metadata)
     lampiran_re = _build_lampiran_re(effective_sep)
 
-    # Regex broad: tangkap SEMUA paragraf yang diawali "Lampiran <angka>"
-    # untuk mendeteksi judul yang memakai separator salah
-    _LAMPIRAN_BROAD_RE = re.compile(r'^Lampiran\s+\d+', re.IGNORECASE)
-
     try:
-        from docx import Document as DocxDocument
-        from docx.enum.text import WD_ALIGN_PARAGRAPH
-
         doc = DocxDocument(str(docx_path))
 
         wrong_alignment:  list[str] = []
@@ -961,8 +975,6 @@ def _check_caption_format(
     expected_size   = int(t.font_size_body_pt) if t and t.font_size_body_pt else None
 
     try:
-        from docx import Document as DocxDocument
-        from docx.enum.text import WD_ALIGN_PARAGRAPH
 
         doc = DocxDocument(str(docx_path))
 
@@ -1018,7 +1030,7 @@ def _check_caption_format(
             ))
             checks.append(ValidationCheckResult(
                 category="figures_tables", field="caption_alignment",
-                status="error", message=msg,
+                status="failed", message=msg,
                 expected="CENTER", actual="bukan CENTER",
             ))
         else:
@@ -1123,7 +1135,6 @@ def _check_figures_tables(
         return issues, checks
 
     try:
-        from docx import Document as DocxDocument
         doc = DocxDocument(str(docx_path))
 
         fig_fmt_re = _template_to_regex(fig_fmt_tpl) if fig_fmt_tpl else None
@@ -1316,7 +1327,6 @@ def _get_pgnum_fmt(sectPr) -> str:
     ada atau atribut w:fmt tidak di-set — sesuai perilaku default Microsoft
     Word (OOXML spec: nilai default w:fmt adalah 'decimal').
     """
-    from docx.oxml.ns import qn
     pgNumType = sectPr.find(qn('w:pgNumType'))
     if pgNumType is not None:
         fmt = pgNumType.get(qn('w:fmt'))
@@ -1326,7 +1336,6 @@ def _get_pgnum_fmt(sectPr) -> str:
 
 def _hdrftr_has_page_field(hdrftr) -> bool:
     """Cek apakah header/footer mengandung field PAGE."""
-    from docx.oxml.ns import qn
     if hdrftr is None:
         return False
     for instrText in hdrftr._element.iter(qn('w:instrText')):
@@ -1349,8 +1358,6 @@ def _scan_numbering_zones(doc) -> tuple[dict | None, dict | None]:
     4. Section yang berakhir SEBELUM BAB 1 = preliminary zone.
     5. Jika BAB 1 tidak ditemukan, semua section dianggap content.
     """
-    from docx.oxml.ns import qn
-
     body = doc.element.body
     all_children = list(body)
 
@@ -1500,7 +1507,6 @@ def _check_numbering(
         return issues, checks
 
     try:
-        from docx import Document as DocxDocument
         doc = DocxDocument(str(docx_path))
 
         # Gunakan pendekatan content-aware: cari BAB 1 lalu tentukan zone
@@ -1509,13 +1515,12 @@ def _check_numbering(
 
         # Fallback: jika scan gagal, bangun section_infos biasa
         if prelim_zone is None and content_zone is None:
-            from docx.oxml.ns import qn as _qn
             section_infos = []
             for section in doc.sections:
                 sectPr = section._sectPr
                 fmt = _get_pgnum_fmt(sectPr)
-                has_own_hdr = bool(sectPr.findall(_qn('w:headerReference')))
-                has_own_ftr = bool(sectPr.findall(_qn('w:footerReference')))
+                has_own_hdr = bool(sectPr.findall(qn('w:headerReference')))
+                has_own_ftr = bool(sectPr.findall(qn('w:footerReference')))
                 has_header_page = False
                 has_footer_page = False
                 if has_own_hdr:
@@ -1729,9 +1734,6 @@ def _check_page_count(
     selesai_type = pc.halaman_inti_selesai  # default: "daftar_pustaka"
 
     try:
-        from docx import Document as DocxDocument
-        from docx.oxml.ns import qn
-
         doc = DocxDocument(str(docx_path))
 
         # ── Identifikasi section content (BAB) vs preliminary (romawi) ────
@@ -1809,17 +1811,6 @@ def _check_page_count(
                 current_page += 1
             para_pages.append((current_page, para.style.name, para.text.strip()))
 
-        # ── Tentukan heading title untuk setiap section type ─────────────
-        _SECTION_HEADING_MAP = {
-            "bab":            _BAB_RE,
-            "daftar_isi":     re.compile(r"^DAFTAR\s+ISI$", re.IGNORECASE),
-            "daftar_gambar":  re.compile(r"^DAFTAR\s+GAMBAR$", re.IGNORECASE),
-            "daftar_tabel":   re.compile(r"^DAFTAR\s+TABEL$", re.IGNORECASE),
-            "daftar_lampiran":re.compile(r"^DAFTAR\s+LAMPIRAN$", re.IGNORECASE),
-            "daftar_pustaka": re.compile(r"^DAFTAR\s+PUSTAKA$", re.IGNORECASE),
-            "lampiran":       re.compile(r"^LAMPIRAN$", re.IGNORECASE),
-        }
-
         def _find_first_page(section_type: str) -> int | None:
             pattern = _SECTION_HEADING_MAP.get(section_type)
             if pattern is None:
@@ -1864,7 +1855,7 @@ def _check_page_count(
             ))
             checks.append(ValidationCheckResult(
                 category="page_count", field="halaman_inti",
-                status="error", message=msg,
+                status="failed", message=msg,
                 expected=str(maks), actual=str(jumlah_halaman),
             ))
         else:
@@ -1911,8 +1902,7 @@ def _check_start_section(
         label = f"BAB {target_num}"
     else:
         # Cari heading yang cocok dengan tipe section
-        title_map_inv = {v: k for k, v in _HEADING_TITLE_MAP.items()}
-        expected_title = title_map_inv.get(start_at, start_at.upper().replace("_", " "))
+        expected_title = _HEADING_TITLE_MAP_INV.get(start_at, start_at.upper().replace("_", " "))
         found = any(
             para.style.name == "Heading 1"
             and para.text.strip().upper() == expected_title

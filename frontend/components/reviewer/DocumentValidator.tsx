@@ -1196,7 +1196,7 @@ export function DocumentValidator() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <p className="text-xs text-gray-400 mb-0.5">Nama Pengusul</p>
-                  <p className="text-sm font-medium text-gray-800">{file ? parseFileName(file.name).ketua : "—"}</p>
+                  <p className="text-sm font-medium text-gray-800">{file ? parseFileName(file.name, pkmSchemes).ketua : "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400 mb-0.5">Skema PKM</p>

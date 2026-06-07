@@ -28,14 +28,16 @@ import {
   runDocumentValidation,
   runBulkValidation,
   checkSessionStatus,
+  getPkmSchemas,
+  getPkmSchemeLabel,
   type ValidationResult,
   type ValidationIssue,
   type ValidationOccurrence,
   type ValidationCheck,
   type ValidationSession,
   type ValidationResultItem,
+  type PkmSchema,
 } from "@/lib/api/pkm"
-import { PKM_SCHEMES } from "@/lib/constants/pkm-schemes"
 import { YearPicker } from "@/components/ui/year-picker"
 
 // ─── Konstanta ───────────────────────────────────────────────────────────────
@@ -133,22 +135,21 @@ function formatFieldLabel(field: string): string {
 
 // ─── Helper: parse nama file → nama ketua + skema PKM ───────────────────────
 
-function parseFileName(fileName: string): { ketua: string; scheme: string } {
+function parseFileName(fileName: string, schemes: PkmSchema[]): { ketua: string; scheme: string } {
   const base  = fileName.replace(/\.docx$/i, "")
   const parts = base.split("_")
 
   const rawKetua  = parts[0] ?? base
   const rawScheme = parts[parts.length - 1] ?? ""
 
-  // Cocokkan ke nilai PKM_SCHEMES (PKMKC → PKM-KC)
   const normalizedScheme = rawScheme.toUpperCase()
-  const matched = PKM_SCHEMES.find(
-    (s) => s.value.replace("-", "").toUpperCase() === normalizedScheme
+  const matched = schemes.find(
+    (s) => s.singkatan.replace("-", "").toUpperCase() === normalizedScheme
   )
 
   return {
     ketua:  rawKetua,
-    scheme: matched?.value ?? rawScheme,
+    scheme: matched?.singkatan ?? rawScheme,
   }
 }
 
@@ -721,6 +722,7 @@ function BulkItemForm({
   onRemove,
   canRemove,
   disabled,
+  schemes,
 }: {
   item:     BulkItem
   index:    number
@@ -728,6 +730,7 @@ function BulkItemForm({
   onRemove: (id: string) => void
   canRemove: boolean
   disabled: boolean
+  schemes:  PkmSchema[]
 }) {
   const [isDragging, setIsDragging] = useState(false)
 
@@ -808,8 +811,8 @@ function BulkItemForm({
                   <SelectValue placeholder="Pilih skema" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PKM_SCHEMES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  {schemes.map((s) => (
+                    <SelectItem key={s.singkatan} value={s.singkatan}>{s.singkatan}: {s.nama}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -891,8 +894,8 @@ function BulkItemForm({
 
 // ─── Sub-komponen: JobProgressRow ─────────────────────────────────────────────
 
-function JobProgressRow({ item }: { item: ValidationResultItem }) {
-  const { ketua, scheme } = parseFileName(item.file_name)
+function JobProgressRow({ item, schemes }: { item: ValidationResultItem; schemes: PkmSchema[] }) {
+  const { ketua, scheme } = parseFileName(item.file_name, schemes)
 
   const statusConfig = {
     pending:    { icon: "○", color: "text-gray-400", label: "Menunggu" },
@@ -925,17 +928,19 @@ function DocSelectorTab({
   items,
   selectedIdx,
   onSelect,
+  schemes,
 }: {
   items: ValidationResultItem[]
   selectedIdx: number
   onSelect: (idx: number) => void
+  schemes: PkmSchema[]
 }) {
   return (
     <div className="px-6 pt-4 pb-2">
       <p className="text-xs font-medium text-gray-500 mb-2">Pilih dokumen untuk melihat hasil:</p>
       <div className="flex flex-wrap gap-2">
         {items.map((item, idx) => {
-          const { ketua, scheme } = parseFileName(item.file_name)
+          const { ketua, scheme } = parseFileName(item.file_name, schemes)
           const isActive = selectedIdx === idx
           const statusDot = {
             completed:  "bg-pkm-500",
@@ -973,6 +978,15 @@ function DocSelectorTab({
 // ─── Komponen utama: DocumentValidator ───────────────────────────────────────
 
 export function DocumentValidator() {
+
+  // ── Daftar skema PKM dari database ────────────────────────────────────────
+  const [pkmSchemes, setPkmSchemes] = useState<PkmSchema[]>([])
+
+  useEffect(() => {
+    getPkmSchemas().then(({ data }) => {
+      if (data) setPkmSchemes(data)
+    })
+  }, [])
 
   // ── Mode: single (default) atau bulk ─────────────────────────────────────
   const [mode, setMode] = useState<"single" | "bulk">("single")
@@ -1187,7 +1201,7 @@ export function DocumentValidator() {
                 <div>
                   <p className="text-xs text-gray-400 mb-0.5">Skema PKM</p>
                   <p className="text-sm font-medium text-gray-800">
-                    {PKM_SCHEMES.find((s) => s.value === selectedSchemaId)?.label ?? selectedSchemaId}
+                    {getPkmSchemeLabel(selectedSchemaId, pkmSchemes)}
                   </p>
                 </div>
                 <div>
@@ -1216,8 +1230,8 @@ export function DocumentValidator() {
                   <SelectValue placeholder="Pilih jenis PKM" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PKM_SCHEMES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  {pkmSchemes.map((s) => (
+                    <SelectItem key={s.singkatan} value={s.singkatan}>{s.singkatan}: {s.nama}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1315,6 +1329,7 @@ export function DocumentValidator() {
           onRemove={removeBulkItem}
           canRemove={bulkItems.length > 1}
           disabled={bulkSubmitting}
+          schemes={pkmSchemes}
         />
       ))}
 
@@ -1387,7 +1402,7 @@ export function DocumentValidator() {
         {/* Daftar progress per dokumen */}
         <div className="border-y border-border bg-white">
           {items.map((item) => (
-            <JobProgressRow key={item.id} item={item} />
+            <JobProgressRow key={item.id} item={item} schemes={pkmSchemes} />
           ))}
           {items.length === 0 && (
             <div className="flex items-center justify-center py-6 gap-2 text-gray-400">
@@ -1405,6 +1420,7 @@ export function DocumentValidator() {
               items={items}
               selectedIdx={selectedDocIdx}
               onSelect={(idx) => setSelectedDocIdx(idx)}
+              schemes={pkmSchemes}
             />
 
             {/* Hasil dokumen yang dipilih */}

@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DownloadIcon, Loader2Icon } from "@/components/icons/public-icons"
+import { getPkmSchemas, type PkmSchema } from "@/lib/api/pkm"
 
 type HistoryItem = {
   id: string
@@ -19,27 +20,10 @@ type HistoryItem = {
   result_url: string
 }
 
-const PKM_SCHEMES = [
-  { value: "pkm-re", label: "PKM-RE: Riset Eksakta" },
-  { value: "pkm-rsh", label: "PKM-RSH: Riset Sosial Humaniora" },
-  { value: "pkm-k", label: "PKM-K: Kewirausahaan" },
-  { value: "pkm-pm", label: "PKM-PM: Pengabdian Kepada Masyarakat" },
-  { value: "pkm-pi", label: "PKM-PI: Penerapan Iptek" },
-  { value: "pkm-kc", label: "PKM-KC: Karsa Cipta" },
-  { value: "pkm-ki", label: "PKM-KI: Karya Inovatif" },
-  { value: "pkm-vgk", label: "PKM-VGK: Video Gagasan Konstruktif" },
-  { value: "pkm-ai", label: "PKM-AI: Artikel Ilmiah" },
-  { value: "pkm-gft", label: "PKM-GFT: Gagasan Futuristik Tertulis" },
-]
-
 const YEARS = Array.from({ length: 5 }, (_, i) => {
   const year = new Date().getFullYear() + 1 - i
   return { value: String(year), label: String(year) }
 })
-
-const SKEMA_LABEL: Record<string, string> = Object.fromEntries(
-  PKM_SCHEMES.map((s) => [s.value, s.value.toUpperCase()])
-)
 
 export function RiwayatModal({
   open,
@@ -50,9 +34,16 @@ export function RiwayatModal({
 }) {
   const [filterSkema, setFilterSkema] = useState("all")
   const [filterTahun, setFilterTahun] = useState("all")
+  const [pkmSchemes, setPkmSchemes] = useState<PkmSchema[]>([])
   const [data, setData] = useState<HistoryItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
+
+  useEffect(() => {
+    getPkmSchemas().then(({ data }) => {
+      if (data) setPkmSchemes(data)
+    })
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -89,9 +80,9 @@ export function RiwayatModal({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Skema</SelectItem>
-                {PKM_SCHEMES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
+                {pkmSchemes.map((s) => (
+                  <SelectItem key={s.singkatan} value={s.singkatan}>
+                    {s.singkatan}: {s.nama}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -146,7 +137,7 @@ export function RiwayatModal({
                 {data.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50/50">
                     <td className="px-4 py-3 font-medium text-gray-700">
-                      {SKEMA_LABEL[item.skema] ?? item.skema.toUpperCase()}
+                      {item.skema}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{item.tahun}</td>
                     <td className="px-4 py-3 text-right">

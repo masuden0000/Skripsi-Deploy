@@ -14,11 +14,9 @@ import { z } from "zod"
 // Schema Definitions
 // ============================================================================
 export const pkmSchemaSchema = z.object({
-  id: z.string(),
-  nama: z.string(),
   singkatan: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  nama: z.string(),
+  renderer_type: z.string().nullable().optional(),
 })
 
 export const activePeriodSchema = z.object({
@@ -125,7 +123,7 @@ export async function getPkmSchemas(): Promise<{
   data: PkmSchema[] | null
   error: string | null
 }> {
-  const result = await apiRequest<{ data: PkmSchema[] }>(
+  const result = await apiRequest<{ data: unknown[] }>(
     "GET",
     "/pkm/schemas",
     undefined,
@@ -139,7 +137,18 @@ export async function getPkmSchemas(): Promise<{
     return { data: [], error: null }
   }
 
-  return { data: raw.data as PkmSchema[], error: null }
+  const parsed = raw.data
+    .map((item) => pkmSchemaSchema.safeParse(item))
+    .filter((r) => r.success)
+    .map((r) => (r as { success: true; data: PkmSchema }).data)
+
+  return { data: parsed, error: null }
+}
+
+export function getPkmSchemeLabel(singkatan: string, schemas: PkmSchema[]): string {
+  const found = schemas.find((s) => s.singkatan === singkatan)
+  if (!found) return singkatan
+  return `${found.singkatan}: ${found.nama}`
 }
 
 // ============================================================================

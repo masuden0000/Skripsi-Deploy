@@ -32,22 +32,16 @@ router.get("/schemas", async (req, res, next) => {
   try {
     const { data, error } = await adminClient
       .from("pkm_schemas")
-      .select("id, nama, singkatan, created_at, updated_at")
-      .order("nama", { ascending: true })
+      .select("singkatan, nama, renderer_type")
+      .filter("singkatan", "like", "PKM-%")
+      .order("singkatan", { ascending: true })
 
     if (error) {
-      return res.status(500).json({ error: "Gagal mengambil daftar skema PKM." })
+      console.error("[PkmRoute] Gagal query pkm_schemas:", error.message)
+      return res.status(500).json({ error: "Gagal mengambil daftar skema PKM.", detail: error.message })
     }
 
-    const mapped = (data ?? []).map((row) => ({
-      id: row.id,
-      nama: row.nama,
-      singkatan: row.singkatan,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    }))
-
-    res.json({ data: mapped })
+    res.json({ data: data ?? [] })
   } catch (error) {
     next(error)
   }

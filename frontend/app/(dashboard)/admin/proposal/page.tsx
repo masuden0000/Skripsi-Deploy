@@ -29,7 +29,7 @@ import {
 import { YearPicker } from "@/components/ui/year-picker"
 import { DocumentIcon, FileTextIcon, UploadIcon, CheckCircleIcon, AlertCircleIcon, Loader2Icon, HistoryIcon } from "@/components/icons/public-icons"
 import { ExtractionValuesForm, type ExtractionPayload } from "@/components/proposal/ExtractionValuesForm"
-import { PKM_SCHEMES, getPkmSchemeLabel } from "@/lib/constants/pkm-schemes"
+import { getPkmSchemas, getPkmSchemeLabel, type PkmSchema } from "@/lib/api/pkm"
 
 // Types
 type ProjectStatus = "pending" | "uploading" | "extracting" | "extracted" | "generating" | "completed" | "failed" | "pending_upload"
@@ -96,6 +96,7 @@ export default function ProposalDocumentPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [metadataError, setMetadataError] = useState<string | null>(null)
   const [metadataRetry, setMetadataRetry] = useState(0)
+  const [pkmSchemes, setPkmSchemes] = useState<PkmSchema[]>([])
   const logsEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const maxLogIdRef = useRef<number>(0)
@@ -128,6 +129,12 @@ export default function ProposalDocumentPage() {
     }
   }, [])
 
+  useEffect(() => {
+    getPkmSchemas().then(({ data }) => {
+      if (data) setPkmSchemes(data)
+    })
+  }, [])
+
   // Restore in-progress project on page load
   useEffect(() => {
     const savedId = localStorage.getItem(ACTIVE_PROJECT_KEY)
@@ -154,7 +161,7 @@ export default function ProposalDocumentPage() {
         setResult({
           projectId: savedId,
           fileName: project.source_file ?? "",
-          skema: getPkmSchemeLabel(project.skema),
+          skema: getPkmSchemeLabel(project.skema, pkmSchemes),
           tahun: project.tahun,
           sourceUrl: project.source_url,
           resultUrl: project.result_url,
@@ -412,7 +419,7 @@ export default function ProposalDocumentPage() {
       setResult({
         projectId: project_id,
         fileName: project.source_file ?? selectedFile.name,
-        skema: getPkmSchemeLabel(project.skema),
+        skema: getPkmSchemeLabel(project.skema, pkmSchemes),
         tahun: project.tahun,
         sourceUrl: project.source_url,
         resultUrl: project.result_url,
@@ -758,9 +765,9 @@ export default function ProposalDocumentPage() {
                       <SelectValue placeholder="Pilih skema" />
                     </SelectTrigger>
                     <SelectContent>
-                      {PKM_SCHEMES.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>
-                          {s.label}
+                      {pkmSchemes.map((s) => (
+                        <SelectItem key={s.singkatan} value={s.singkatan}>
+                          {s.singkatan}: {s.nama}
                         </SelectItem>
                       ))}
                     </SelectContent>

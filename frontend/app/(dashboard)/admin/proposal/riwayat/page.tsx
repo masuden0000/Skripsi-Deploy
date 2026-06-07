@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select"
 import { YearPicker } from "@/components/ui/year-picker"
 import { DownloadIcon, Loader2Icon, ArrowLeftIcon } from "@/components/icons/public-icons"
-import { PKM_SCHEMES } from "@/lib/constants/pkm-schemes"
+import { getPkmSchemas, type PkmSchema } from "@/lib/api/pkm"
 
 
 type HistoryItem = {
@@ -31,6 +31,13 @@ export default function RiwayatPage() {
   const [data, setData] = useState<HistoryItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [pkmSchemes, setPkmSchemes] = useState<PkmSchema[]>([])
+
+  useEffect(() => {
+    getPkmSchemas().then(({ data }) => {
+      if (data) setPkmSchemes(data)
+    })
+  }, [])
 
   useEffect(() => {
     setIsLoading(true)
@@ -77,9 +84,9 @@ export default function RiwayatPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Semua Skema</SelectItem>
-                  {PKM_SCHEMES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
+                  {pkmSchemes.map((s) => (
+                    <SelectItem key={s.singkatan} value={s.singkatan}>
+                      {s.singkatan}: {s.nama}
                     </SelectItem>
                   ))}
                 </SelectContent>

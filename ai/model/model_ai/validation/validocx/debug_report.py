@@ -72,7 +72,6 @@ def _get_para_details(docx_path):
 
     Setiap entri menyertakan:
       - bab  : teks Heading 1 terakhir sebelum paragraf ini (atau None)
-      - page : selalu None (mekanisme penghitungan halaman dihapus)
     """
     try:
         from docx import Document
@@ -115,7 +114,6 @@ def _get_para_details(docx_path):
                 "text"        : text[:100],
                 "full_text"   : text,
                 "runs"        : runs,
-                "page"        : None,
                 "bab"         : current_bab,
             }
 

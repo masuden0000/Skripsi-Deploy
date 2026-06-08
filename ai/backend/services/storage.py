@@ -70,24 +70,6 @@ async def delete_file(bucket_name: str, file_path: str) -> bool:
         return False
 
 
-async def create_signed_upload_url(bucket_name: str, file_path: str) -> dict:
-    """
-    Generate signed URL for direct upload to Supabase Storage.
-    Returns dict with 'signedUrl' and 'token' for frontend upload.
-    """
-    client = get_supabase_client()
-    try:
-        result = client.storage.from_(bucket_name).create_signed_upload_url(file_path)
-    except Exception as e:
-        # Jika file sudah ada (Duplicate), hapus lalu coba lagi
-        if "Duplicate" in str(e) or "already exists" in str(e):
-            client.storage.from_(bucket_name).remove([file_path])
-            result = client.storage.from_(bucket_name).create_signed_upload_url(file_path)
-        else:
-            raise
-    return dict(result)
-
-
 async def delete_folder(bucket_name: str, folder_prefix: str) -> bool:
     """
     Delete all files under a folder prefix in a bucket.

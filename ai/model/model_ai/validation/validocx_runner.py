@@ -47,22 +47,23 @@ _BAB_RE = re.compile(r'^BAB\s+(\d+)\b', re.IGNORECASE)
 _SUB_BAB_RE = re.compile(r'^(\d+)\.(\d+)\b')
 # Default: wajib ada titik+spasi setelah nomor ("Lampiran 1. Judul").
 # Diperbarui secara dinamis via _build_lampiran_re() saat metadata tersedia.
-_LAMPIRAN_ITEM_RE = re.compile(r'^Lampiran\s+\d+\.\s', re.IGNORECASE)
+_LAMPIRAN_ITEM_RE = re.compile(r'^Lampiran\s+(\d+)\.\s', re.IGNORECASE)
 # Broad: menangkap SEMUA paragraf berawalan "Lampiran <angka>" (dipakai _check_lampiran_format)
 _LAMPIRAN_BROAD_RE = re.compile(r'^Lampiran\s+\d+', re.IGNORECASE)
 
 # Inverse dari _HEADING_TITLE_MAP: tipe section → teks heading
 _HEADING_TITLE_MAP_INV: dict[str, str] = {v: k for k, v in _HEADING_TITLE_MAP.items()}
 
-# Regex per tipe section untuk deteksi halaman pertama di _check_page_count
-_SECTION_HEADING_MAP: dict[str, re.Pattern] = {
-    "bab":            _BAB_RE,
-    "daftar_isi":     re.compile(r"^DAFTAR\s+ISI$",       re.IGNORECASE),
-    "daftar_gambar":  re.compile(r"^DAFTAR\s+GAMBAR$",     re.IGNORECASE),
-    "daftar_tabel":   re.compile(r"^DAFTAR\s+TABEL$",      re.IGNORECASE),
-    "daftar_lampiran":re.compile(r"^DAFTAR\s+LAMPIRAN$",   re.IGNORECASE),
-    "daftar_pustaka": re.compile(r"^DAFTAR\s+PUSTAKA$",    re.IGNORECASE),
-    "lampiran":       re.compile(r"^LAMPIRAN$",             re.IGNORECASE),
+# Normalisasi format penomoran halaman: alias → nilai kanonik ODF.
+# Digunakan di _classify_sections_by_metadata dan _check_numbering.
+_FORMAT_ALIAS: dict[str, str] = {
+    "arabic":      "decimal",
+    "number":      "decimal",
+    "roman":       "lowerRoman",
+    "lowerroman":  "lowerRoman",
+    "upperroman":  "upperRoman",
+    "lowerletter": "lowerLetter",
+    "upperletter": "upperLetter",
 }
 
 
@@ -203,8 +204,8 @@ def _build_occurrences(
     """Bangun list occurrence dari paragraph_details.
 
     Setiap occurrence berisi: page, bab, para_idx, style, text, actual, expected.
-    para_details adalah list dict hasil _inject_para_details() yang sudah
-    menyertakan field 'page' dan 'bab' dari debug_report._get_para_details().
+    para_details adalah list dict dari build_report() via debug_report._get_para_details().
+    Field 'page' dan 'bab' dapat bernilai None jika tidak tersedia di sumber.
     """
     result = []
     for detail in para_details:
@@ -986,16 +987,9 @@ def _check_lampiran_format(
                     except (TypeError, ValueError):
                         pass
 
-        if total == 0:
-            checks.append(ValidationCheckResult(
-                category="typography", field="lampiran_format",
-                status="skipped",
-                message="Tidak ada judul lampiran (non-Lampiran style) yang perlu diperiksa via text-pattern",
-                skip_reason="Semua lampiran pakai style eksplisit atau tidak ada",
-            ))
-            return issues, checks
-
         # ── Emit: format separator ────────────────────────────────────────────
+        # Dicek sebelum early-return total==0 agar separator issue tidak terlewat
+        # meski semua lampiran pakai style eksplisit.
         sep_display = f'titik (".")' if effective_sep == "." else (
             f'"{effective_sep}"' if effective_sep else "tanpa titik"
         )
@@ -1021,6 +1015,16 @@ def _check_lampiran_format(
                 message=f"Format penulisan judul lampiran sesuai ({sep_display} setelah nomor)",
                 expected=effective_sep,
             ))
+
+        # Jika tidak ada judul lampiran non-style, cek atribut dilewati
+        if total == 0:
+            checks.append(ValidationCheckResult(
+                category="typography", field="lampiran_format",
+                status="skipped",
+                message="Tidak ada judul lampiran (non-Lampiran style) yang perlu diperiksa via text-pattern",
+                skip_reason="Semua lampiran pakai style eksplisit atau tidak ada",
+            ))
+            return issues, checks
 
         # ── Emit: atribut (font, alignment, spacing) ─────────────────────────
         all_ok = not any([wrong_alignment, wrong_font, wrong_size, wrong_spacing])
@@ -1452,129 +1456,6 @@ def _hdrftr_has_page_field(hdrftr) -> bool:
     return False
 
 
-def _count_pages_structural(doc) -> tuple[dict[int, int], int]:
-    """Hitung halaman fisik per paragraf menggunakan struktur DOCX saja.
-
-    Menggantikan count_body_pages() dari debug_report.py untuk konteks runner —
-    tidak bergantung pada w:lastRenderedPageBreak yang hanya ada pada dokumen
-    yang pernah dirender oleh Microsoft Word. Dokumen yang dibuat secara
-    programatik (misal output python-docx dari AI) tidak memiliki penanda ini.
-
-    Penanda yang digunakan (selalu ada pada DOCX yang valid):
-      1. w:sectPr dengan type nextPage/oddPage/evenPage (section break)
-      2. w:br type="page" (explicit manual page break)
-
-    Returns:
-        tuple(dict, int):
-            dict  → {id(para._p): nomor_halaman_fisik}
-            int   → total halaman fisik
-    """
-    current_page  = 1
-    para_page_map: dict[int, int] = {}
-
-    for para in doc.paragraphs:
-        para_xml = para._p
-
-        pPr     = para_xml.find(qn("w:pPr"))
-        sect_pr = pPr.find(qn("w:sectPr")) if pPr is not None else None
-        has_section_break = False
-        if sect_pr is not None:
-            type_el       = sect_pr.find(qn("w:type"))
-            sect_type_val = type_el.get(qn("w:val")) if type_el is not None else None
-            if sect_type_val in ("nextPage", "oddPage", "evenPage", None):
-                has_section_break = True
-
-        has_explicit_break = any(
-            br.get(qn("w:type")) == "page"
-            for br in para_xml.findall(".//" + qn("w:br"))
-        )
-
-        if has_section_break and para_page_map:
-            # Paragraf ini adalah paragraf terakhir section lama.
-            # Catat di halaman lama dulu, baru naikkan counter.
-            para_page_map[id(para_xml)] = current_page
-            current_page += 1
-            continue
-
-        if has_explicit_break and para_page_map:
-            current_page += 1
-
-        para_page_map[id(para_xml)] = current_page
-
-    return para_page_map, current_page
-
-
-def _get_para_details_structural(docx_path: Path) -> dict:
-    """Muat semua paragraf dari docx, kembalikan dict {idx: detail}.
-
-    Versi struktural dari debug_report._get_para_details() — menggunakan
-    _count_pages_structural() alih-alih count_body_pages() agar penghitungan
-    halaman konsisten dengan _build_page_display_map().
-
-    Keduanya harus pakai metode yang sama supaya _patch_report_pages()
-    dapat mengonversi physical page → display label dengan benar:
-
-        _get_para_details_structural()  → physical page via structural breaks
-        _build_page_display_map()       → display map via structural breaks
-        _patch_report_pages()           → page_map.get(physical) = label ✓
-
-    Setiap entri berisi:
-      style, alignment, line_spacing, spacing_rule,
-      text, full_text, runs, page (struktural), bab
-    """
-    try:
-        doc = DocxDocument(str(docx_path))
-
-        # Bangun peta halaman fisik via structural breaks
-        para_page_map, _ = _count_pages_structural(doc)
-
-        result      = {}
-        current_bab = None
-
-        for idx, para in enumerate(doc.paragraphs):
-            style_name = para.style.name
-            text       = para.text.strip()
-
-            if style_name == "Heading 1" and text:
-                current_bab = text
-
-            page = para_page_map.get(id(para._p), 1)
-
-            pf    = para.paragraph_format
-            ls    = pf.line_spacing
-            rule  = str(pf.line_spacing_rule) if pf.line_spacing_rule else "inherited"
-            align = str(pf.alignment) if pf.alignment else "inherited"
-
-            runs = []
-            for r in para.runs:
-                size  = round(r.font.size.pt, 1) if r.font.size else None
-                name  = r.font.name or None
-                attrs = [a for a in ("bold", "italic", "underline", "all_caps")
-                         if getattr(r.font, a)]
-                runs.append({
-                    "text"      : r.text[:60],
-                    "font_size" : size,
-                    "font_name" : name,
-                    "attributes": attrs,
-                })
-
-            result[idx] = {
-                "style"       : style_name,
-                "alignment"   : align,
-                "line_spacing": float(ls) if ls is not None else None,
-                "spacing_rule": rule,
-                "text"        : text[:100],
-                "full_text"   : text,
-                "runs"        : runs,
-                "page"        : page,
-                "bab"         : current_bab,
-            }
-
-        return result
-    except Exception:
-        return {}
-
-
 def _classify_sections_by_metadata(
     doc,
     metadata: "DocumentMetadata",
@@ -1677,6 +1558,7 @@ def _classify_sections_by_metadata(
             "FOOTER" if has_footer_page else None
         )
         return {
+            "sectPr":          sp,
             "fmt":             fmt,
             "start_num":       start_num,
             "location":        location,
@@ -1690,16 +1572,6 @@ def _classify_sections_by_metadata(
     section_infos = [_sec_info(s) for s in raw_sections]
 
     # ── Normalisasi format metadata (case-insensitive + alias umum) ───────────
-    _FORMAT_ALIAS: dict[str, str] = {
-        "arabic":     "decimal",
-        "number":     "decimal",
-        "roman":      "lowerRoman",
-        "lowerroman": "lowerRoman",
-        "upperroman": "upperRoman",
-        "lowerletter":"lowerLetter",
-        "upperletter":"upperLetter",
-    }
-
     def _norm_fmt(fmt: str | None) -> str | None:
         if not fmt:
             return fmt
@@ -1728,25 +1600,36 @@ def _classify_sections_by_metadata(
     prelim_info:  dict | None = None
     content_info: dict | None = None
 
+    prelim_candidates:  list[dict] = []
+    content_candidates: list[dict] = []
+
     for info in section_infos:
         fmt = _norm_fmt(info["fmt"])
         if prelim_fmt_exp and fmt == prelim_fmt_exp:
-            if prelim_info is None:
-                prelim_info = info
-            continue
-        if content_fmt_exp and fmt == content_fmt_exp:
-            if content_info is None:
-                content_info = info
-            elif bab1_para_idx is not None:
-                # Tiebreaker: pilih section yang mengandung heading BAB 1
-                if info["start_para_idx"] <= bab1_para_idx <= info["end_para_idx"]:
-                    content_info = info
-            continue
-        # Format tidak cocok dengan keduanya — tebak dari tipe umum
-        if not prelim_fmt_exp and fmt in ("lowerRoman", "upperRoman") and prelim_info is None:
-            prelim_info = info
-        elif not content_fmt_exp and fmt == "decimal" and content_info is None:
-            content_info = info
+            prelim_candidates.append(info)
+        elif content_fmt_exp and fmt == content_fmt_exp:
+            content_candidates.append(info)
+        else:
+            # Format tidak cocok dengan keduanya — tebak dari tipe umum
+            if not prelim_fmt_exp and fmt in ("lowerRoman", "upperRoman"):
+                prelim_candidates.append(info)
+            elif not content_fmt_exp and fmt == "decimal":
+                content_candidates.append(info)
+
+    # Pilih preliminary: section pertama yang cocok
+    prelim_info = prelim_candidates[0] if prelim_candidates else None
+
+    # Pilih content: terapkan tiebreaker via BAB 1 sebelum memilih
+    if content_candidates:
+        if bab1_para_idx is not None:
+            bab_match = next(
+                (i for i in content_candidates
+                 if i["start_para_idx"] <= bab1_para_idx <= i["end_para_idx"]),
+                None,
+            )
+            content_info = bab_match or content_candidates[0]
+        else:
+            content_info = content_candidates[0]
 
     # Fallback 1: gunakan posisi heading BAB 1 jika format match gagal
     if content_info is None and bab1_para_idx is not None:
@@ -1757,40 +1640,51 @@ def _classify_sections_by_metadata(
 
     # Fallback 2: doc.sections[-1] sebagai last resort untuk content zone.
     # Dalam dokumen PKM, section terakhir selalu merupakan section isi (arabic).
-    # Ini menangani kasus di mana body sectPr tidak terdeteksi lewat body.find()
-    # atau format pada sectPr tidak cocok dengan metadata.
+    # Ini menangani kasus di mana format pada sectPr tidak cocok dengan metadata.
     if content_info is None and len(doc.sections) >= 1:
         last_sp = doc.sections[-1]._sectPr
-        fmt_last, start_last = _read_pgNumType(last_sp)
-        content_info = {
-            "fmt":             _norm_fmt(fmt_last) or fmt_last,
-            "start_num":       start_last,
-            "location":        None,
-            "has_header_page": False,
-            "has_footer_page": False,
-            "has_any_page":    False,
-            "start_para_idx":  (section_infos[-1]["end_para_idx"] + 1
-                                 if section_infos else 0),
-            "end_para_idx":    len(para_list) - 1,
-        }
-        # Coba cek header/footer pada section terakhir juga
-        try:
-            last_sec = doc.sections[-1]
-            has_own_hdr = bool(last_sp.findall(qn('w:headerReference')))
-            has_own_ftr = bool(last_sp.findall(qn('w:footerReference')))
-            if has_own_hdr:
-                content_info["has_header_page"] = _hdrftr_has_page_field(last_sec.header)
-            if has_own_ftr:
-                content_info["has_footer_page"] = _hdrftr_has_page_field(last_sec.footer)
-            content_info["has_any_page"] = (
-                content_info["has_header_page"] or content_info["has_footer_page"]
-            )
-            content_info["location"] = (
-                "HEADER" if content_info["has_header_page"] else
-                "FOOTER" if content_info["has_footer_page"] else None
-            )
-        except Exception:
-            pass
+        # Cek apakah body sectPr ini sudah ada di section_infos (cegah duplikasi).
+        existing = next(
+            (info for info in section_infos if info["sectPr"] is last_sp),
+            None,
+        )
+        if existing is not None:
+            # Body sectPr sudah dalam section_infos — gunakan langsung
+            content_info = {k: v for k, v in existing.items() if k != "sectPr"}
+            content_info["fmt"] = _norm_fmt(existing["fmt"]) or existing["fmt"]
+        else:
+            fmt_last, start_last = _read_pgNumType(last_sp)
+            # start_para_idx: tepat setelah section sebelumnya berakhir
+            prev_end_idx = (section_infos[-1]["end_para_idx"] + 1
+                            if section_infos else 0)
+            content_info = {
+                "fmt":             _norm_fmt(fmt_last) or fmt_last,
+                "start_num":       start_last,
+                "location":        None,
+                "has_header_page": False,
+                "has_footer_page": False,
+                "has_any_page":    False,
+                "start_para_idx":  prev_end_idx,
+                "end_para_idx":    len(para_list) - 1,
+            }
+            # Coba cek header/footer pada section terakhir
+            try:
+                last_sec = doc.sections[-1]
+                has_own_hdr = bool(last_sp.findall(qn('w:headerReference')))
+                has_own_ftr = bool(last_sp.findall(qn('w:footerReference')))
+                if has_own_hdr:
+                    content_info["has_header_page"] = _hdrftr_has_page_field(last_sec.header)
+                if has_own_ftr:
+                    content_info["has_footer_page"] = _hdrftr_has_page_field(last_sec.footer)
+                content_info["has_any_page"] = (
+                    content_info["has_header_page"] or content_info["has_footer_page"]
+                )
+                content_info["location"] = (
+                    "HEADER" if content_info["has_header_page"] else
+                    "FOOTER" if content_info["has_footer_page"] else None
+                )
+            except Exception:
+                pass
 
     if prelim_info is None and content_info is not None and len(section_infos) > 1:
         for info in section_infos:
@@ -1848,7 +1742,7 @@ def _check_numbering(
 
         # ── Preliminary (romawi) ──────────────────────────────────────────────
         if prelim:
-            exp_fmt = prelim.format  # e.g. "lowerRoman"
+            exp_fmt = _FORMAT_ALIAS.get((prelim.format or "").lower(), prelim.format)
             exp_loc = (prelim.location or "").upper()  # "HEADER" atau "FOOTER"
             exp_start = prelim.start_at_section  # e.g. "daftar_isi"
 
@@ -1921,7 +1815,7 @@ def _check_numbering(
 
         # ── Content (angka arab) ──────────────────────────────────────────────
         if content:
-            exp_fmt = content.format  # e.g. "decimal"
+            exp_fmt = _FORMAT_ALIAS.get((content.format or "").lower(), content.format)
             exp_loc = (content.location or "").upper()
             exp_start = content.start_at_section  # e.g. "bab_1"
 
@@ -2026,116 +1920,12 @@ def _check_page_count(
         ))
         return issues, checks
 
-    maks = pc.proposal_halaman_inti_maks
-    mulai_type  = pc.halaman_inti_mulai   # default: "bab"
-    selesai_type = pc.halaman_inti_selesai  # default: "daftar_pustaka"
-
-    try:
-        doc = DocxDocument(str(docx_path))
-
-        # ── Bangun peta halaman per paragraf (seluruh dokumen) ────────────
-        # Gunakan hanya structural breaks: section break dan explicit page break.
-        # Tidak menggunakan lastRenderedPageBreak karena hanya ada pada dokumen
-        # yang sudah dirender oleh Word — dokumen output AI tidak memiliki penanda ini.
-        # Jumlah halaman inti dihitung via SELISIH (halaman_selesai - halaman_mulai + 1)
-        # sehingga halaman preliminary (romawi) otomatis ter-cancel.
-        current_page = 1
-        para_pages: list[tuple[int, str, str]] = []  # (page, style, text)
-
-        for para in doc.paragraphs:
-            para_xml = para._p
-
-            pPr     = para_xml.find(qn("w:pPr"))
-            sect_pr = pPr.find(qn("w:sectPr")) if pPr is not None else None
-            has_section_break = False
-            if sect_pr is not None:
-                type_el       = sect_pr.find(qn("w:type"))
-                sect_type_val = type_el.get(qn("w:val")) if type_el is not None else None
-                if sect_type_val in ("nextPage", "oddPage", "evenPage", None):
-                    has_section_break = True
-
-            has_explicit_break = any(
-                br.get(qn("w:type")) == "page"
-                for br in para_xml.findall(".//" + qn("w:br"))
-            )
-
-            if has_section_break and para_pages:
-                # Paragraf ini adalah paragraf terakhir section lama.
-                # Catat di halaman lama dulu, baru naikkan counter.
-                para_pages.append((current_page, para.style.name, para.text.strip()))
-                current_page += 1
-                continue
-
-            if has_explicit_break and para_pages:
-                current_page += 1
-            para_pages.append((current_page, para.style.name, para.text.strip()))
-
-        def _find_first_page(section_type: str) -> int | None:
-            pattern = _SECTION_HEADING_MAP.get(section_type)
-            if pattern is None:
-                return None
-            for page, style, text in para_pages:
-                if "Heading" in style and pattern.match(text.upper()):
-                    return page
-            return None
-
-        page_mulai   = _find_first_page(mulai_type)
-        page_selesai = _find_first_page(selesai_type)
-
-        if page_mulai is None:
-            checks.append(ValidationCheckResult(
-                category="page_count", field="halaman_inti",
-                status="skipped",
-                message=f"Titik mulai halaman inti '{mulai_type}' tidak ditemukan di dokumen",
-                skip_reason=f"Section {mulai_type} tidak ada",
-            ))
-            return issues, checks
-
-        # Jika selesai tidak ditemukan, hitung sampai akhir dokumen
-        if page_selesai is None:
-            page_selesai = para_pages[-1][0] if para_pages else page_mulai
-
-        # jumlah_halaman = selisih halaman sekuensial antara mulai dan selesai + 1.
-        # Preliminary pages (romawi) otomatis ter-cancel karena kita hitung SELISIH,
-        # bukan posisi absolut. Misal: BAB=5, DAFTAR PUSTAKA=13 → 13-5+1=9 halaman inti.
-        jumlah_halaman = page_selesai - page_mulai + 1
-
-        if jumlah_halaman > maks:
-            msg = (
-                f"Halaman inti melebihi batas maksimum: "
-                f"{jumlah_halaman} halaman (maks {maks}). "
-                f"Dihitung dari halaman {page_mulai} ({mulai_type}) "
-                f"sampai {page_selesai} ({selesai_type})."
-            )
-            issues.append(ValidationIssue(
-                category="page_count", field="halaman_inti",
-                severity="error", message=msg,
-                expected=str(maks), actual=str(jumlah_halaman),
-            ))
-            checks.append(ValidationCheckResult(
-                category="page_count", field="halaman_inti",
-                status="failed", message=msg,
-                expected=str(maks), actual=str(jumlah_halaman),
-            ))
-        else:
-            msg = (
-                f"Jumlah halaman inti: {jumlah_halaman} halaman "
-                f"(maks {maks}) — sesuai."
-            )
-            checks.append(ValidationCheckResult(
-                category="page_count", field="halaman_inti",
-                status="passed", message=msg,
-                expected=str(maks), actual=str(jumlah_halaman),
-            ))
-
-    except Exception as exc:
-        checks.append(ValidationCheckResult(
-            category="page_count", field="halaman_inti",
-            status="skipped",
-            message=f"Pengecekan jumlah halaman dilewati: {exc}",
-            skip_reason=str(exc),
-        ))
-
+    checks.append(ValidationCheckResult(
+        category="page_count", field="halaman_inti",
+        status="skipped",
+        message="Pengecekan jumlah halaman inti dilewati: mekanisme penghitungan halaman tidak tersedia",
+        skip_reason="page counting mechanism removed",
+    ))
     return issues, checks
 
 
@@ -2153,8 +1943,8 @@ def _check_start_section(
         target_num = int(bab_m.group(1))
         found = any(
             para.style.name == "Heading 1"
-            and bool(_BAB_RE.match(para.text.strip().upper()))
-            and int((_BAB_RE.match(para.text.strip().upper()) or re.match(r'(\d+)', '0')).group(1)) == target_num
+            and (m := _BAB_RE.match(para.text.strip().upper())) is not None
+            and int(m.group(1)) == target_num
             for para in doc.paragraphs
             if para.text.strip()
         )
@@ -2192,22 +1982,6 @@ def _check_start_section(
         ))
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Page Number Display Map
-# ─────────────────────────────────────────────────────────────────────────────
-
-def _int_to_roman_lower(n: int) -> str:
-    """Konversi integer positif ke angka romawi huruf kecil."""
-    val  = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
-    syms = ['m', 'cm', 'd', 'cd', 'c', 'xc', 'l', 'xl', 'x', 'ix', 'v', 'iv', 'i']
-    result = ''
-    for i in range(len(val)):
-        while n >= val[i]:
-            result += syms[i]
-            n -= val[i]
-    return result
-
-
 def _read_pgNumType(sectPr) -> tuple[str, int]:
     """Baca format dan nomor awal dari elemen w:pgNumType dalam sectPr.
 
@@ -2227,151 +2001,6 @@ def _read_pgNumType(sectPr) -> tuple[str, int]:
         except (TypeError, ValueError):
             start_num = 1
     return fmt, start_num
-
-
-def _build_page_display_map(
-    docx_path: Path,
-    metadata: "DocumentMetadata | None" = None,
-) -> dict[int, str]:
-    """Bangun peta nomor halaman fisik → label display sesuai penomoran dokumen.
-
-    Langkah:
-    1. Hitung halaman fisik via _count_pages_structural (pakai section break +
-       explicit page break — tidak bergantung pada w:lastRenderedPageBreak)
-    2. Baca section properties (w:pgNumType) untuk menentukan format penomoran
-       (Romawi/Arab) dan nomor awal per section
-    3. Jika section properties tidak tersedia atau tidak jelas → fallback ke
-       deteksi teks "BAB 1"
-    """
-    try:
-        doc = DocxDocument(str(docx_path))
-
-        # ── 1. Hitung halaman fisik ──────────────────────────────────────────
-        para_page_map, total_pages = _count_pages_structural(doc)
-
-        # ── 2. Baca section properties ───────────────────────────────────────
-        # Setiap section dalam dokumen punya format penomoran (Romawi/Arab) dan
-        # nomor awal. Section break tersimpan di w:pPr/w:sectPr pada paragraf
-        # TERAKHIR tiap section. Section paling akhir ada di w:body/w:sectPr.
-        #
-        # Struktur 'sections': list yang sudah diurutkan berdasarkan kemunculan,
-        # setiap item berisi:
-        #   start_page : halaman fisik pertama section ini
-        #   fmt        : format angka ("lowerRoman", "upperRoman", "decimal", ...)
-        #   start_num  : nomor halaman awal section ini
-        raw_sections: list[dict] = []   # [{fmt, start_num, next_start}, ...]
-
-        for para in doc.paragraphs:
-            pPr    = para._p.find(qn("w:pPr"))
-            if pPr is None:
-                continue
-            sectPr = pPr.find(qn("w:sectPr"))
-            if sectPr is None:
-                continue
-
-            fmt, start_num = _read_pgNumType(sectPr)
-            sect_page      = para_page_map.get(id(para._p), 1)
-
-            t   = sectPr.find(qn("w:type"))
-            val = t.get(qn("w:val"), "nextPage") if t is not None else "nextPage"
-
-            # Section berikutnya mulai satu halaman setelah section break ini
-            # (kecuali continuous yang tidak pindah halaman)
-            next_start = sect_page + 1 if val in ("nextPage", "evenPage", "oddPage") else sect_page
-
-            raw_sections.append({"fmt": fmt, "start_num": start_num, "next_start": next_start})
-
-        # Tambahkan section terakhir (w:body/w:sectPr)
-        last_sectPr = doc.element.body.find(qn("w:sectPr"))
-        if last_sectPr is not None:
-            fmt, start_num = _read_pgNumType(last_sectPr)
-            raw_sections.append({"fmt": fmt, "start_num": start_num, "next_start": total_pages + 1})
-
-        # Hitung start_page untuk setiap section dalam satu pass
-        sections: list[dict] = []
-        current_start = 1
-        for rs in raw_sections:
-            sections.append({
-                "start_page": current_start,
-                "fmt"       : rs["fmt"],
-                "start_num" : rs["start_num"],
-            })
-            current_start = rs["next_start"]
-
-        # ── 3. Bangun peta halaman → label ───────────────────────────────────
-        page_map: dict[int, str] = {}
-
-        roman_fmts        = {"lowerRoman", "upperRoman"}
-        has_clear_sections = (
-            len(sections) >= 2
-            and any(s["fmt"] in roman_fmts for s in sections[:-1])
-            and sections[-1]["fmt"] not in roman_fmts
-        )
-
-        def _page_label(page: int, fmt: str, start_num: int, section_start: int) -> str:
-            num = start_num + (page - section_start)
-            if fmt == "lowerRoman":
-                return _int_to_roman_lower(max(num, 1))
-            if fmt == "upperRoman":
-                return _int_to_roman_lower(max(num, 1)).upper()
-            return str(max(num, 1))
-
-        if has_clear_sections:
-            # Gunakan section properties
-            for p in range(1, total_pages + 1):
-                active = sections[0]
-                for s in sections:
-                    if s["start_page"] <= p:
-                        active = s
-                page_map[p] = _page_label(p, active["fmt"], active["start_num"], active["start_page"])
-
-        else:
-            # Fallback: deteksi BAB 1 (Heading 1 yang teksnya diawali "BAB")
-            bab1_page: int | None = None
-            for para in doc.paragraphs:
-                if "Heading" in para.style.name and _BAB_RE.match(para.text.strip().upper()):
-                    bab1_page = para_page_map.get(id(para._p))
-                    break
-
-            if bab1_page is None or bab1_page <= 1:
-                for p in range(1, total_pages + 1):
-                    page_map[p] = str(p)
-            else:
-                for p in range(1, bab1_page):
-                    page_map[p] = _int_to_roman_lower(p)
-                for p in range(bab1_page, total_pages + 1):
-                    page_map[p] = str(p - bab1_page + 1)
-
-        return page_map
-    except Exception:
-        return {}
-
-
-def _patch_report_pages(report: dict, page_map: dict[int, str]) -> None:
-    """Konversi field 'page' di semua paragraph_details dari nomor fisik ke label display.
-
-    Iterasi seluruh paragraph_details dan paragraph_details_pass di setiap
-    bucket report, lalu ganti nilai integer fisik dengan label dari page_map.
-    """
-    if not page_map:
-        return
-
-    def _patch_items(items: list[dict]) -> None:
-        for item in items:
-            for detail in item.get("paragraph_details", []):
-                phys = detail.get("page")
-                if isinstance(phys, int):
-                    detail["page"] = page_map.get(phys, str(phys))
-            for detail in item.get("paragraph_details_pass", []):
-                phys = detail.get("page")
-                if isinstance(phys, int):
-                    detail["page"] = page_map.get(phys, str(phys))
-
-    _patch_items(report["errors"].get("value_mismatch", []))
-    _patch_items(report["errors"].get("font_mismatch", []))
-    _patch_items(report["warnings"].get("undefined_styles", []))
-    _patch_items(report["warnings"].get("attr_inherited", []))
-    _patch_items(report.get("parameter_summary", []))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2398,18 +2027,7 @@ def run_validocx(
     log_text = _capture_log(path, requirements)
 
     entries = parse_entries(log_text)
-
-    # Bangun para_map dengan metode struktural agar konsisten dengan
-    # _build_page_display_map() yang juga memakai _count_pages_structural().
-    # Ini memastikan physical page dari para_map dan dari page_map merujuk
-    # ke nomor yang sama sehingga _patch_report_pages() dapat konversi dengan benar.
-    para_map = _get_para_details_structural(path)
-    report   = build_report(entries, para_map=para_map)
-
-    # Konversi nomor halaman fisik → label display (romawi / angka arab)
-    # sesuai penomoran dokumen aktual, sebelum laporan diproses lebih lanjut.
-    page_map = _build_page_display_map(path, metadata)
-    _patch_report_pages(report, page_map)
+    report  = build_report(entries, docx_path=path)
 
     # Ekstrak daftar style yang dikenali dari requirements untuk ditampilkan
     # sebagai nilai "Seharusnya" pada warning undefined_style.

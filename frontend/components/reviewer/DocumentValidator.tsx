@@ -293,9 +293,6 @@ function OccurrenceCard({
     <div className={`rounded-lg border ${cardBorder} bg-white border-l-4 ${accentColor} overflow-hidden`}>
       {/* ── Header: halaman · BAB · style ── */}
       <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 ${headerBg} border-b ${headerBorder}`}>
-        {occ.page != null && (
-          <span className="text-[11px] font-medium text-gray-500">Halaman {occ.page}</span>
-        )}
         {occ.bab && (
           <>
             <span className="text-gray-300 text-xs">·</span>
@@ -468,7 +465,7 @@ function LocationPanel({ issue }: { issue: DisplayIssue | null }) {
       <div className="flex-1 p-4 space-y-3 bg-gray-50/40">
         {occurrences.length > 0 ? (
           occurrences.map((occ, i) => (
-            <OccurrenceCard key={`${occ.page}-${occ.para_idx}-${i}`} occ={occ} severity={issue.severity} />
+            <OccurrenceCard key={`${occ.para_idx}-${i}`} occ={occ} severity={issue.severity} />
           ))
         ) : (
           <div className="rounded-lg border border-border bg-white p-4">

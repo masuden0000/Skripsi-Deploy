@@ -176,7 +176,7 @@ def render_proposal_docx(
     document = Document()
     first_section = document.sections[0]
     _configure_page_layout(first_section, page_layout)
-    _apply_base_styles(document, typography, spacing)
+    _apply_base_styles(document, typography, spacing, figures_tables)
 
     prelim_num  = numbering.get("preliminary") or {}
     content_num = numbering.get("content") or {}
@@ -246,7 +246,7 @@ def _configure_page_layout(section, page_layout: dict) -> None:
     section.right_margin  = Cm(page_layout.get("margin_right_cm", 3.0))
 
 
-def _apply_base_styles(document: Document, typography: dict, spacing: dict) -> None:
+def _apply_base_styles(document: Document, typography: dict, spacing: dict, figures_tables: dict | None = None) -> None:
     body_font    = typography.get("font_family", "Times New Roman")
     body_size    = typography.get("font_size_body_pt", 12)
     heading_size  = typography.get("font_size_heading_pt", body_size)
@@ -313,7 +313,8 @@ def _apply_base_styles(document: Document, typography: dict, spacing: dict) -> N
     caption_style.font.bold      = False
     caption_style.font.italic    = False
     caption_style.font.color.rgb = RGBColor(0, 0, 0)
-    caption_style.paragraph_format.alignment    = WD_ALIGN_PARAGRAPH.CENTER
+    _ft = figures_tables or {}
+    caption_style.paragraph_format.alignment    = _map_alignment((_ft.get("caption_alignment_figure") or "CENTER").upper())
     caption_style.paragraph_format.space_before = Pt(3)
     caption_style.paragraph_format.space_after  = Pt(6)
 
@@ -814,7 +815,8 @@ def _render_sub_bab_section(
         except (ValueError, IndexError):
             bab_num = 4
 
-    table_caption_pos = (figures_tables.get("table_caption_position") or "ABOVE").upper()
+    table_caption_pos   = (figures_tables.get("table_caption_position") or "ABOVE").upper()
+    table_caption_align = _map_alignment((figures_tables.get("caption_alignment_table") or "CENTER").upper())
 
     if sub_num and bab_num == 4 and str(sub_num).endswith(".1"):
         body_placeholder = document.add_paragraph(
@@ -843,6 +845,7 @@ def _render_sub_bab_section(
         )
         if table_caption_pos != "BELOW":
             cap_p = document.add_paragraph(caption_text, style="Caption")
+            cap_p.alignment = table_caption_align
             cap_p.paragraph_format.space_after = Pt(0)
             _force_paragraph_runs_black(cap_p)
 
@@ -850,6 +853,7 @@ def _render_sub_bab_section(
 
         if table_caption_pos == "BELOW":
             cap_p = document.add_paragraph(caption_text, style="Caption")
+            cap_p.alignment = table_caption_align
             cap_p.paragraph_format.space_after = Pt(0)
             _force_paragraph_runs_black(cap_p)
 
@@ -861,6 +865,7 @@ def _render_sub_bab_section(
         )
         if table_caption_pos != "BELOW":
             cap_p = document.add_paragraph(caption_text, style="Caption")
+            cap_p.alignment = table_caption_align
             cap_p.paragraph_format.space_after = Pt(0)
             _force_paragraph_runs_black(cap_p)
 
@@ -868,6 +873,7 @@ def _render_sub_bab_section(
 
         if table_caption_pos == "BELOW":
             cap_p = document.add_paragraph(caption_text, style="Caption")
+            cap_p.alignment = table_caption_align
             cap_p.paragraph_format.space_after = Pt(0)
             _force_paragraph_runs_black(cap_p)
 
@@ -922,8 +928,9 @@ def _render_item_lampiran_section(
     sep.paragraph_format.space_after  = Pt(0)
     _apply_line_spacing(sep.paragraph_format, spacing)
 
+    lampiran_align = _map_alignment(((figures_tables or {}).get("caption_alignment_lampiran") or "JUSTIFY").upper())
     heading = document.add_heading(heading_text, level=2)
-    heading.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    heading.alignment = lampiran_align
     _force_paragraph_runs_black(heading)
     bm_id = _bookmark_id("lampiran")
     bm_name = _bookmark_name("lampiran", lampiran_number_raw)
@@ -1124,7 +1131,8 @@ def _add_example_figure(
     else:
         img_width = Cm(10)
 
-    caption_pos = (figures_tables.get("figure_caption_position") or "BELOW").upper() if figures_tables else "BELOW"
+    caption_pos      = (figures_tables.get("figure_caption_position") or "BELOW").upper() if figures_tables else "BELOW"
+    caption_align    = _map_alignment(((figures_tables or {}).get("caption_alignment_figure") or "CENTER").upper())
 
     possible_paths = [
         Path(__file__).parent.parent.parent / "data" / "images.jpg",
@@ -1140,7 +1148,7 @@ def _add_example_figure(
 
     if caption and caption_pos == "ABOVE":
         caption_p = document.add_paragraph(caption, style="Caption")
-        caption_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        caption_p.alignment = caption_align
         caption_p.paragraph_format.space_after = Pt(0)
         _force_paragraph_runs_black(caption_p)
 
@@ -1155,7 +1163,7 @@ def _add_example_figure(
 
     if caption and caption_pos != "ABOVE":
         caption_p = document.add_paragraph(caption, style="Caption")
-        caption_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        caption_p.alignment = caption_align
         caption_p.paragraph_format.space_after = Pt(0)
         _force_paragraph_runs_black(caption_p)
 
@@ -1320,7 +1328,7 @@ def render_proposal_docx_bytes(
     doc: Document = Document()
     first_section = doc.sections[0]
     _configure_page_layout(first_section, output_data["page_layout"])
-    _apply_base_styles(doc, output_data["typography"], output_data["spacing"])
+    _apply_base_styles(doc, output_data["typography"], output_data["spacing"], output_data.get("figures_and_tables"))
 
     typography = output_data["typography"]
     page_layout = output_data["page_layout"]

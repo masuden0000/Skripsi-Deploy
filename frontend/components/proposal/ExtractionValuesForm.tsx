@@ -91,6 +91,9 @@ export type ExtractionPayload = {
     caption_format_figure: string | null
     caption_format_table: string | null
     caption_format_lampiran: string | null
+    caption_alignment_figure: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
+    caption_alignment_table: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
+    caption_alignment_lampiran: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
   }
   page_count_limits: {
     proposal_halaman_inti_maks: number | null
@@ -674,6 +677,39 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
                 { value: "BELOW", label: "Bawah (Below)" },
               ]}
               onChange={(v) => patch("figures_and_tables", { table_caption_position: v })}
+            />
+            <SelectFieldInput
+              label="Alignment Keterangan Gambar"
+              value={data.figures_and_tables.caption_alignment_figure ?? null}
+              options={[
+                { value: "CENTER",  label: "Center" },
+                { value: "LEFT",    label: "Left" },
+                { value: "RIGHT",   label: "Right" },
+                { value: "JUSTIFY", label: "Justify" },
+              ]}
+              onChange={(v) => patch("figures_and_tables", { caption_alignment_figure: v as ExtractionPayload["figures_and_tables"]["caption_alignment_figure"] })}
+            />
+            <SelectFieldInput
+              label="Alignment Keterangan Tabel"
+              value={data.figures_and_tables.caption_alignment_table ?? null}
+              options={[
+                { value: "CENTER",  label: "Center" },
+                { value: "LEFT",    label: "Left" },
+                { value: "RIGHT",   label: "Right" },
+                { value: "JUSTIFY", label: "Justify" },
+              ]}
+              onChange={(v) => patch("figures_and_tables", { caption_alignment_table: v as ExtractionPayload["figures_and_tables"]["caption_alignment_table"] })}
+            />
+            <SelectFieldInput
+              label="Alignment Heading Lampiran"
+              value={data.figures_and_tables.caption_alignment_lampiran ?? null}
+              options={[
+                { value: "CENTER",  label: "Center" },
+                { value: "LEFT",    label: "Left" },
+                { value: "RIGHT",   label: "Right" },
+                { value: "JUSTIFY", label: "Justify" },
+              ]}
+              onChange={(v) => patch("figures_and_tables", { caption_alignment_lampiran: v as ExtractionPayload["figures_and_tables"]["caption_alignment_lampiran"] })}
             />
             <TextFieldInput
               label="Format Keterangan Gambar"

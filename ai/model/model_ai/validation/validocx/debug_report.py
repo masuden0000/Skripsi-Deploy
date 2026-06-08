@@ -286,13 +286,19 @@ def _inject_para_details(items, para_map):
     return items
 
 
-def build_report(entries, docx_path=None):
+def build_report(entries, docx_path=None, para_map=None):
     """Bangun laporan dalam format dict (siap di-serialize ke JSON).
 
     docx_path: opsional — jika diberikan, detail isi paragraf akan
                disertakan langsung di dalam setiap entri error/warning.
+               Diabaikan jika para_map sudah diberikan secara eksplisit.
+    para_map:  opsional — dict {idx: detail} yang sudah dibangun dari luar
+               (misalnya oleh _get_para_details_structural() di validocx_runner
+               yang memakai penghitungan halaman struktural). Jika diberikan,
+               docx_path tidak dipakai untuk membangun para_map.
     """
-    para_map = _get_para_details(docx_path) if docx_path else {}
+    if para_map is None:
+        para_map = _get_para_details(docx_path) if docx_path else {}
 
     buckets = defaultdict(list)
     for level, cat, msg in entries:

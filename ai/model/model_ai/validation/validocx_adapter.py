@@ -166,6 +166,21 @@ def metadata_to_requirements(metadata: DocumentMetadata) -> dict:
     lampiran_style = {k: v for k, v in normal_style.items() if k != "exclude"}
     styles["Lampiran"] = lampiran_style
 
+    # ── Style TOC & TOF ───────────────────────────────────────────────────────
+    # "table of figures" → entri Daftar Gambar, Daftar Tabel, Daftar Lampiran
+    # "TOC 1"–"TOC 5"    → entri Daftar Isi per level
+    #
+    # Aturan: identik dengan Normal (JUSTIFY, 12pt, TNR, 1.15) TANPA exclude.
+    # Exclude Normal sengaja tidak dipakai agar entri "Gambar N." / "Tabel N."
+    # di halaman Daftar Gambar/Tabel tidak ter-skip (exclude itu untuk caption
+    # inline di BAB yang sudah dicek terpisah via _check_caption_format).
+    toc_tof_style = {k: v for k, v in normal_style.items() if k != "exclude"}
+    for _toc_tof_name in (
+        "table of figures",
+        "TOC 1", "TOC 2", "TOC 3", "TOC 4", "TOC 5",
+    ):
+        styles[_toc_tof_name] = toc_tof_style
+
     # Caption tidak lagi divalidasi via style name — terlalu dinamis (Gambar, Gambar (Lampiran), dll).
     # Validasi caption dilakukan di runner via text-pattern detection (_check_caption_format).
 

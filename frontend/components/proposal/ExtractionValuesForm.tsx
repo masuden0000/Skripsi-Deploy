@@ -113,17 +113,21 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 function FieldRow({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-2 gap-x-6 gap-y-4">{children}</div>
+  return <div className="grid grid-cols-2 gap-x-6 gap-y-4 mt-3">{children}</div>
 }
 
 function TextFieldInput({
   label,
   value,
   onChange,
+  placeholder,
+  hint,
 }: {
   label: string
   value: string | null
   onChange: (v: string) => void
+  placeholder?: string
+  hint?: string
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -132,7 +136,9 @@ function TextFieldInput({
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         className="h-8 text-sm"
+        placeholder={placeholder}
       />
+      {hint && <p className="text-[10px] text-muted-foreground/60 leading-tight">{hint}</p>}
     </div>
   )
 }

@@ -313,8 +313,7 @@ def _apply_base_styles(document: Document, typography: dict, spacing: dict, figu
     caption_style.font.bold      = False
     caption_style.font.italic    = False
     caption_style.font.color.rgb = RGBColor(0, 0, 0)
-    _ft = figures_tables or {}
-    caption_style.paragraph_format.alignment    = _map_alignment((_ft.get("caption_alignment_figure") or "CENTER").upper())
+    caption_style.paragraph_format.alignment    = _map_alignment(((figures_tables or {}).get("caption_alignment_figure") or "CENTER").upper())
     caption_style.paragraph_format.space_before = Pt(3)
     caption_style.paragraph_format.space_after  = Pt(6)
 

@@ -24,7 +24,8 @@ class DocumentWrapper(object):
 
         docDefaults adalah lapisan terbawah formatting — berlaku ke seluruh
         dokumen jika paragraf dan style tidak mendefinisikan nilainya sendiri.
-        Disimpan di: word/styles.xml → <w:docDefaults> → <w:pPrDefault>
+        Disimpan di: word/styles.xml → <w:docDefaults> → <w:pPrDefault> (paragraf)
+        dan <w:rPrDefault> (run/font).
 
         Contoh XML:
           <w:pPrDefault>
@@ -32,12 +33,20 @@ class DocumentWrapper(object):
               <w:spacing w:line="276" w:lineRule="auto"/>
             </w:pPr>
           </w:pPrDefault>
+          <w:rPrDefault>
+            <w:rPr>
+              <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
+              <w:sz w:val="24"/>  <!-- 24 half-points = 12pt -->
+            </w:rPr>
+          </w:rPrDefault>
 
         w:line="276" dengan lineRule="auto" → 276 ÷ 240 = 1.15x (MULTIPLE)
+        w:sz w:val="24" → 24 ÷ 2 = 12pt
         """
         defaults = {}
         try:
             styles_el = self._document.styles.element
+            # ── Line spacing (pPrDefault) ─────────────────────────────────────
             spacing = styles_el.find(
                 f'.//{qn("w:pPrDefault")}/{qn("w:pPr")}/{qn("w:spacing")}'
             )
@@ -47,6 +56,20 @@ class DocumentWrapper(object):
                 if line and line_rule == 'auto':
                     # "auto" = MULTIPLE — nilai dalam 240ths of a line
                     defaults['line_spacing'] = int(line) / 240
+            # ── Font defaults (rPrDefault) ────────────────────────────────────
+            rPr = styles_el.find(f'.//{qn("w:rPrDefault")}/{qn("w:rPr")}')
+            if rPr is not None:
+                rFonts = rPr.find(qn('w:rFonts'))
+                if rFonts is not None:
+                    name = (rFonts.get(qn('w:ascii')) or
+                            rFonts.get(qn('w:hAnsi')))
+                    if name:
+                        defaults['font_name'] = name
+                sz = rPr.find(qn('w:sz'))
+                if sz is not None:
+                    val = sz.get(qn('w:val'))
+                    if val:
+                        defaults['font_size_pt'] = int(val) / 2  # half-points → pt
         except Exception:
             pass
         return defaults
@@ -68,13 +91,32 @@ class DocumentWrapper(object):
         return self._last_modified_by
 
     def iter_paragraphs(self, styles=None):
-        """Get paragraphs of specific styles of a document."""
-        for paragraph in self._document.paragraphs:
-            if styles:
-                if paragraph.style.name in styles:
-                    yield paragraph
-            else:
-                yield paragraph
+        """Get paragraphs of a document, termasuk paragraf di dalam w:sdt.
+
+        python-docx standar (doc.paragraphs) hanya mengembalikan w:p yang langsung
+        ada di w:body. Elemen w:sdt (Structured Document Tag) seperti Table of
+        Contents yang dibuat otomatis Word menyimpan paragraf di dalam dirinya —
+        dan tidak ikut dalam doc.paragraphs.
+
+        Method ini menelusuri langsung elemen-elemen w:body, lalu untuk setiap
+        w:sdt juga menelusuri semua w:p di dalamnya secara rekursif.
+        """
+        from docx.text.paragraph import Paragraph
+
+        body = self._document.element.body
+
+        for child in body:
+            if child.tag == qn("w:p"):
+                # paragraf biasa langsung di body
+                para = Paragraph(child, self._document)
+                if not styles or para.style.name in styles:
+                    yield para
+            elif child.tag == qn("w:sdt"):
+                # content control (TOC, caption field, dll) — telusuri semua w:p di dalamnya
+                for p_el in child.iter(qn("w:p")):
+                    para = Paragraph(p_el, self._document)
+                    if not styles or para.style.name in styles:
+                        yield para
 
     def iter_sections(self):
         """Iterate over sections in docx document."""
@@ -85,16 +127,36 @@ class DocumentWrapper(object):
     # cs_bold/cs_italic: artefak Word untuk Complex Script, selalu mengikuti bold/italic biasa.
     _IGNORE_FONT_ATTRS = frozenset({'italic', 'cs_italic', 'cs_bold'})
 
+    def _get_normal_style_font_attr(self, attr):
+        """Baca nilai font dari style 'Normal' sebagai final fallback."""
+        try:
+            normal = self._document.styles['Normal']
+            value = getattr(normal.font, attr, None)
+            if value is not None:
+                return value
+            return self._find_paragraph_attribute(normal, 'font', attr)
+        except (KeyError, AttributeError):
+            return None
+
     def get_font_attributes(self, paragraph, unit='pt'):
-        """Get font attributes for specified paragraph."""
+        """Get font attributes for specified paragraph.
+
+        Fallback chain untuk size dan name (setara dengan get_paragraph_attributes):
+          1. Run font (eksplisit di run XML)
+          2. Style chain (base_style → ancestor)
+          3. docDefaults (rPrDefault di styles.xml)
+          4. Style Normal sebagai final fallback
+        """
         runs = []
         for run in paragraph.runs:
             size = (run.font.size or
-                    self._find_paragraph_attribute(paragraph.style,
-                                                   'font', 'size'))
+                    self._find_paragraph_attribute(paragraph.style, 'font', 'size') or
+                    self._doc_defaults.get('font_size_pt') or
+                    self._get_normal_style_font_attr('size'))
             family = (run.font.name or
-                      self._find_paragraph_attribute(paragraph.style,
-                                                     'font', 'name'))
+                      self._find_paragraph_attribute(paragraph.style, 'font', 'name') or
+                      self._doc_defaults.get('font_name') or
+                      self._get_normal_style_font_attr('name'))
             fetched_attributes = [self._convert_unit(size, unit), family]
             for attr, member in type(paragraph.style.font).__dict__.items():
                 if isinstance(member, property) and attr not in self._IGNORE_FONT_ATTRS:

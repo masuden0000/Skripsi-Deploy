@@ -52,11 +52,14 @@ _LAMPIRAN_ITEM_RE = re.compile(r'^Lampiran\s+(\d+)\.\s', re.IGNORECASE)
 # Broad: menangkap SEMUA paragraf berawalan "Lampiran <angka>" (dipakai _check_lampiran_format)
 _LAMPIRAN_BROAD_RE = re.compile(r'^Lampiran\s+\d+', re.IGNORECASE)
 
-# Style TOC/TOF yang sudah divalidasi engine secara terpisah — dipakai sebagai
-# filter di _check_lampiran_format agar entri Daftar Lampiran tidak ikut terhitung.
+# Style TOC/TOF — dipakai sebagai filter di _check_lampiran_format dan
+# _check_body_content, serta sebagai target di _check_toc_format.
+# Word menyimpan style name dengan case yang bervariasi (mis. "toc 1" lowercase),
+# sehingga kedua varian (upper dan lower) didaftarkan.
 _TOC_TOF_STYLE_NAMES: frozenset[str] = frozenset({
     "table of figures",
     "TOC 1", "TOC 2", "TOC 3", "TOC 4", "TOC 5",
+    "toc 1", "toc 2", "toc 3", "toc 4", "toc 5",
 })
 
 # Inverse dari _HEADING_TITLE_MAP: tipe section → teks heading
@@ -1216,6 +1219,178 @@ def _check_lampiran_format(
     return issues, checks
 
 
+def _check_toc_format(
+    docx_path: Path,
+    metadata: DocumentMetadata,
+) -> tuple[list[ValidationIssue], list[ValidationCheckResult]]:
+    """Validasi font & ukuran entri TOC/TOF (Daftar Isi, Gambar, Tabel, Lampiran).
+
+    Cek yang dilakukan: font family, font size.
+    Alignment SENGAJA tidak dicek — entri TOC/TOF selalu LEFT-aligned karena
+    menggunakan tab stop ke nomor halaman, sehingga JUSTIFY tidak berlaku.
+
+    Mendeteksi style: table of figures, TOC 1–5 (dan lowercase-nya toc 1–5).
+    """
+    issues: list[ValidationIssue] = []
+    checks: list[ValidationCheckResult] = []
+
+    t = metadata.typography
+    expected_font = t.font_family if t else None
+    expected_size = int(t.font_size_body_pt) if t and t.font_size_body_pt else None
+
+    if not expected_font and not expected_size:
+        return issues, checks
+
+    expected_font_str = expected_font or ""
+    expected_size_str = f"{expected_size}pt" if expected_size else ""
+
+    try:
+        doc = DocxDocument(str(docx_path))
+
+        font_pass: list[dict] = []
+        font_fail: list[dict] = []
+        size_pass: list[dict] = []
+        size_fail: list[dict] = []
+
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            if not text:
+                continue
+            if para.style.name not in _TOC_TOF_STYLE_NAMES:
+                continue
+
+            para_info: dict = {
+                "text"      : text[:100],
+                "full_text" : text,
+                "style"     : para.style.name,
+                "page"      : None,
+                "bab"       : None,
+                "para_idx"  : None,
+            }
+
+            font_ok = True
+            size_ok = True
+
+            for run in para.runs:
+                if expected_font and run.font.name and run.font.name != expected_font:
+                    font_fail.append({**para_info, "actual": run.font.name})
+                    font_ok = False
+                    break
+                if expected_size and run.font.size:
+                    actual_pt = round(run.font.size.pt)
+                    if actual_pt != expected_size:
+                        size_fail.append({**para_info, "actual": f"{actual_pt}pt"})
+                        size_ok = False
+                        break
+
+            if font_ok:
+                font_pass.append(para_info)
+            if size_ok:
+                size_pass.append(para_info)
+
+        total_font = len(font_pass) + len(font_fail)
+        total_size = len(size_pass) + len(size_fail)
+
+        if total_font == 0:
+            checks.append(ValidationCheckResult(
+                category="typography", field="toc_format",
+                status="skipped",
+                message="Tidak ada entri TOC/TOF yang ditemukan di dokumen",
+                skip_reason="Tidak ada paragraf dengan style TOC/TOF",
+            ))
+            return issues, checks
+
+        # ── Font family ───────────────────────────────────────────────────────
+        if font_pass:
+            n_pass = len(font_pass)
+            all_ok = not font_fail
+            occs_pass = _build_occurrences(
+                font_pass, actual_str=expected_font_str, expected_str=expected_font_str
+            ) or None
+            checks.append(ValidationCheckResult(
+                category="typography", field="toc_font",
+                status="passed",
+                message=(
+                    f"Semua {total_font} entri daftar (TOC/TOF) sesuai font"
+                    if all_ok else
+                    f"{n_pass} dari {total_font} entri daftar (TOC/TOF) sesuai font"
+                ),
+                expected=expected_font_str,
+                actual=expected_font_str,
+                occurrences=occs_pass,
+            ))
+
+        if font_fail:
+            first_actual = font_fail[0].get("actual", "")
+            msg = (
+                f"{len(font_fail)} entri daftar (TOC/TOF) font tidak sesuai "
+                f"(ekspektasi: {expected_font_str}). Contoh: \"{font_fail[0]['text']}\""
+            )
+            occs_fail = _build_occurrences(font_fail, expected_str=expected_font_str) or None
+            issues.append(ValidationIssue(
+                category="typography", field="toc_font",
+                severity="warning", message=msg,
+                expected=expected_font_str, actual=first_actual,
+                occurrences=occs_fail,
+            ))
+            checks.append(ValidationCheckResult(
+                category="typography", field="toc_font",
+                status="warning", message=msg,
+                expected=expected_font_str, actual=first_actual,
+                occurrences=occs_fail,
+            ))
+
+        # ── Font size ─────────────────────────────────────────────────────────
+        if size_pass:
+            n_pass = len(size_pass)
+            all_ok = not size_fail
+            occs_pass = _build_occurrences(
+                size_pass, actual_str=expected_size_str, expected_str=expected_size_str
+            ) or None
+            checks.append(ValidationCheckResult(
+                category="typography", field="toc_font_size",
+                status="passed",
+                message=(
+                    f"Semua {total_size} entri daftar (TOC/TOF) sesuai ukuran font"
+                    if all_ok else
+                    f"{n_pass} dari {total_size} entri daftar (TOC/TOF) sesuai ukuran font"
+                ),
+                expected=expected_size_str,
+                actual=expected_size_str,
+                occurrences=occs_pass,
+            ))
+
+        if size_fail:
+            first_actual = size_fail[0].get("actual", "")
+            msg = (
+                f"{len(size_fail)} entri daftar (TOC/TOF) ukuran font tidak sesuai "
+                f"(ekspektasi: {expected_size_str}). Contoh: \"{size_fail[0]['text']}\""
+            )
+            occs_fail = _build_occurrences(size_fail, expected_str=expected_size_str) or None
+            issues.append(ValidationIssue(
+                category="typography", field="toc_font_size",
+                severity="warning", message=msg,
+                expected=expected_size_str, actual=first_actual,
+                occurrences=occs_fail,
+            ))
+            checks.append(ValidationCheckResult(
+                category="typography", field="toc_font_size",
+                status="warning", message=msg,
+                expected=expected_size_str, actual=first_actual,
+                occurrences=occs_fail,
+            ))
+
+    except Exception as exc:
+        checks.append(ValidationCheckResult(
+            category="typography", field="toc_format",
+            status="skipped",
+            message=f"Pengecekan format TOC/TOF dilewati: {exc}",
+            skip_reason=str(exc),
+        ))
+
+    return issues, checks
+
+
 def _check_body_content(
     docx_path: Path,
     metadata: DocumentMetadata,
@@ -1265,6 +1440,11 @@ def _check_body_content(
             if not text:
                 continue
             if _is_heading_para(para):
+                continue
+            # Entri TOC/TOF (Daftar Isi, Daftar Gambar, Daftar Tabel, Daftar Lampiran)
+            # divalidasi oleh _check_toc_format — skip di sini agar tidak false positive
+            # (entri TOC memang LEFT-aligned, bukan JUSTIFY).
+            if para.style.name in _TOC_TOF_STYLE_NAMES:
                 continue
             # Caption gambar/tabel/lampiran divalidasi di fungsi tersendiri.
             # Gunakan _LAMPIRAN_BROAD_RE (r'^Lampiran\s+\d+', butuh digit) bukan
@@ -2552,14 +2732,15 @@ def run_validocx(
     fig_issues, fig_checks           = _check_figures_tables(path, metadata)
     caption_issues, caption_checks   = _check_caption_format(path, metadata)
     lampiran_issues, lampiran_checks = _check_lampiran_format(path, metadata)
+    toc_issues, toc_checks           = _check_toc_format(path, metadata)
     num_issues, num_checks           = _check_numbering(path, metadata)
     pgcount_issues, pgcount_checks   = _check_page_count(path, metadata)
     body_issues, body_checks         = _check_body_content(path, metadata)
 
     all_issues = (issues + case_issues + struct_issues + fig_issues
-                  + caption_issues + lampiran_issues + num_issues
+                  + caption_issues + lampiran_issues + toc_issues + num_issues
                   + pgcount_issues + body_issues)
     all_checks = (checks + case_checks + struct_checks + fig_checks
-                  + caption_checks + lampiran_checks + num_checks
+                  + caption_checks + lampiran_checks + toc_checks + num_checks
                   + pgcount_checks + body_checks)
     return all_issues, all_checks

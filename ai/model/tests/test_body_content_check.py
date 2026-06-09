@@ -13,7 +13,11 @@ from model_ai.validation.validocx_runner import (
     _check_figures_tables,
 )
 
-_DOCX = Path(__file__).parent / "file_target.docx"
+_DOCX = next(
+    (p for p in (Path(__file__).parent).iterdir()
+     if p.suffix == ".docx" and not p.name.startswith("~")),
+    Path(__file__).parent / "file_target.docx",  # fallback jika tidak ada
+)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

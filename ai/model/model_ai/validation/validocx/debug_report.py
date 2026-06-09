@@ -175,8 +175,11 @@ def _build_parameter_summary(check_msgs):
       CHECK [para#N] alignment (Style) FAIL actual=V expected=W
       CHECK [para#N] line_spacing (Style) INHERITED
     """
-    # key = "parameter (Style)", value = {pass, fail, inherited, paragraphs_pass}
-    summary = defaultdict(lambda: {"pass": 0, "fail": 0, "inherited": 0, "paragraphs_pass": []})
+    # key = "parameter (Style)", value = {pass, fail, inherited, paragraphs_pass, paragraphs_fail}
+    summary = defaultdict(lambda: {
+        "pass": 0, "fail": 0, "inherited": 0,
+        "paragraphs_pass": [], "paragraphs_fail": [],
+    })
 
     for msg in check_msgs:
         # Ambil para_idx, parameter, style, dan hasil
@@ -186,10 +189,13 @@ def _build_parameter_summary(check_msgs):
         para_idx_str, param, style, result = m.group(1), m.group(2), m.group(3), m.group(4)
         key = f"{param} ({style})"
         summary[key][result.lower()] += 1
+        para_idx = int(para_idx_str)
         if result == "PASS":
-            para_idx = int(para_idx_str)
             if para_idx not in summary[key]["paragraphs_pass"]:
                 summary[key]["paragraphs_pass"].append(para_idx)
+        elif result == "FAIL":
+            if para_idx not in summary[key]["paragraphs_fail"]:
+                summary[key]["paragraphs_fail"].append(para_idx)
 
     result_list = []
     for key, counts in sorted(summary.items()):
@@ -205,6 +211,7 @@ def _build_parameter_summary(check_msgs):
             "fail"           : counts["fail"],
             "inherited"      : counts["inherited"],
             "paragraphs_pass": counts["paragraphs_pass"],
+            "paragraphs_fail": counts["paragraphs_fail"],
         })
 
     return result_list
@@ -307,11 +314,17 @@ def build_report(entries, docx_path=None, para_map=None):
         undefined_styles= _inject_para_details(undefined_styles,para_map)
         attr_inherited  = _inject_para_details(attr_inherited,  para_map)
         for item in parameter_summary:
-            details = []
+            details_pass = []
             for idx in item.get("paragraphs_pass", []):
                 if idx in para_map:
-                    details.append({"para_idx": idx, **para_map[idx]})
-            item["paragraph_details_pass"] = details
+                    details_pass.append({"para_idx": idx, **para_map[idx]})
+            item["paragraph_details_pass"] = details_pass
+
+            details_fail = []
+            for idx in item.get("paragraphs_fail", []):
+                if idx in para_map:
+                    details_fail.append({"para_idx": idx, **para_map[idx]})
+            item["paragraph_details_fail"] = details_fail
 
     report = {
         "summary": {

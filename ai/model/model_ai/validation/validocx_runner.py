@@ -487,19 +487,16 @@ def _build_issues_checks(
             status="warning", message=msg,
         ))
 
-    # ── Parameter summary sebagai check passed (heading only) ────────────────
+    # ── Parameter summary sebagai check (heading only) ───────────────────────
     # Non-heading summary digantikan oleh _check_body_content() yang mengagregasi
-    # per nilai parameter. Di sini hanya tampilkan hasil heading (Heading 1–5, Judul*).
+    # per nilai parameter. Di sini tampilkan hasil heading (Heading 1–5, Judul*):
+    #   - lolos semua / lolos semua (ada inherited) → check passed
+    #   - ada yang gagal → check failed + issue (masuk section error)
     for ps in report.get("parameter_summary", []):
-        if ps["status"] not in ("lolos semua", "lolos semua (ada inherited)"):
-            continue
         param_match = re.match(r'^(\S+)\s+\((.+)\)$', ps["parameter"])
         style_in_param = (param_match.group(2) if param_match else "").lower()
         if not any(k in style_in_param for k in _HEADING_PARAM_KEYWORDS):
             continue
-
-        raw_details = ps.get("paragraph_details_pass", [])
-        occs = _build_occurrences(raw_details) or None
 
         expected_val: str | None = None
         if requirements and param_match:
@@ -507,15 +504,43 @@ def _build_issues_checks(
                 requirements, param_match.group(1), param_match.group(2)
             )
 
-        checks.append(ValidationCheckResult(
-            category="typography",
-            field=f"validocx_param.{ps['parameter'].replace(' ', '_')}",
-            status="passed",
-            message=f"{ps['parameter']}: {ps['pass']} elemen lolos",
-            expected=expected_val,
-            actual=expected_val,  # sama dengan expected karena semua lolos
-            occurrences=occs,
-        ))
+        field = f"validocx_param.{ps['parameter'].replace(' ', '_')}"
+
+        if ps["status"] in ("lolos semua", "lolos semua (ada inherited)"):
+            raw_details = ps.get("paragraph_details_pass", [])
+            occs = _build_occurrences(raw_details) or None
+            checks.append(ValidationCheckResult(
+                category="typography",
+                field=field,
+                status="passed",
+                message=f"{ps['parameter']}: {ps['pass']} elemen lolos",
+                expected=expected_val,
+                actual=expected_val,
+                occurrences=occs,
+            ))
+
+        elif ps["status"] == "ada yang gagal":
+            raw_fail = ps.get("paragraph_details_fail", [])
+            occs = _build_occurrences(raw_fail, expected_str=expected_val) or None
+            msg = (
+                f"{ps['parameter']}: {ps['fail']} dari {ps['total']} elemen gagal"
+                + (f" (expected: {expected_val})" if expected_val else "")
+            )
+            issues.append(ValidationIssue(
+                category="typography",
+                field=field,
+                severity="error",
+                message=msg,
+                occurrences=occs,
+            ))
+            checks.append(ValidationCheckResult(
+                category="typography",
+                field=field,
+                status="failed",
+                message=msg,
+                expected=expected_val,
+                occurrences=occs,
+            ))
 
     # ── Summary check ────────────────────────────────────────────────────────
     s = report["summary"]

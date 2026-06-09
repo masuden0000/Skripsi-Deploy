@@ -135,10 +135,7 @@ function formatFieldLabel(field: string): string {
 
 function statusMessage(status: string, n: number): string {
   if (status === "skipped") return "Dilewati"
-  const label =
-    status === "passed"                      ? "lolos" :
-    status === "error" || status === "failed"? "tidak lolos" :
-                                               "warning"
+  const label = status === "passed" ? "lolos" : "tidak lolos"
   return n > 0 ? `${n} elemen ${label}` : label.charAt(0).toUpperCase() + label.slice(1)
 }
 
@@ -202,22 +199,19 @@ function SummaryBar({
   viewMode,
   skippedCount,
   onErrorClick,
-  onWarningClick,
   onPassedClick,
 }: {
   result: ValidationResult
-  viewMode: "error" | "warning" | "passed"
+  viewMode: "error" | "passed"
   skippedCount: number
   onErrorClick: () => void
-  onWarningClick: () => void
   onPassedClick: () => void
 }) {
-  const errors   = result.issues?.filter((i) => i.severity === "error").length   ?? 0
-  const warnings = (result.issues?.filter((i) => i.severity === "warning").length ?? 0) + skippedCount
-  const passed   = result.summary?.passed ?? 0
+  const errors = (result.issues?.length ?? 0) + skippedCount
+  const passed = result.summary?.passed ?? 0
 
   return (
-    <div className="grid grid-cols-3 divide-x divide-border border-t border-border">
+    <div className="grid grid-cols-2 divide-x divide-border border-t border-border">
       <button
         type="button"
         onClick={onErrorClick}
@@ -230,22 +224,7 @@ function SummaryBar({
       >
         <span className="text-2xl font-bold tabular-nums text-red-600">{errors}</span>
         <span className={["mt-0.5 text-[11px] font-medium uppercase tracking-wide", viewMode === "error" ? "text-red-700" : "text-gray-400"].join(" ")}>
-          Error{viewMode === "error" ? " ▾" : ""}
-        </span>
-      </button>
-      <button
-        type="button"
-        onClick={onWarningClick}
-        className={[
-          "flex flex-col items-center py-4 transition-colors cursor-pointer",
-          viewMode === "warning"
-            ? "bg-amber-100 ring-1 ring-inset ring-amber-200"
-            : "bg-amber-50 hover:bg-amber-100/70",
-        ].join(" ")}
-      >
-        <span className="text-2xl font-bold tabular-nums text-amber-600">{warnings}</span>
-        <span className={["mt-0.5 text-[11px] font-medium uppercase tracking-wide", viewMode === "warning" ? "text-amber-700" : "text-gray-400"].join(" ")}>
-          Peringatan{viewMode === "warning" ? " ▾" : ""}
+          Tidak Lolos{viewMode === "error" ? " ▾" : ""}
         </span>
       </button>
       <button
@@ -260,7 +239,7 @@ function SummaryBar({
       >
         <span className="text-2xl font-bold tabular-nums text-pkm-600">{passed}</span>
         <span className={["mt-0.5 text-[11px] font-medium uppercase tracking-wide", viewMode === "passed" ? "text-pkm-700" : "text-gray-400"].join(" ")}>
-          Lulus{viewMode === "passed" ? " ▾" : ""}
+          Lolos{viewMode === "passed" ? " ▾" : ""}
         </span>
       </button>
     </div>
@@ -285,9 +264,7 @@ function OccurrenceCard({
 
   const accentColor = passed
     ? "border-l-pkm-300"
-    : severity === "error"
-    ? "border-l-red-300"
-    : "border-l-amber-300"
+    : "border-l-red-300"
 
   const cardBorder  = passed ? "border-pkm-100"      : "border-border"
   const headerBg    = passed ? "bg-pkm-50/50"         : "bg-gray-50/60"
@@ -402,7 +379,6 @@ function IssueListPanel({
             </div>
             {items.map(({ issue, idx }) => {
               const isActive   = selectedIdx === idx
-              const isError    = issue.severity === "error"
               const isSkipped  = issue._isSkipped === true
               return (
                 <button
@@ -415,8 +391,8 @@ function IssueListPanel({
                       : "hover:bg-gray-50/80 border-l-[3px] border-l-transparent",
                   ].join(" ")}
                 >
-                  <span className={["shrink-0 mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded", isError ? "bg-red-100 text-red-600" : isSkipped ? "bg-gray-100 text-gray-500" : "bg-amber-100 text-amber-600"].join(" ")}>
-                    {isError ? "ERR" : isSkipped ? "SKIP" : "WARN"}
+                  <span className={["shrink-0 mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded", isSkipped ? "bg-gray-100 text-gray-500" : "bg-red-100 text-red-600"].join(" ")}>
+                    {isSkipped ? "SKIP" : "ERR"}
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className={`text-sm truncate ${isActive ? "font-semibold text-pkm-900" : "font-medium text-gray-800"}`}>
@@ -688,7 +664,7 @@ function skippedCheckToIssue(check: ValidationCheck): DisplayIssue {
 // Menampilkan hasil validasi satu dokumen (sama seperti tampilan lama).
 
 function ValidationResultView({ result }: { result: ValidationResult }) {
-  const [viewMode, setViewMode]           = useState<"error" | "warning" | "passed">(
+  const [viewMode, setViewMode]           = useState<"error" | "passed">(
     result.valid ? "passed" : "error"
   )
   const [selectedIssueIdx, setSelectedIssueIdx] = useState<number | null>(null)
@@ -700,14 +676,10 @@ function ValidationResultView({ result }: { result: ValidationResult }) {
     .flat()
     .filter((c) => c.status === "skipped")
 
-  const filteredIssues: DisplayIssue[] = viewMode === "error"
-    ? allIssues.filter((i) => i.severity === "error")
-    : viewMode === "warning"
-    ? [
-        ...allIssues.filter((i) => i.severity === "warning"),
-        ...skippedChecks.map(skippedCheckToIssue),
-      ]
-    : allIssues
+  const filteredIssues: DisplayIssue[] = [
+    ...allIssues,
+    ...skippedChecks.map(skippedCheckToIssue),
+  ]
 
   const passedChecks: ValidationCheck[] = Object.values(result.report ?? {})
     .flat()
@@ -734,8 +706,7 @@ function ValidationResultView({ result }: { result: ValidationResult }) {
             <AlertCircleIcon className="size-4" />
             <AlertTitle>Ditemukan Masalah Format</AlertTitle>
             <AlertDescription>
-              {allIssues.filter((i) => i.severity === "error").length} error,{" "}
-              {allIssues.filter((i) => i.severity === "warning").length} peringatan ditemukan.
+              {allIssues.length} masalah ditemukan.
             </AlertDescription>
           </Alert>
         )}
@@ -747,7 +718,6 @@ function ValidationResultView({ result }: { result: ValidationResult }) {
           viewMode={viewMode}
           skippedCount={skippedChecks.length}
           onErrorClick={() => { setViewMode("error"); setSelectedIssueIdx(null) }}
-          onWarningClick={() => { setViewMode((m) => m === "warning" ? "error" : "warning"); setSelectedIssueIdx(null) }}
           onPassedClick={() => { setViewMode((m) => m === "passed" ? "error" : "passed"); setSelectedCheckIdx(null) }}
         />
         <div className="grid grid-cols-[300px_1fr] border-t border-border overflow-hidden" style={{ height: 680 }}>

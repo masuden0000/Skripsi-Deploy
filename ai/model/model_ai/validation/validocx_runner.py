@@ -474,12 +474,12 @@ def _build_issues_checks(
 
         issues.append(ValidationIssue(
             category="typography", field="undefined_style",
-            severity="warning", message=msg,
+            severity="error", message=msg,
             occurrences=occurrences,
         ))
         checks.append(ValidationCheckResult(
             category="typography", field="undefined_style",
-            status="warning", message=msg,
+            status="failed", message=msg,
         ))
 
     # ── Attr inherited ───────────────────────────────────────────────────────
@@ -494,12 +494,12 @@ def _build_issues_checks(
 
         issues.append(ValidationIssue(
             category="spacing", field="paragraph_inherited",
-            severity="warning", message=msg,
+            severity="error", message=msg,
             occurrences=occurrences,
         ))
         checks.append(ValidationCheckResult(
             category="spacing", field="paragraph_inherited",
-            status="warning", message=msg,
+            status="failed", message=msg,
         ))
 
     # ── Parameter summary sebagai check (heading only) ───────────────────────
@@ -686,13 +686,13 @@ def _check_heading_case(
                 ) or None
                 issues.append(ValidationIssue(
                     category="typography", field=field_name,
-                    severity="warning", message=msg,
+                    severity="error", message=msg,
                     expected=case_style, actual=first_actual,
                     occurrences=occs,
                 ))
                 checks.append(ValidationCheckResult(
                     category="typography", field=field_name,
-                    status="warning", message=msg,
+                    status="failed", message=msg,
                     expected=case_style, actual=first_actual,
                     occurrences=occs,
                 ))
@@ -880,13 +880,13 @@ def _check_document_structure(
             )
             issues.append(ValidationIssue(
                 category="document_structure", field="section_order",
-                severity="warning", message=msg,
+                severity="error", message=msg,
                 expected=' → '.join(expected_filtered),
                 actual=' → '.join(actual_filtered),
             ))
             checks.append(ValidationCheckResult(
                 category="document_structure", field="section_order",
-                status="warning", message=msg,
+                status="failed", message=msg,
                 expected=' → '.join(expected_filtered),
                 actual=' → '.join(actual_filtered),
             ))
@@ -1132,12 +1132,12 @@ def _check_lampiran_format(
             )
             issues.append(ValidationIssue(
                 category="document_structure", field="lampiran_separator",
-                severity="warning", message=msg,
+                severity="error", message=msg,
                 expected=effective_sep, actual=wrong_separator[0],
             ))
             checks.append(ValidationCheckResult(
                 category="document_structure", field="lampiran_separator",
-                status="warning", message=msg,
+                status="failed", message=msg,
                 expected=effective_sep, actual=wrong_separator[0],
             ))
         else:
@@ -1180,12 +1180,14 @@ def _check_lampiran_format(
                 occurrences=occs_pass,
             ))
 
-        # ── Emit: atribut gagal → warning check + issue per atribut ──────────
-        for field, items, label, expected_val in [
-            ("lampiran_alignment", wrong_alignment, "alignment",    "JUSTIFY"),
-            ("lampiran_font",      wrong_font,      "font family",  expected_font or ""),
-            ("lampiran_font_size", wrong_size,      "font size",    f"{expected_size}pt"),
-            ("lampiran_spacing",   wrong_spacing,   "line spacing", str(expected_spacing)),
+        # ── Emit: atribut gagal → issue per atribut ──────────────────────────
+        # alignment → error (konsisten dengan caption_alignment_* dan body_alignment)
+        # font/size/spacing → warning
+        for field, items, label, expected_val, is_error in [
+            ("lampiran_alignment", wrong_alignment, "alignment",    "JUSTIFY",              True),
+            ("lampiran_font",      wrong_font,      "font family",  expected_font or "",    False),
+            ("lampiran_font_size", wrong_size,      "font size",    f"{expected_size}pt",   False),
+            ("lampiran_spacing",   wrong_spacing,   "line spacing", str(expected_spacing),  False),
         ]:
             if not items:
                 continue
@@ -1194,17 +1196,16 @@ def _check_lampiran_format(
                 f"{len(items)} judul lampiran {label} tidak sesuai "
                 f"(ekspektasi: {expected_val}). Contoh: \"{items[0]['text']}\""
             )
-            # actual_str=None → _build_occurrences akan pakai "actual" tiap item
             occs_fail = _build_occurrences(items, expected_str=str(expected_val)) or None
             issues.append(ValidationIssue(
                 category="typography", field=field,
-                severity="warning", message=msg,
+                severity="error" if is_error else "warning", message=msg,
                 expected=str(expected_val), actual=first_actual,
                 occurrences=occs_fail,
             ))
             checks.append(ValidationCheckResult(
                 category="typography", field=field,
-                status="warning", message=msg,
+                status="failed" if is_error else "warning", message=msg,
                 expected=str(expected_val), actual=first_actual,
                 occurrences=occs_fail,
             ))
@@ -1558,12 +1559,12 @@ def _check_caption_format(
             )
             issues.append(ValidationIssue(
                 category="figures_tables", field="caption_font",
-                severity="warning", message=msg,
+                severity="error", message=msg,
                 expected=expected_font, actual=wrong_font[0],
             ))
             checks.append(ValidationCheckResult(
                 category="figures_tables", field="caption_font",
-                status="warning", message=msg,
+                status="failed", message=msg,
                 expected=expected_font, actual=wrong_font[0],
             ))
         elif expected_font and total_captions > 0:
@@ -1582,12 +1583,12 @@ def _check_caption_format(
             )
             issues.append(ValidationIssue(
                 category="figures_tables", field="caption_font_size",
-                severity="warning", message=msg,
+                severity="error", message=msg,
                 expected=str(expected_size), actual=wrong_size[0],
             ))
             checks.append(ValidationCheckResult(
                 category="figures_tables", field="caption_font_size",
-                status="warning", message=msg,
+                status="failed", message=msg,
                 expected=str(expected_size), actual=wrong_size[0],
             ))
         elif expected_size and total_captions > 0:
@@ -1751,11 +1752,11 @@ def _check_figures_tables(
                 )
                 issues.append(ValidationIssue(
                     category="figures_tables", field="figure_caption_position",
-                    severity="warning", message=msg, expected=fig_pos_exp,
+                    severity="error", message=msg, expected=fig_pos_exp,
                 ))
                 checks.append(ValidationCheckResult(
                     category="figures_tables", field="figure_caption_position",
-                    status="warning", message=msg, expected=fig_pos_exp,
+                    status="failed", message=msg, expected=fig_pos_exp,
                 ))
             else:
                 checks.append(ValidationCheckResult(
@@ -1774,12 +1775,12 @@ def _check_figures_tables(
                     )
                     issues.append(ValidationIssue(
                         category="figures_tables", field="figure_caption_format",
-                        severity="warning", message=msg,
+                        severity="error", message=msg,
                         expected=fig_fmt_tpl, actual=fig_fmt_errors[0],
                     ))
                     checks.append(ValidationCheckResult(
                         category="figures_tables", field="figure_caption_format",
-                        status="warning", message=msg,
+                        status="failed", message=msg,
                         expected=fig_fmt_tpl, actual=fig_fmt_errors[0],
                     ))
                 else:
@@ -1823,12 +1824,12 @@ def _check_figures_tables(
                     )
                     issues.append(ValidationIssue(
                         category="figures_tables", field="table_caption_format",
-                        severity="warning", message=msg,
+                        severity="error", message=msg,
                         expected=tbl_fmt_tpl, actual=tbl_fmt_errors[0],
                     ))
                     checks.append(ValidationCheckResult(
                         category="figures_tables", field="table_caption_format",
-                        status="warning", message=msg,
+                        status="failed", message=msg,
                         expected=tbl_fmt_tpl, actual=tbl_fmt_errors[0],
                     ))
                 else:
@@ -1882,12 +1883,12 @@ def _check_figures_tables(
                     )
                     issues.append(ValidationIssue(
                         category="figures_tables", field="lampiran_caption_format",
-                        severity="warning", message=msg,
+                        severity="error", message=msg,
                         expected=lamp_fmt_tpl, actual=lamp_fmt_errors[0],
                     ))
                     checks.append(ValidationCheckResult(
                         category="figures_tables", field="lampiran_caption_format",
-                        status="warning", message=msg,
+                        status="failed", message=msg,
                         expected=lamp_fmt_tpl, actual=lamp_fmt_errors[0],
                     ))
                 else:
@@ -2286,12 +2287,12 @@ def _check_numbering(
                         )
                         issues.append(ValidationIssue(
                             category="numbering", field="preliminary_location",
-                            severity="warning", message=msg, expected=exp_loc,
+                            severity="error", message=msg, expected=exp_loc,
                             actual=actual_loc,
                         ))
                         checks.append(ValidationCheckResult(
                             category="numbering", field="preliminary_location",
-                            status="warning", message=msg, expected=exp_loc,
+                            status="failed", message=msg, expected=exp_loc,
                             actual=actual_loc,
                         ))
                     else:
@@ -2360,12 +2361,12 @@ def _check_numbering(
                         )
                         issues.append(ValidationIssue(
                             category="numbering", field="content_location",
-                            severity="warning", message=msg, expected=exp_loc,
+                            severity="error", message=msg, expected=exp_loc,
                             actual=actual_loc,
                         ))
                         checks.append(ValidationCheckResult(
                             category="numbering", field="content_location",
-                            status="warning", message=msg, expected=exp_loc,
+                            status="failed", message=msg, expected=exp_loc,
                             actual=actual_loc,
                         ))
                     else:
@@ -2483,13 +2484,13 @@ def _check_start_section(
     else:
         issues.append(ValidationIssue(
             category="numbering", field=field,
-            severity="warning",
+            severity="error",
             message=f"Titik mulai nomor halaman {zone} '{label}' tidak ditemukan di dokumen",
             expected=start_at,
         ))
         checks.append(ValidationCheckResult(
             category="numbering", field=field,
-            status="warning",
+            status="failed",
             message=f"Titik mulai nomor halaman {zone} '{label}' tidak ditemukan di dokumen",
             expected=start_at,
         ))

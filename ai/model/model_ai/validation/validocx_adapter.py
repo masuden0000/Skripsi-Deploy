@@ -26,9 +26,11 @@ _ORIENTATION_MAP: dict[str, int] = {
 }
 
 _GRUP_A_LINE_SPACING: dict[str, float] = {
-    "SINGLE": 1.0,
-    "ONE_POINT_FIVE": 1.15,
-    "DOUBLE": 2.0,
+    "SINGLE":         1.0,   # Word "Single"      → 1.0×  (w:line="240")
+    "ONE_POINT_FIVE": 1.5,   # Word "1.5 lines"   → 1.5×  (w:line="360")
+    "DOUBLE":         2.0,   # Word "Double"       → 2.0×  (w:line="480")
+    # Catatan: 1.15× (Multiple 1.15) bukan named rule — disimpan sebagai
+    # line_spacing=1.15 langsung dan ditangani via cabang else di bawah.
 }
 
 _PAPER_SIZE_DIMS: dict[str, tuple[float, float]] = {

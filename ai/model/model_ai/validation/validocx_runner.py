@@ -1311,43 +1311,65 @@ def _check_caption_format(
     """Validasi atribut caption gambar/tabel via text-pattern, bukan style name.
 
     Caption dideteksi dari teks yang diawali 'Gambar <angka>' atau 'Tabel <angka>'.
-    Aturan: atribut sama dengan Normal (font family, font size) kecuali alignment = CENTER.
-    Style name diabaikan agar tidak false positive pada nama dinamis seperti 'Gambar (Lampiran)'.
+    Alignment dibaca dari metadata.figures_and_tables per tipe caption (CENTER fallback).
+    Font family dan font size harus sama dengan body — dicek per tipe caption.
+    Style name diabaikan agar tidak false positive pada nama dinamis.
     """
     issues: list[ValidationIssue] = []
     checks: list[ValidationCheckResult] = []
 
-    t = metadata.typography
-    expected_font   = t.font_family if t else None
-    expected_size   = int(t.font_size_body_pt) if t and t.font_size_body_pt else None
+    t  = metadata.typography
+    ft = metadata.figures_and_tables
+
+    expected_font = t.font_family if t else None
+    expected_size = int(t.font_size_body_pt) if t and t.font_size_body_pt else None
+
+    # Baca alignment per tipe dari metadata; default CENTER jika null
+    fig_align_str = ((ft.caption_alignment_figure or "CENTER").upper() if ft else "CENTER")
+    tbl_align_str = ((ft.caption_alignment_table  or "CENTER").upper() if ft else "CENTER")
+    fig_align_val = _CAPTION_ALIGN_MAP.get(fig_align_str, WD_ALIGN_PARAGRAPH.CENTER)
+    tbl_align_val = _CAPTION_ALIGN_MAP.get(tbl_align_str, WD_ALIGN_PARAGRAPH.CENTER)
 
     try:
-
         doc = DocxDocument(str(docx_path))
 
-        wrong_alignment: list[str] = []
-        wrong_font:      list[str] = []
-        wrong_size:      list[str] = []
+        wrong_fig_alignment: list[str] = []
+        wrong_tbl_alignment: list[str] = []
+        wrong_font:          list[str] = []
+        wrong_size:          list[str] = []
+        fig_total = 0
+        tbl_total = 0
 
         for para in doc.paragraphs:
             text = para.text.strip()
             if not text:
                 continue
-            if not (_FIG_DETECT_RE.match(text) or _TBL_DETECT_RE.match(text)):
+
+            is_fig = bool(_FIG_DETECT_RE.match(text))
+            is_tbl = bool(_TBL_DETECT_RE.match(text))
+            if not is_fig and not is_tbl:
                 continue
 
-            # ── Alignment harus CENTER ────────────────────────────────────────
+            if is_fig:
+                fig_total += 1
+            else:
+                tbl_total += 1
+
+            # ── Alignment ────────────────────────────────────────────────────
             align = para.paragraph_format.alignment
             if align is None:
-                # Ambil dari style jika tidak di-override di paragraf
                 try:
                     align = para.style.paragraph_format.alignment
                 except Exception:
                     align = None
-            if align is not None and align != WD_ALIGN_PARAGRAPH.CENTER:
-                wrong_alignment.append(text[:70])
 
-            # ── Font family & size harus sama dengan body ─────────────────────
+            if align is not None:
+                if is_fig and align != fig_align_val:
+                    wrong_fig_alignment.append(text[:70])
+                elif is_tbl and align != tbl_align_val:
+                    wrong_tbl_alignment.append(text[:70])
+
+            # ── Font family & size ────────────────────────────────────────────
             for run in para.runs:
                 if expected_font and run.font.name and run.font.name != expected_font:
                     wrong_font.append(text[:70])
@@ -1358,40 +1380,58 @@ def _check_caption_format(
                         wrong_size.append(text[:70])
                         break
 
-        total_captions = sum(
-            1 for para in doc.paragraphs
-            if (_FIG_DETECT_RE.match(para.text.strip()) or _TBL_DETECT_RE.match(para.text.strip()))
-            and para.text.strip()
-        )
+        # ── Emit alignment gambar ─────────────────────────────────────────────
+        if fig_total > 0:
+            if wrong_fig_alignment:
+                msg = (
+                    f"{len(wrong_fig_alignment)} caption gambar tidak {fig_align_str}. "
+                    f'Contoh: "{wrong_fig_alignment[0]}"'
+                )
+                issues.append(ValidationIssue(
+                    category="figures_tables", field="caption_alignment_figure",
+                    severity="error", message=msg,
+                    expected=fig_align_str, actual=f"bukan {fig_align_str}",
+                ))
+                checks.append(ValidationCheckResult(
+                    category="figures_tables", field="caption_alignment_figure",
+                    status="failed", message=msg,
+                    expected=fig_align_str, actual=f"bukan {fig_align_str}",
+                ))
+            else:
+                checks.append(ValidationCheckResult(
+                    category="figures_tables", field="caption_alignment_figure",
+                    status="passed",
+                    message=f"Semua {fig_total} caption gambar alignment {fig_align_str}",
+                    expected=fig_align_str,
+                ))
 
-        # ── Emit results ──────────────────────────────────────────────────────
-        if wrong_alignment:
-            msg = (
-                f"{len(wrong_alignment)} caption tidak rata tengah. "
-                f'Contoh: "{wrong_alignment[0]}"'
-            )
-            issues.append(ValidationIssue(
-                category="figures_tables", field="caption_alignment",
-                severity="error", message=msg,
-                expected="CENTER", actual="bukan CENTER",
-            ))
-            checks.append(ValidationCheckResult(
-                category="figures_tables", field="caption_alignment",
-                status="failed", message=msg,
-                expected="CENTER", actual="bukan CENTER",
-            ))
-        else:
-            checks.append(ValidationCheckResult(
-                category="figures_tables", field="caption_alignment",
-                status="passed" if total_captions > 0 else "skipped",
-                message=(
-                    f"Semua {total_captions} caption rata tengah"
-                    if total_captions > 0
-                    else "Tidak ada caption ditemukan"
-                ),
-                expected="CENTER",
-            ))
+        # ── Emit alignment tabel ──────────────────────────────────────────────
+        if tbl_total > 0:
+            if wrong_tbl_alignment:
+                msg = (
+                    f"{len(wrong_tbl_alignment)} caption tabel tidak {tbl_align_str}. "
+                    f'Contoh: "{wrong_tbl_alignment[0]}"'
+                )
+                issues.append(ValidationIssue(
+                    category="figures_tables", field="caption_alignment_table",
+                    severity="error", message=msg,
+                    expected=tbl_align_str, actual=f"bukan {tbl_align_str}",
+                ))
+                checks.append(ValidationCheckResult(
+                    category="figures_tables", field="caption_alignment_table",
+                    status="failed", message=msg,
+                    expected=tbl_align_str, actual=f"bukan {tbl_align_str}",
+                ))
+            else:
+                checks.append(ValidationCheckResult(
+                    category="figures_tables", field="caption_alignment_table",
+                    status="passed",
+                    message=f"Semua {tbl_total} caption tabel alignment {tbl_align_str}",
+                    expected=tbl_align_str,
+                ))
 
+        # ── Emit font (gabungan gambar + tabel) ───────────────────────────────
+        total_captions = fig_total + tbl_total
         if wrong_font:
             msg = (
                 f"{len(wrong_font)} caption font tidak sesuai (ekspektasi: {expected_font}). "
@@ -1417,7 +1457,8 @@ def _check_caption_format(
 
         if wrong_size:
             msg = (
-                f"{len(wrong_size)} caption ukuran font tidak sesuai (ekspektasi: {expected_size}pt). "
+                f"{len(wrong_size)} caption ukuran font tidak sesuai "
+                f"(ekspektasi: {expected_size}pt). "
                 f'Contoh: "{wrong_size[0]}"'
             )
             issues.append(ValidationIssue(
@@ -1438,9 +1479,17 @@ def _check_caption_format(
                 expected=str(expected_size),
             ))
 
+        if total_captions == 0:
+            checks.append(ValidationCheckResult(
+                category="figures_tables", field="caption_alignment_figure",
+                status="skipped",
+                message="Tidak ada caption gambar/tabel ditemukan",
+                skip_reason="Tidak ada caption",
+            ))
+
     except Exception as exc:
         checks.append(ValidationCheckResult(
-            category="figures_tables", field="caption_alignment",
+            category="figures_tables", field="caption_alignment_figure",
             status="skipped",
             message=f"Pengecekan atribut caption dilewati: {exc}",
             skip_reason=str(exc),
@@ -1467,12 +1516,15 @@ def _check_figures_tables(
         ))
         return issues, checks
 
-    tbl_pos_exp = (ft.table_caption_position or "").upper()
-    fig_pos_exp = (ft.figure_caption_position or "").upper()
-    fig_fmt_tpl = ft.caption_format_figure
-    tbl_fmt_tpl = ft.caption_format_table
+    tbl_pos_exp  = (ft.table_caption_position or "").upper()
+    fig_pos_exp  = (ft.figure_caption_position or "").upper()
+    fig_fmt_tpl  = ft.caption_format_figure
+    tbl_fmt_tpl  = ft.caption_format_table
+    lamp_fmt_tpl = ft.caption_format_lampiran
+    lamp_align_str = (ft.caption_alignment_lampiran or "").upper() or None
 
-    if not tbl_pos_exp and not fig_pos_exp and not fig_fmt_tpl and not tbl_fmt_tpl:
+    if not tbl_pos_exp and not fig_pos_exp and not fig_fmt_tpl and not tbl_fmt_tpl \
+            and not lamp_fmt_tpl and not lamp_align_str:
         checks.append(ValidationCheckResult(
             category="figures_tables", field="caption",
             status="skipped",
@@ -1484,8 +1536,13 @@ def _check_figures_tables(
     try:
         doc = DocxDocument(str(docx_path))
 
-        fig_fmt_re = _template_to_regex(fig_fmt_tpl) if fig_fmt_tpl else None
-        tbl_fmt_re = _template_to_regex(tbl_fmt_tpl) if tbl_fmt_tpl else None
+        fig_fmt_re  = _template_to_regex(fig_fmt_tpl)  if fig_fmt_tpl  else None
+        tbl_fmt_re  = _template_to_regex(tbl_fmt_tpl)  if tbl_fmt_tpl  else None
+        lamp_fmt_re = _template_to_regex(lamp_fmt_tpl) if lamp_fmt_tpl else None
+        lamp_align_val = (
+            _CAPTION_ALIGN_MAP.get(lamp_align_str, WD_ALIGN_PARAGRAPH.CENTER)
+            if lamp_align_str else None
+        )
 
         # Batasi scan hanya pada section dengan penomoran decimal,
         # kecualikan DAFTAR PUSTAKA dan LAMPIRAN.
@@ -1650,6 +1707,97 @@ def _check_figures_tables(
                         status="passed",
                         message=f"Format caption tabel '{tbl_fmt_tpl}': {tbl_count} caption sesuai",
                         expected=tbl_fmt_tpl,
+                    ))
+
+        # ── Lampiran scan (seluruh dokumen) ──────────────────────────────────
+        # _build_content_elements() berhenti sebelum LAMPIRAN → scan terpisah.
+        if lamp_fmt_re or lamp_align_val is not None:
+            lamp_count          = 0
+            lamp_fmt_errors:    list[str] = []
+            lamp_align_errors:  list[str] = []
+
+            for para in doc.paragraphs:
+                text = para.text.strip()
+                if not text or not _LAMP_DETECT_RE.match(text):
+                    continue
+                lamp_count += 1
+
+                if lamp_fmt_re and not lamp_fmt_re.match(text):
+                    lamp_fmt_errors.append(text[:70])
+
+                if lamp_align_val is not None:
+                    align = para.paragraph_format.alignment
+                    if align is None:
+                        try:
+                            align = para.style.paragraph_format.alignment
+                        except Exception:
+                            align = None
+                    if align is not None and align != lamp_align_val:
+                        lamp_align_errors.append(text[:70])
+
+            # Emit format lampiran
+            if lamp_fmt_re:
+                if lamp_count == 0:
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="lampiran_caption_format",
+                        status="skipped",
+                        message="Tidak ditemukan caption lampiran di dokumen",
+                        skip_reason="Tidak ada paragraf diawali 'Lampiran '",
+                    ))
+                elif lamp_fmt_errors:
+                    msg = (
+                        f"Format caption lampiran tidak sesuai pola '{lamp_fmt_tpl}'. "
+                        f"{len(lamp_fmt_errors)}x salah. "
+                        f'Contoh: "{lamp_fmt_errors[0]}"'
+                    )
+                    issues.append(ValidationIssue(
+                        category="figures_tables", field="lampiran_caption_format",
+                        severity="warning", message=msg,
+                        expected=lamp_fmt_tpl, actual=lamp_fmt_errors[0],
+                    ))
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="lampiran_caption_format",
+                        status="warning", message=msg,
+                        expected=lamp_fmt_tpl, actual=lamp_fmt_errors[0],
+                    ))
+                else:
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="lampiran_caption_format",
+                        status="passed",
+                        message=f"Format caption lampiran '{lamp_fmt_tpl}': {lamp_count} caption sesuai",
+                        expected=lamp_fmt_tpl,
+                    ))
+
+            # Emit alignment lampiran
+            if lamp_align_val is not None:
+                if lamp_count == 0:
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="lampiran_caption_alignment",
+                        status="skipped",
+                        message="Tidak ditemukan caption lampiran di dokumen",
+                        skip_reason="Tidak ada paragraf diawali 'Lampiran '",
+                    ))
+                elif lamp_align_errors:
+                    msg = (
+                        f"{len(lamp_align_errors)} caption lampiran tidak {lamp_align_str}. "
+                        f'Contoh: "{lamp_align_errors[0]}"'
+                    )
+                    issues.append(ValidationIssue(
+                        category="figures_tables", field="lampiran_caption_alignment",
+                        severity="error", message=msg,
+                        expected=lamp_align_str, actual=f"bukan {lamp_align_str}",
+                    ))
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="lampiran_caption_alignment",
+                        status="failed", message=msg,
+                        expected=lamp_align_str, actual=f"bukan {lamp_align_str}",
+                    ))
+                else:
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="lampiran_caption_alignment",
+                        status="passed",
+                        message=f"Semua {lamp_count} caption lampiran alignment {lamp_align_str}",
+                        expected=lamp_align_str,
                     ))
 
     except Exception as exc:

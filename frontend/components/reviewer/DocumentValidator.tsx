@@ -332,7 +332,7 @@ function OccurrenceCard({
           </button>
         )}
 
-        {(occ.actual || occ.expected) && (
+        {(occ.actual || (!passed && occ.expected)) && (
           <div className="flex flex-wrap gap-2 pt-0.5">
             {occ.actual && (
               <span className="inline-flex items-center gap-1.5 text-xs bg-red-50 text-red-700 px-2.5 py-1 rounded-md border border-red-100">
@@ -340,7 +340,7 @@ function OccurrenceCard({
                 <span className="font-medium">Ditemukan:</span>&nbsp;{occ.actual}
               </span>
             )}
-            {occ.expected && (
+            {!passed && occ.expected && (
               <span className="inline-flex items-center gap-1.5 text-xs bg-pkm-50 text-pkm-700 px-2.5 py-1 rounded-md border border-pkm-100">
                 <span className="size-1.5 rounded-full bg-pkm-400 shrink-0" />
                 <span className="font-medium">Seharusnya:</span>&nbsp;{occ.expected}

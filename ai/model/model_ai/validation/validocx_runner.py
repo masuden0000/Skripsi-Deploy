@@ -508,14 +508,18 @@ def _build_issues_checks(
         field = f"validocx_param.{ps['parameter'].replace(' ', '_')}"
 
         # ── Elemen yang lolos → selalu emit passed check ──────────────────────
+        # Gunakan len(raw_pass) bukan ps["pass"] karena ps["pass"] menghitung
+        # baris log per run (bisa >1 per paragraf), sedangkan raw_pass berisi
+        # satu entry per paragraf unik — konsisten dengan jumlah lokasi yang ditampilkan.
         if ps["pass"] > 0 or ps["status"] in ("lolos semua", "lolos semua (ada inherited)"):
             raw_pass = ps.get("paragraph_details_pass", [])
+            n_pass = len(raw_pass)
             occs_pass = _build_occurrences(raw_pass) or None
             checks.append(ValidationCheckResult(
                 category="typography",
                 field=field,
                 status="passed",
-                message=f"{ps['parameter']}: {ps['pass']} elemen lolos",
+                message=f"{ps['parameter']}: {n_pass} elemen lolos",
                 expected=expected_val,
                 actual=expected_val,
                 occurrences=occs_pass,
@@ -524,9 +528,11 @@ def _build_issues_checks(
         # ── Elemen yang gagal → emit failed check + issue ─────────────────────
         if ps["status"] == "ada yang gagal":
             raw_fail = ps.get("paragraph_details_fail", [])
+            n_fail  = len(raw_fail)
+            n_total = len(ps.get("paragraph_details_pass", [])) + n_fail
             occs_fail = _build_occurrences(raw_fail, expected_str=expected_val) or None
             msg = (
-                f"{ps['parameter']}: {ps['fail']} dari {ps['total']} elemen gagal"
+                f"{ps['parameter']}: {n_fail} dari {n_total} elemen gagal"
                 + (f" (expected: {expected_val})" if expected_val else "")
             )
             issues.append(ValidationIssue(

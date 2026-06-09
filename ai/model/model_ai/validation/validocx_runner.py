@@ -800,10 +800,18 @@ def _check_document_structure(
             ))
 
         if not missing_required:
+            required_found = [s for s in actual_classified if s["type"] in required_types]
+            occ_req = _build_occurrences(
+                [{"text": s["text"][:100], "full_text": s["text"],
+                  "style": "", "page": None, "bab": None, "para_idx": None}
+                 for s in required_found],
+                actual_str="Ditemukan", expected_str="Wajib ada",
+            ) or None
             checks.append(ValidationCheckResult(
                 category="document_structure", field="required_section",
                 status="passed",
                 message=f"Semua section wajib ditemukan ({len(required_types)} section)",
+                occurrences=occ_req,
             ))
 
         # 2. Cek BAB berurutan (1, 2, 3, ...)
@@ -840,12 +848,19 @@ def _check_document_structure(
                         expected=str(expected_bab_numbers), actual=str(bab_numbers),
                     ))
                 else:
+                    occ_bab = _build_occurrences(
+                        [{"text": s["text"][:100], "full_text": s["text"],
+                          "style": "", "page": None, "bab": None, "para_idx": None}
+                         for s in bab_actuals],
+                        actual_str="Berurutan", expected_str=str(expected_bab_numbers),
+                    ) or None
                     checks.append(ValidationCheckResult(
                         category="document_structure", field="bab_order",
                         status="passed",
                         message=f"BAB berurutan dengan benar: {bab_numbers}",
                         expected=str(expected_bab_numbers),
                         actual=str(bab_numbers),
+                        occurrences=occ_bab,
                     ))
 
         # 3. Cek urutan major section secara keseluruhan
@@ -891,12 +906,20 @@ def _check_document_structure(
                 actual=' → '.join(actual_filtered),
             ))
         elif expected_filtered:
+            major_found = [s for s in actual_classified if s["type"] in set(expected_order)]
+            occ_sec = _build_occurrences(
+                [{"text": s["text"][:100], "full_text": s["text"],
+                  "style": "", "page": None, "bab": None, "para_idx": None}
+                 for s in major_found],
+                actual_str="Urutan sesuai", expected_str=' → '.join(expected_filtered),
+            ) or None
             checks.append(ValidationCheckResult(
                 category="document_structure", field="section_order",
                 status="passed",
                 message=f"Urutan section sesuai: {' → '.join(actual_filtered)}",
                 expected=' → '.join(expected_filtered),
                 actual=' → '.join(actual_filtered),
+                occurrences=occ_sec,
             ))
 
     except Exception as exc:
@@ -1051,6 +1074,7 @@ def _check_lampiran_format(
         doc = DocxDocument(str(docx_path))
 
         pass_items:      list[dict] = []
+        sep_pass_items:  list[dict] = []
         wrong_alignment: list[dict] = []
         wrong_font:      list[dict] = []
         wrong_size:      list[dict] = []
@@ -1068,7 +1092,8 @@ def _check_lampiran_format(
                 continue
 
             # ── Separator ────────────────────────────────────────────────────
-            if not lampiran_re.match(text):
+            _sep_ok = bool(lampiran_re.match(text))
+            if not _sep_ok:
                 wrong_separator.append(text[:70])
 
             total += 1
@@ -1081,6 +1106,8 @@ def _check_lampiran_format(
                 "para_idx"  : None,
             }
             has_issue = False
+            if _sep_ok:
+                sep_pass_items.append(para_info)
 
             # ── Alignment harus JUSTIFY ──────────────────────────────────────
             align = para.paragraph_format.alignment
@@ -1141,11 +1168,15 @@ def _check_lampiran_format(
                 expected=effective_sep, actual=wrong_separator[0],
             ))
         else:
+            occ_sep = _build_occurrences(
+                sep_pass_items, actual_str=effective_sep, expected_str=effective_sep,
+            ) or None
             checks.append(ValidationCheckResult(
                 category="document_structure", field="lampiran_separator",
                 status="passed",
                 message=f"Format penulisan judul lampiran sesuai ({sep_display} setelah nomor)",
                 expected=effective_sep,
+                occurrences=occ_sep,
             ))
 
         # Tidak ada judul lampiran sama sekali → skip atribut check

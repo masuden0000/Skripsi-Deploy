@@ -1,6 +1,6 @@
 """Definisi schema Pydantic untuk hasil ekstraksi dokumen dan validasi turunannya. Posisi pipeline: dipakai oleh doc_extractor, metadata_loader, dan validocx_adapter."""
 import re
-from typing import Literal
+from typing import ClassVar, Literal
 
 from pydantic import BaseModel, model_validator
 
@@ -224,7 +224,7 @@ class FiguresTablesExtracted(BaseModel):
     caption_alignment_lampiran: str | None = None
     budget_format_rules: "BudgetFormatRules | None" = None
 
-    _VALID_CAPTION_ALIGNMENTS: frozenset[str] = frozenset({"CENTER", "LEFT", "RIGHT", "JUSTIFY"})
+    _VALID_CAPTION_ALIGNMENTS: ClassVar[frozenset[str]] = frozenset({"CENTER", "LEFT", "RIGHT", "JUSTIFY"})
 
     @model_validator(mode="after")
     def _normalize_caption_alignments(self) -> "FiguresTablesExtracted":

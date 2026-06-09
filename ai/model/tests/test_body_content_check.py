@@ -1,10 +1,11 @@
 # ai/model/tests/test_body_content_check.py
 """Test untuk _is_heading_para, _check_body_content, caption_alignment dinamis di
-_check_caption_format / _check_figures_tables."""
+_check_caption_format / _check_figures_tables, dan FiguresTablesExtracted validator."""
 import pytest
 from pathlib import Path
 from unittest.mock import MagicMock
 
+from model_ai.extractor.models import FiguresTablesExtracted
 from model_ai.validation.validocx_runner import (
     _is_heading_para,
     _check_body_content,
@@ -223,3 +224,46 @@ def test_figures_tables_lampiran_alignment_skipped_when_none():
     _, checks = _check_figures_tables(_DOCX, meta)
     fields = [c.field for c in checks]
     assert "lampiran_caption_alignment" not in fields, f"Muncul padahal None: {fields}"
+
+
+# ── FiguresTablesExtracted @model_validator ───────────────────────────────────
+
+def test_figures_tables_extracted_normalizes_valid_alignment():
+    """Nilai valid lowercase harus dinormalisasi ke uppercase."""
+    ft = FiguresTablesExtracted(
+        caption_alignment_figure="center",
+        caption_alignment_table="left",
+        caption_alignment_lampiran="RIGHT",
+    )
+    assert ft.caption_alignment_figure == "CENTER"
+    assert ft.caption_alignment_table == "LEFT"
+    assert ft.caption_alignment_lampiran == "RIGHT"
+
+
+def test_figures_tables_extracted_invalid_alignment_becomes_none():
+    """Nilai tidak valid (typo, tidak dikenal) harus di-set None."""
+    ft = FiguresTablesExtracted(
+        caption_alignment_figure="CENTRE",   # typo British English
+        caption_alignment_table="MIDDLE",    # tidak valid
+        caption_alignment_lampiran="JUSTIFY",  # valid — harus tetap
+    )
+    assert ft.caption_alignment_figure is None, "CENTRE harus menjadi None"
+    assert ft.caption_alignment_table is None, "MIDDLE harus menjadi None"
+    assert ft.caption_alignment_lampiran == "JUSTIFY"
+
+
+def test_figures_tables_extracted_none_alignment_stays_none():
+    """None harus tetap None — tidak diubah ke default CENTER."""
+    ft = FiguresTablesExtracted(
+        caption_alignment_figure=None,
+        caption_alignment_table=None,
+        caption_alignment_lampiran=None,
+    )
+    assert ft.caption_alignment_figure is None
+    assert ft.caption_alignment_table is None
+    assert ft.caption_alignment_lampiran is None
+
+
+def test_valid_caption_alignments_not_in_model_fields():
+    """_VALID_CAPTION_ALIGNMENTS (ClassVar) tidak boleh muncul di model_fields."""
+    assert "_VALID_CAPTION_ALIGNMENTS" not in FiguresTablesExtracted.model_fields

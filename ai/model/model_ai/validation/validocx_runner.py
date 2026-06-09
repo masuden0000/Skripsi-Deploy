@@ -1155,8 +1155,9 @@ def _check_body_content(
             if _is_heading_para(para):
                 continue
             # Caption gambar/tabel/lampiran divalidasi di fungsi tersendiri.
-            # Gunakan _LAMPIRAN_BROAD_RE (r'^Lampiran\s+\d+') bukan _LAMP_DETECT_RE
-            # agar paragraf prosa "Lampiran yang dimaksud..." tidak ikut dilewati.
+            # Gunakan _LAMPIRAN_BROAD_RE (r'^Lampiran\s+\d+', butuh digit) bukan
+            # _LAMP_DETECT_RE (r'^Lampiran\s+', tanpa digit — terlalu broad).
+            # _LAMP_DETECT_RE akan ikut menangkap prosa "Lampiran yang dimaksud...".
             if (
                 _FIG_DETECT_RE.match(text)
                 or _TBL_DETECT_RE.match(text)
@@ -1369,16 +1370,17 @@ def _check_caption_format(
                 elif is_tbl and align != tbl_align_val:
                     wrong_tbl_alignment.append(text[:70])
 
-            # ── Font family & size ────────────────────────────────────────────
+            # ── Font family & size (run pertama non-empty saja) ──────────────
             for run in para.runs:
+                if not run.text.strip():
+                    continue
                 if expected_font and run.font.name and run.font.name != expected_font:
                     wrong_font.append(text[:70])
-                    break
                 if expected_size and run.font.size:
                     run_pt = round(run.font.size.pt)
                     if run_pt != expected_size:
                         wrong_size.append(text[:70])
-                        break
+                break  # cukup satu run
 
         # ── Emit alignment gambar ─────────────────────────────────────────────
         if fig_total > 0:
@@ -1503,7 +1505,17 @@ def _check_figures_tables(
     docx_path: Path,
     metadata: DocumentMetadata,
 ) -> tuple[list[ValidationIssue], list[ValidationCheckResult]]:
-    """Validasi posisi caption dan format penomoran gambar/tabel."""
+    """Validasi posisi caption dan format penomoran gambar/tabel + lampiran.
+
+    Kepemilikan field (tidak overlap dengan _check_lampiran_format):
+      - figure_caption_position / table_caption_position — posisi relatif gambar/tabel
+      - figure_caption_format / table_caption_format — template penomoran (via _build_content_elements)
+      - lampiran_caption_format — template penomoran header lampiran (via doc.paragraphs scan terpisah)
+      - lampiran_caption_alignment — alignment header lampiran
+
+    _check_lampiran_format() memiliki: lampiran_separator, lampiran_font, lampiran_spacing.
+    Keduanya scan _LAMPIRAN_BROAD_RE tetapi mengecek field yang berbeda.
+    """
     issues: list[ValidationIssue] = []
     checks: list[ValidationCheckResult] = []
 

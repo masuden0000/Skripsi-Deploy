@@ -1489,6 +1489,10 @@ def _check_caption_format(
         wrong_size:          list[str] = []
         fig_total = 0
         tbl_total = 0
+        fig_pass_align_items: list[dict] = []
+        tbl_pass_align_items: list[dict] = []
+        font_pass_items:      list[dict] = []
+        size_pass_items:      list[dict] = []
 
         for para in doc.paragraphs:
             text = para.text.strip()
@@ -1505,6 +1509,8 @@ def _check_caption_format(
             else:
                 tbl_total += 1
 
+            para_info = {"text": text[:100], "full_text": text, "style": para.style.name, "page": None, "bab": None, "para_idx": None}
+
             # ── Alignment ────────────────────────────────────────────────────
             align = para.paragraph_format.alignment
             if align is None:
@@ -1514,21 +1520,32 @@ def _check_caption_format(
                     align = None
 
             if align is not None:
-                if is_fig and align != fig_align_val:
-                    wrong_fig_alignment.append(text[:70])
-                elif is_tbl and align != tbl_align_val:
-                    wrong_tbl_alignment.append(text[:70])
+                if is_fig:
+                    if align != fig_align_val:
+                        wrong_fig_alignment.append(text[:70])
+                    else:
+                        fig_pass_align_items.append(para_info)
+                elif is_tbl:
+                    if align != tbl_align_val:
+                        wrong_tbl_alignment.append(text[:70])
+                    else:
+                        tbl_pass_align_items.append(para_info)
 
             # ── Font family & size (run pertama non-empty saja) ──────────────
             for run in para.runs:
                 if not run.text.strip():
                     continue
-                if expected_font and run.font.name and run.font.name != expected_font:
-                    wrong_font.append(text[:70])
+                if expected_font and run.font.name:
+                    if run.font.name != expected_font:
+                        wrong_font.append(text[:70])
+                    else:
+                        font_pass_items.append(para_info)
                 if expected_size and run.font.size:
                     run_pt = round(run.font.size.pt)
                     if run_pt != expected_size:
                         wrong_size.append(text[:70])
+                    else:
+                        size_pass_items.append(para_info)
                 break  # cukup satu run
 
         # ── Emit alignment gambar ─────────────────────────────────────────────
@@ -1554,6 +1571,7 @@ def _check_caption_format(
                     status="passed",
                     message=f"Semua {fig_total} caption gambar alignment {fig_align_str}",
                     expected=fig_align_str,
+                    occurrences=_build_occurrences(fig_pass_align_items),
                 ))
 
         # ── Emit alignment tabel ──────────────────────────────────────────────
@@ -1579,6 +1597,7 @@ def _check_caption_format(
                     status="passed",
                     message=f"Semua {tbl_total} caption tabel alignment {tbl_align_str}",
                     expected=tbl_align_str,
+                    occurrences=_build_occurrences(tbl_pass_align_items),
                 ))
 
         # ── Emit font (gabungan gambar + tabel) ───────────────────────────────
@@ -1604,6 +1623,7 @@ def _check_caption_format(
                 status="passed",
                 message=f"Font caption sesuai: {expected_font}",
                 expected=expected_font,
+                occurrences=_build_occurrences(font_pass_items),
             ))
 
         if wrong_size:
@@ -1628,6 +1648,7 @@ def _check_caption_format(
                 status="passed",
                 message=f"Ukuran font caption sesuai: {expected_size}pt",
                 expected=str(expected_size),
+                occurrences=_build_occurrences(size_pass_items),
             ))
 
         if total_captions == 0:
@@ -1716,6 +1737,10 @@ def _check_figures_tables(
         tbl_fmt_errors: list[str] = []
         fig_count = 0
         tbl_count = 0
+        fig_pos_pass_items: list[dict] = []
+        fig_fmt_pass_items: list[dict] = []
+        tbl_pos_pass_items: list[dict] = []
+        tbl_fmt_pass_items: list[dict] = []
 
         for i, (etype, elem) in enumerate(elements):
             if etype != "para":
@@ -1726,8 +1751,12 @@ def _check_figures_tables(
 
             if _FIG_DETECT_RE.match(text):
                 fig_count += 1
-                if fig_fmt_re and not fig_fmt_re.match(text):
-                    fig_fmt_errors.append(text[:70])
+                fig_para_info = {"text": text[:100], "full_text": text, "style": "", "page": None, "bab": None, "para_idx": None}
+                if fig_fmt_re:
+                    if not fig_fmt_re.match(text):
+                        fig_fmt_errors.append(text[:70])
+                    else:
+                        fig_fmt_pass_items.append(fig_para_info)
                 # Cek posisi: BELOW → gambar sebelum caption
                 if fig_pos_exp == "BELOW":
                     found_img = any(
@@ -1736,6 +1765,8 @@ def _check_figures_tables(
                     )
                     if not found_img:
                         fig_pos_errors.append(f'"{text[:60]}"')
+                    else:
+                        fig_pos_pass_items.append(fig_para_info)
                 elif fig_pos_exp == "ABOVE":
                     found_img = any(
                         elements[j][0] == "para" and _para_contains_image(elements[j][1])
@@ -1743,20 +1774,30 @@ def _check_figures_tables(
                     )
                     if not found_img:
                         fig_pos_errors.append(f'"{text[:60]}"')
+                    else:
+                        fig_pos_pass_items.append(fig_para_info)
 
             elif _TBL_DETECT_RE.match(text):
                 tbl_count += 1
-                if tbl_fmt_re and not tbl_fmt_re.match(text):
-                    tbl_fmt_errors.append(text[:70])
+                tbl_para_info = {"text": text[:100], "full_text": text, "style": "", "page": None, "bab": None, "para_idx": None}
+                if tbl_fmt_re:
+                    if not tbl_fmt_re.match(text):
+                        tbl_fmt_errors.append(text[:70])
+                    else:
+                        tbl_fmt_pass_items.append(tbl_para_info)
                 # Cek posisi: ABOVE → tabel setelah caption
                 if tbl_pos_exp == "ABOVE":
                     next_is_tbl = i + 1 < len(elements) and elements[i + 1][0] == "table"
                     if not next_is_tbl:
                         tbl_pos_errors.append(f'"{text[:60]}"')
+                    else:
+                        tbl_pos_pass_items.append(tbl_para_info)
                 elif tbl_pos_exp == "BELOW":
                     prev_is_tbl = i > 0 and elements[i - 1][0] == "table"
                     if not prev_is_tbl:
                         tbl_pos_errors.append(f'"{text[:60]}"')
+                    else:
+                        tbl_pos_pass_items.append(tbl_para_info)
 
         # Gambar — tidak ditemukan sama sekali dalam area yang di-scan
         if fig_count == 0 and tbl_count == 0:
@@ -1795,6 +1836,7 @@ def _check_figures_tables(
                     status="passed",
                     message=f"Posisi caption gambar ({fig_pos_exp}): {fig_count} caption sesuai",
                     expected=fig_pos_exp,
+                    occurrences=_build_occurrences(fig_pos_pass_items),
                 ))
 
             if fig_fmt_re:
@@ -1820,6 +1862,7 @@ def _check_figures_tables(
                         status="passed",
                         message=f"Format caption gambar '{fig_fmt_tpl}': {fig_count} caption sesuai",
                         expected=fig_fmt_tpl,
+                        occurrences=_build_occurrences(fig_fmt_pass_items),
                     ))
 
         # Report tabel
@@ -1844,6 +1887,7 @@ def _check_figures_tables(
                     status="passed",
                     message=f"Posisi caption tabel ({tbl_pos_exp}): {tbl_count} caption sesuai",
                     expected=tbl_pos_exp,
+                    occurrences=_build_occurrences(tbl_pos_pass_items),
                 ))
 
             if tbl_fmt_re:
@@ -1869,23 +1913,30 @@ def _check_figures_tables(
                         status="passed",
                         message=f"Format caption tabel '{tbl_fmt_tpl}': {tbl_count} caption sesuai",
                         expected=tbl_fmt_tpl,
+                        occurrences=_build_occurrences(tbl_fmt_pass_items),
                     ))
 
         # ── Lampiran scan (seluruh dokumen) ──────────────────────────────────
         # _build_content_elements() berhenti sebelum LAMPIRAN → scan terpisah.
         if lamp_fmt_re or lamp_align_val is not None:
-            lamp_count          = 0
+            lamp_count             = 0
             lamp_fmt_errors:    list[str] = []
             lamp_align_errors:  list[str] = []
+            lamp_fmt_pass_items:   list[dict] = []
+            lamp_align_pass_items: list[dict] = []
 
             for para in doc.paragraphs:
                 text = para.text.strip()
                 if not text or not _LAMPIRAN_BROAD_RE.match(text):
                     continue
                 lamp_count += 1
+                lamp_para_info = {"text": text[:100], "full_text": text, "style": para.style.name, "page": None, "bab": None, "para_idx": None}
 
-                if lamp_fmt_re and not lamp_fmt_re.match(text):
-                    lamp_fmt_errors.append(text[:70])
+                if lamp_fmt_re:
+                    if not lamp_fmt_re.match(text):
+                        lamp_fmt_errors.append(text[:70])
+                    else:
+                        lamp_fmt_pass_items.append(lamp_para_info)
 
                 if lamp_align_val is not None:
                     align = para.paragraph_format.alignment
@@ -1896,6 +1947,8 @@ def _check_figures_tables(
                             align = None
                     if align is not None and align != lamp_align_val:
                         lamp_align_errors.append(text[:70])
+                    else:
+                        lamp_align_pass_items.append(lamp_para_info)
 
             # Emit format lampiran
             if lamp_fmt_re:
@@ -1928,6 +1981,7 @@ def _check_figures_tables(
                         status="passed",
                         message=f"Format caption lampiran '{lamp_fmt_tpl}': {lamp_count} caption sesuai",
                         expected=lamp_fmt_tpl,
+                        occurrences=_build_occurrences(lamp_fmt_pass_items),
                     ))
 
             # Emit alignment lampiran
@@ -1960,6 +2014,7 @@ def _check_figures_tables(
                         status="passed",
                         message=f"Semua {lamp_count} caption lampiran alignment {lamp_align_str}",
                         expected=lamp_align_str,
+                        occurrences=_build_occurrences(lamp_align_pass_items),
                     ))
 
     except Exception as exc:
@@ -2303,6 +2358,7 @@ def _check_numbering(
                         f"({_NUM_FORMAT_DISPLAY.get(exp_fmt, exp_fmt)}): sesuai"
                     ),
                     expected=exp_fmt,
+                    occurrences=_build_occurrences([{"text": exp_fmt, "full_text": _NUM_FORMAT_DISPLAY.get(exp_fmt, exp_fmt), "style": "", "page": None, "bab": None, "para_idx": None}]),
                 ))
                 # Cek lokasi
                 if exp_loc in ("HEADER", "FOOTER") and zone["has_any_page"]:
@@ -2332,6 +2388,7 @@ def _check_numbering(
                             status="passed",
                             message=f"Lokasi nomor halaman awal ({exp_loc}): sesuai",
                             expected=exp_loc,
+                            occurrences=_build_occurrences([{"text": exp_loc, "full_text": f"Nomor halaman di {exp_loc}", "style": "", "page": None, "bab": None, "para_idx": None}]),
                         ))
             else:
                 actual_fmt = zone["fmt"] if zone else None
@@ -2377,6 +2434,7 @@ def _check_numbering(
                         f"(ditemukan mulai BAB 1)"
                     ),
                     expected=exp_fmt,
+                    occurrences=_build_occurrences([{"text": exp_fmt, "full_text": _NUM_FORMAT_DISPLAY.get(exp_fmt, exp_fmt), "style": "", "page": None, "bab": None, "para_idx": None}]),
                 ))
                 # Cek lokasi
                 if exp_loc in ("HEADER", "FOOTER") and zone["has_any_page"]:
@@ -2406,6 +2464,7 @@ def _check_numbering(
                             status="passed",
                             message=f"Lokasi nomor halaman isi ({exp_loc}): sesuai",
                             expected=exp_loc,
+                            occurrences=_build_occurrences([{"text": exp_loc, "full_text": f"Nomor halaman di {exp_loc}", "style": "", "page": None, "bab": None, "para_idx": None}]),
                         ))
             else:
                 actual_fmt = zone["fmt"] if zone else None
@@ -2511,6 +2570,7 @@ def _check_start_section(
             status="passed",
             message=f"Titik mulai nomor halaman {zone}: '{label}' ditemukan di dokumen",
             expected=start_at,
+            occurrences=_build_occurrences([{"text": label, "full_text": label, "style": "Heading 1", "page": None, "bab": None, "para_idx": None}]),
         ))
     else:
         issues.append(ValidationIssue(

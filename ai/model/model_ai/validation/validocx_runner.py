@@ -52,6 +52,13 @@ _LAMPIRAN_ITEM_RE = re.compile(r'^Lampiran\s+(\d+)\.\s', re.IGNORECASE)
 # Broad: menangkap SEMUA paragraf berawalan "Lampiran <angka>" (dipakai _check_lampiran_format)
 _LAMPIRAN_BROAD_RE = re.compile(r'^Lampiran\s+\d+', re.IGNORECASE)
 
+# Style TOC/TOF yang sudah divalidasi engine secara terpisah — dipakai sebagai
+# filter di _check_lampiran_format agar entri Daftar Lampiran tidak ikut terhitung.
+_TOC_TOF_STYLE_NAMES: frozenset[str] = frozenset({
+    "table of figures",
+    "TOC 1", "TOC 2", "TOC 3", "TOC 4", "TOC 5",
+})
+
 # Inverse dari _HEADING_TITLE_MAP: tipe section → teks heading
 _HEADING_TITLE_MAP_INV: dict[str, str] = {v: k for k, v in _HEADING_TITLE_MAP.items()}
 
@@ -1052,7 +1059,11 @@ def _check_lampiran_format(
             if not text or not _LAMPIRAN_BROAD_RE.match(text):
                 continue
 
-            # ── Separator (semua lampiran, termasuk yang pakai style "Lampiran") ──
+            # Entri Daftar Lampiran (style TOC/TOF) sudah divalidasi engine → skip
+            if para.style.name in _TOC_TOF_STYLE_NAMES:
+                continue
+
+            # ── Separator ────────────────────────────────────────────────────
             if not lampiran_re.match(text):
                 wrong_separator.append(text[:70])
 

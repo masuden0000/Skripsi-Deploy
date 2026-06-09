@@ -655,6 +655,11 @@ def _check_heading_case(
             mismatches = mismatch_per_level[level]
             passes     = pass_per_level[level]
 
+            # Jika tidak ada paragraf sama sekali untuk level ini,
+            # heading tidak digunakan di dokumen → tidak perlu emit check.
+            if not mismatches and not passes:
+                continue
+
             if mismatches:
                 first_actual = mismatches[0]["text"]
                 msg = (

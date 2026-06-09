@@ -43,7 +43,8 @@ import { YearPicker } from "@/components/ui/year-picker"
 // ─── Konstanta ───────────────────────────────────────────────────────────────
 
 const MAX_FILE_SIZE     = 10 * 1024 * 1024   // 10 MB
-const SESSION_STORAGE_KEY = "validation_bulk_session_id"
+const SESSION_STORAGE_KEY  = "validation_bulk_session_id"
+const SINGLE_RESULT_KEY    = "validation_single_result"
 const POLL_INTERVAL_MS = 3000
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -1062,8 +1063,19 @@ export function DocumentValidator() {
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // ── Restore session dari localStorage saat mount ──────────────────────────
+  // ── Restore state dari localStorage saat mount ────────────────────────────
   useEffect(() => {
+    // Restore hasil single validation jika ada
+    const savedResult = localStorage.getItem(SINGLE_RESULT_KEY)
+    if (savedResult) {
+      try {
+        setSingleResult(JSON.parse(savedResult))
+      } catch {
+        localStorage.removeItem(SINGLE_RESULT_KEY)
+      }
+    }
+
+    // Restore bulk session jika ada
     const saved = localStorage.getItem(SESSION_STORAGE_KEY)
     if (saved) {
       setMode("bulk")
@@ -1128,11 +1140,16 @@ export function DocumentValidator() {
     const res = await runDocumentValidation({ schemaId: selectedSchemaId, year: selectedYear, file })
     setLoading(false)
 
-    if (res.error) setSingleError(res.error)
-    else setSingleResult(res.data)
+    if (res.error) {
+      setSingleError(res.error)
+    } else {
+      setSingleResult(res.data)
+      if (res.data) localStorage.setItem(SINGLE_RESULT_KEY, JSON.stringify(res.data))
+    }
   }
 
   const handleSingleReset = () => {
+    localStorage.removeItem(SINGLE_RESULT_KEY)
     setSelectedSchemaId("")
     setSelectedYear("")
     setFile(null)

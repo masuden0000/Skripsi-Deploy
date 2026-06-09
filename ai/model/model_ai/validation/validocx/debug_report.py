@@ -72,16 +72,23 @@ def _get_para_details(docx_path):
 
     Setiap entri menyertakan:
       - bab  : teks Heading 1 terakhir sebelum paragraf ini (atau None)
+
+    PENTING: menggunakan DocumentWrapper.iter_paragraphs() — sama persis dengan
+    yang dipakai validator.py saat membangun para_idx di log CHECK. Ini memastikan
+    indeks di sini selaras dengan indeks yang ditulis ke log, termasuk paragraf
+    di dalam w:sdt (misalnya TOC yang dibuat otomatis oleh Word).
     """
     try:
         from docx import Document
+        from model_ai.validation.validocx.wrapper import DocumentWrapper
 
-        doc = Document(docx_path)
+        doc     = Document(docx_path)
+        wrapper = DocumentWrapper(doc)
 
         result      = {}
         current_bab = None
 
-        for idx, para in enumerate(doc.paragraphs):
+        for idx, para in enumerate(wrapper.iter_paragraphs()):
             style_name = para.style.name
             text       = para.text.strip()
 

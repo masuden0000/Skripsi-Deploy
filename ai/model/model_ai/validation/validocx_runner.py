@@ -588,9 +588,10 @@ def _check_heading_case(
     try:
         doc = DocxDocument(str(docx_path))
 
-        mismatches_per_level: dict[int, list[str]] = {lvl: [] for lvl in case_per_level}
+        pass_per_level:     dict[int, list[dict]] = {lvl: [] for lvl in case_per_level}
+        mismatch_per_level: dict[int, list[dict]] = {lvl: [] for lvl in case_per_level}
 
-        for para in doc.paragraphs:
+        for idx, para in enumerate(doc.paragraphs):
             style_name = para.style.name
             text = para.text.strip()
             if not text:
@@ -598,37 +599,58 @@ def _check_heading_case(
             for level in range(1, 6):
                 case_style = case_per_level[level]
                 if case_style and style_name == f"Heading {level}":
+                    para_info: dict = {
+                        "para_idx"  : idx,
+                        "style"     : style_name,
+                        "text"      : text[:100],
+                        "full_text" : text,
+                        "bab"       : None,
+                        "page"      : None,
+                    }
                     if not _text_matches_case_para(para, case_style):
-                        mismatches_per_level[level].append(text[:80])
+                        mismatch_per_level[level].append(para_info)
+                    else:
+                        pass_per_level[level].append(para_info)
                     break
 
         for level, case_style in case_per_level.items():
             if case_style is None:
                 continue
             field_name = f"heading_{level}_case"
-            mismatches = mismatches_per_level[level]
+            mismatches = mismatch_per_level[level]
+            passes     = pass_per_level[level]
+
             if mismatches:
+                first_actual = mismatches[0]["text"]
                 msg = (
                     f"Heading {level} harus {case_style}. "
                     f"{len(mismatches)} heading tidak sesuai. "
-                    f'Contoh: "{mismatches[0]}"'
+                    f'Contoh: "{first_actual}"'
                 )
+                occs = _build_occurrences(
+                    mismatches, actual_str=first_actual, expected_str=case_style
+                ) or None
                 issues.append(ValidationIssue(
                     category="typography", field=field_name,
                     severity="warning", message=msg,
-                    expected=case_style, actual=mismatches[0],
+                    expected=case_style, actual=first_actual,
+                    occurrences=occs,
                 ))
                 checks.append(ValidationCheckResult(
                     category="typography", field=field_name,
                     status="warning", message=msg,
-                    expected=case_style, actual=mismatches[0],
+                    expected=case_style, actual=first_actual,
+                    occurrences=occs,
                 ))
             else:
+                occs = _build_occurrences(passes, expected_str=case_style) or None
                 checks.append(ValidationCheckResult(
                     category="typography", field=field_name,
                     status="passed",
                     message=f"Heading {level} case {case_style}: semua sesuai",
                     expected=case_style,
+                    actual=case_style,
+                    occurrences=occs,
                 ))
 
     except Exception as exc:

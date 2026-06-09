@@ -133,6 +133,15 @@ function formatFieldLabel(field: string): string {
   return field
 }
 
+function statusMessage(status: string, n: number): string {
+  if (status === "skipped") return "Dilewati"
+  const label =
+    status === "passed"                      ? "lolos" :
+    status === "error" || status === "failed"? "tidak lolos" :
+                                               "warning"
+  return n > 0 ? `${n} elemen ${label}` : label.charAt(0).toUpperCase() + label.slice(1)
+}
+
 // ─── Helper: parse nama file → nama ketua + skema PKM ───────────────────────
 
 function parseFileName(fileName: string, schemes: PkmSchema[]): { ketua: string; scheme: string } {
@@ -413,13 +422,8 @@ function IssueListPanel({
                     <p className={`text-sm truncate ${isActive ? "font-semibold text-pkm-900" : "font-medium text-gray-800"}`}>
                       {FIELD_LABELS[issue.field ?? ""] ?? issue.field ?? CATEGORY_LABELS[issue.category] ?? issue.category}
                     </p>
-                    <p className="text-[11px] text-gray-400 truncate mt-0.5 leading-tight">{issue.message}</p>
+                    <p className="text-[11px] text-gray-400 truncate mt-0.5 leading-tight">{statusMessage(issue._isSkipped ? "skipped" : issue.severity, issue.occurrences?.length ?? 0)}</p>
                   </div>
-                  {(issue.occurrences?.length ?? 0) > 0 && (
-                    <span className={["shrink-0 text-[11px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums", isError ? "bg-red-100 text-red-600" : isSkipped ? "bg-gray-100 text-gray-500" : "bg-amber-100 text-amber-600"].join(" ")}>
-                      {issue.occurrences!.length}×
-                    </span>
-                  )}
                 </button>
               )
             })}
@@ -454,7 +458,7 @@ function LocationPanel({ issue }: { issue: DisplayIssue | null }) {
             <p className="text-sm font-semibold text-gray-800 truncate">
               {FIELD_LABELS[issue.field ?? ""] ?? issue.field ?? CATEGORY_LABELS[issue.category] ?? issue.category}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{issue.message}</p>
+            <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{statusMessage(issue._isSkipped ? "skipped" : issue.severity, occurrences.length)}</p>
           </div>
           {occurrences.length > 0 && (
             <span className="shrink-0 text-xs font-medium text-pkm-700 bg-pkm-100 px-2.5 py-1 rounded-full whitespace-nowrap">
@@ -552,7 +556,7 @@ function PassedListPanel({
                     <p className={`text-sm truncate ${isActive ? "font-semibold text-pkm-900" : "font-medium text-gray-800"}`}>
                       {formatFieldLabel(check.field)}
                     </p>
-                    <p className="text-[11px] text-gray-400 truncate mt-0.5 leading-tight">{check.message}</p>
+                    <p className="text-[11px] text-gray-400 truncate mt-0.5 leading-tight">{statusMessage(check.status ?? "passed", check.occurrences?.length ?? 0)}</p>
                   </div>
                 </button>
               )
@@ -592,11 +596,11 @@ function PassedDetailPanel({ check }: { check: ValidationCheck | null }) {
               </span>
               <p className="text-sm font-semibold text-gray-800 truncate">{formatFieldLabel(check.field)}</p>
             </div>
-            <p className="text-xs text-gray-400 mt-0.5 ml-6 line-clamp-1">{check.message}</p>
+            <p className="text-xs text-gray-400 mt-0.5 ml-6 line-clamp-1">{statusMessage(check.status ?? "passed", occurrences.length)}</p>
           </div>
           {occurrences.length > 0 && (
             <span className="shrink-0 text-xs font-medium text-pkm-700 bg-pkm-100 px-2.5 py-1 rounded-full whitespace-nowrap">
-              {occurrences.length} elemen
+              {occurrences.length} lokasi
             </span>
           )}
         </div>

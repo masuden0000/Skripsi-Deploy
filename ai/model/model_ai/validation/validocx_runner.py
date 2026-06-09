@@ -1270,12 +1270,9 @@ def _check_body_content(
                 continue
             if _is_heading_para(para):
                 continue
-            # Caption gambar/tabel/lampiran divalidasi di fungsi tersendiri.
-            # PENGECUALIAN: entri TOC/TOF (table of figures, toc 1–5, dll) yang
-            # teksnya kebetulan diawali "Gambar/Tabel/Lampiran \d+" BUKAN caption
-            # — tetap diproses di sini dengan aturan body yang sama.
-            # Gunakan _LAMPIRAN_BROAD_RE (r'^Lampiran\s+\d+', butuh digit) bukan
-            # _LAMP_DETECT_RE (r'^Lampiran\s+', tanpa digit — terlalu broad).
+            # Entri TOC/TOF divalidasi oleh engine validocx — skip di sini agar
+            # teksnya (mis. "DAFTAR ISI i", "Gambar 1. Judul...3") tidak muncul
+            # sebagai elemen body. Konsisten dengan _check_lampiran_format.
             if para.style.name not in _TOC_TOF_STYLE_NAMES and (
                 _FIG_DETECT_RE.match(text)
                 or _TBL_DETECT_RE.match(text)
@@ -1402,19 +1399,17 @@ def _check_body_content(
                     occurrences=occs,
                 ))
 
-        # body_alignment mendapat occurrences (primary check, dokumen-order dijamin).
-        # Check lain hanya melaporkan jumlah — mencegah para_idx ganda lintas checks.
         _emit("body_alignment",    "Alignment (JUSTIFY)",            "JUSTIFY",
               align_pass,   align_fail,   include_occurrences=True)
         if expected_font:
             _emit("body_font_family",  f"Font family ({expected_font})",   expected_font,
-                  font_pass,    font_fail,    include_occurrences=False)
+                  font_pass,    font_fail,    include_occurrences=True)
         if expected_size:
             _emit("body_font_size",    f"Ukuran font ({expected_size}pt)", f"{expected_size}pt",
-                  size_pass,    size_fail,    include_occurrences=False)
+                  size_pass,    size_fail,    include_occurrences=True)
         if expected_spacing:
             _emit("body_line_spacing", f"Spasi baris ({expected_spacing})", str(expected_spacing),
-                  spacing_pass, spacing_fail, include_occurrences=False)
+                  spacing_pass, spacing_fail, include_occurrences=True)
 
     except Exception as exc:
         checks.append(ValidationCheckResult(

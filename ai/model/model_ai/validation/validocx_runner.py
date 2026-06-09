@@ -487,28 +487,35 @@ def _build_issues_checks(
             status="warning", message=msg,
         ))
 
-    # ── Parameter summary sebagai check passed ───────────────────────────────
+    # ── Parameter summary sebagai check passed (heading only) ────────────────
+    # Non-heading summary digantikan oleh _check_body_content() yang mengagregasi
+    # per nilai parameter. Di sini hanya tampilkan hasil heading (Heading 1–5, Judul*).
     for ps in report.get("parameter_summary", []):
-        if ps["status"] in ("lolos semua", "lolos semua (ada inherited)"):
-            raw_details = ps.get("paragraph_details_pass", [])
-            occs = _build_occurrences(raw_details) or None
+        if ps["status"] not in ("lolos semua", "lolos semua (ada inherited)"):
+            continue
+        param_match = re.match(r'^(\S+)\s+\((.+)\)$', ps["parameter"])
+        style_in_param = (param_match.group(2) if param_match else "").lower()
+        if not any(k in style_in_param for k in _HEADING_PARAM_KEYWORDS):
+            continue
 
-            # Cari expected value dari requirements: "param (Style Name)" → parse → lookup
-            expected_val: str | None = None
-            if requirements:
-                m = re.match(r'^(\S+)\s+\((.+)\)$', ps["parameter"])
-                if m:
-                    expected_val = _lookup_expected(requirements, m.group(1), m.group(2))
+        raw_details = ps.get("paragraph_details_pass", [])
+        occs = _build_occurrences(raw_details) or None
 
-            checks.append(ValidationCheckResult(
-                category="typography",
-                field=f"validocx_param.{ps['parameter'].replace(' ', '_')}",
-                status="passed",
-                message=f"{ps['parameter']}: {ps['pass']} elemen lolos",
-                expected=expected_val,
-                actual=expected_val,  # sama dengan expected karena semua lolos
-                occurrences=occs,
-            ))
+        expected_val: str | None = None
+        if requirements and param_match:
+            expected_val = _lookup_expected(
+                requirements, param_match.group(1), param_match.group(2)
+            )
+
+        checks.append(ValidationCheckResult(
+            category="typography",
+            field=f"validocx_param.{ps['parameter'].replace(' ', '_')}",
+            status="passed",
+            message=f"{ps['parameter']}: {ps['pass']} elemen lolos",
+            expected=expected_val,
+            actual=expected_val,  # sama dengan expected karena semua lolos
+            occurrences=occs,
+        ))
 
     # ── Summary check ────────────────────────────────────────────────────────
     s = report["summary"]
@@ -2270,7 +2277,12 @@ def run_validocx(
     lampiran_issues, lampiran_checks = _check_lampiran_format(path, metadata)
     num_issues, num_checks           = _check_numbering(path, metadata)
     pgcount_issues, pgcount_checks   = _check_page_count(path, metadata)
+    body_issues, body_checks         = _check_body_content(path, metadata)
 
-    all_issues = issues + case_issues + struct_issues + fig_issues + caption_issues + lampiran_issues + num_issues + pgcount_issues
-    all_checks = checks + case_checks + struct_checks + fig_checks + caption_checks + lampiran_checks + num_checks + pgcount_checks
+    all_issues = (issues + case_issues + struct_issues + fig_issues
+                  + caption_issues + lampiran_issues + num_issues
+                  + pgcount_issues + body_issues)
+    all_checks = (checks + case_checks + struct_checks + fig_checks
+                  + caption_checks + lampiran_checks + num_checks
+                  + pgcount_checks + body_checks)
     return all_issues, all_checks

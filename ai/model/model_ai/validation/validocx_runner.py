@@ -1480,12 +1480,13 @@ def _check_caption_format(
             ))
 
         if total_captions == 0:
-            checks.append(ValidationCheckResult(
-                category="figures_tables", field="caption_alignment_figure",
-                status="skipped",
-                message="Tidak ada caption gambar/tabel ditemukan",
-                skip_reason="Tidak ada caption",
-            ))
+            for _fld in ("caption_alignment_figure", "caption_alignment_table"):
+                checks.append(ValidationCheckResult(
+                    category="figures_tables", field=_fld,
+                    status="skipped",
+                    message="Tidak ada caption gambar/tabel ditemukan",
+                    skip_reason="Tidak ada caption",
+                ))
 
     except Exception as exc:
         checks.append(ValidationCheckResult(
@@ -1718,7 +1719,7 @@ def _check_figures_tables(
 
             for para in doc.paragraphs:
                 text = para.text.strip()
-                if not text or not _LAMP_DETECT_RE.match(text):
+                if not text or not _LAMPIRAN_BROAD_RE.match(text):
                     continue
                 lamp_count += 1
 

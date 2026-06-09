@@ -1147,11 +1147,13 @@ def _check_body_content(
                 continue
             if _is_heading_para(para):
                 continue
-            # Caption gambar/tabel/lampiran divalidasi di fungsi tersendiri
+            # Caption gambar/tabel/lampiran divalidasi di fungsi tersendiri.
+            # Gunakan _LAMPIRAN_BROAD_RE (r'^Lampiran\s+\d+') bukan _LAMP_DETECT_RE
+            # agar paragraf prosa "Lampiran yang dimaksud..." tidak ikut dilewati.
             if (
                 _FIG_DETECT_RE.match(text)
                 or _TBL_DETECT_RE.match(text)
-                or _LAMP_DETECT_RE.match(text)
+                or _LAMPIRAN_BROAD_RE.match(text)
             ):
                 continue
 

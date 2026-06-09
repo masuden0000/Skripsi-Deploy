@@ -224,6 +224,20 @@ class FiguresTablesExtracted(BaseModel):
     caption_alignment_lampiran: str | None = None
     budget_format_rules: "BudgetFormatRules | None" = None
 
+    _VALID_CAPTION_ALIGNMENTS: frozenset[str] = frozenset({"CENTER", "LEFT", "RIGHT", "JUSTIFY"})
+
+    @model_validator(mode="after")
+    def _normalize_caption_alignments(self) -> "FiguresTablesExtracted":
+        """Normalise alignment strings dari LLM: strip, upper-case, validasi ke enum.
+        Nilai yang tidak dikenal di-set None (→ default CENTER saat digunakan).
+        """
+        for field in ("caption_alignment_figure", "caption_alignment_table", "caption_alignment_lampiran"):
+            raw = getattr(self, field)
+            if raw is None:
+                continue
+            normalized = raw.strip().upper()
+            setattr(self, field, normalized if normalized in self._VALID_CAPTION_ALIGNMENTS else None)
+        return self
 
 
 class BudgetItem(BaseModel):

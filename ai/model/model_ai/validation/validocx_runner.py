@@ -82,9 +82,22 @@ def _build_lampiran_re(separator: str | None) -> re.Pattern:
         pattern = r'^Lampiran\s+\d+\s'
     return re.compile(pattern, re.IGNORECASE)
 
-# Pola deteksi caption gambar/tabel
-_FIG_DETECT_RE = re.compile(r'^Gambar\s+\d+', re.IGNORECASE)
-_TBL_DETECT_RE = re.compile(r'^Tabel\s+\d+', re.IGNORECASE)
+# Pola deteksi caption gambar / tabel / lampiran
+_FIG_DETECT_RE  = re.compile(r'^Gambar\s+\d+', re.IGNORECASE)
+_TBL_DETECT_RE  = re.compile(r'^Tabel\s+\d+',  re.IGNORECASE)
+_LAMP_DETECT_RE = re.compile(r'^Lampiran\s+',   re.IGNORECASE)
+
+# Mapping string alignment dari metadata → enum WD_ALIGN_PARAGRAPH
+_CAPTION_ALIGN_MAP: dict[str, "WD_ALIGN_PARAGRAPH"] = {
+    "CENTER":  WD_ALIGN_PARAGRAPH.CENTER,
+    "LEFT":    WD_ALIGN_PARAGRAPH.LEFT,
+    "RIGHT":   WD_ALIGN_PARAGRAPH.RIGHT,
+    "JUSTIFY": WD_ALIGN_PARAGRAPH.JUSTIFY,
+}
+
+# Keyword untuk mendeteksi heading dari style name / inheritance chain.
+_HEADING_STYLE_KEYWORDS: frozenset[str] = frozenset({"heading", "judul"})
+_HEADING_PARAM_KEYWORDS: frozenset[str] = frozenset({"heading", "judul"})
 
 # Format nomor halaman
 _NUM_FORMAT_DISPLAY: dict[str, str] = {
@@ -149,6 +162,23 @@ def _humanize_attr_value(attr_name: str, raw_value: str | None) -> str | None:
             pass
 
     return raw_value
+
+
+def _is_heading_para(para) -> bool:
+    """Deteksi apakah paragraf adalah heading berdasarkan style name + inheritance chain.
+
+    Menelusuri style dan semua base_style-nya hingga kedalaman 10.
+    Return True jika nama style mengandung 'heading' atau 'judul' (case-insensitive).
+    """
+    style = para.style
+    depth = 0
+    while style is not None and depth < 10:
+        name = (style.name or "").lower()
+        if any(k in name for k in _HEADING_STYLE_KEYWORDS):
+            return True
+        style = getattr(style, "base_style", None)
+        depth += 1
+    return False
 
 
 def _vm_category(key: str) -> tuple[str, str]:
@@ -1063,6 +1093,202 @@ def _check_lampiran_format(
             category="typography", field="lampiran_format",
             status="skipped",
             message=f"Pengecekan format lampiran dilewati: {exc}",
+            skip_reason=str(exc),
+        ))
+
+    return issues, checks
+
+
+def _check_body_content(
+    docx_path: Path,
+    metadata: DocumentMetadata,
+) -> tuple[list[ValidationIssue], list[ValidationCheckResult]]:
+    """Validasi konten non-heading via content-based check.
+
+    Iterasi SEMUA paragraf (termasuk w:sdt seperti TOC), skip heading dan semua
+    jenis caption, cek alignment/font_family/font_size/line_spacing dari metadata.
+    Hasil diagregasi per nilai parameter — bukan per nama style.
+
+    Skip rules:
+      - Paragraf kosong (text.strip() == "")
+      - Heading: style name/inheritance mengandung 'heading' atau 'judul'
+      - Caption gambar   : teks diawali 'Gambar \\d'  → dicek _check_caption_format
+      - Caption tabel    : teks diawali 'Tabel \\d'   → dicek _check_caption_format
+      - Caption lampiran : teks diawali 'Lampiran '   → dicek _check_figures_tables
+    """
+    issues: list[ValidationIssue] = []
+    checks: list[ValidationCheckResult] = []
+
+    t = metadata.typography
+    s = metadata.spacing
+    expected_align   = WD_ALIGN_PARAGRAPH.JUSTIFY
+    expected_font    = t.font_family if t else None
+    expected_size    = int(t.font_size_body_pt) if t and t.font_size_body_pt else None
+    expected_spacing = float(s.line_spacing) if s and s.line_spacing else None
+
+    try:
+        from model_ai.validation.validocx.wrapper import DocumentWrapper
+
+        doc     = DocxDocument(str(docx_path))
+        wrapper = DocumentWrapper(doc)
+
+        align_pass:   list[dict] = []
+        align_fail:   list[dict] = []
+        font_pass:    list[dict] = []
+        font_fail:    list[dict] = []
+        size_pass:    list[dict] = []
+        size_fail:    list[dict] = []
+        spacing_pass: list[dict] = []
+        spacing_fail: list[dict] = []
+
+        for idx, para in enumerate(wrapper.iter_paragraphs()):
+            text = para.text.strip()
+            if not text:
+                continue
+            if _is_heading_para(para):
+                continue
+            # Caption gambar/tabel/lampiran divalidasi di fungsi tersendiri
+            if (
+                _FIG_DETECT_RE.match(text)
+                or _TBL_DETECT_RE.match(text)
+                or _LAMP_DETECT_RE.match(text)
+            ):
+                continue
+
+            para_info: dict = {
+                "para_idx" : idx,
+                "style"    : para.style.name,
+                "text"     : text[:100],
+                "full_text": text,
+                "bab"      : None,
+                "page"     : None,
+            }
+
+            # ── Alignment ─────────────────────────────────────────────────────
+            align = para.paragraph_format.alignment
+            if align is None:
+                try:
+                    align = para.style.paragraph_format.alignment
+                except Exception:
+                    align = None
+            if align is None or align == expected_align:
+                align_pass.append(para_info)
+            else:
+                align_fail.append({**para_info, "actual": str(int(align))})
+
+            # ── Font family & font size (run pertama yang punya teks) ─────────
+            _run_checked = False
+            for run in para.runs:
+                if not run.text.strip():
+                    continue
+                _run_checked = True
+                fn = run.font.name
+                if fn is not None:
+                    if expected_font and fn != expected_font:
+                        font_fail.append({**para_info, "actual": fn})
+                    else:
+                        font_pass.append(para_info)
+                else:
+                    # Font None = inherited — anggap lolos (backward-compatible)
+                    font_pass.append(para_info)
+                fs = run.font.size
+                if fs is not None:
+                    fs_pt = round(fs.pt)
+                    if expected_size and fs_pt != expected_size:
+                        size_fail.append({**para_info, "actual": f"{fs_pt}pt"})
+                    else:
+                        size_pass.append(para_info)
+                else:
+                    # Size None = inherited — anggap lolos
+                    size_pass.append(para_info)
+                break  # cukup satu run
+            if not _run_checked:
+                # Tidak ada run dengan teks — anggap font/size lolos (inherited)
+                font_pass.append(para_info)
+                size_pass.append(para_info)
+
+            # ── Line spacing ──────────────────────────────────────────────────
+            if expected_spacing:
+                ls = para.paragraph_format.line_spacing
+                if ls is not None:
+                    try:
+                        ls_val = round(float(ls), 2)
+                        if abs(ls_val - expected_spacing) > 0.05:
+                            spacing_fail.append({**para_info, "actual": str(ls_val)})
+                        else:
+                            spacing_pass.append(para_info)
+                    except (TypeError, ValueError):
+                        spacing_pass.append(para_info)
+
+        # ── Emit satu check per parameter ────────────────────────────────────
+        # Occurrences hanya disertakan pada satu check — body_alignment — agar
+        # para_idx lintas semua checks tetap monotone (sesuai urutan dokumen).
+        # Check lain (font, size, spacing) hanya melaporkan jumlah tanpa occurrences.
+        def _emit(
+            field: str,
+            label: str,
+            expected_val: str,
+            pass_list: list[dict],
+            fail_list: list[dict],
+            include_occurrences: bool = False,
+        ) -> None:
+            if not pass_list and not fail_list:
+                return
+            if fail_list:
+                actual_vals = list(dict.fromkeys(d.get("actual", "?") for d in fail_list))
+                actual_str  = ", ".join(str(v) for v in actual_vals[:3])
+                msg = (
+                    f"{label}: {len(fail_list)} elemen tidak sesuai "
+                    f"(ekspektasi: {expected_val}). Ditemukan: {actual_str}"
+                )
+                occs = (
+                    _build_occurrences(fail_list, actual_str=actual_str,
+                                       expected_str=expected_val) or None
+                ) if include_occurrences else None
+                issues.append(ValidationIssue(
+                    category="typography", field=field,
+                    severity="error", message=msg,
+                    expected=expected_val, actual=actual_str,
+                    occurrences=occs,
+                ))
+                checks.append(ValidationCheckResult(
+                    category="typography", field=field,
+                    status="failed", message=msg,
+                    expected=expected_val, actual=actual_str,
+                    occurrences=occs,
+                ))
+            if pass_list:
+                occs = (
+                    _build_occurrences(pass_list, expected_str=expected_val) or None
+                ) if include_occurrences else None
+                checks.append(ValidationCheckResult(
+                    category="typography", field=field,
+                    status="passed",
+                    message=f"{label}: {len(pass_list)} elemen lolos",
+                    expected=expected_val,
+                    actual=expected_val,
+                    occurrences=occs,
+                ))
+
+        # body_alignment mendapat occurrences (primary check, dokumen-order dijamin).
+        # Check lain hanya melaporkan jumlah — mencegah para_idx ganda lintas checks.
+        _emit("body_alignment",    "Alignment (JUSTIFY)",            "JUSTIFY",
+              align_pass,   align_fail,   include_occurrences=True)
+        if expected_font:
+            _emit("body_font_family",  f"Font family ({expected_font})",   expected_font,
+                  font_pass,    font_fail,    include_occurrences=False)
+        if expected_size:
+            _emit("body_font_size",    f"Ukuran font ({expected_size}pt)", f"{expected_size}pt",
+                  size_pass,    size_fail,    include_occurrences=False)
+        if expected_spacing:
+            _emit("body_line_spacing", f"Spasi baris ({expected_spacing})", str(expected_spacing),
+                  spacing_pass, spacing_fail, include_occurrences=False)
+
+    except Exception as exc:
+        checks.append(ValidationCheckResult(
+            category="typography", field="body_content",
+            status="skipped",
+            message=f"Pengecekan konten body dilewati: {exc}",
             skip_reason=str(exc),
         ))
 

@@ -3019,29 +3019,32 @@ def _check_page_count(
             ))
             return issues, checks
 
-        # ── Buat occurrences (marker awal & akhir) ────────────────────────────
-        occurrences = [
-            {
-                "text"     : start_text[:100],
-                "full_text": start_text,
-                "style"    : para_list[start_idx].style.name,
-                "page"     : start_page,
-                "bab"      : start_text,
-                "para_idx" : start_idx,
-                "actual"   : f"halaman {start_page}",
-                "expected" : f"mulai ({mulai_type})",
-            },
-            {
-                "text"     : end_text[:100],
-                "full_text": end_text,
-                "style"    : para_list[end_idx].style.name,
-                "page"     : end_page,
-                "bab"      : None,
-                "para_idx" : end_idx,
-                "actual"   : f"halaman {end_page}",
-                "expected" : f"selesai ({selesai_type})",
-            },
-        ]
+        # ── Kumpulkan semua heading antara START dan END (inklusif) ─────────────
+        # Setiap heading utama (BAB, DAFTAR PUSTAKA, sub-bab, dll.) yang ada di
+        # rentang start_idx..end_idx ditampilkan beserta nomor halamannya.
+        occurrences: list[dict] = []
+        current_bab: str | None = start_text
+        for i in range(start_idx, end_idx + 1):
+            para = para_list[i]
+            text = para.text.strip()
+            if not text:
+                continue
+            if _heading_level_from_style(para.style) is None:
+                continue
+            pg = page_map.get(i, 1)
+            # Lacak BAB aktif untuk konteks
+            if _BAB_RE.match(text.upper()):
+                current_bab = text
+            occurrences.append({
+                "text"     : text[:100],
+                "full_text": text,
+                "style"    : para.style.name,
+                "page"     : pg,
+                "bab"      : current_bab,
+                "para_idx" : i,
+                "actual"   : f"halaman {pg}",
+                "expected" : None,
+            })
 
         expected_str = f"≤ {maks} halaman"
         actual_str   = f"{count} halaman"

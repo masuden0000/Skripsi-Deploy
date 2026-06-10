@@ -277,13 +277,18 @@ class TestCheckPageCount:
                 assert "halaman" in (c.expected or "")
 
     @pytest.mark.skipif(not _DOCX.exists(), reason="Dokumen uji tidak tersedia")
-    def test_real_docx_occurrences_has_two_markers(self):
-        """Occurrences harus berisi 2 entry: marker awal (BAB) dan akhir (DAFTAR PUSTAKA)."""
+    def test_real_docx_occurrences_lists_all_elements(self):
+        """Occurrences harus berisi SEMUA heading antara START dan END (bukan hanya 2 marker)."""
         meta = _make_pc_metadata(maks=10)
         _, checks = _check_page_count(_DOCX, meta)
         for c in checks:
             if c.status in ("passed", "failed"):
                 assert c.occurrences is not None
-                assert len(c.occurrences) == 2
-                # Entry pertama harus mengandung teks BAB
+                # Harus ada lebih dari 2 entry (semua heading, bukan hanya START+END)
+                assert len(c.occurrences) > 2
+                # Entry pertama harus heading BAB pertama
                 assert "BAB" in (c.occurrences[0].get("text", "")).upper()
+                # Setiap entry harus punya page number
+                for occ in c.occurrences:
+                    assert occ.get("page") is not None
+                    assert isinstance(occ["page"], int)

@@ -891,6 +891,21 @@ def _check_document_structure(
                     ))
 
         # 3. Cek urutan major section secara keseluruhan
+        # Mapping type → label yang terbaca manusia (dari metadata / inverse map)
+        def _section_label(section_type: str, title: str | None = None) -> str:
+            if section_type == "bab":
+                return "BAB"
+            if section_type == "sub_bab":
+                return "Sub BAB"
+            if title:
+                return title
+            return _HEADING_TITLE_MAP_INV.get(section_type) or section_type.replace("_", " ").upper()
+
+        type_to_label: dict[str, str] = {}
+        for s in expected_major:
+            if s.type not in type_to_label:
+                type_to_label[s.type] = _section_label(s.type, s.title)
+
         # Ambil tipe unik dari actual (pertahankan urutan kemunculan pertama)
         seen: set[str] = set()
         actual_order: list[str] = []
@@ -914,23 +929,27 @@ def _check_document_structure(
         # Filter actual ke yang ada di expected
         actual_filtered = [t for t in actual_order if t in set(expected_order)]
 
+        # Konversi ke label terbaca (judul, bukan type key)
+        def _labels(type_list: list[str]) -> str:
+            return ' → '.join(type_to_label.get(t, t.replace("_", " ").upper()) for t in type_list)
+
         if expected_filtered and actual_filtered and actual_filtered != expected_filtered:
             msg = (
                 f"Urutan section tidak sesuai. "
-                f"Seharusnya: {' → '.join(expected_filtered)}, "
-                f"Ditemukan: {' → '.join(actual_filtered)}"
+                f"Seharusnya: {_labels(expected_filtered)}, "
+                f"Ditemukan: {_labels(actual_filtered)}"
             )
             issues.append(ValidationIssue(
                 category="document_structure", field="section_order",
                 severity="error", message=msg,
-                expected=' → '.join(expected_filtered),
-                actual=' → '.join(actual_filtered),
+                expected=_labels(expected_filtered),
+                actual=_labels(actual_filtered),
             ))
             checks.append(ValidationCheckResult(
                 category="document_structure", field="section_order",
                 status="failed", message=msg,
-                expected=' → '.join(expected_filtered),
-                actual=' → '.join(actual_filtered),
+                expected=_labels(expected_filtered),
+                actual=_labels(actual_filtered),
             ))
         elif expected_filtered:
             major_found = [s for s in actual_classified if s["type"] in set(expected_order)]
@@ -938,14 +957,14 @@ def _check_document_structure(
                 [{"text": s["text"][:100], "full_text": s["text"],
                   "style": "", "page": None, "bab": None, "para_idx": None}
                  for s in major_found],
-                actual_str="Urutan sesuai", expected_str=' → '.join(expected_filtered),
+                actual_str=None, expected_str=None,
             ) or None
             checks.append(ValidationCheckResult(
                 category="document_structure", field="section_order",
                 status="passed",
-                message=f"Urutan section sesuai: {' → '.join(actual_filtered)}",
-                expected=' → '.join(expected_filtered),
-                actual=' → '.join(actual_filtered),
+                message=f"Urutan section sesuai: {_labels(actual_filtered)}",
+                expected=_labels(expected_filtered),
+                actual=_labels(actual_filtered),
                 occurrences=occ_sec,
             ))
 

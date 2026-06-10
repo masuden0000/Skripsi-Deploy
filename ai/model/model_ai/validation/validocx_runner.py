@@ -2887,19 +2887,26 @@ def _build_displayed_page_map(doc) -> dict[int, int]:
       - Section preliminary (romawi): i, ii, iii, ...
       - Section konten (arab): 1, 2, 3, ...
 
-    Deteksi page break dalam tiap section menggunakan:
+    Deteksi page break menggunakan:
       Utama  : w:lastRenderedPageBreak (disimpan Word setelah rendering)
       Fallback: explicit w:br type="page"
+
+    Iterasi mencakup SELURUH paragraf termasuk yang ada di dalam sel tabel,
+    karena Word menyimpan w:lastRenderedPageBreak di dalam sel tabel ketika
+    tabel tersebut membentang antar halaman.  Hanya paragraf body-level
+    (doc.paragraphs) yang dimasukkan ke dalam result.
     """
     para_list = list(doc.paragraphs)
     if not para_list:
         return {}
 
-    # Cek apakah dokumen punya lastRenderedPageBreak sama sekali
-    has_any_lrpb = any(
-        bool(para._p.findall(".//" + qn("w:lastRenderedPageBreak")))
-        for para in para_list
+    # Cek lrpb di SELURUH dokumen (termasuk tabel) — bukan hanya body paragraphs
+    has_any_lrpb = bool(
+        doc.element.body.findall(".//" + qn("w:lastRenderedPageBreak"))
     )
+
+    # Map element-id → body para index agar result bisa diisi saat iterasi semua para
+    body_para_ids: dict[int, int] = {id(p._p): i for i, p in enumerate(para_list)}
 
     # Kumpulkan batas section: (end_para_idx, sectPr)
     # Inline sectPr di pPr → paragraf tsb adalah paragraf terakhir section-nya
@@ -2933,23 +2940,44 @@ def _build_displayed_page_map(doc) -> dict[int, int]:
 
         current_page = section_start_page
 
-        for i in range(sec_start, end_idx + 1):
-            p = para_list[i]._p
+        # Elemen batas section dalam XML (body paragraphs)
+        start_elem = para_list[sec_start]._p
+        end_elem   = para_list[end_idx]._p
 
-            if i > sec_start:
+        found_start     = False
+        first_in_section = True
+
+        # Iterasi SEMUA paragraf (body + tabel) dalam urutan dokumen
+        for p_elem in doc.element.body.iter(qn("w:p")):
+            if not found_start:
+                if p_elem is start_elem:
+                    found_start = True
+                else:
+                    continue
+
+            # Cek page break (kecuali paragraf pertama section)
+            if not first_in_section:
                 has_break = False
                 if has_any_lrpb:
-                    if p.findall(".//" + qn("w:lastRenderedPageBreak")):
+                    if p_elem.findall(".//" + qn("w:lastRenderedPageBreak")):
                         has_break = True
                 if not has_break:
-                    for br in p.findall(".//" + qn("w:br")):
+                    for br in p_elem.findall(".//" + qn("w:br")):
                         if br.get(qn("w:type")) == "page":
                             has_break = True
                             break
                 if has_break:
                     current_page += 1
+            else:
+                first_in_section = False
 
-            result[i] = current_page
+            # Catat page number hanya untuk paragraf body-level
+            body_idx = body_para_ids.get(id(p_elem))
+            if body_idx is not None:
+                result[body_idx] = current_page
+
+            if p_elem is end_elem:
+                break
 
         sec_start = end_idx + 1
 

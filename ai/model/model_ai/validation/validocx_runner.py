@@ -2827,6 +2827,95 @@ def _check_numbering(
     return issues, checks
 
 
+def _count_pages_structural(doc) -> dict[int, int]:
+    """Peta para_index → page_number (1-based) menggunakan penanda page break di XML.
+
+    Strategi (dua pass):
+      Pass 1 (utama) : w:lastRenderedPageBreak — disimpan Word setelah rendering,
+                       paling andal untuk dokumen yang sudah disimpan oleh Word.
+      Pass 2 (fallback): jika pass 1 menghasilkan max_page == 1 (tidak ada lrpb),
+                        gunakan explicit w:br type="page" + inline w:sectPr saja.
+
+    Inline w:sectPr di w:pPr suatu paragraf menandai section break:
+    paragraf itu sendiri tetap di halaman yang sama, tapi paragraf BERIKUTNYA
+    mulai di halaman baru.
+    """
+    para_list = list(doc.paragraphs)
+    if not para_list:
+        return {}
+
+    def _build_map(use_lrpb: bool) -> dict[int, int]:
+        result: dict[int, int] = {}
+        current_page = 1
+        for idx, para in enumerate(para_list):
+            p = para._p
+            has_break = False
+
+            if use_lrpb and idx > 0:
+                if p.findall(".//" + qn("w:lastRenderedPageBreak")):
+                    has_break = True
+
+            if not has_break:
+                for br in p.findall(".//" + qn("w:br")):
+                    if br.get(qn("w:type")) == "page":
+                        has_break = True
+                        break
+
+            if has_break and idx > 0:
+                current_page += 1
+
+            result[idx] = current_page
+
+            # Inline sectPr → paragraf BERIKUTNYA mulai halaman baru
+            pPr = p.find(qn("w:pPr"))
+            if pPr is not None and pPr.find(qn("w:sectPr")) is not None:
+                current_page += 1
+
+        return result
+
+    page_map = _build_map(use_lrpb=True)
+    if max(page_map.values(), default=1) <= 1:
+        page_map = _build_map(use_lrpb=False)
+    return page_map
+
+
+def _find_section_para_idx(
+    para_list: list,
+    section_type: str,
+    search_from: int = 0,
+) -> tuple[int | None, str]:
+    """Cari indeks paragraf heading pertama yang cocok dengan section_type.
+
+    Mengembalikan (para_idx, text) atau (None, "") jika tidak ditemukan.
+    Hanya paragraf dengan style heading (deteksi via _heading_level_from_style)
+    yang diperiksa — entri TOC/TOF (style "toc 1", Normal, dsb.) diabaikan.
+    """
+    if section_type == "bab":
+        for i in range(search_from, len(para_list)):
+            para = para_list[i]
+            text = para.text.strip()
+            if not text:
+                continue
+            if _heading_level_from_style(para.style) is None:
+                continue
+            if _BAB_RE.match(text.upper()):
+                return i, text
+    else:
+        expected_title = _HEADING_TITLE_MAP_INV.get(
+            section_type, section_type.upper().replace("_", " ")
+        )
+        for i in range(search_from, len(para_list)):
+            para = para_list[i]
+            text = para.text.strip()
+            if not text:
+                continue
+            if _heading_level_from_style(para.style) is None:
+                continue
+            if text.upper() == expected_title:
+                return i, text
+    return None, ""
+
+
 def _check_page_count(
     docx_path: Path,
     metadata: DocumentMetadata,
@@ -2835,6 +2924,8 @@ def _check_page_count(
 
     Halaman inti dihitung dari section halaman_inti_mulai (default: bab)
     sampai halaman_inti_selesai (default: daftar_pustaka), inklusif.
+    Penghitungan halaman menggunakan penanda struktural di XML:
+    w:lastRenderedPageBreak (utama), explicit page break, dan inline sectPr.
     """
     issues: list[ValidationIssue] = []
     checks: list[ValidationCheckResult] = []
@@ -2849,12 +2940,154 @@ def _check_page_count(
         ))
         return issues, checks
 
-    checks.append(ValidationCheckResult(
-        category="page_count", field="halaman_inti",
-        status="skipped",
-        message="Pengecekan jumlah halaman inti dilewati: mekanisme penghitungan halaman tidak tersedia",
-        skip_reason="page counting mechanism removed",
-    ))
+    maks         = pc.proposal_halaman_inti_maks
+    mulai_type   = pc.halaman_inti_mulai    # default "bab"
+    selesai_type = pc.halaman_inti_selesai  # default "daftar_pustaka"
+
+    try:
+        doc = DocxDocument(str(docx_path))
+        para_list = list(doc.paragraphs)
+
+        # ── Cari heading START ────────────────────────────────────────────────
+        start_idx, start_text = _find_section_para_idx(para_list, mulai_type)
+
+        if start_idx is None:
+            mulai_label = (
+                "BAB pertama" if mulai_type == "bab"
+                else _HEADING_TITLE_MAP_INV.get(mulai_type, mulai_type.upper())
+            )
+            checks.append(ValidationCheckResult(
+                category="page_count", field="halaman_inti",
+                status="skipped",
+                message=(
+                    f"Penghitungan halaman dilewati: heading '{mulai_label}' "
+                    f"(halaman_inti_mulai='{mulai_type}') tidak ditemukan di dokumen"
+                ),
+                skip_reason=f"heading '{mulai_label}' tidak ditemukan",
+            ))
+            return issues, checks
+
+        # ── Cari heading END (mulai dari paragraf setelah START) ─────────────
+        end_idx, end_text = _find_section_para_idx(
+            para_list, selesai_type, search_from=start_idx + 1
+        )
+
+        if end_idx is None:
+            selesai_label = _HEADING_TITLE_MAP_INV.get(
+                selesai_type, selesai_type.upper().replace("_", " ")
+            )
+            checks.append(ValidationCheckResult(
+                category="page_count", field="halaman_inti",
+                status="skipped",
+                message=(
+                    f"Penghitungan halaman dilewati: heading '{selesai_label}' "
+                    f"(halaman_inti_selesai='{selesai_type}') tidak ditemukan "
+                    f"setelah '{start_text}'"
+                ),
+                skip_reason=f"heading '{selesai_label}' tidak ditemukan setelah start",
+            ))
+            return issues, checks
+
+        # ── Hitung halaman ────────────────────────────────────────────────────
+        page_map   = _count_pages_structural(doc)
+        start_page = page_map.get(start_idx, 1)
+        end_page   = page_map.get(end_idx, 1)
+        count      = end_page - start_page + 1
+
+        if count <= 0:
+            checks.append(ValidationCheckResult(
+                category="page_count", field="halaman_inti",
+                status="skipped",
+                message=(
+                    f"Penghitungan halaman menghasilkan nilai tidak valid ({count}). "
+                    "Urutan section mungkin tidak linear atau dokumen rusak."
+                ),
+                skip_reason=f"hitung halaman tidak valid: {count}",
+            ))
+            return issues, checks
+
+        if count > 200:
+            checks.append(ValidationCheckResult(
+                category="page_count", field="halaman_inti",
+                status="skipped",
+                message=(
+                    f"Jumlah halaman terhitung tidak realistis ({count} halaman). "
+                    "Dokumen mungkin belum pernah dirender oleh Word "
+                    "sehingga tidak memiliki penanda page break."
+                ),
+                skip_reason=f"hitung halaman tidak realistis: {count}",
+            ))
+            return issues, checks
+
+        # ── Buat occurrences (marker awal & akhir) ────────────────────────────
+        occurrences = [
+            {
+                "text"     : start_text[:100],
+                "full_text": start_text,
+                "style"    : para_list[start_idx].style.name,
+                "page"     : start_page,
+                "bab"      : start_text,
+                "para_idx" : start_idx,
+                "actual"   : f"halaman {start_page}",
+                "expected" : f"mulai ({mulai_type})",
+            },
+            {
+                "text"     : end_text[:100],
+                "full_text": end_text,
+                "style"    : para_list[end_idx].style.name,
+                "page"     : end_page,
+                "bab"      : None,
+                "para_idx" : end_idx,
+                "actual"   : f"halaman {end_page}",
+                "expected" : f"selesai ({selesai_type})",
+            },
+        ]
+
+        expected_str = f"≤ {maks} halaman"
+        actual_str   = f"{count} halaman"
+
+        if count <= maks:
+            checks.append(ValidationCheckResult(
+                category="page_count", field="halaman_inti",
+                status="passed",
+                message=(
+                    f"Jumlah halaman inti {count} halaman "
+                    f"(halaman {start_page}–{end_page}): "
+                    f"sesuai batas maksimum {maks} halaman"
+                ),
+                expected=expected_str,
+                actual=actual_str,
+                occurrences=occurrences,
+            ))
+        else:
+            msg = (
+                f"Jumlah halaman inti {count} halaman "
+                f"(halaman {start_page}–{end_page}) "
+                f"melebihi batas maksimum {maks} halaman."
+            )
+            issues.append(ValidationIssue(
+                category="page_count", field="halaman_inti",
+                severity="error", message=msg,
+                expected=expected_str,
+                actual=actual_str,
+                occurrences=occurrences,
+            ))
+            checks.append(ValidationCheckResult(
+                category="page_count", field="halaman_inti",
+                status="failed", message=msg,
+                expected=expected_str,
+                actual=actual_str,
+                occurrences=occurrences,
+            ))
+
+    except Exception as exc:
+        checks.append(ValidationCheckResult(
+            category="page_count", field="halaman_inti",
+            status="skipped",
+            message=f"Pengecekan jumlah halaman inti dilewati: {exc}",
+            skip_reason=str(exc),
+        ))
+
     return issues, checks
 
 

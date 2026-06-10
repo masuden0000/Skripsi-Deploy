@@ -814,52 +814,79 @@ def _check_document_structure(
                 occurrences=occ_req,
             ))
 
-        # 2. Cek BAB berurutan (1, 2, 3, ...)
+        # 2. Cek BAB berurutan — gunakan nama BAB dari metadata, bukan angka
         bab_actuals = [s for s in actual_classified if s["type"] == "bab"]
         bab_numbers = [s["number"] for s in bab_actuals if "number" in s]
-        expected_bab_numbers = sorted({
-            s.number for s in expected_major if s.type == "bab" and s.number is not None
-        })
+        expected_bab_sections = sorted(
+            [s for s in expected_major if s.type == "bab" and s.number is not None],
+            key=lambda s: s.number,  # type: ignore[arg-type]
+        )
+        expected_bab_numbers = [s.number for s in expected_bab_sections]
+
+        def _bab_label(number: int, title: str | None) -> str:
+            """Format label BAB: 'BAB N JUDUL' atau fallback 'BAB N'."""
+            if title:
+                return f"BAB {number} {title.upper()}"
+            return f"BAB {number}"
+
+        # Label expected (dari metadata) dan actual (dari teks heading dokumen)
+        expected_bab_labels = [_bab_label(s.number, s.title) for s in expected_bab_sections]  # type: ignore[arg-type]
+        actual_bab_labels   = [s["text"] for s in bab_actuals]
+        bab_num_to_text: dict[int, str] = {
+            s["number"]: s["text"] for s in bab_actuals if "number" in s
+        }
+
         if expected_bab_numbers and bab_numbers:
             if bab_numbers != sorted(bab_numbers):
-                msg = f"BAB tidak berurutan. Ditemukan urutan: {bab_numbers}"
+                # Urutan salah — tampilkan nama, bukan angka
+                actual_ordered_labels   = [bab_num_to_text.get(n, f"BAB {n}") for n in bab_numbers]
+                expected_sorted_labels  = [_bab_label(s.number, s.title) for s in expected_bab_sections]  # type: ignore[arg-type]
+                msg = f"BAB tidak berurutan. Ditemukan: {' → '.join(actual_ordered_labels)}"
                 issues.append(ValidationIssue(
                     category="document_structure", field="bab_order",
                     severity="error", message=msg,
-                    expected=str(sorted(bab_numbers)), actual=str(bab_numbers),
+                    expected=' → '.join(expected_sorted_labels),
+                    actual=' → '.join(actual_ordered_labels),
                 ))
                 checks.append(ValidationCheckResult(
                     category="document_structure", field="bab_order",
                     status="failed", message=msg,
-                    expected=str(sorted(bab_numbers)), actual=str(bab_numbers),
+                    expected=' → '.join(expected_sorted_labels),
+                    actual=' → '.join(actual_ordered_labels),
                 ))
             else:
-                missing_babs = set(expected_bab_numbers) - set(bab_numbers)
-                if missing_babs:
-                    msg = f"BAB {sorted(missing_babs)} tidak ditemukan di dokumen"
+                missing_bab_nums = set(expected_bab_numbers) - set(bab_numbers)
+                if missing_bab_nums:
+                    missing_labels = [
+                        _bab_label(s.number, s.title)  # type: ignore[arg-type]
+                        for s in expected_bab_sections if s.number in missing_bab_nums
+                    ]
+                    msg = f"BAB berikut tidak ditemukan: {', '.join(missing_labels)}"
                     issues.append(ValidationIssue(
                         category="document_structure", field="bab_order",
                         severity="error", message=msg,
-                        expected=str(expected_bab_numbers), actual=str(bab_numbers),
+                        expected=' → '.join(expected_bab_labels),
+                        actual=' → '.join(actual_bab_labels),
                     ))
                     checks.append(ValidationCheckResult(
                         category="document_structure", field="bab_order",
                         status="failed", message=msg,
-                        expected=str(expected_bab_numbers), actual=str(bab_numbers),
+                        expected=' → '.join(expected_bab_labels),
+                        actual=' → '.join(actual_bab_labels),
                     ))
                 else:
                     occ_bab = _build_occurrences(
                         [{"text": s["text"][:100], "full_text": s["text"],
                           "style": "", "page": None, "bab": None, "para_idx": None}
                          for s in bab_actuals],
-                        actual_str="Berurutan", expected_str=str(expected_bab_numbers),
+                        actual_str=None, expected_str=None,
                     ) or None
                     checks.append(ValidationCheckResult(
                         category="document_structure", field="bab_order",
                         status="passed",
-                        message=f"BAB berurutan dengan benar: {bab_numbers}",
-                        expected=str(expected_bab_numbers),
-                        actual=str(bab_numbers),
+                        message=f"BAB berurutan dengan benar: {' → '.join(actual_bab_labels)}",
+                        expected=' → '.join(expected_bab_labels),
+                        actual=' → '.join(actual_bab_labels),
                         occurrences=occ_bab,
                     ))
 

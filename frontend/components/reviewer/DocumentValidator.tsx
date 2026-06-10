@@ -89,6 +89,9 @@ const FIELD_LABELS: Record<string, string> = {
   lampiran_font_size      : "Ukuran font judul lampiran",
   lampiran_spacing        : "Spasi judul lampiran",
   halaman_inti            : "Jumlah halaman inti",
+  required_section        : "Section wajib",
+  section_order           : "Urutan section",
+  bab_order               : "Urutan BAB",
 }
 
 const PARAM_LABELS: Record<string, string> = {

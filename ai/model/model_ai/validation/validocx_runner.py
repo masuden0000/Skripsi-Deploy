@@ -2879,6 +2879,83 @@ def _count_pages_structural(doc) -> dict[int, int]:
     return page_map
 
 
+def _build_displayed_page_map(doc) -> dict[int, int]:
+    """Peta para_index → nomor halaman yang ditampilkan di header/footer.
+
+    Membaca w:pgNumType w:start dari tiap section sehingga nomor halaman
+    yang dihasilkan sesuai dengan yang tertera di header dokumen:
+      - Section preliminary (romawi): i, ii, iii, ...
+      - Section konten (arab): 1, 2, 3, ...
+
+    Deteksi page break dalam tiap section menggunakan:
+      Utama  : w:lastRenderedPageBreak (disimpan Word setelah rendering)
+      Fallback: explicit w:br type="page"
+    """
+    para_list = list(doc.paragraphs)
+    if not para_list:
+        return {}
+
+    # Cek apakah dokumen punya lastRenderedPageBreak sama sekali
+    has_any_lrpb = any(
+        bool(para._p.findall(".//" + qn("w:lastRenderedPageBreak")))
+        for para in para_list
+    )
+
+    # Kumpulkan batas section: (end_para_idx, sectPr)
+    # Inline sectPr di pPr → paragraf tsb adalah paragraf terakhir section-nya
+    section_ends: list[tuple[int, object]] = []
+    for idx, para in enumerate(para_list):
+        pPr = para._p.find(qn("w:pPr"))
+        if pPr is not None:
+            sectPr = pPr.find(qn("w:sectPr"))
+            if sectPr is not None:
+                section_ends.append((idx, sectPr))
+
+    # Section terakhir → body-level sectPr
+    try:
+        body_sectPr = doc.element.body.find(qn("w:sectPr"))
+    except Exception:
+        body_sectPr = None
+    section_ends.append((len(para_list) - 1, body_sectPr))
+
+    result: dict[int, int] = {}
+    sec_start = 0
+
+    for end_idx, sectPr in section_ends:
+        if end_idx < sec_start:
+            continue  # Lewati jika section kosong
+
+        # Baca nomor halaman awal section dari w:pgNumType w:start
+        if sectPr is not None:
+            _, section_start_page = _read_pgNumType(sectPr)
+        else:
+            section_start_page = 1
+
+        current_page = section_start_page
+
+        for i in range(sec_start, end_idx + 1):
+            p = para_list[i]._p
+
+            if i > sec_start:
+                has_break = False
+                if has_any_lrpb:
+                    if p.findall(".//" + qn("w:lastRenderedPageBreak")):
+                        has_break = True
+                if not has_break:
+                    for br in p.findall(".//" + qn("w:br")):
+                        if br.get(qn("w:type")) == "page":
+                            has_break = True
+                            break
+                if has_break:
+                    current_page += 1
+
+            result[i] = current_page
+
+        sec_start = end_idx + 1
+
+    return result
+
+
 def _find_section_para_idx(
     para_list: list,
     section_type: str,
@@ -2988,8 +3065,8 @@ def _check_page_count(
             ))
             return issues, checks
 
-        # ── Hitung halaman ────────────────────────────────────────────────────
-        page_map   = _count_pages_structural(doc)
+        # ── Hitung halaman (berdasarkan nomor header, bukan fisik) ───────────
+        page_map   = _build_displayed_page_map(doc)
         start_page = page_map.get(start_idx, 1)
         end_page   = page_map.get(end_idx, 1)
         count      = end_page - start_page + 1

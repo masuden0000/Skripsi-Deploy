@@ -785,32 +785,83 @@ def _check_document_structure(
         actual_types_set = {s["type"] for s in actual_classified}
 
         # 1. Cek section wajib hadir
+        def _req_label(section_type: str, title: str | None) -> str:
+            """Label terbaca manusia untuk sebuah tipe section."""
+            if section_type == "bab":
+                return "BAB"
+            if section_type == "sub_bab":
+                return "Sub BAB"
+            if title:
+                return title
+            return _HEADING_TITLE_MAP_INV.get(section_type, section_type.replace("_", " ").upper())
+
+        # Kelompokkan section metadata: wajib vs opsional (deduplikasi by type)
+        seen_meta: set[str] = set()
+        required_labels: list[str] = []
+        optional_labels: list[str] = []
+        for s in expected_major:
+            if s.type in seen_meta:
+                continue
+            seen_meta.add(s.type)
+            lbl = _req_label(s.type, s.title)
+            if s.required is True:
+                required_labels.append(lbl)
+            else:
+                optional_labels.append(lbl)
+
+        # Section aktual yang ditemukan (hanya major, BAB di-expand individual)
+        major_types_set = {s.type for s in expected_major}
+        seen_actual: set[str] = set()
+        actual_section_texts: list[str] = []
+        for s in actual_classified:
+            if s["type"] not in major_types_set:
+                continue
+            if s["type"] == "bab":
+                actual_section_texts.append(s["text"])  # tiap BAB ditampilkan
+            elif s["type"] not in seen_actual:
+                actual_section_texts.append(s["text"])
+                seen_actual.add(s["type"])
+
+        # Format display
+        req_part = ', '.join(required_labels) if required_labels else "–"
+        opt_part = ', '.join(optional_labels) if optional_labels else "–"
+        expected_display_req = f"Wajib: {req_part} | Opsional: {opt_part}"
+        actual_display_req   = ', '.join(actual_section_texts) if actual_section_texts else "Tidak ada"
+
         missing_required = required_types - actual_types_set
-        for t in sorted(missing_required):
-            expected_section = next((s for s in expected_major if s.type == t), None)
-            label = expected_section.title if expected_section and expected_section.title else t
-            msg = f"Section wajib '{label}' tidak ditemukan di dokumen"
+        if missing_required:
+            # Deduplikasi label yang hilang
+            seen_ml: set[str] = set()
+            missing_labels: list[str] = []
+            for s in expected_major:
+                if s.type in missing_required and s.type not in seen_ml:
+                    seen_ml.add(s.type)
+                    missing_labels.append(_req_label(s.type, s.title))
+            msg = f"{len(missing_required)} section wajib tidak ditemukan: {', '.join(missing_labels)}"
             issues.append(ValidationIssue(
                 category="document_structure", field="required_section",
-                severity="error", message=msg, expected=label,
+                severity="error", message=msg,
+                expected=expected_display_req, actual=actual_display_req,
             ))
             checks.append(ValidationCheckResult(
                 category="document_structure", field="required_section",
-                status="failed", message=msg, expected=label,
+                status="failed", message=msg,
+                expected=expected_display_req, actual=actual_display_req,
             ))
-
-        if not missing_required:
-            required_found = [s for s in actual_classified if s["type"] in required_types]
+        else:
+            actual_major_found = [s for s in actual_classified if s["type"] in major_types_set]
             occ_req = _build_occurrences(
                 [{"text": s["text"][:100], "full_text": s["text"],
                   "style": "", "page": None, "bab": None, "para_idx": None}
-                 for s in required_found],
-                actual_str="Ditemukan", expected_str="Wajib ada",
+                 for s in actual_major_found],
+                actual_str=None, expected_str=None,
             ) or None
             checks.append(ValidationCheckResult(
                 category="document_structure", field="required_section",
                 status="passed",
-                message=f"Semua section wajib ditemukan ({len(required_types)} section)",
+                message=f"Semua {len(required_types)} section wajib ditemukan",
+                expected=expected_display_req,
+                actual=actual_display_req,
                 occurrences=occ_req,
             ))
 

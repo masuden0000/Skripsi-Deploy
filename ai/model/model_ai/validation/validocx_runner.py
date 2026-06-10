@@ -165,12 +165,14 @@ def _humanize_attr_value(attr_name: str, raw_value: str | None) -> str | None:
             return label
 
     if "line_spacing" in attr_lower or "spacing" in attr_lower:
-        # Bulatkan ke 2 desimal untuk lookup
+        # Bulatkan ke 2 desimal untuk lookup dan sebagai fallback display
         try:
             rounded = f"{float(raw_value.strip()):.2f}".rstrip("0").rstrip(".")
             label = _LINE_SPACING_LABELS.get(rounded) or _LINE_SPACING_LABELS.get(raw_value.strip())
             if label:
                 return label
+            # Tidak ada label → kembalikan nilai yang sudah dibulatkan (bukan raw float panjang)
+            return rounded
         except ValueError:
             pass
 
@@ -195,14 +197,25 @@ def _is_heading_para(para) -> bool:
 
 
 def _vm_category(key: str) -> tuple[str, str]:
-    """Tentukan category/field untuk value_mismatch berdasarkan key report."""
-    attr = key.split(".")[1].split(":")[0].strip() if "." in key else key
-    if attr in _SECTION_ATTR_KEYS or key.lstrip().startswith("'Section"):
+    """Tentukan category/field untuk value_mismatch berdasarkan key report.
+
+    Format key: "StyleName.attr: actual=X expected=Y"
+    Deteksi heading dari nama style sebelum titik pertama.
+    """
+    parts = key.split(".", 1)
+    style_part = parts[0].strip().lower() if len(parts) > 1 else ""
+    attr_part  = parts[1].split(":")[0].strip() if len(parts) > 1 else key
+
+    if attr_part in _SECTION_ATTR_KEYS or key.lstrip().startswith("'Section"):
         return "page_layout", "section_attribute"
+
     spacing_attrs = {"alignment", "line_spacing", "space_before", "space_after"}
-    if any(a in attr.lower() for a in spacing_attrs):
-        return "spacing", "paragraph_attribute"
-    return "typography", "paragraph_attribute"
+    is_spacing  = any(a in attr_part.lower() for a in spacing_attrs)
+    is_heading  = any(k in style_part for k in _HEADING_STYLE_KEYWORDS)
+
+    if is_heading:
+        return ("spacing", "heading_attribute") if is_spacing else ("typography", "heading_attribute")
+    return ("spacing", "body_attribute") if is_spacing else ("typography", "body_attribute")
 
 
 def _capture_log(docx_path: Path, requirements: dict) -> str:

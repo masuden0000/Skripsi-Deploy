@@ -891,10 +891,8 @@ def _check_document_structure(
                     ))
 
         # 3. Cek urutan major section secara keseluruhan
-        # Mapping type → label yang terbaca manusia (dari metadata / inverse map)
+        # Mapping type → label sederhana (untuk non-bab)
         def _section_label(section_type: str, title: str | None = None) -> str:
-            if section_type == "bab":
-                return "BAB"
             if section_type == "sub_bab":
                 return "Sub BAB"
             if title:
@@ -905,6 +903,17 @@ def _check_document_structure(
         for s in expected_major:
             if s.type not in type_to_label:
                 type_to_label[s.type] = _section_label(s.type, s.title)
+
+        # Expand type list ke label: "bab" dipecah ke label tiap BAB individual
+        def _expand_labels(type_list: list[str], bab_labels: list[str]) -> str:
+            parts: list[str] = []
+            for t in type_list:
+                if t == "bab":
+                    # Expand ke nama tiap BAB; fallback ke "BAB" jika list kosong
+                    parts.extend(bab_labels if bab_labels else ["BAB"])
+                else:
+                    parts.append(type_to_label.get(t, t.replace("_", " ").upper()))
+            return ' → '.join(parts)
 
         # Ambil tipe unik dari actual (pertahankan urutan kemunculan pertama)
         seen: set[str] = set()
@@ -929,27 +938,28 @@ def _check_document_structure(
         # Filter actual ke yang ada di expected
         actual_filtered = [t for t in actual_order if t in set(expected_order)]
 
-        # Konversi ke label terbaca (judul, bukan type key)
-        def _labels(type_list: list[str]) -> str:
-            return ' → '.join(type_to_label.get(t, t.replace("_", " ").upper()) for t in type_list)
+        # Label display: BAB di-expand ke nama masing-masing
+        # expected_bab_labels dan actual_bab_labels sudah tersedia dari step 2
+        exp_display = _expand_labels(expected_filtered, expected_bab_labels)
+        act_display = _expand_labels(actual_filtered, actual_bab_labels)
 
         if expected_filtered and actual_filtered and actual_filtered != expected_filtered:
             msg = (
                 f"Urutan section tidak sesuai. "
-                f"Seharusnya: {_labels(expected_filtered)}, "
-                f"Ditemukan: {_labels(actual_filtered)}"
+                f"Seharusnya: {exp_display}, "
+                f"Ditemukan: {act_display}"
             )
             issues.append(ValidationIssue(
                 category="document_structure", field="section_order",
                 severity="error", message=msg,
-                expected=_labels(expected_filtered),
-                actual=_labels(actual_filtered),
+                expected=exp_display,
+                actual=act_display,
             ))
             checks.append(ValidationCheckResult(
                 category="document_structure", field="section_order",
                 status="failed", message=msg,
-                expected=_labels(expected_filtered),
-                actual=_labels(actual_filtered),
+                expected=exp_display,
+                actual=act_display,
             ))
         elif expected_filtered:
             major_found = [s for s in actual_classified if s["type"] in set(expected_order)]
@@ -962,9 +972,9 @@ def _check_document_structure(
             checks.append(ValidationCheckResult(
                 category="document_structure", field="section_order",
                 status="passed",
-                message=f"Urutan section sesuai: {_labels(actual_filtered)}",
-                expected=_labels(expected_filtered),
-                actual=_labels(actual_filtered),
+                message=f"Urutan section sesuai: {act_display}",
+                expected=exp_display,
+                actual=act_display,
                 occurrences=occ_sec,
             ))
 

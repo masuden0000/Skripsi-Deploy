@@ -20,6 +20,7 @@ from model_ai.validation.validocx_adapter import (
     enrich_requirements_with_docx_styles,
     metadata_to_requirements,
     _resolve_line_spacing,
+    _heading_level_from_style,
 )
 
 
@@ -766,14 +767,16 @@ def _check_document_structure(
     try:
         doc = DocxDocument(str(docx_path))
 
-        # Ekstrak heading dari docx dan klasifikasikan
+        # Ekstrak heading dari docx dan klasifikasikan.
+        # Gunakan _heading_level_from_style agar style kustom (Judul 1, Judul 2, dll.)
+        # yang mewarisi Heading atau punya outline level ikut terdeteksi.
         actual_classified: list[dict] = []
         for para in doc.paragraphs:
-            style_name = para.style.name
             text = para.text.strip()
             if not text:
                 continue
-            if style_name not in ("Heading 1", "Heading 2", "Heading 3"):
+            level = _heading_level_from_style(para.style)
+            if level is None:
                 continue
             section_type, extra = _classify_heading(text)
             if section_type:

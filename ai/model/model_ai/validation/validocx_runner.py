@@ -380,13 +380,25 @@ def _build_issues_checks(
     # ── Section missing ──────────────────────────────────────────────────────
     for item in report["errors"].get("section_missing", []):
         msg = item.get("message", "Section attribute missing")
+        # Coba ekstrak atribut yang diharapkan dari pesan
+        attr_m = re.search(r"'([^']+)'", msg)
+        expected_attr = attr_m.group(1) if attr_m else "attribute"
+        occ_sec_missing = _build_occurrences(
+            [{"text": msg[:100], "full_text": msg, "style": "",
+              "page": None, "bab": None, "para_idx": None,
+              "actual": "Tidak ada"}],
+            actual_str="Tidak ada", expected_str=expected_attr,
+        ) or None
         issues.append(ValidationIssue(
             category="page_layout", field="section_missing",
             severity="error", message=msg,
+            expected=expected_attr, actual="Tidak ada",
         ))
         checks.append(ValidationCheckResult(
             category="page_layout", field="section_missing",
             status="failed", message=msg,
+            expected=expected_attr, actual="Tidak ada",
+            occurrences=occ_sec_missing,
         ))
 
     # ── Value mismatch ───────────────────────────────────────────────────────
@@ -426,6 +438,8 @@ def _build_issues_checks(
         checks.append(ValidationCheckResult(
             category=category, field=field,
             status="failed", message=msg, location=location,
+            expected=vm_expected_str, actual=vm_actual_str,
+            occurrences=occurrences,
         ))
 
     # ── Font mismatch ────────────────────────────────────────────────────────
@@ -456,6 +470,8 @@ def _build_issues_checks(
         checks.append(ValidationCheckResult(
             category="typography", field="font_per_paragraph",
             status="failed", message=msg, location=location,
+            expected=fm_expected_str, actual=fm_actual_str,
+            occurrences=occurrences,
         ))
 
     # ── Undefined styles ─────────────────────────────────────────────────────
@@ -481,6 +497,8 @@ def _build_issues_checks(
         checks.append(ValidationCheckResult(
             category="typography", field="undefined_style",
             status="failed", message=msg,
+            expected=normal_fmt_label, actual=style,
+            occurrences=occurrences,
         ))
 
     # ── Attr inherited ───────────────────────────────────────────────────────
@@ -501,6 +519,8 @@ def _build_issues_checks(
         checks.append(ValidationCheckResult(
             category="spacing", field="paragraph_inherited",
             status="failed", message=msg,
+            expected="explicit", actual="inherited",
+            occurrences=occurrences,
         ))
 
     # ── Parameter summary sebagai check (heading only) ───────────────────────
@@ -547,6 +567,11 @@ def _build_issues_checks(
             n_fail  = len(raw_fail)
             n_total = len(ps.get("paragraph_details_pass", [])) + n_fail
             occs_fail = _build_occurrences(raw_fail, expected_str=expected_val) or None
+            # Ambil actual dari elemen pertama yang gagal (jika tersedia)
+            first_fail_actual: str | None = None
+            if raw_fail and isinstance(raw_fail[0], dict):
+                first_fail_actual = raw_fail[0].get("actual")
+            actual_summary = first_fail_actual or "Tidak sesuai"
             msg = (
                 f"{ps['parameter']}: {n_fail} dari {n_total} elemen gagal"
                 + (f" (expected: {expected_val})" if expected_val else "")
@@ -564,6 +589,7 @@ def _build_issues_checks(
                 status="failed",
                 message=msg,
                 expected=expected_val,
+                actual=actual_summary,
                 occurrences=occs_fail,
             ))
 
@@ -923,6 +949,12 @@ def _check_document_structure(
                 actual_ordered_labels   = [bab_num_to_text.get(n, f"BAB {n}") for n in bab_numbers]
                 expected_sorted_labels  = [_bab_label(s.number, s.title) for s in expected_bab_sections]  # type: ignore[arg-type]
                 msg = f"BAB tidak berurutan. Ditemukan: {' → '.join(actual_ordered_labels)}"
+                occ_bab_err = _build_occurrences(
+                    [{"text": s["text"][:100], "full_text": s["text"],
+                      "style": "", "page": None, "bab": None, "para_idx": None}
+                     for s in bab_actuals],
+                    actual_str=None, expected_str=None,
+                ) or None
                 issues.append(ValidationIssue(
                     category="document_structure", field="bab_order",
                     severity="error", message=msg,
@@ -934,6 +966,7 @@ def _check_document_structure(
                     status="failed", message=msg,
                     expected=' → '.join(expected_sorted_labels),
                     actual=' → '.join(actual_ordered_labels),
+                    occurrences=occ_bab_err,
                 ))
             else:
                 missing_bab_nums = set(expected_bab_numbers) - set(bab_numbers)
@@ -943,6 +976,12 @@ def _check_document_structure(
                         for s in expected_bab_sections if s.number in missing_bab_nums
                     ]
                     msg = f"BAB berikut tidak ditemukan: {', '.join(missing_labels)}"
+                    occ_bab_missing = _build_occurrences(
+                        [{"text": s["text"][:100], "full_text": s["text"],
+                          "style": "", "page": None, "bab": None, "para_idx": None}
+                         for s in bab_actuals],
+                        actual_str=None, expected_str=None,
+                    ) or None
                     issues.append(ValidationIssue(
                         category="document_structure", field="bab_order",
                         severity="error", message=msg,
@@ -954,6 +993,7 @@ def _check_document_structure(
                         status="failed", message=msg,
                         expected=' → '.join(expected_bab_labels),
                         actual=' → '.join(actual_bab_labels),
+                        occurrences=occ_bab_missing,
                     ))
                 else:
                     occ_bab = _build_occurrences(
@@ -1030,6 +1070,12 @@ def _check_document_structure(
                 f"Seharusnya: {exp_display}, "
                 f"Ditemukan: {act_display}"
             )
+            occ_sec_err = _build_occurrences(
+                [{"text": s["text"][:100], "full_text": s["text"],
+                  "style": "", "page": None, "bab": None, "para_idx": None}
+                 for s in actual_classified if s["type"] in set(expected_order)],
+                actual_str=None, expected_str=None,
+            ) or None
             issues.append(ValidationIssue(
                 category="document_structure", field="section_order",
                 severity="error", message=msg,
@@ -1041,6 +1087,7 @@ def _check_document_structure(
                 status="failed", message=msg,
                 expected=exp_display,
                 actual=act_display,
+                occurrences=occ_sec_err,
             ))
         elif expected_filtered:
             major_found = [s for s in actual_classified if s["type"] in set(expected_order)]
@@ -1294,6 +1341,12 @@ def _check_lampiran_format(
                 f"{len(wrong_separator)} judul lampiran tidak menggunakan format yang diharapkan "
                 f"({sep_display} setelah nomor). Contoh: \"{wrong_separator[0]}\""
             )
+            occ_sep_err = _build_occurrences(
+                [{"text": t[:100], "full_text": t, "style": "",
+                  "page": None, "bab": None, "para_idx": None}
+                 for t in wrong_separator],
+                actual_str=None, expected_str=effective_sep,
+            ) or None
             issues.append(ValidationIssue(
                 category="document_structure", field="lampiran_separator",
                 severity="error", message=msg,
@@ -1303,6 +1356,7 @@ def _check_lampiran_format(
                 category="document_structure", field="lampiran_separator",
                 status="failed", message=msg,
                 expected=effective_sep, actual=wrong_separator[0],
+                occurrences=occ_sep_err,
             ))
         else:
             occ_sep = _build_occurrences(
@@ -1620,8 +1674,8 @@ def _check_caption_format(
     try:
         doc = DocxDocument(str(docx_path))
 
-        wrong_fig_alignment: list[str] = []
-        wrong_tbl_alignment: list[str] = []
+        wrong_fig_alignment: list[dict] = []
+        wrong_tbl_alignment: list[dict] = []
         wrong_font_items:    list[dict] = []   # dict dengan field "actual" per item
         wrong_size_items:    list[dict] = []   # dict dengan field "actual" per item
         fig_total = 0
@@ -1657,14 +1711,15 @@ def _check_caption_format(
                     align = None
 
             if align is not None:
+                align_label = _ALIGN_LABEL.get(align.value if hasattr(align, "value") else align, str(align))
                 if is_fig:
                     if align != fig_align_val:
-                        wrong_fig_alignment.append(text[:70])
+                        wrong_fig_alignment.append({**para_info, "actual": align_label})
                     else:
                         fig_pass_align_items.append(para_info)
                 elif is_tbl:
                     if align != tbl_align_val:
-                        wrong_tbl_alignment.append(text[:70])
+                        wrong_tbl_alignment.append({**para_info, "actual": align_label})
                     else:
                         tbl_pass_align_items.append(para_info)
 
@@ -1712,19 +1767,23 @@ def _check_caption_format(
         # ── Emit alignment gambar ─────────────────────────────────────────────
         if fig_total > 0:
             if wrong_fig_alignment:
+                first_act = wrong_fig_alignment[0].get("actual", f"bukan {fig_align_str}")
                 msg = (
                     f"{len(wrong_fig_alignment)} caption gambar tidak {fig_align_str}. "
-                    f'Contoh: "{wrong_fig_alignment[0]}"'
+                    f'Contoh: "{wrong_fig_alignment[0]["text"]}"'
                 )
                 issues.append(ValidationIssue(
                     category="figures_tables", field="caption_alignment_figure",
                     severity="error", message=msg,
-                    expected=fig_align_str, actual=f"bukan {fig_align_str}",
+                    expected=fig_align_str, actual=first_act,
                 ))
                 checks.append(ValidationCheckResult(
                     category="figures_tables", field="caption_alignment_figure",
                     status="failed", message=msg,
-                    expected=fig_align_str, actual=f"bukan {fig_align_str}",
+                    expected=fig_align_str, actual=first_act,
+                    occurrences=_build_occurrences(
+                        wrong_fig_alignment, actual_str=None, expected_str=fig_align_str
+                    ),
                 ))
             else:
                 checks.append(ValidationCheckResult(
@@ -1738,19 +1797,23 @@ def _check_caption_format(
         # ── Emit alignment tabel ──────────────────────────────────────────────
         if tbl_total > 0:
             if wrong_tbl_alignment:
+                first_act = wrong_tbl_alignment[0].get("actual", f"bukan {tbl_align_str}")
                 msg = (
                     f"{len(wrong_tbl_alignment)} caption tabel tidak {tbl_align_str}. "
-                    f'Contoh: "{wrong_tbl_alignment[0]}"'
+                    f'Contoh: "{wrong_tbl_alignment[0]["text"]}"'
                 )
                 issues.append(ValidationIssue(
                     category="figures_tables", field="caption_alignment_table",
                     severity="error", message=msg,
-                    expected=tbl_align_str, actual=f"bukan {tbl_align_str}",
+                    expected=tbl_align_str, actual=first_act,
                 ))
                 checks.append(ValidationCheckResult(
                     category="figures_tables", field="caption_alignment_table",
                     status="failed", message=msg,
-                    expected=tbl_align_str, actual=f"bukan {tbl_align_str}",
+                    expected=tbl_align_str, actual=first_act,
+                    occurrences=_build_occurrences(
+                        wrong_tbl_alignment, actual_str=None, expected_str=tbl_align_str
+                    ),
                 ))
             else:
                 checks.append(ValidationCheckResult(
@@ -1996,13 +2059,21 @@ def _check_figures_tables(
                     f"{len(fig_pos_errors)}x salah posisi. "
                     f"Contoh: {fig_pos_errors[0]}"
                 )
+                occ_fig_pos = _build_occurrences(
+                    [{"text": t[:100], "full_text": t, "style": "",
+                      "page": None, "bab": None, "para_idx": None}
+                     for t in fig_pos_errors],
+                    actual_str=f"bukan {fig_pos_exp}", expected_str=fig_pos_exp,
+                ) or None
                 issues.append(ValidationIssue(
                     category="figures_tables", field="figure_caption_position",
                     severity="error", message=msg, expected=fig_pos_exp,
+                    actual=f"bukan {fig_pos_exp}",
                 ))
                 checks.append(ValidationCheckResult(
                     category="figures_tables", field="figure_caption_position",
                     status="failed", message=msg, expected=fig_pos_exp,
+                    actual=f"bukan {fig_pos_exp}", occurrences=occ_fig_pos,
                 ))
             else:
                 checks.append(ValidationCheckResult(
@@ -2020,6 +2091,12 @@ def _check_figures_tables(
                         f"{len(fig_fmt_errors)}x salah format. "
                         f"Contoh: \"{fig_fmt_errors[0]}\""
                     )
+                    occ_fig_fmt = _build_occurrences(
+                        [{"text": t[:100], "full_text": t, "style": "",
+                          "page": None, "bab": None, "para_idx": None}
+                         for t in fig_fmt_errors],
+                        actual_str=None, expected_str=fig_fmt_tpl,
+                    ) or None
                     issues.append(ValidationIssue(
                         category="figures_tables", field="figure_caption_format",
                         severity="error", message=msg,
@@ -2029,6 +2106,7 @@ def _check_figures_tables(
                         category="figures_tables", field="figure_caption_format",
                         status="failed", message=msg,
                         expected=fig_fmt_tpl, actual=fig_fmt_errors[0],
+                        occurrences=occ_fig_fmt,
                     ))
                 else:
                     checks.append(ValidationCheckResult(
@@ -2047,13 +2125,21 @@ def _check_figures_tables(
                     f"{len(tbl_pos_errors)}x salah posisi. "
                     f"Contoh: {tbl_pos_errors[0]}"
                 )
+                occ_tbl_pos = _build_occurrences(
+                    [{"text": t[:100], "full_text": t, "style": "",
+                      "page": None, "bab": None, "para_idx": None}
+                     for t in tbl_pos_errors],
+                    actual_str=f"bukan {tbl_pos_exp}", expected_str=tbl_pos_exp,
+                ) or None
                 issues.append(ValidationIssue(
                     category="figures_tables", field="table_caption_position",
                     severity="error", message=msg, expected=tbl_pos_exp,
+                    actual=f"bukan {tbl_pos_exp}",
                 ))
                 checks.append(ValidationCheckResult(
                     category="figures_tables", field="table_caption_position",
                     status="failed", message=msg, expected=tbl_pos_exp,
+                    actual=f"bukan {tbl_pos_exp}", occurrences=occ_tbl_pos,
                 ))
             else:
                 checks.append(ValidationCheckResult(
@@ -2071,6 +2157,12 @@ def _check_figures_tables(
                         f"{len(tbl_fmt_errors)}x salah format. "
                         f"Contoh: \"{tbl_fmt_errors[0]}\""
                     )
+                    occ_tbl_fmt = _build_occurrences(
+                        [{"text": t[:100], "full_text": t, "style": "",
+                          "page": None, "bab": None, "para_idx": None}
+                         for t in tbl_fmt_errors],
+                        actual_str=None, expected_str=tbl_fmt_tpl,
+                    ) or None
                     issues.append(ValidationIssue(
                         category="figures_tables", field="table_caption_format",
                         severity="error", message=msg,
@@ -2080,6 +2172,7 @@ def _check_figures_tables(
                         category="figures_tables", field="table_caption_format",
                         status="failed", message=msg,
                         expected=tbl_fmt_tpl, actual=tbl_fmt_errors[0],
+                        occurrences=occ_tbl_fmt,
                     ))
                 else:
                     checks.append(ValidationCheckResult(
@@ -2139,6 +2232,12 @@ def _check_figures_tables(
                         f"{len(lamp_fmt_errors)}x salah. "
                         f'Contoh: "{lamp_fmt_errors[0]}"'
                     )
+                    occ_lamp_fmt = _build_occurrences(
+                        [{"text": t[:100], "full_text": t, "style": "",
+                          "page": None, "bab": None, "para_idx": None}
+                         for t in lamp_fmt_errors],
+                        actual_str=None, expected_str=lamp_fmt_tpl,
+                    ) or None
                     issues.append(ValidationIssue(
                         category="figures_tables", field="lampiran_caption_format",
                         severity="error", message=msg,
@@ -2148,6 +2247,7 @@ def _check_figures_tables(
                         category="figures_tables", field="lampiran_caption_format",
                         status="failed", message=msg,
                         expected=lamp_fmt_tpl, actual=lamp_fmt_errors[0],
+                        occurrences=occ_lamp_fmt,
                     ))
                 else:
                     checks.append(ValidationCheckResult(
@@ -2172,6 +2272,13 @@ def _check_figures_tables(
                         f"{len(lamp_align_errors)} caption lampiran tidak {lamp_align_str}. "
                         f'Contoh: "{lamp_align_errors[0]}"'
                     )
+                    occ_lamp_align = _build_occurrences(
+                        [{"text": t[:100], "full_text": t, "style": "",
+                          "page": None, "bab": None, "para_idx": None,
+                          "actual": f"bukan {lamp_align_str}"}
+                         for t in lamp_align_errors],
+                        actual_str=f"bukan {lamp_align_str}", expected_str=lamp_align_str,
+                    ) or None
                     issues.append(ValidationIssue(
                         category="figures_tables", field="lampiran_caption_alignment",
                         severity="error", message=msg,
@@ -2181,6 +2288,7 @@ def _check_figures_tables(
                         category="figures_tables", field="lampiran_caption_alignment",
                         status="failed", message=msg,
                         expected=lamp_align_str, actual=f"bukan {lamp_align_str}",
+                        occurrences=occ_lamp_align,
                     ))
                 else:
                     checks.append(ValidationCheckResult(
@@ -2546,6 +2654,13 @@ def _check_numbering(
                             f"Nomor halaman awal seharusnya di {exp_loc}, "
                             f"tetapi ditemukan di {actual_loc}."
                         )
+                        occ_prelim_loc = _build_occurrences(
+                            [{"text": f"nomor halaman di {actual_loc}",
+                              "full_text": msg, "style": "",
+                              "page": None, "bab": None, "para_idx": None,
+                              "actual": actual_loc}],
+                            actual_str=actual_loc, expected_str=exp_loc,
+                        ) or None
                         issues.append(ValidationIssue(
                             category="numbering", field="preliminary_location",
                             severity="error", message=msg, expected=exp_loc,
@@ -2554,7 +2669,7 @@ def _check_numbering(
                         checks.append(ValidationCheckResult(
                             category="numbering", field="preliminary_location",
                             status="failed", message=msg, expected=exp_loc,
-                            actual=actual_loc,
+                            actual=actual_loc, occurrences=occ_prelim_loc,
                         ))
                     else:
                         checks.append(ValidationCheckResult(
@@ -2573,6 +2688,13 @@ def _check_numbering(
                     f"di bagian sebelum BAB 1. "
                     + (f"Format yang ada: {found_fmts}" if found_fmts else "Tidak ada nomor halaman terdeteksi.")
                 )
+                occ_prelim_fmt = _build_occurrences(
+                    [{"text": actual_fmt or "tidak terdeteksi",
+                      "full_text": msg, "style": "",
+                      "page": None, "bab": None, "para_idx": None,
+                      "actual": actual_fmt or "tidak terdeteksi"}],
+                    actual_str=actual_fmt or "tidak terdeteksi", expected_str=exp_fmt,
+                ) or None
                 issues.append(ValidationIssue(
                     category="numbering", field="preliminary_format",
                     severity="error", message=msg,
@@ -2584,6 +2706,7 @@ def _check_numbering(
                     status="failed", message=msg,
                     expected=exp_fmt,
                     actual=actual_fmt,
+                    occurrences=occ_prelim_fmt,
                 ))
 
             if exp_start:
@@ -2622,6 +2745,13 @@ def _check_numbering(
                             f"Nomor halaman isi seharusnya di {exp_loc}, "
                             f"tetapi ditemukan di {actual_loc}."
                         )
+                        occ_content_loc = _build_occurrences(
+                            [{"text": f"nomor halaman di {actual_loc}",
+                              "full_text": msg, "style": "",
+                              "page": None, "bab": None, "para_idx": None,
+                              "actual": actual_loc}],
+                            actual_str=actual_loc, expected_str=exp_loc,
+                        ) or None
                         issues.append(ValidationIssue(
                             category="numbering", field="content_location",
                             severity="error", message=msg, expected=exp_loc,
@@ -2630,7 +2760,7 @@ def _check_numbering(
                         checks.append(ValidationCheckResult(
                             category="numbering", field="content_location",
                             status="failed", message=msg, expected=exp_loc,
-                            actual=actual_loc,
+                            actual=actual_loc, occurrences=occ_content_loc,
                         ))
                     else:
                         checks.append(ValidationCheckResult(
@@ -2649,6 +2779,13 @@ def _check_numbering(
                     f"di section yang mengandung BAB 1. "
                     + (f"Format yang ada: {found_fmts}" if found_fmts else "Tidak ada nomor halaman terdeteksi.")
                 )
+                occ_content_fmt = _build_occurrences(
+                    [{"text": actual_fmt or "tidak terdeteksi",
+                      "full_text": msg, "style": "",
+                      "page": None, "bab": None, "para_idx": None,
+                      "actual": actual_fmt or "tidak terdeteksi"}],
+                    actual_str=actual_fmt or "tidak terdeteksi", expected_str=exp_fmt,
+                ) or None
                 issues.append(ValidationIssue(
                     category="numbering", field="content_format",
                     severity="error", message=msg,
@@ -2660,6 +2797,7 @@ def _check_numbering(
                     status="failed", message=msg,
                     expected=exp_fmt,
                     actual=actual_fmt,
+                    occurrences=occ_content_fmt,
                 ))
 
             if exp_start:
@@ -2747,17 +2885,27 @@ def _check_start_section(
             occurrences=_build_occurrences([{"text": label, "full_text": label, "style": "Heading 1", "page": None, "bab": None, "para_idx": None}]),
         ))
     else:
+        fail_msg = f"Titik mulai nomor halaman {zone} '{label}' tidak ditemukan di dokumen"
+        occ_start = _build_occurrences(
+            [{"text": label, "full_text": fail_msg, "style": "",
+              "page": None, "bab": None, "para_idx": None,
+              "actual": "Tidak ditemukan"}],
+            actual_str="Tidak ditemukan", expected_str=label,
+        ) or None
         issues.append(ValidationIssue(
             category="numbering", field=field,
             severity="error",
-            message=f"Titik mulai nomor halaman {zone} '{label}' tidak ditemukan di dokumen",
+            message=fail_msg,
             expected=start_at,
+            actual="Tidak ditemukan",
         ))
         checks.append(ValidationCheckResult(
             category="numbering", field=field,
             status="failed",
-            message=f"Titik mulai nomor halaman {zone} '{label}' tidak ditemukan di dokumen",
+            message=fail_msg,
             expected=start_at,
+            actual="Tidak ditemukan",
+            occurrences=occ_start,
         ))
 
 

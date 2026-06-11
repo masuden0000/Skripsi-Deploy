@@ -111,3 +111,61 @@ export async function proxyToAiBackend(
     )
   }
 }
+
+/**
+ * Proxy request langsung ke AI backend dan kembalikan response sebagai binary (ArrayBuffer).
+ * Digunakan untuk endpoint yang mengembalikan file (mis. Excel .xlsx).
+ * Berbeda dengan proxyToAiBackend yang memakai .text() — fungsi ini memakai .arrayBuffer()
+ * sehingga binary data tidak rusak.
+ */
+export async function proxyBinaryToAiBackend(
+  path: string,
+  options: ProxyOptions = {}
+): Promise<NextResponse> {
+  const { cookie, headers: extraHeaders, ...fetchOptions } = options
+
+  const headers: Record<string, string> = { ...(extraHeaders ?? {}) }
+  if (cookie) {
+    headers["cookie"] = cookie
+  }
+
+  try {
+    const backendResponse = await fetch(`${getAiBackendBaseUrl()}${path}`, {
+      ...fetchOptions,
+      headers,
+      cache: "no-store",
+    })
+
+    if (!backendResponse.ok) {
+      // Error → kembalikan JSON pesan error agar frontend bisa menampilkannya
+      const text = await backendResponse.text()
+      return new NextResponse(text, {
+        status: backendResponse.status,
+        headers: { "content-type": "application/json" },
+      })
+    }
+
+    const buffer = await backendResponse.arrayBuffer()
+    const responseHeaders: Record<string, string> = {
+      "content-type":
+        backendResponse.headers.get("content-type") ??
+        "application/octet-stream",
+    }
+    const disposition = backendResponse.headers.get("content-disposition")
+    if (disposition) {
+      responseHeaders["content-disposition"] = disposition
+    }
+
+    return new NextResponse(buffer, {
+      status: backendResponse.status,
+      headers: responseHeaders,
+    })
+  } catch (err) {
+    const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err)
+    console.error("[proxyBinaryToAiBackend] fetch failed:", message, "→ path:", path)
+    return NextResponse.json(
+      { error: "Tidak dapat menjangkau server backend.", detail: message },
+      { status: 503 }
+    )
+  }
+}

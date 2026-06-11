@@ -23,12 +23,14 @@ import {
   TrashIcon,
   LayersIcon,
   ArrowLeftIcon,
+  DownloadIcon,
 } from "@/components/icons/public-icons"
 import {
   runDocumentValidation,
   runBulkValidation,
   checkSessionStatus,
   summarizeValidation,
+  downloadBulkSummaryExcel,
   getPkmSchemas,
   getPkmSchemeLabel,
   type ValidationResult,
@@ -796,7 +798,13 @@ function ValidationLLMSummarySection({
 // ─── Sub-komponen: ValidationResultView ──────────────────────────────────────
 // Menampilkan hasil validasi satu dokumen (sama seperti tampilan lama).
 
-function ValidationResultView({ result }: { result: ValidationResult }) {
+function ValidationResultView({
+  result,
+  showLlmSummary = true,
+}: {
+  result: ValidationResult
+  showLlmSummary?: boolean
+}) {
   const [viewMode, setViewMode]           = useState<"error" | "passed">(
     result.valid ? "passed" : "error"
   )
@@ -845,10 +853,12 @@ function ValidationResultView({ result }: { result: ValidationResult }) {
         )}
       </div>
 
-      <ValidationLLMSummarySection
-        key={result.validated_at ?? "summary"}
-        issues={allIssues}
-      />
+      {showLlmSummary && (
+        <ValidationLLMSummarySection
+          key={result.validated_at ?? "summary"}
+          issues={allIssues}
+        />
+      )}
 
       <div className="border-t border-border">
         <SummaryBar
@@ -920,12 +930,22 @@ function BulkItemForm({
 
   return (
     <div className="rounded-lg border border-border overflow-hidden">
-      {/* Header — klik untuk collapse/expand */}
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => onUpdate(item.id, { collapsed: !item.collapsed })}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+      {/* Header — klik untuk collapse/expand.
+          Pakai <div role="button"> bukan <button> karena di dalamnya ada <button>
+          hapus — HTML tidak mengizinkan <button> di dalam <button>. */}
+      <div
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        aria-expanded={!item.collapsed}
+        aria-disabled={disabled}
+        onClick={() => { if (!disabled) onUpdate(item.id, { collapsed: !item.collapsed }) }}
+        onKeyDown={(e) => {
+          if (!disabled && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault()
+            onUpdate(item.id, { collapsed: !item.collapsed })
+          }
+        }}
+        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left cursor-pointer select-none"
       >
         <div className="flex items-center gap-2 min-w-0">
           {item.collapsed
@@ -956,7 +976,7 @@ function BulkItemForm({
             </button>
           )}
         </div>
-      </button>
+      </div>
 
       {/* Body — hanya tampil kalau tidak collapsed */}
       {!item.collapsed && (
@@ -1172,6 +1192,8 @@ export function DocumentValidator() {
   const [sessionStatus, setSessionStatus] = useState<ValidationSession | null>(null)
   const [isPolling, setIsPolling]         = useState(false)
   const [selectedDocIdx, setSelectedDocIdx] = useState<number>(0)
+  const [excelLoading, setExcelLoading]   = useState(false)
+  const [excelError, setExcelError]       = useState<string | null>(null)
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -1351,6 +1373,38 @@ export function DocumentValidator() {
   const handleFinishSession = () => {
     handleClearJob()
     setMode("single")
+  }
+
+  const handleDownloadExcel = async () => {
+    if (!sessionId) return
+    setExcelLoading(true)
+    setExcelError(null)
+
+    // Ambil schema_name dari item pertama yang selesai (untuk konteks LLM)
+    const schemaName = sessionStatus?.items.find(
+      (i) => i.status === "completed"
+    )?.schema_id
+
+    const { blob, error } = await downloadBulkSummaryExcel(sessionId, schemaName)
+
+    if (error) {
+      setExcelError(error)
+      setExcelLoading(false)
+      return
+    }
+
+    if (blob) {
+      const url = URL.createObjectURL(blob)
+      const a   = document.createElement("a")
+      a.href     = url
+      a.download = `ringkasan-validasi-${sessionId.slice(0, 8)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    }
+
+    setExcelLoading(false)
   }
 
   const switchToBulk = () => {
@@ -1565,6 +1619,16 @@ export function DocumentValidator() {
                 : `Memvalidasi ${total} dokumen... (${completed}/${total})`
               }
             </span>
+            {!isDone && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 hover:text-red-700 h-7 px-2.5 text-xs"
+                onClick={handleClearJob}
+              >
+                Batal
+              </Button>
+            )}
           </div>
 
           {/* Progress bar */}
@@ -1591,6 +1655,34 @@ export function DocumentValidator() {
           )}
         </div>
 
+        {/* Tombol aksi — muncul setelah semua dokumen selesai diproses */}
+        {isDone && (
+          <div className="px-6 pt-5 pb-1 space-y-2">
+            {/* Error unduh Excel — tampil inline jika ada */}
+            {excelError && (
+              <p className="text-xs text-destructive text-center">{excelError}</p>
+            )}
+            <div className="flex gap-3">
+              {/* Unduh Ringkasan — generate LLM per dokumen → Excel */}
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={handleDownloadExcel}
+                disabled={excelLoading}
+              >
+                {excelLoading
+                  ? <Loader2Icon className="size-4 animate-spin mr-2" />
+                  : <DownloadIcon className="size-4 mr-2" />
+                }
+                Unduh Ringkasan
+              </Button>
+              <Button className="flex-1" onClick={handleFinishSession}>
+                Selesai
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Hasil per dokumen (muncul setelah ada yang selesai) */}
         {items.some((i) => i.status === "completed" || i.status === "failed") && (
           <>
@@ -1606,7 +1698,10 @@ export function DocumentValidator() {
             {selectedItem && (
               <div className="mt-2">
                 {selectedItem.status === "completed" && selectedItem.result ? (
-                  <ValidationResultView result={selectedItem.result as ValidationResult} />
+                  <ValidationResultView
+                    result={selectedItem.result as ValidationResult}
+                    showLlmSummary={false}
+                  />
                 ) : selectedItem.status === "failed" ? (
                   <div className="px-6">
                     <Alert variant="destructive">
@@ -1623,14 +1718,6 @@ export function DocumentValidator() {
           </>
         )}
 
-        {/* Tombol Selesai — muncul setelah semua dokumen selesai diproses */}
-        {isDone && (
-          <div className="px-6 pt-6">
-            <Button className="w-full" onClick={handleFinishSession}>
-              Selesai
-            </Button>
-          </div>
-        )}
       </div>
     )
   }

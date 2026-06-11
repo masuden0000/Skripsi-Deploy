@@ -285,6 +285,51 @@ export async function summarizeValidation(
   }
 }
 
+// ── downloadBulkSummaryExcel ─────────────────────────────────────────────────
+
+/**
+ * Download file Excel ringkasan LLM untuk semua dokumen dalam bulk session.
+ *
+ * Memanggil GET /api/pkm/validation/export/{sessionId}?schema_name=...
+ * yang di-proxy ke FastAPI. Response berupa Blob (.xlsx) siap diunduh.
+ *
+ * schema_name: singkatan skema PKM (mis. "PKM-KC"), opsional, untuk konteks LLM.
+ */
+export async function downloadBulkSummaryExcel(
+  sessionId: string,
+  schemaName?: string
+): Promise<{ blob: Blob | null; error: string | null }> {
+  try {
+    const params = schemaName
+      ? `?schema_name=${encodeURIComponent(schemaName)}`
+      : ""
+    const response = await fetch(
+      `/api/pkm/validation/export/${encodeURIComponent(sessionId)}${params}`,
+      { credentials: "include" }
+    )
+
+    if (!response.ok) {
+      const json = await response.json().catch(() => ({}))
+      return {
+        blob: null,
+        error:
+          (json as { detail?: string; error?: string }).detail ??
+          (json as { detail?: string; error?: string }).error ??
+          `Request gagal (${response.status})`,
+      }
+    }
+
+    const blob = await response.blob()
+    return { blob, error: null }
+  } catch (err) {
+    const message =
+      err instanceof TypeError && err.message.includes("fetch")
+        ? "Tidak dapat menjangkau server."
+        : "Terjadi kesalahan tidak terduga."
+    return { blob: null, error: message }
+  }
+}
+
 // ── runBulkValidation ────────────────────────────────────────────────────────
 export async function runBulkValidation(
   items: BulkValidationItem[]

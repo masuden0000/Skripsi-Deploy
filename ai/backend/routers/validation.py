@@ -2,18 +2,23 @@
 Fungsi: FastAPI router untuk validasi format dokumen DOCX proposal mahasiswa.
 
 Endpoint:
-  POST /run              — validasi satu dokumen (synchronous, hasil langsung dikembalikan)
-  POST /bulk             — validasi banyak dokumen (async, kembalikan session_id, proses di background)
-  GET  /sessions/{id}    — cek status + hasil validasi bulk
+  POST /run                   — validasi satu dokumen (synchronous, hasil langsung dikembalikan)
+  POST /bulk                  — validasi banyak dokumen (async, kembalikan session_id, proses di background)
+  GET  /sessions/{id}         — cek status + hasil validasi bulk
+  POST /summarize             — ringkasan naratif LLM dari daftar issue (satu dokumen)
+  GET  /export/{session_id}   — generate Excel ringkasan LLM semua dokumen dalam bulk session
 
 Digunakan oleh: backend/src/routes/pkm.routes.js (sebagai proxy)
 """
+import io
 import json
 import os
 import tempfile
 from datetime import datetime, timezone
+from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from services.database import get_supabase
@@ -193,6 +198,109 @@ async def summarize_validation(body: SummarizeRequest):
         )
 
     return {"summary": summary, "generated_at": _utcnow()}
+
+
+# ─── GET /export/{session_id} — Excel ringkasan LLM per dokumen ─────────────
+
+def _extract_ketua(file_name: str) -> str:
+    """Ekstrak nama ketua dari nama file.
+
+    Replikasi logika parseFileName() di DocumentValidator.tsx baris 152–167:
+    Ambil segmen pertama sebelum '_' dari nama file tanpa ekstensi.
+    Contoh: "Budi_Santoso_PKMKC.docx" → "Budi"
+    """
+    return Path(file_name).stem.split("_")[0]
+
+
+@router.get("/export/{session_id}")
+async def export_bulk_summary(session_id: str, schema_name: str | None = None):
+    """Generate file Excel ringkasan LLM untuk semua dokumen dalam satu bulk session.
+
+    Setiap baris mewakili satu dokumen:
+      Kolom A — Nama Pemilik Proposal (dari file_name)
+      Kolom B — Ringkasan kekurangan dari LLM (kosong jika tidak ada issue)
+
+    schema_name: singkatan skema PKM (mis. "PKM-KC"), diteruskan ke summarize_issues
+                 sebagai konteks tambahan.
+    """
+    import openpyxl  # noqa: PLC0415
+
+    supabase = get_supabase()
+
+    results_row = (
+        supabase.table("validation_results")
+        .select("position, file_name, status, result, error_message")
+        .eq("session_id", session_id)
+        .order("position", desc=False)
+        .execute()
+    )
+    if not results_row.data:
+        raise HTTPException(
+            status_code=404,
+            detail="Session tidak ditemukan atau belum ada hasil validasi.",
+        )
+
+    # ── Build workbook ────────────────────────────────────────────────────────
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Ringkasan Validasi"
+
+    # Header row
+    ws.append(["Nama Pemilik Proposal", "Ringkasan Kekurangan"])
+
+    # Style header: bold
+    from openpyxl.styles import Font  # noqa: PLC0415
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+
+    # Lebar kolom yang nyaman dibaca
+    ws.column_dimensions["A"].width = 28
+    ws.column_dimensions["B"].width = 80
+
+    # ── Isi baris per dokumen ─────────────────────────────────────────────────
+    from model_ai.validation.summarizer import summarize_issues  # noqa: PLC0415
+
+    for item in results_row.data:
+        ketua = _extract_ketua(item.get("file_name") or "unknown")
+
+        # result bisa berupa dict (Supabase JSONB) atau string JSON — normalkan ke dict
+        result_raw = item.get("result") or {}
+        if isinstance(result_raw, str):
+            try:
+                result_raw = json.loads(result_raw)
+            except Exception:
+                result_raw = {}
+        issues = result_raw.get("issues") or [] if isinstance(result_raw, dict) else []
+
+        if issues and item.get("status") == "completed":
+            try:
+                summary = summarize_issues(issues, schema_name)
+            except Exception as exc:
+                summary = f"[Gagal generate ringkasan: {exc}]"
+        else:
+            summary = ""
+
+        ws.append([ketua, summary])
+
+    # ── Wrap text di kolom B ──────────────────────────────────────────────────
+    from openpyxl.styles import Alignment  # noqa: PLC0415
+    for row in ws.iter_rows(min_row=2, min_col=2, max_col=2):
+        for cell in row:
+            cell.alignment = Alignment(wrap_text=True, vertical="top")
+
+    # ── Serialize ke BytesIO dan kembalikan sebagai StreamingResponse ─────────
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    safe_session = session_id[:8] if len(session_id) >= 8 else session_id
+    filename = f"ringkasan-validasi-{safe_session}.xlsx"
+
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # ─── POST /bulk — validasi banyak dokumen (async) ────────────────────────────

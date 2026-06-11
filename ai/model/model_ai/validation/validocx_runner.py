@@ -1087,14 +1087,14 @@ def _build_content_elements(doc) -> tuple[list[tuple[str, object]], str]:
             if pPr is not None:
                 sectPr = pPr.find(qn('w:sectPr'))
                 if sectPr is not None:
-                    section_ends.append((idx, _get_pgnum_fmt(sectPr)))
+                    section_ends.append((idx, _get_page_number_format(sectPr)))
         elif tag == 'tbl' and id(child) in tbl_by_el:
             all_elements.append(("table", tbl_by_el[id(child)]))
 
     # Section terakhir ditandai oleh sectPr di level body
     body_sectPr = body.find(qn('w:sectPr'))
     if body_sectPr is not None:
-        section_ends.append((len(all_elements) - 1, _get_pgnum_fmt(body_sectPr)))
+        section_ends.append((len(all_elements) - 1, _get_page_number_format(body_sectPr)))
 
     # Cari range section decimal (bisa lebih dari satu section berturut-turut)
     decimal_start: int | None = None
@@ -2226,7 +2226,7 @@ def _check_figures_tables(
 # Page Numbering Check
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _get_pgnum_fmt(sectPr) -> str:
+def _get_page_number_format(sectPr) -> str:
     """Ambil format nomor halaman dari elemen sectPr (w:pgNumType w:fmt).
 
     Mengembalikan 'decimal' sebagai default apabila elemen w:pgNumType tidak
@@ -2329,7 +2329,7 @@ def _classify_sections_by_metadata(
     # ── Baca info tiap section ────────────────────────────────────────────────
     def _sec_info(sec: dict) -> dict:
         sp = sec["sectPr"]
-        fmt, start_num = _read_pgNumType(sp)
+        fmt, start_num = _read_section_page_numbering(sp)
         has_own_hdr = bool(sp.findall(qn('w:headerReference')))
         has_own_ftr = bool(sp.findall(qn('w:footerReference')))
         has_header_page = False
@@ -2447,7 +2447,7 @@ def _classify_sections_by_metadata(
             content_info = {k: v for k, v in existing.items() if k != "sectPr"}
             content_info["fmt"] = _norm_fmt(existing["fmt"]) or existing["fmt"]
         else:
-            fmt_last, start_last = _read_pgNumType(last_sp)
+            fmt_last, start_last = _read_section_page_numbering(last_sp)
             # start_para_idx: tepat setelah section sebelumnya berakhir
             prev_end_idx = (section_infos[-1]["end_para_idx"] + 1
                             if section_infos else 0)
@@ -2732,8 +2732,9 @@ def _count_pages_structural(doc) -> dict[int, int]:
     Strategi (dua pass):
       Pass 1 (utama) : w:lastRenderedPageBreak — disimpan Word setelah rendering,
                        paling andal untuk dokumen yang sudah disimpan oleh Word.
-      Pass 2 (fallback): jika pass 1 menghasilkan max_page == 1 (tidak ada lrpb),
-                        gunakan explicit w:br type="page" + inline w:sectPr saja.
+      Pass 2 (fallback): jika pass 1 menghasilkan max_page == 1 (tidak ada
+                        rendered page break), gunakan explicit w:br type="page"
+                        + inline w:sectPr saja.
 
     Inline w:sectPr di w:pPr suatu paragraf menandai section break:
     paragraf itu sendiri tetap di halaman yang sama, tapi paragraf BERIKUTNYA
@@ -2743,24 +2744,24 @@ def _count_pages_structural(doc) -> dict[int, int]:
     if not para_list:
         return {}
 
-    def _build_map(use_lrpb: bool) -> dict[int, int]:
+    def _build_structural_map(prefer_rendered_page_breaks: bool) -> dict[int, int]:
         result: dict[int, int] = {}
         current_page = 1
         for idx, para in enumerate(para_list):
             p = para._p
-            has_break = False
+            has_page_break = False
 
-            if use_lrpb and idx > 0:
+            if prefer_rendered_page_breaks and idx > 0:
                 if p.findall(".//" + qn("w:lastRenderedPageBreak")):
-                    has_break = True
+                    has_page_break = True
 
-            if not has_break:
+            if not has_page_break:
                 for br in p.findall(".//" + qn("w:br")):
                     if br.get(qn("w:type")) == "page":
-                        has_break = True
+                        has_page_break = True
                         break
 
-            if has_break and idx > 0:
+            if has_page_break and idx > 0:
                 current_page += 1
 
             result[idx] = current_page
@@ -2772,9 +2773,9 @@ def _count_pages_structural(doc) -> dict[int, int]:
 
         return result
 
-    page_map = _build_map(use_lrpb=True)
+    page_map = _build_structural_map(prefer_rendered_page_breaks=True)
     if max(page_map.values(), default=1) <= 1:
-        page_map = _build_map(use_lrpb=False)
+        page_map = _build_structural_map(prefer_rendered_page_breaks=False)
     return page_map
 
 
@@ -2786,9 +2787,12 @@ def _build_displayed_page_map(doc) -> dict[int, int]:
       - Section preliminary (romawi): i, ii, iii, ...
       - Section konten (arab): 1, 2, 3, ...
 
-    Deteksi page break menggunakan:
-      Utama  : w:lastRenderedPageBreak (disimpan Word setelah rendering)
-      Fallback: explicit w:br type="page"
+    Deteksi page break: paragraf dianggap memulai halaman baru bila punya
+    w:lastRenderedPageBreak (rendered page break, disimpan Word otomatis saat
+    render) ATAU w:br type="page" (explicit page break, dipasang manual oleh
+    user). Keduanya diperlakukan setara per paragraf — audit menunjukkan tidak
+    ada paragraf yang punya keduanya sekaligus, sehingga tidak ada risiko
+    menghitung transisi halaman yang sama dua kali.
 
     Iterasi mencakup SELURUH paragraf termasuk yang ada di dalam sel tabel,
     karena Word menyimpan w:lastRenderedPageBreak di dalam sel tabel ketika
@@ -2798,11 +2802,6 @@ def _build_displayed_page_map(doc) -> dict[int, int]:
     para_list = list(doc.paragraphs)
     if not para_list:
         return {}
-
-    # Cek lrpb di SELURUH dokumen (termasuk tabel) — bukan hanya body paragraphs
-    has_any_lrpb = bool(
-        doc.element.body.findall(".//" + qn("w:lastRenderedPageBreak"))
-    )
 
     # Map element-id → body para index agar result bisa diisi saat iterasi semua para
     body_para_ids: dict[int, int] = {id(p._p): i for i, p in enumerate(para_list)}
@@ -2833,7 +2832,7 @@ def _build_displayed_page_map(doc) -> dict[int, int]:
 
         # Baca nomor halaman awal section dari w:pgNumType w:start
         if sectPr is not None:
-            _, section_start_page = _read_pgNumType(sectPr)
+            _, section_start_page = _read_section_page_numbering(sectPr)
         else:
             section_start_page = 1
 
@@ -2854,26 +2853,20 @@ def _build_displayed_page_map(doc) -> dict[int, int]:
                 else:
                     continue
 
-            # Cek page break (kecuali paragraf pertama section)
-            # Strategi: jika dokumen memiliki w:lastRenderedPageBreak (lrpb),
-            # gunakan HANYA lrpb — explicit page break (w:br type="page") TIDAK
-            # dijadikan fallback karena lrpb di paragraf berikutnya sudah
-            # merepresentasikan transisi yang sama (double-counting).
-            # Contoh: paragraf kosong dengan explicit break diikuti DAFTAR PUSTAKA
-            # yang memiliki lrpb → keduanya menandai SATU transisi halaman;
-            # menghitung keduanya akan menambah 1 halaman palsu.
-            # Fallback ke explicit break hanya dipakai saat dokumen belum pernah
-            # di-render Word (tidak ada lrpb sama sekali).
+            # Paragraf menandai transisi halaman jika punya rendered page break
+            # (w:lastRenderedPageBreak) ATAU explicit page break (w:br type="page").
+            # Explicit break di paragraf X dan rendered break di paragraf X+1 yang
+            # berdekatan tetap dihitung sebagai 2 transisi terpisah karena Word
+            # memang merendernya sebagai 2 halaman berbeda (terverifikasi pada
+            # dokumen test: explicit-only di body[112] + rendered-only di body[113]
+            # DAFTAR PUSTAKA → halaman 9 lalu 10).
             if not first_in_section:
-                has_break = False
-                if has_any_lrpb:
-                    if p_elem.findall(".//" + qn("w:lastRenderedPageBreak")):
-                        has_break = True
-                else:
-                    for br in p_elem.findall(".//" + qn("w:br")):
-                        if br.get(qn("w:type")) == "page":
-                            has_break = True
-                            break
+                has_break = bool(
+                    p_elem.findall(".//" + qn("w:lastRenderedPageBreak"))
+                ) or any(
+                    br.get(qn("w:type")) == "page"
+                    for br in p_elem.findall(".//" + qn("w:br"))
+                )
                 if has_break:
                     current_page += 1
             else:
@@ -2936,8 +2929,7 @@ def _check_page_count(
     """Validasi jumlah halaman inti tidak melebihi batas maksimum.
 
     Halaman inti dihitung dari section halaman_inti_mulai (default: bab)
-    hingga halaman SEBELUM halaman_inti_selesai (default: daftar_pustaka).
-    halaman_inti_selesai adalah batas EKSKLUSIF: halamannya tidak dihitung.
+    hingga halaman halaman_inti_selesai (default: daftar_pustaka), INKLUSIF.
     Penghitungan halaman menggunakan penanda struktural di XML:
     w:lastRenderedPageBreak (utama), explicit page break, dan inline sectPr.
     """
@@ -3007,8 +2999,8 @@ def _check_page_count(
         start_page = page_map.get(start_idx, 1)
         end_page   = page_map.get(end_idx, 1)
         # end_page adalah halaman DAFTAR PUSTAKA (batas eksklusif):
-        # halaman inti = start_page...(end_page-1), jadi count = end_page - start_page
-        count      = end_page - start_page
+        # Halaman inti inklusif: BAB 1 (start_page) s.d. DAFTAR PUSTAKA (end_page)
+        count      = end_page - start_page + 1
 
         if count <= 0:
             checks.append(ValidationCheckResult(
@@ -3071,7 +3063,7 @@ def _check_page_count(
                 status="passed",
                 message=(
                     f"Jumlah halaman inti {count} halaman "
-                    f"(halaman {start_page}–{end_page - 1}): "
+                    f"(halaman {start_page}–{end_page}): "
                     f"sesuai batas maksimum {maks} halaman"
                 ),
                 expected=expected_str,
@@ -3081,7 +3073,7 @@ def _check_page_count(
         else:
             msg = (
                 f"Jumlah halaman inti {count} halaman "
-                f"(halaman {start_page}–{end_page - 1}) "
+                f"(halaman {start_page}–{end_page}) "
                 f"melebihi batas maksimum {maks} halaman."
             )
             issues.append(ValidationIssue(
@@ -3174,7 +3166,7 @@ def _check_start_section(
         ))
 
 
-def _read_pgNumType(sectPr) -> tuple[str, int]:
+def _read_section_page_numbering(sectPr) -> tuple[str, int]:
     """Baca format dan nomor awal dari elemen w:pgNumType dalam sectPr.
 
     Returns:

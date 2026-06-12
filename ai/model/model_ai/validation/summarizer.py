@@ -208,17 +208,22 @@ _FIELD_LABEL: dict[str, str] = {
 }
 
 # Category → deskripsi bahasa Indonesia
+# Kategori resmi sesuai Literal di models.py:
+#   typography, page_layout, spacing, document_structure, numbering, figures_tables, page_count
 _CATEGORY_LABEL: dict[str, str] = {
-    "typography":   "tipografi (font)",
-    "spacing":      "spasi",
-    "page_layout":  "tata letak halaman",
-    "page_count":   "jumlah halaman",
-    "structure":    "struktur dokumen",
-    "content":      "konten",
-    "margin":       "margin",
-    "heading":      "heading/judul bab",
-    "caption":      "caption (keterangan gambar/tabel)",
-    "numbering":    "penomoran",
+    "typography":          "tipografi (font)",
+    "spacing":             "spasi",
+    "page_layout":         "tata letak halaman",
+    "page_count":          "jumlah halaman",
+    "document_structure":  "struktur dokumen",
+    "figures_tables":      "gambar & tabel",
+    "numbering":           "penomoran",
+    # Alias lama untuk kompatibilitas mundur
+    "structure":           "struktur dokumen",
+    "content":             "konten",
+    "margin":              "margin",
+    "heading":             "heading/judul bab",
+    "caption":             "caption (keterangan gambar/tabel)",
 }
 
 
@@ -331,19 +336,21 @@ def _compact_occurrence(occ: dict[str, Any], field_hint: str = "") -> dict[str, 
 def _compact_issue(issue: dict[str, Any]) -> dict[str, Any]:
     field = issue.get("field") or ""
     occurrences = issue.get("occurrences") or []
+    total = len(occurrences)
     return {
         k: v for k, v in {
-            "tingkat":      issue.get("severity"),
-            "kategori":     _humanize_category(issue.get("category")),
-            "elemen":       _humanize_field(field),
-            "pesan":        issue.get("message"),
-            "lokasi":       issue.get("location"),
-            "seharusnya":   _humanize_value(issue.get("expected"), hint=field),
-            "ditemukan":    _humanize_value(issue.get("actual"),   hint=field),
-            "kemunculan":   [
+            "tingkat":        issue.get("severity"),
+            "kategori":       _humanize_category(issue.get("category")),
+            "elemen":         _humanize_field(field),
+            "pesan":          issue.get("message"),
+            "lokasi":         issue.get("location"),
+            "seharusnya":     _humanize_value(issue.get("expected"), hint=field),
+            "ditemukan":      _humanize_value(issue.get("actual"),   hint=field),
+            "kemunculan":     [
                 _compact_occurrence(o, field_hint=field)
                 for o in occurrences[:MAX_OCCURRENCES_PER_ISSUE]
             ] or None,
+            "total_kejadian": total if total > MAX_OCCURRENCES_PER_ISSUE else None,
         }.items() if v is not None and v != ""
     }
 
@@ -387,7 +394,11 @@ def _render_issue_block(idx: int, issue: dict[str, Any]) -> str:
 
     kemunculan = issue.get("kemunculan") or []
     if kemunculan:
-        lines.append("    Kemunculan:")
+        total_kejadian = issue.get("total_kejadian")
+        if total_kejadian:
+            lines.append(f"    Kemunculan ({len(kemunculan)} dari {total_kejadian} total):")
+        else:
+            lines.append("    Kemunculan:")
         for occ in kemunculan:
             parts: list[str] = []
             if occ.get("halaman"):

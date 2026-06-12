@@ -94,16 +94,19 @@ _FORMAT_ALIAS: dict[str, str] = {
 def _build_lampiran_re(separator: str | None) -> re.Pattern:
     """Bangun regex deteksi judul lampiran berdasarkan separator dari metadata.
 
-    separator="."  → r'^Lampiran\\s+\\d+\\.\\s'   ("Lampiran 1. Judul")
-    separator=""   → r'^Lampiran\\s+\\d+\\s'        ("Lampiran 1 Judul")
+    separator="."  → r'^Lampiran\\s+(\\d+)\\.\\s'  ("Lampiran 1. Judul")
+    separator=""   → r'^Lampiran\\s+(\\d+)\\s'       ("Lampiran 1 Judul")
     separator=None → pakai default (titik)
+
+    PENTING: \\d+ HARUS dibungkus capture group agar _classify_heading bisa
+    memanggil m.group(1) tanpa IndexError.
     """
     sep = separator if separator is not None else "."
     if sep:
         escaped = re.escape(sep)
-        pattern = rf'^Lampiran\s+\d+{escaped}\s'
+        pattern = rf'^Lampiran\s+(\d+){escaped}\s'
     else:
-        pattern = r'^Lampiran\s+\d+\s'
+        pattern = r'^Lampiran\s+(\d+)\s'
     return re.compile(pattern, re.IGNORECASE)
 
 # Pola deteksi caption gambar / tabel / lampiran

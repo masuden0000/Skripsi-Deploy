@@ -55,6 +55,9 @@ _SUB_BAB_RE = re.compile(r'^(\d+)\.(\d+)\b')
 _LAMPIRAN_ITEM_RE = re.compile(r'^Lampiran\s+(\d+)\.\s', re.IGNORECASE)
 # Broad: menangkap SEMUA paragraf berawalan "Lampiran <angka>" (dipakai _check_lampiran_format)
 _LAMPIRAN_BROAD_RE = re.compile(r'^Lampiran\s+\d+', re.IGNORECASE)
+# Faktor pengali untuk mendeteksi "dokumen belum dirender Word".
+# Bila hitung halaman > maks × faktor ini, hasil dianggap tidak realistis.
+_UNREALISTIC_PAGE_FACTOR = 10
 
 # Style TOC/TOF — dipakai sebagai filter di _check_lampiran_format dan
 # _check_body_content (agar entri daftar yang teksnya diawali "Gambar/Tabel/Lampiran"
@@ -602,26 +605,27 @@ def _check_heading_case(
         mismatch_per_level: dict[int, list[dict]] = {lvl: [] for lvl in case_per_level}
 
         for idx, para in enumerate(doc.paragraphs):
-            style_name = para.style.name
             text = para.text.strip()
             if not text:
                 continue
-            for level in range(1, 6):
-                case_style = case_per_level[level]
-                if case_style and style_name == f"Heading {level}":
-                    para_info: dict = {
-                        "para_idx"  : idx,
-                        "style"     : style_name,
-                        "text"      : text[:100],
-                        "full_text" : text,
-                        "bab"       : None,
-                        "page"      : None,
-                    }
-                    if not _text_matches_case_para(para, case_style):
-                        mismatch_per_level[level].append(para_info)
-                    else:
-                        pass_per_level[level].append(para_info)
-                    break
+            level = _heading_level_from_style(para.style)
+            if level is None or level not in case_per_level:
+                continue
+            case_style = case_per_level[level]
+            if not case_style:
+                continue
+            para_info: dict = {
+                "para_idx"  : idx,
+                "style"     : para.style.name,
+                "text"      : text[:100],
+                "full_text" : text,
+                "bab"       : None,
+                "page"      : None,
+            }
+            if not _text_matches_case_para(para, case_style):
+                mismatch_per_level[level].append(para_info)
+            else:
+                pass_per_level[level].append(para_info)
 
         for level, case_style in case_per_level.items():
             if case_style is None:
@@ -3054,12 +3058,14 @@ def _check_page_count(
             ))
             return issues, checks
 
-        if count > 200:
+        unrealistic_limit = maks * _UNREALISTIC_PAGE_FACTOR
+        if count > unrealistic_limit:
             checks.append(ValidationCheckResult(
                 category="page_count", field="halaman_inti",
                 status="skipped",
                 message=(
-                    f"Jumlah halaman terhitung tidak realistis ({count} halaman). "
+                    f"Jumlah halaman terhitung tidak realistis "
+                    f"({count} halaman > {unrealistic_limit}× batas maks). "
                     "Dokumen mungkin belum pernah dirender oleh Word "
                     "sehingga tidak memiliki penanda page break."
                 ),

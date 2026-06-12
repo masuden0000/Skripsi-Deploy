@@ -48,8 +48,8 @@ _HEADING_TITLE_MAP: dict[str, str] = {
 }
 _BAB_RE = re.compile(r'^BAB\s+(\d+)\b', re.IGNORECASE)
 _SUB_BAB_RE = re.compile(r'^(\d+)\.(\d+)\b')
-# Default: wajib ada titik+spasi setelah nomor ("Lampiran 1. Judul").
-# Diperbarui secara dinamis via _build_lampiran_re() saat metadata tersedia.
+# Fallback: titik+spasi setelah nomor ("Lampiran 1. Judul").
+# Hanya dipakai bila _classify_heading() dipanggil tanpa lampiran_re eksplisit.
 _LAMPIRAN_ITEM_RE = re.compile(r'^Lampiran\s+(\d+)\.\s', re.IGNORECASE)
 # Broad: menangkap SEMUA paragraf berawalan "Lampiran <angka>" (dipakai _check_lampiran_format)
 _LAMPIRAN_BROAD_RE = re.compile(r'^Lampiran\s+\d+', re.IGNORECASE)
@@ -680,8 +680,15 @@ def _check_heading_case(
 # Document Structure Check
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _classify_heading(text: str) -> tuple[str | None, dict]:
-    """Klasifikasi teks heading menjadi tipe section + info tambahan."""
+def _classify_heading(
+    text: str,
+    lampiran_re: re.Pattern | None = None,
+) -> tuple[str | None, dict]:
+    """Klasifikasi teks heading menjadi tipe section + info tambahan.
+
+    lampiran_re: regex dinamis dari metadata (separator per skema).
+                 Bila None, fallback ke _LAMPIRAN_ITEM_RE (titik).
+    """
     text_stripped = text.strip()
     text_upper = text_stripped.upper()
 
@@ -696,7 +703,7 @@ def _classify_heading(text: str) -> tuple[str | None, dict]:
     if m:
         return "sub_bab", {"sub_number": f"{m.group(1)}.{m.group(2)}"}
 
-    m = _LAMPIRAN_ITEM_RE.match(text_stripped)
+    m = (lampiran_re or _LAMPIRAN_ITEM_RE).match(text_stripped)
     if m:
         return "item_lampiran", {"lampiran_number": f"Lampiran {m.group(1)}"}
 
@@ -724,6 +731,10 @@ def _check_document_structure(
     try:
         doc = DocxDocument(str(docx_path))
 
+        # Build lampiran regex dari metadata agar sesuai separator per skema.
+        _ds_sep = ds.lampiran_heading_separator if ds else None
+        _lampiran_re = _build_lampiran_re(_ds_sep if _ds_sep is not None else ".")
+
         # Ekstrak heading dari docx dan klasifikasikan.
         # Gunakan _heading_level_from_style agar style kustom (Judul 1, Judul 2, dll.)
         # yang mewarisi Heading atau punya outline level ikut terdeteksi.
@@ -735,7 +746,7 @@ def _check_document_structure(
             level = _heading_level_from_style(para.style)
             if level is None:
                 continue
-            section_type, extra = _classify_heading(text)
+            section_type, extra = _classify_heading(text, lampiran_re=_lampiran_re)
             if section_type:
                 actual_classified.append({"type": section_type, "text": text, **extra})
 

@@ -5,7 +5,9 @@ catatan siap-pakai bergaya penilai dosen.
 """
 from __future__ import annotations
 
+import threading
 import time
+from collections import deque
 from typing import Any
 
 from langchain_groq import ChatGroq
@@ -18,6 +20,108 @@ CONFIG = get_config()
 MAX_OCCURRENCES_PER_ISSUE = 3
 TEXT_PREVIEW_LEN = 80
 MAX_RATE_LIMIT_WAIT = 60
+
+# ── Concurrency & per-key rate tracking ──────────────────────────────────────
+_CONCURRENT_LIMIT = 3
+_LLM_SEMAPHORE    = threading.Semaphore(_CONCURRENT_LIMIT)
+
+_RPM = 30       # max requests per minute per key
+_RPD = 1_000    # max requests per day per key
+
+
+class _KeyState:
+    """Status rate limit satu API key: sliding window menit + counter harian."""
+
+    def __init__(self, key: str, model_name: str) -> None:
+        self.key        = key
+        self.model_name = model_name
+        self._lock      = threading.Lock()
+        self._req_ts: deque[float] = deque()
+        self._day_reqs  = 0
+        self._day_start = time.monotonic()
+
+    def _prune(self, now: float) -> None:
+        cutoff = now - 60.0
+        while self._req_ts and self._req_ts[0] < cutoff:
+            self._req_ts.popleft()
+        if now - self._day_start >= 86_400.0:
+            self._day_reqs  = 0
+            self._day_start = now
+
+    def available(self) -> bool:
+        with self._lock:
+            self._prune(time.monotonic())
+            return len(self._req_ts) < _RPM and self._day_reqs < _RPD
+
+    def record(self) -> None:
+        with self._lock:
+            now = time.monotonic()
+            self._prune(now)
+            self._req_ts.append(now)
+            self._day_reqs += 1
+
+    def exhaust_minute(self) -> None:
+        """Paksa window menit penuh agar key ini dilewati sementara."""
+        with self._lock:
+            now = time.monotonic()
+            self._req_ts = deque([now] * _RPM)
+
+
+class _KeyPool:
+    """Pool API key Groq + Gemini dengan round-robin dan rate tracking per key."""
+
+    def __init__(
+        self,
+        groq_keys: list[tuple[str, str]],
+        google_keys: list[tuple[str, str]],
+    ) -> None:
+        self._groq   = [_KeyState(k, m) for k, m in groq_keys]
+        self._google = [_KeyState(k, m) for k, m in google_keys]
+        self._lock   = threading.Lock()
+        self._gi = 0
+        self._di = 0
+
+    def _pick(self, pool: list[_KeyState], cursor_attr: str) -> _KeyState | None:
+        with self._lock:
+            n = len(pool)
+            if not n:
+                return None
+            start = getattr(self, cursor_attr)
+            for i in range(n):
+                state = pool[(start + i) % n]
+                if state.available():
+                    setattr(self, cursor_attr, (start + i + 1) % n)
+                    return state
+            return None
+
+    def pick_groq(self) -> _KeyState | None:
+        return self._pick(self._groq, "_gi")
+
+    def pick_google(self) -> _KeyState | None:
+        return self._pick(self._google, "_di")
+
+
+_pool_lock: threading.Lock = threading.Lock()
+_pool: _KeyPool | None = None
+
+
+def _get_pool() -> _KeyPool:
+    global _pool
+    if _pool is None:
+        with _pool_lock:
+            if _pool is None:
+                _pool = _KeyPool(
+                    groq_keys=[
+                        (k.get_secret_value(), CONFIG.model_name)
+                        for k in CONFIG.groq_api_keys
+                    ],
+                    google_keys=[
+                        (k.get_secret_value(), CONFIG.gemini_model_name)
+                        for k in CONFIG.google_api_keys
+                    ],
+                )
+    return _pool
+
 
 # ── Tabel translasi: nilai teknis → bahasa Indonesia yang mudah dipahami ─────
 
@@ -217,18 +321,17 @@ def _compact_issue(issue: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _build_llm():
+def _build_llm_from_state(state: _KeyState):
     CONFIG.disable_blackhole_proxies()
-    api_key, model_name = CONFIG.get_llm_api_key()
-    if model_name.startswith("gemini"):
+    if state.model_name.startswith("gemini"):
         return ChatGoogleGenerativeAI(
-            model=model_name,
-            google_api_key=api_key,
+            model=state.model_name,
+            google_api_key=state.key,
             temperature=CONFIG.temperature,
         )
     return ChatGroq(
-        model=model_name,
-        api_key=api_key,
+        model=state.model_name,
+        api_key=state.key,
         temperature=CONFIG.temperature,
     )
 
@@ -341,51 +444,52 @@ def summarize_issues(
 
     Return string kosong bila issues kosong/None. Lempar exception bila
     semua key LLM habis — caller (endpoint) yang menerjemahkannya ke HTTP error.
+
+    Maks _CONCURRENT_LIMIT (3) request berjalan bersamaan. Setiap request mencoba
+    key Groq dulu (round-robin), fallback ke Gemini jika semua Groq exhausted.
     """
     if not issues:
         return ""
 
-    prompt = _render_user_prompt(issues, schema_name)
-    max_retries = len(CONFIG.groq_api_keys) + len(CONFIG.google_api_keys) + 2
-
-    groq_keys_tried = 0
+    prompt       = _render_user_prompt(issues, schema_name)
+    pool         = _get_pool()
+    total_keys   = len(CONFIG.groq_api_keys) + len(CONFIG.google_api_keys)
+    max_attempts = total_keys + 2
     last_err: Exception | None = None
-    for attempt in range(max_retries):
-        try:
-            llm = _build_llm()
-            response = llm.invoke([
-                ("system", SYSTEM_PROMPT),
-                ("human", prompt),
-            ])
-            content = getattr(response, "content", response)
-            return _strip_scratchpad(str(content))
-        except Exception as e:
-            last_err = e
-            err_str = str(e)
-            is_rate = (
-                "429" in err_str
-                or "rate_limit" in err_str.lower()
-                or "quota" in err_str.lower()
-                or "ResourceExhausted" in type(e).__name__
-            )
-            if not is_rate:
-                raise
 
-            if not CONFIG._groq_exhausted:
-                groq_keys_tried += 1
-                if groq_keys_tried < len(CONFIG.groq_api_keys):
-                    CONFIG.rotate_groq_key()
-                    print(f"[summarize] Rate limit Groq, rotasi key ({groq_keys_tried}/{len(CONFIG.groq_api_keys)})...")
-                else:
-                    CONFIG._groq_exhausted = True
-                    print("[summarize] Semua Groq key exhausted, switch ke Gemini...")
-            else:
-                if len(CONFIG.google_api_keys) > 1:
-                    CONFIG.rotate_google_key()
+    with _LLM_SEMAPHORE:
+        for attempt in range(max_attempts):
+            state = pool.pick_groq() or pool.pick_google()
+            if state is None:
                 wait_secs = min(30, MAX_RATE_LIMIT_WAIT)
-                print(f"[summarize] Rate limit Gemini, tunggu {wait_secs}s...")
+                print(f"[summarize] Semua key exhausted, tunggu {wait_secs}s (attempt {attempt + 1})...")
                 time.sleep(wait_secs)
+                continue
+
+            try:
+                llm = _build_llm_from_state(state)
+                response = llm.invoke([
+                    ("system", SYSTEM_PROMPT),
+                    ("human",  prompt),
+                ])
+                content = getattr(response, "content", response)
+                state.record()
+                return _strip_scratchpad(str(content))
+
+            except Exception as e:
+                last_err = e
+                is_rate = (
+                    "429" in str(e)
+                    or "rate_limit" in str(e).lower()
+                    or "quota" in str(e).lower()
+                    or "ResourceExhausted" in type(e).__name__
+                )
+                if not is_rate:
+                    raise
+                provider = "Gemini" if state.model_name.startswith("gemini") else "Groq"
+                print(f"[summarize] Rate limit {provider} key {state.key[:8]}..., exhaust & retry (attempt {attempt + 1})...")
+                state.exhaust_minute()
 
     raise RuntimeError(
-        f"Gagal generate ringkasan setelah {max_retries} percobaan: {last_err}"
+        f"Gagal generate ringkasan setelah {max_attempts} percobaan: {last_err}"
     )

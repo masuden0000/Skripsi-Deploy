@@ -470,10 +470,14 @@ def summarize_issues(
         for attempt in range(max_attempts):
             state = pool.pick_groq() or pool.pick_google()
             if state is None:
-                wait_secs = min(30, MAX_RATE_LIMIT_WAIT)
-                print(f"[summarize] Semua key exhausted, tunggu {wait_secs}s (attempt {attempt + 1})...")
-                time.sleep(wait_secs)
-                continue
+                # Semua key habis — tidak ada key yang tersedia saat ini.
+                # Menunggu di sini (time.sleep) akan memblokir thread server hingga
+                # menit-an. Lempar exception agar caller merespons dengan HTTP 503/429
+                # daripada menahan thread secara synchronous.
+                raise RuntimeError(
+                    "Semua key LLM sedang rate-limited. "
+                    "Ringkasan otomatis tidak tersedia saat ini — coba lagi dalam beberapa menit."
+                )
 
             try:
                 llm = _build_llm_from_state(state)

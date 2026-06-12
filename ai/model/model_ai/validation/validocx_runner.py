@@ -24,6 +24,7 @@ from model_ai.validation.validocx_adapter import (
     metadata_to_requirements,
     _resolve_line_spacing,
     _heading_level_from_style,
+    clear_style_level_cache,
 )
 
 
@@ -3258,6 +3259,9 @@ def run_validocx(
     Returns:
         Tuple (issues, checks) siap masuk ke ValidationResult.
     """
+    # Reset cache style level agar hasil dokumen sebelumnya tidak terbawa.
+    clear_style_level_cache()
+
     path = Path(docx_path)
     # Load dokumen SEKALI di sini; semua helper menerima objek doc yang sama
     # agar tidak perlu buka/parse ZIP berulang kali.

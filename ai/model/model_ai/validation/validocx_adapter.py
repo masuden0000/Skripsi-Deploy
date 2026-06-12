@@ -5,6 +5,7 @@ Posisi pipeline: jembatan antara metadata Pydantic dan engine validocx (validate
 from __future__ import annotations
 
 import copy
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -223,6 +224,17 @@ _HEADING_NAME_TO_LEVEL: dict[str, int] = {
     "Judul1": 1,  "Judul2": 2,  "Judul3": 3,  "Judul4": 4,  "Judul5": 5,
 }
 
+# Cache hasil traversal _heading_level_from_style per style name.
+# Thread-local agar tiap thread (request) punya cache sendiri dan tidak
+# terkontaminasi oleh dokumen lain yang diproses thread berbeda.
+# Di-reset oleh clear_style_level_cache() di awal setiap run_validocx().
+_style_level_local: threading.local = threading.local()
+
+
+def clear_style_level_cache() -> None:
+    """Reset cache level heading — dipanggil sekali di awal setiap run validasi."""
+    _style_level_local.cache = {}
+
 
 def _outline_level_from_style_xml(style) -> int | None:
     """Baca <w:outlineLvl w:val="N"/> langsung dari definisi style di styles.xml.
@@ -262,9 +274,18 @@ def _heading_level_from_style(style, max_depth: int = 10) -> int | None:
 
     Return 1–5 jika ditemukan, None jika style biasa.
     """
+    style_name = style.name
+    cache: dict = getattr(_style_level_local, "cache", None)
+    if cache is None:
+        cache = {}
+        _style_level_local.cache = cache
+    if style_name in cache:
+        return cache[style_name]
+
     seen: set[str] = set()
     current = style
     depth = 0
+    result: int | None = None
     while current is not None and depth < max_depth:
         name = current.name
         if name in seen:
@@ -272,15 +293,19 @@ def _heading_level_from_style(style, max_depth: int = 10) -> int | None:
         seen.add(name)
 
         if name in _HEADING_NAME_TO_LEVEL:
-            return _HEADING_NAME_TO_LEVEL[name]
+            result = _HEADING_NAME_TO_LEVEL[name]
+            break
 
         outline_level = _outline_level_from_style_xml(current)
         if outline_level is not None:
-            return min(outline_level, 5)
+            result = min(outline_level, 5)
+            break
 
         current = getattr(current, "base_style", None)
         depth += 1
-    return None
+
+    cache[style_name] = result
+    return result
 
 
 def enrich_requirements_with_docx_styles(requirements: dict, docx_path: str | Path, doc=None) -> dict:

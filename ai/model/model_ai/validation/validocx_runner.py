@@ -6,6 +6,7 @@ parse_entries/build_report → ValidationIssue + ValidationCheckResult.
 import io
 import logging
 import re
+import threading
 from pathlib import Path
 
 from docx import Document as DocxDocument
@@ -217,6 +218,22 @@ def _vm_category(key: str) -> tuple[str, str]:
     return ("spacing", "body_attribute") if is_spacing else ("typography", "body_attribute")
 
 
+class _ThreadFilter(logging.Filter):
+    """Hanya terima log record dari thread yang membuat filter ini.
+
+    Dipasang pada setiap handler di _capture_log sehingga dalam skenario
+    multi-user, log validasi milik thread A tidak bocor ke buffer milik
+    thread B dan sebaliknya.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._tid = threading.current_thread().ident
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return threading.current_thread().ident == self._tid
+
+
 def _capture_log(docx_path: Path, requirements: dict) -> str:
     """Jalankan validocx dan capture seluruh log (termasuk multi-line) ke string."""
     buf = io.StringIO()
@@ -227,6 +244,8 @@ def _capture_log(docx_path: Path, requirements: dict) -> str:
         "%(asctime)s.%(msecs)03d %(levelname)s (%(module)s) %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     ))
+    # Filter log hanya dari thread ini — isolasi antar-user di lingkungan concurrent.
+    handler.addFilter(_ThreadFilter())
 
     # Attach ke root logger global agar tidak ada log validocx yang lolos.
     # Pendekatan ini sama dengan validate.py di Extractor Document aslinya.

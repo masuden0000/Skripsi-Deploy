@@ -257,7 +257,13 @@ def build_report(entries, docx_path=None, para_map=None):
     # ── Value mismatch ─────────────────────────────────────────────────────
     def vm_key(msg):
         # format: "[para#N] ...paragraph 'ATTR' (STYLE) with value VAL does not match..."
-        m = re.search(r"paragraph '([\w_]+)' \(([^)]+)\) with value (.+?) does not match required value (.+?):", msg)
+        # [^']+ agar nama atribut boleh mengandung karakter non-word (future-proof).
+        # (.+?) non-greedy agar style name boleh mengandung tanda kurung nested,
+        # mis. "Custom (Style 2)" — anchored oleh ") with value" di sebelah kanannya.
+        m = re.search(
+            r"paragraph '([^']+)' \((.+?)\) with value (.+?) does not match required value (.+?):",
+            msg,
+        )
         if m:
             return f"{m.group(2)}.{m.group(1)}: actual={m.group(3).strip()} expected={m.group(4).strip()}"
         return msg
@@ -267,7 +273,11 @@ def build_report(entries, docx_path=None, para_map=None):
     # ── Font mismatch ──────────────────────────────────────────────────────
     def fm_key(msg):
         # format: "[para#N] Font attributes (A,B) mismatch required (X,Y)..."
-        m = re.search(r"Font attributes \(([^)]+)\) mismatch required \(([^)]+)\).*style '([^']+)'", msg)
+        # (.+?) non-greedy agar nilai font boleh mengandung tanda kurung.
+        m = re.search(
+            r"Font attributes \((.+?)\) mismatch required \((.+?)\).*style '([^']+)'",
+            msg,
+        )
         if m:
             return f"{m.group(3)}: actual=[{m.group(1)}] expected=[{m.group(2)}]"
         return msg

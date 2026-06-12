@@ -283,7 +283,7 @@ def _heading_level_from_style(style, max_depth: int = 10) -> int | None:
     return None
 
 
-def enrich_requirements_with_docx_styles(requirements: dict, docx_path: str | Path) -> dict:
+def enrich_requirements_with_docx_styles(requirements: dict, docx_path: str | Path, doc=None) -> dict:
     """Tambahkan custom styles ke requirements berdasarkan deteksi heading H1–H5.
 
     Dokumen sering memakai style buatan sendiri (misal "Sub Judul Bab") yang:
@@ -310,10 +310,11 @@ def enrich_requirements_with_docx_styles(requirements: dict, docx_path: str | Pa
     if not level_to_req:
         return requirements
 
-    try:
-        doc = Document(str(docx_path))
-    except Exception:
-        return requirements
+    if doc is None:
+        try:
+            doc = Document(str(docx_path))
+        except Exception:
+            return requirements
 
     extra: dict[str, dict] = {}
     for style in doc.styles:

@@ -3251,11 +3251,11 @@ def run_validocx(
     doc  = DocxDocument(str(path))
 
     requirements = metadata_to_requirements(metadata)
-    requirements = enrich_requirements_with_docx_styles(requirements, path)
+    requirements = enrich_requirements_with_docx_styles(requirements, path, doc)
     log_text = _capture_log(path, requirements)
 
     entries = parse_entries(log_text)
-    report  = build_report(entries, docx_path=path)
+    report  = build_report(entries, doc=doc)
 
     # Ekstrak daftar style yang dikenali dari requirements untuk ditampilkan
     # sebagai nilai "Seharusnya" pada warning undefined_style.

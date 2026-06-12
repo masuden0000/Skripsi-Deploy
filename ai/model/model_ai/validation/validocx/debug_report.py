@@ -67,7 +67,7 @@ def parse_entries_from_file(path):
         return parse_entries(f.read())
 
 
-def _get_para_details(docx_path):
+def _get_para_details(docx_path=None, *, doc=None):
     """Muat semua paragraf dari docx, kembalikan dict {idx: detail}.
 
     Setiap entri menyertakan:
@@ -77,12 +77,16 @@ def _get_para_details(docx_path):
     yang dipakai validator.py saat membangun para_idx di log CHECK. Ini memastikan
     indeks di sini selaras dengan indeks yang ditulis ke log, termasuk paragraf
     di dalam w:sdt (misalnya TOC yang dibuat otomatis oleh Word).
+
+    doc: objek Document yang sudah dimuat — jika diberikan, docx_path diabaikan
+         sehingga tidak perlu membuka ulang file dari disk.
     """
     try:
         from docx import Document
         from model_ai.validation.validocx.wrapper import DocumentWrapper
 
-        doc     = Document(docx_path)
+        if doc is None:
+            doc = Document(docx_path)
         wrapper = DocumentWrapper(doc)
 
         result      = {}
@@ -228,17 +232,22 @@ def _inject_para_details(items, para_map):
     return items
 
 
-def build_report(entries, docx_path=None, para_map=None):
+def build_report(entries, docx_path=None, para_map=None, *, doc=None):
     """Bangun laporan dalam format dict (siap di-serialize ke JSON).
 
-    docx_path: opsional — jika diberikan, detail isi paragraf akan
-               disertakan langsung di dalam setiap entri error/warning.
-               Diabaikan jika para_map sudah diberikan secara eksplisit.
+    docx_path: opsional — jika diberikan, detail paragraf dibaca dari file.
+               Diabaikan jika para_map atau doc sudah diberikan secara eksplisit.
     para_map:  opsional — dict {idx: detail} yang sudah dibangun dari luar.
-               Jika diberikan, docx_path tidak dipakai untuk membangun para_map.
+    doc:       opsional — objek Document yang sudah dimuat; dipakai untuk
+               membangun para_map tanpa membuka ulang file dari disk.
     """
     if para_map is None:
-        para_map = _get_para_details(docx_path) if docx_path else {}
+        if doc is not None:
+            para_map = _get_para_details(doc=doc)
+        elif docx_path:
+            para_map = _get_para_details(docx_path)
+        else:
+            para_map = {}
 
     buckets = defaultdict(list)
     for level, cat, msg in entries:

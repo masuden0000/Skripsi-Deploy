@@ -190,12 +190,13 @@ class Validator(object):
             raise
 
 
-def validate(docx, requirements):
+def validate(docx, requirements, *, doc=None):
     """Validates docx document.
 
     :param docx: path to docx file (as a string) or a file-like object
     :param requirements: document requirements as a dict (see examples)
+    :param doc: already-opened Document object — jika diberikan, docx tidak dibuka ulang dari disk
     """
-    document = Document(docx)
+    document = doc if doc is not None else Document(docx)
     validator = Validator(document)
     validator.validate(requirements)

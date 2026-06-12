@@ -5,6 +5,7 @@ catatan siap-pakai bergaya penilai dosen.
 """
 from __future__ import annotations
 
+import logging
 import re
 import threading
 import time
@@ -17,6 +18,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from model_ai.config import get_config
 
 CONFIG = get_config()
+logger = logging.getLogger(__name__)
 
 MAX_OCCURRENCES_PER_ISSUE = 3
 TEXT_PREVIEW_LEN = 80
@@ -33,8 +35,9 @@ _RPD = 1_000    # max requests per day per key
 class _KeyState:
     """Status rate limit satu API key: sliding window menit + counter harian."""
 
-    def __init__(self, key: str, model_name: str) -> None:
+    def __init__(self, key: str, model_name: str, key_idx: int = 0) -> None:
         self.key        = key
+        self.key_idx    = key_idx
         self.model_name = model_name
         self._lock      = threading.Lock()
         self._req_ts: deque[float] = deque()
@@ -76,8 +79,8 @@ class _KeyPool:
         groq_keys: list[tuple[str, str]],
         google_keys: list[tuple[str, str]],
     ) -> None:
-        self._groq   = [_KeyState(k, m) for k, m in groq_keys]
-        self._google = [_KeyState(k, m) for k, m in google_keys]
+        self._groq   = [_KeyState(k, m, idx) for idx, (k, m) in enumerate(groq_keys)]
+        self._google = [_KeyState(k, m, idx) for idx, (k, m) in enumerate(google_keys)]
         self._lock   = threading.Lock()
         self._gi = 0
         self._di = 0
@@ -544,7 +547,10 @@ def summarize_issues(
                 if not is_rate:
                     raise
                 provider = "Gemini" if state.model_name.startswith("gemini") else "Groq"
-                print(f"[summarize] Rate limit {provider} key {state.key[:8]}..., exhaust & retry (attempt {attempt + 1})...")
+                logger.warning(
+                    "[summarize] Rate limit %s Key #%d, exhaust & retry (attempt %d)...",
+                    provider, state.key_idx + 1, attempt + 1,
+                )
                 state.exhaust_minute()
 
     raise RuntimeError(

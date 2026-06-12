@@ -244,8 +244,12 @@ class _ThreadFilter(logging.Filter):
         return threading.current_thread().ident == self._tid
 
 
-def _capture_log(docx_path: Path, requirements: dict) -> str:
-    """Jalankan validocx dan capture seluruh log (termasuk multi-line) ke string."""
+def _capture_log(docx_path: Path, requirements: dict, doc=None) -> str:
+    """Jalankan validocx dan capture seluruh log (termasuk multi-line) ke string.
+
+    doc: objek Document yang sudah dibuka — jika diberikan, validocx tidak membuka
+         ulang file dari disk sehingga menghemat satu siklus ZIP decompress + XML parse.
+    """
     buf = io.StringIO()
     handler = logging.StreamHandler(buf)
     # Format HARUS cocok dengan LOG_PATTERN di debug_report.parse_entries
@@ -268,7 +272,7 @@ def _capture_log(docx_path: Path, requirements: dict) -> str:
     target.setLevel(logging.INFO)
 
     try:
-        validocx_validate(str(docx_path), requirements)
+        validocx_validate(str(docx_path), requirements, doc=doc)
     finally:
         target.removeHandler(handler)
         target.setLevel(orig_level)
@@ -3269,7 +3273,7 @@ def run_validocx(
 
     requirements = metadata_to_requirements(metadata)
     requirements = enrich_requirements_with_docx_styles(requirements, path, doc)
-    log_text = _capture_log(path, requirements)
+    log_text = _capture_log(path, requirements, doc=doc)
 
     entries = parse_entries(log_text)
     report  = build_report(entries, doc=doc)

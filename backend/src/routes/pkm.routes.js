@@ -32,7 +32,7 @@ router.get("/schemas", async (req, res, next) => {
   try {
     const { data, error } = await adminClient
       .from("pkm_schemas")
-      .select("singkatan, nama, renderer_type")
+      .select("singkatan, nama")
       .filter("singkatan", "like", "PKM-%")
       .order("singkatan", { ascending: true })
 

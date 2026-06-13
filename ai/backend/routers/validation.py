@@ -110,14 +110,17 @@ async def run_validation(
     schema_id: slug PKM (mis. "PKM-KC") yang cocok dengan projects.skema.
     tahun: tahun referensi (mis. "2025") yang cocok dengan projects.tahun.
     """
+    schema_id = schema_id.strip().upper()
+    tahun     = tahun.strip()
+
     if not (file.filename or "").lower().endswith(".docx"):
         raise HTTPException(status_code=400, detail="File harus berformat DOCX (.docx).")
 
-    if not tahun.strip():
+    if not tahun:
         raise HTTPException(status_code=400, detail="Parameter tahun tidak boleh kosong.")
 
     try:
-        payload = await _fetch_metadata(schema_id.strip(), tahun.strip())
+        payload = await _fetch_metadata(schema_id, tahun)
     except HTTPException:
         raise
     except Exception as e:
@@ -166,7 +169,7 @@ async def run_validation(
                 "session_id":  session_id,
                 "position":    0,
                 "file_name":   file.filename or "dokumen.docx",
-                "schema_id":   schema_id.strip(),
+                "schema_id":   schema_id,
                 "tahun":       tahun.strip(),
                 "status":      "completed",
                 "result":      result_dict,
@@ -334,7 +337,7 @@ async def run_bulk_validation(request: Request, background_tasks: BackgroundTask
     # Validasi dan baca semua file sebelum membuat session
     items_bytes: list[dict] = []
     for i in range(count):
-        schema_id = str(form.get(f"schema_id_{i}") or "").strip()
+        schema_id = str(form.get(f"schema_id_{i}") or "").strip().upper()
         tahun     = str(form.get(f"tahun_{i}")     or "").strip()
         upload    = form.get(f"file_{i}")
 

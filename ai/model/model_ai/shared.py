@@ -3,7 +3,7 @@ from supabase import Client, create_client
 
 # ─── Domain ───────────────────────────────────────────────────────────────────
 
-SKEMA_TYPE_B: frozenset[str] = frozenset({"PKM-AI"})
+_SKEMA_TYPE_B: frozenset[str] = frozenset({"PKM-AI"})
 
 EXCLUDED_PARENTS: frozenset[str] = frozenset({
     "DAFTAR ISI",
@@ -51,20 +51,6 @@ def get_supabase_client() -> Client:
     )
 
 
-def get_renderer_type(skema: str) -> str:
-    """Kembalikan 'A' atau 'B' berdasarkan pkm_schemas.renderer_type di database.
-
-    Fallback ke SKEMA_TYPE_B jika koneksi DB gagal.
-    """
-    try:
-        client = get_supabase_client()
-        result = (
-            client.table("pkm_schemas")
-            .select("renderer_type")
-            .eq("singkatan", skema.upper())
-            .single()
-            .execute()
-        )
-        return (result.data or {}).get("renderer_type") or "A"
-    except Exception:
-        return "B" if skema.upper() in SKEMA_TYPE_B else "A"
+def is_type_b(skema: str) -> bool:
+    """Kembalikan True jika skema menggunakan renderer Type B (artikel ilmiah PKM-AI)."""
+    return skema.upper() in _SKEMA_TYPE_B

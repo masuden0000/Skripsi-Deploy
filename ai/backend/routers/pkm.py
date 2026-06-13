@@ -14,7 +14,7 @@ async def list_pkm_schemas():
         supabase = get_supabase()
         result = (
             supabase.table("pkm_schemas")
-            .select("singkatan, nama, renderer_type")
+            .select("singkatan, nama")
             .order("singkatan")
             .execute()
         )

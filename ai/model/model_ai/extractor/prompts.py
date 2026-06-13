@@ -4,7 +4,7 @@ from pathlib import Path
 
 import frontmatter as fm
 
-from model_ai.shared import get_renderer_type
+from model_ai.shared import is_type_b
 
 _PROMPTS_ROOT = Path(__file__).parent / "prompts"
 
@@ -62,7 +62,7 @@ def load_prompts_for_skema(skema: str) -> dict[str, PromptConfig]:
     Type B (PKM-AI): kembalikan dict kosong — renderer-nya berbeda.
     Type A (semua lainnya): muat dari folder skema. Error jika folder kosong atau tidak ada.
     """
-    if get_renderer_type(skema) == "B":
+    if is_type_b(skema):
         return {}
 
     folder = _PROMPTS_ROOT / skema.upper()

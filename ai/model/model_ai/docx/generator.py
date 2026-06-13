@@ -8,7 +8,7 @@ from model_ai.docx.instructional_placeholder_builder import (
     build_instructional_placeholder_map,
 )
 from model_ai.metadata_repository import load_document_metadata, save_generated_placeholders
-from model_ai.shared import get_renderer_type
+from model_ai.shared import is_type_b
 
 
 def generate_proposal_docx_bytes(
@@ -65,7 +65,7 @@ def generate_proposal_docx_bytes(
 
     output_data = metadata.model_dump()
 
-    if get_renderer_type(skema) == "B":
+    if is_type_b(skema):
         print(f"[docx] Skema {skema} -> Type B renderer (PKM-AI).", flush=True)
         doc_bytes = render_article_docx_bytes(
             output_data=output_data,

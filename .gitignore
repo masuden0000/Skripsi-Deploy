@@ -25,3 +25,9 @@ CLAUDE.md
 ai/model/data/
 # Temporary files for bulk validation background jobs
 ai/backend/jobs_temp/
+
+# Supabase CLI working directory (generated, bukan source of truth)
+# Source of truth migration ada di database/supabase/migrations/
+# Pakai /supabase/ (dengan slash depan) agar hanya root-level yang diabaikan,
+# tidak menimpa database/supabase/ yang merupakan source of truth.
+/supabase/

@@ -57,6 +57,11 @@ export type ExtractionPayload = {
     heading_1_case: "UPPERCASE" | "LOWERCASE" | "SENTENCE_CASE" | "TOGGLE_CASE" | null
     heading_2_case: "UPPERCASE" | "LOWERCASE" | "SENTENCE_CASE" | "TOGGLE_CASE" | null
     heading_3_case: "UPPERCASE" | "LOWERCASE" | "SENTENCE_CASE" | "TOGGLE_CASE" | null
+    // PKM-AI
+    font_size_title_pt?: number | null
+    font_size_author_pt?: number | null
+    font_size_abstract_pt?: number | null
+    title_style?: "BOLD_UPPERCASE" | "BOLD" | "UPPERCASE" | "NORMAL" | null
     heading_4_case: "UPPERCASE" | "LOWERCASE" | "SENTENCE_CASE" | "TOGGLE_CASE" | null
     heading_5_case: "UPPERCASE" | "LOWERCASE" | "SENTENCE_CASE" | "TOGGLE_CASE" | null
   }
@@ -72,6 +77,8 @@ export type ExtractionPayload = {
     line_spacing: number | null
     line_spacing_rule: string | null
     paragraph_alignment: string | null
+    // PKM-AI
+    line_spacing_title_abstract?: number | null
   }
   document_structure_proposal?: {
     sections: SectionItem[]
@@ -100,11 +107,17 @@ export type ExtractionPayload = {
     caption_alignment_figure: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
     caption_alignment_table: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
     caption_alignment_lampiran: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
+    // PKM-AI
+    caption_font_size?: number | null
+    caption_line_spacing?: number | null
   }
   page_count_limits: {
     proposal_halaman_inti_maks: number | null
     halaman_inti_mulai: string | null
     halaman_inti_selesai: string | null
+    // PKM-AI
+    artikel_halaman_inti_min?: number | null
+    artikel_halaman_inti_maks?: number | null
   }
 }
 
@@ -282,6 +295,7 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
     ? "document_structure_artikel" as const
     : "document_structure_proposal" as const
   const docStructure = data.document_structure_artikel ?? data.document_structure_proposal
+  const isArtikel = docStructureKey === "document_structure_artikel"
 
   // Helper: update satu field nested di ExtractionPayload dan propagate ke parent
   // Parent (page.tsx) menyimpan hasilnya ke Supabase document_metadata.payload
@@ -315,6 +329,36 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
               onChange={(v) => patch("typography", { font_size_heading_pt: v })}
             />
           </FieldRow>
+          {isArtikel && (
+            <FieldRow className="mt-3">
+              <NumberFieldInput
+                label="Ukuran Judul Artikel (pt)"
+                value={data.typography.font_size_title_pt ?? null}
+                onChange={(v) => patch("typography", { font_size_title_pt: v })}
+              />
+              <NumberFieldInput
+                label="Ukuran Nama Penulis (pt)"
+                value={data.typography.font_size_author_pt ?? null}
+                onChange={(v) => patch("typography", { font_size_author_pt: v })}
+              />
+              <NumberFieldInput
+                label="Ukuran Abstrak (pt)"
+                value={data.typography.font_size_abstract_pt ?? null}
+                onChange={(v) => patch("typography", { font_size_abstract_pt: v })}
+              />
+              <SelectFieldInput
+                label="Gaya Judul Artikel"
+                value={data.typography.title_style ?? null}
+                options={[
+                  { value: "BOLD_UPPERCASE", label: "Bold + UPPERCASE" },
+                  { value: "BOLD",           label: "Bold" },
+                  { value: "UPPERCASE",      label: "UPPERCASE" },
+                  { value: "NORMAL",         label: "Normal" },
+                ]}
+                onChange={(v) => patch("typography", { title_style: v as ExtractionPayload["typography"]["title_style"] })}
+              />
+            </FieldRow>
+          )}
         </div>
       </div>
 
@@ -423,6 +467,15 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
                   ]}
                   onChange={(v) => patch("spacing", { paragraph_alignment: v })}
                 />
+                {isArtikel && (
+                  <NumberFieldInput
+                    label="Spasi Halaman Judul/Abstrak"
+                    value={data.spacing.line_spacing_title_abstract ?? null}
+                    onChange={(v) => patch("spacing", { line_spacing_title_abstract: v })}
+                    placeholder="contoh: 1.0"
+                    hint="Spasi baris khusus halaman judul dan abstrak PKM-AI (biasanya 1.0)."
+                  />
+                )}
               </FieldRow>
             </div>
           </div>
@@ -745,6 +798,21 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
               placeholder="contoh: Lampiran {n}. {title}"
               hint="Gunakan {n} untuk nomor dan {title} untuk judul. Klik ⓘ untuk panduan lengkap."
             />
+            {isArtikel && (
+              <>
+                <NumberFieldInput
+                  label="Ukuran Font Caption (pt)"
+                  value={data.figures_and_tables.caption_font_size ?? null}
+                  onChange={(v) => patch("figures_and_tables", { caption_font_size: v })}
+                />
+                <NumberFieldInput
+                  label="Spasi Baris Caption"
+                  value={data.figures_and_tables.caption_line_spacing ?? null}
+                  onChange={(v) => patch("figures_and_tables", { caption_line_spacing: v })}
+                  placeholder="contoh: 1.0"
+                />
+              </>
+            )}
           </FieldRow>
         </div>
       </div>
@@ -795,19 +863,38 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
         <SectionHeader title="8. Batas Halaman" />
         <div className="mt-3 px-1">
           <FieldRow>
-            <NumberFieldInput
-              label="Maks. Halaman Inti"
-              value={data.page_count_limits.proposal_halaman_inti_maks}
-              onChange={(v) => patch("page_count_limits", { proposal_halaman_inti_maks: v })}
-            />
+            {isArtikel ? (
+              <>
+                <NumberFieldInput
+                  label="Min. Halaman Inti Artikel"
+                  value={data.page_count_limits.artikel_halaman_inti_min ?? null}
+                  onChange={(v) => patch("page_count_limits", { artikel_halaman_inti_min: v })}
+                />
+                <NumberFieldInput
+                  label="Maks. Halaman Inti Artikel"
+                  value={data.page_count_limits.artikel_halaman_inti_maks ?? null}
+                  onChange={(v) => patch("page_count_limits", { artikel_halaman_inti_maks: v })}
+                />
+              </>
+            ) : (
+              <NumberFieldInput
+                label="Maks. Halaman Inti"
+                value={data.page_count_limits.proposal_halaman_inti_maks}
+                onChange={(v) => patch("page_count_limits", { proposal_halaman_inti_maks: v })}
+              />
+            )}
             <SelectFieldInput
               label="Halaman Inti Mulai Dari"
               value={data.page_count_limits.halaman_inti_mulai}
               options={[
-                { value: "bab", label: "BAB" },
-                { value: "daftar_isi", label: "Daftar Isi" },
-                { value: "daftar_pustaka", label: "Daftar Pustaka" },
-                { value: "lampiran", label: "Lampiran" },
+                { value: "bab",           label: "BAB" },
+                { value: "daftar_isi",    label: "Daftar Isi" },
+                { value: "daftar_pustaka",label: "Daftar Pustaka" },
+                { value: "lampiran",      label: "Lampiran" },
+                ...(isArtikel ? [
+                  { value: "judul_abstrak",  label: "Judul & Abstrak" },
+                  { value: "lampiran_utama", label: "Lampiran (Artikel)" },
+                ] : []),
               ]}
               onChange={(v) => patch("page_count_limits", { halaman_inti_mulai: v })}
             />
@@ -815,10 +902,14 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
               label="Halaman Inti Selesai Di"
               value={data.page_count_limits.halaman_inti_selesai}
               options={[
-                { value: "bab", label: "BAB" },
-                { value: "daftar_isi", label: "Daftar Isi" },
-                { value: "daftar_pustaka", label: "Daftar Pustaka" },
-                { value: "lampiran", label: "Lampiran" },
+                { value: "bab",           label: "BAB" },
+                { value: "daftar_isi",    label: "Daftar Isi" },
+                { value: "daftar_pustaka",label: "Daftar Pustaka" },
+                { value: "lampiran",      label: "Lampiran" },
+                ...(isArtikel ? [
+                  { value: "judul_abstrak",  label: "Judul & Abstrak" },
+                  { value: "lampiran_utama", label: "Lampiran (Artikel)" },
+                ] : []),
               ]}
               onChange={(v) => patch("page_count_limits", { halaman_inti_selesai: v })}
             />

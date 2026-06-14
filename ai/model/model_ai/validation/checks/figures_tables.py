@@ -1,0 +1,802 @@
+"""Figures & tables checks: caption format and positioning."""
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+from docx import Document as DocxDocument
+from docx.oxml.ns import qn
+
+from model_ai.extractor.models import DocumentMetadata
+from model_ai.validation.models import ValidationCheckResult, ValidationIssue
+
+from ._shared import (
+    _BAB_RE,
+    _FIG_DETECT_RE,
+    _TBL_DETECT_RE,
+    _LAMPIRAN_BROAD_RE,
+    _CAPTION_ALIGN_MAP,
+    _ALIGN_LABEL,
+    _build_occurrences,
+)
+
+
+def _template_to_regex(template: str) -> re.Pattern:
+    """Konversi template caption seperti 'Gambar {n}. {title}' ke regex.
+
+    Titik (.) yang memisahkan nomor bab/urutan diizinkan diikuti spasi opsional,
+    sehingga '4.1.' dan '4. 1.' sama-sama diterima.
+    """
+    escaped = re.escape(template)
+    escaped = escaped.replace(r'\{n\}', r'\d+')
+    escaped = escaped.replace(r'\{bab\}', r'\d+')
+    escaped = escaped.replace(r'\{title\}', r'.+')
+    # Izinkan spasi opsional setelah setiap titik literal agar format
+    # "4.1." maupun "4. 1." sama-sama cocok dengan pola.
+    escaped = escaped.replace(r'\.', r'\.\s*')
+    return re.compile(r'^' + escaped, re.IGNORECASE)
+
+
+def _para_contains_image(para) -> bool:
+    """Cek apakah paragraf mengandung gambar inline."""
+    el = para._element
+    return (
+        el.find('.//' + qn('w:drawing')) is not None
+        or el.find('.//' + qn('w:pict')) is not None
+    )
+
+
+def _get_page_number_format_for_content(sectPr) -> str:
+    """Ambil format nomor halaman dari elemen sectPr (w:pgNumType w:fmt).
+
+    Dipakai oleh _build_content_elements. Mengembalikan 'decimal' sebagai
+    default apabila elemen w:pgNumType tidak ada atau atribut w:fmt tidak di-set.
+    """
+    pgNumType = sectPr.find(qn('w:pgNumType'))
+    if pgNumType is not None:
+        fmt = pgNumType.get(qn('w:fmt'))
+        return fmt if fmt else "decimal"
+    return "decimal"
+
+
+def _build_content_elements(doc) -> tuple[list[tuple[str, object]], str]:
+    """Bangun daftar elemen body yang dibatasi pada section dengan penomoran decimal.
+
+    Urutan prioritas batas scan:
+      1. Mulai dari awal section yang punya pgNumType decimal
+      2. Fallback: mulai dari Heading 1 BAB pertama jika tidak ada section decimal
+      3. Berhenti tepat sebelum heading DAFTAR PUSTAKA atau LAMPIRAN
+
+    Returns:
+        (elements, source) di mana source menjelaskan metode yang dipakai.
+    """
+    body = doc.element.body
+    para_by_el = {id(p._element): p for p in doc.paragraphs}
+    tbl_by_el  = {id(t._element): t for t in doc.tables}
+
+    # Satu pass: bangun daftar elemen + deteksi section break dalam setiap paragraf
+    all_elements: list[tuple[str, object]] = []
+    section_ends: list[tuple[int, str | None]] = []  # (element_idx, pgNumType fmt)
+
+    for child in body:
+        tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
+        if tag == 'p' and id(child) in para_by_el:
+            para = para_by_el[id(child)]
+            idx = len(all_elements)
+            all_elements.append(("para", para))
+            pPr = child.find(qn('w:pPr'))
+            if pPr is not None:
+                sectPr = pPr.find(qn('w:sectPr'))
+                if sectPr is not None:
+                    section_ends.append((idx, _get_page_number_format_for_content(sectPr)))
+        elif tag == 'tbl' and id(child) in tbl_by_el:
+            all_elements.append(("table", tbl_by_el[id(child)]))
+
+    # Section terakhir ditandai oleh sectPr di level body
+    body_sectPr = body.find(qn('w:sectPr'))
+    if body_sectPr is not None:
+        section_ends.append((len(all_elements) - 1, _get_page_number_format_for_content(body_sectPr)))
+
+    # Cari range section decimal (bisa lebih dari satu section berturut-turut)
+    decimal_start: int | None = None
+    decimal_end:   int | None = None
+    prev_end = -1
+    for end_idx, fmt in section_ends:
+        if fmt == "decimal":
+            if decimal_start is None:
+                decimal_start = prev_end + 1
+            decimal_end = end_idx
+        prev_end = end_idx
+
+    if decimal_start is not None and decimal_end is not None:
+        candidate = all_elements[decimal_start : decimal_end + 1]
+        source = "decimal_section"
+    else:
+        # Fallback: mulai dari BAB pertama
+        bab1_idx = next(
+            (i for i, (etype, elem) in enumerate(all_elements)
+             if etype == "para"
+             and elem.style.name == "Heading 1"
+             and _BAB_RE.match((elem.text or "").strip().upper())),
+            0,
+        )
+        candidate = all_elements[bab1_idx:]
+        source = "bab1_fallback"
+
+    # Potong sebelum DAFTAR PUSTAKA atau LAMPIRAN
+    _EXCLUDED_HEADINGS = frozenset({"DAFTAR PUSTAKA", "LAMPIRAN"})
+    cutoff = len(candidate)
+    for i, (etype, elem) in enumerate(candidate):
+        if etype == "para" and elem.style.name == "Heading 1":
+            if (elem.text or "").strip().upper() in _EXCLUDED_HEADINGS:
+                cutoff = i
+                break
+
+    return candidate[:cutoff], source
+
+
+def _check_caption_format(
+    docx_path: Path,
+    metadata: DocumentMetadata,
+    doc: DocxDocument | None = None,
+) -> tuple[list[ValidationIssue], list[ValidationCheckResult]]:
+    """Validasi atribut caption gambar/tabel via text-pattern, bukan style name.
+
+    Caption dideteksi dari teks yang diawali 'Gambar <angka>' atau 'Tabel <angka>'.
+    Alignment dibaca dari metadata.figures_and_tables per tipe caption (CENTER fallback).
+    Font family dan font size harus sama dengan body — dicek per tipe caption.
+    Style name diabaikan agar tidak false positive pada nama dinamis.
+    """
+    issues: list[ValidationIssue] = []
+    checks: list[ValidationCheckResult] = []
+
+    t  = metadata.typography
+    ft = metadata.figures_and_tables
+
+    expected_font = t.font_family if t else None
+    expected_size = int(t.font_size_body_pt) if t and t.font_size_body_pt else None
+
+    # Baca alignment per tipe dari metadata; default CENTER jika null
+    fig_align_str = ((ft.caption_alignment_figure or "CENTER").upper() if ft else "CENTER")
+    tbl_align_str = ((ft.caption_alignment_table  or "CENTER").upper() if ft else "CENTER")
+    fig_align_val = _CAPTION_ALIGN_MAP.get(fig_align_str)
+    tbl_align_val = _CAPTION_ALIGN_MAP.get(tbl_align_str)
+
+    try:
+        doc = doc or DocxDocument(str(docx_path))
+
+        wrong_fig_alignment: list[dict] = []
+        wrong_tbl_alignment: list[dict] = []
+        wrong_font_items:    list[dict] = []   # dict dengan field "actual" per item
+        wrong_size_items:    list[dict] = []   # dict dengan field "actual" per item
+        fig_total = 0
+        tbl_total = 0
+        fig_pass_align_items: list[dict] = []
+        tbl_pass_align_items: list[dict] = []
+        font_pass_items:      list[dict] = []
+        size_pass_items:      list[dict] = []
+
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            if not text:
+                continue
+
+            is_fig = bool(_FIG_DETECT_RE.match(text))
+            is_tbl = bool(_TBL_DETECT_RE.match(text))
+            if not is_fig and not is_tbl:
+                continue
+
+            if is_fig:
+                fig_total += 1
+            else:
+                tbl_total += 1
+
+            para_info = {"text": text[:100], "full_text": text, "style": para.style.name, "page": None, "bab": None, "para_idx": None}
+
+            # ── Alignment ────────────────────────────────────────────────────
+            align = para.paragraph_format.alignment
+            if align is None:
+                try:
+                    align = para.style.paragraph_format.alignment
+                except Exception:
+                    align = None
+
+            if align is not None:
+                align_label = _ALIGN_LABEL.get(align.value if hasattr(align, "value") else align, str(align))
+                if is_fig:
+                    if align != fig_align_val:
+                        wrong_fig_alignment.append({**para_info, "actual": align_label})
+                    else:
+                        fig_pass_align_items.append(para_info)
+                elif is_tbl:
+                    if align != tbl_align_val:
+                        wrong_tbl_alignment.append({**para_info, "actual": align_label})
+                    else:
+                        tbl_pass_align_items.append(para_info)
+
+            # ── Font family & size (run pertama non-empty saja) ──────────────
+            # Font/size sering di-inherit dari style, bukan eksplisit di run.
+            # Fallback: run → paragraph style → None.
+            for run in para.runs:
+                if not run.text.strip():
+                    continue
+
+                actual_font: str | None = run.font.name
+                if actual_font is None:
+                    try:
+                        actual_font = para.style.font.name
+                    except Exception:
+                        pass
+
+                actual_size_pt: int | None = None
+                if run.font.size is not None:
+                    actual_size_pt = round(run.font.size.pt)
+                else:
+                    try:
+                        if para.style.font.size is not None:
+                            actual_size_pt = round(para.style.font.size.pt)
+                    except Exception:
+                        pass
+
+                if expected_font and actual_font:
+                    item = {**para_info, "actual": actual_font}
+                    if actual_font != expected_font:
+                        wrong_font_items.append(item)
+                    else:
+                        font_pass_items.append(item)
+
+                if expected_size and actual_size_pt is not None:
+                    actual_size_str = f"{actual_size_pt}pt"
+                    item = {**para_info, "actual": actual_size_str}
+                    if actual_size_pt != expected_size:
+                        wrong_size_items.append(item)
+                    else:
+                        size_pass_items.append(item)
+
+                break  # cukup satu run
+
+        # ── Emit alignment gambar ─────────────────────────────────────────────
+        if fig_total > 0:
+            if wrong_fig_alignment:
+                first_act = wrong_fig_alignment[0].get("actual", f"bukan {fig_align_str}")
+                msg = (
+                    f"{len(wrong_fig_alignment)} caption gambar tidak {fig_align_str}. "
+                    f'Contoh: "{wrong_fig_alignment[0]["text"]}"'
+                )
+                issues.append(ValidationIssue(
+                    category="figures_tables", field="caption_alignment_figure",
+                    severity="error", message=msg,
+                    expected=fig_align_str, actual=first_act,
+                ))
+                checks.append(ValidationCheckResult(
+                    category="figures_tables", field="caption_alignment_figure",
+                    status="failed", message=msg,
+                    expected=fig_align_str, actual=first_act,
+                    occurrences=_build_occurrences(
+                        wrong_fig_alignment, actual_str=None, expected_str=fig_align_str
+                    ),
+                ))
+            else:
+                checks.append(ValidationCheckResult(
+                    category="figures_tables", field="caption_alignment_figure",
+                    status="passed",
+                    message=f"Semua {fig_total} caption gambar alignment {fig_align_str}",
+                    expected=fig_align_str,
+                    occurrences=_build_occurrences(fig_pass_align_items),
+                ))
+
+        # ── Emit alignment tabel ──────────────────────────────────────────────
+        if tbl_total > 0:
+            if wrong_tbl_alignment:
+                first_act = wrong_tbl_alignment[0].get("actual", f"bukan {tbl_align_str}")
+                msg = (
+                    f"{len(wrong_tbl_alignment)} caption tabel tidak {tbl_align_str}. "
+                    f'Contoh: "{wrong_tbl_alignment[0]["text"]}"'
+                )
+                issues.append(ValidationIssue(
+                    category="figures_tables", field="caption_alignment_table",
+                    severity="error", message=msg,
+                    expected=tbl_align_str, actual=first_act,
+                ))
+                checks.append(ValidationCheckResult(
+                    category="figures_tables", field="caption_alignment_table",
+                    status="failed", message=msg,
+                    expected=tbl_align_str, actual=first_act,
+                    occurrences=_build_occurrences(
+                        wrong_tbl_alignment, actual_str=None, expected_str=tbl_align_str
+                    ),
+                ))
+            else:
+                checks.append(ValidationCheckResult(
+                    category="figures_tables", field="caption_alignment_table",
+                    status="passed",
+                    message=f"Semua {tbl_total} caption tabel alignment {tbl_align_str}",
+                    expected=tbl_align_str,
+                    occurrences=_build_occurrences(tbl_pass_align_items),
+                ))
+
+        # ── Emit font (gabungan gambar + tabel) ───────────────────────────────
+        total_captions = fig_total + tbl_total
+        if wrong_font_items:
+            first_actual = wrong_font_items[0].get("actual", "")
+            msg = (
+                f"{len(wrong_font_items)} caption font tidak sesuai "
+                f"(seharusnya: {expected_font}). "
+                f'Contoh: "{wrong_font_items[0]["text"]}"'
+            )
+            issues.append(ValidationIssue(
+                category="figures_tables", field="caption_font",
+                severity="error", message=msg,
+                expected=expected_font, actual=first_actual,
+            ))
+            checks.append(ValidationCheckResult(
+                category="figures_tables", field="caption_font",
+                status="failed", message=msg,
+                expected=expected_font, actual=first_actual,
+                occurrences=_build_occurrences(
+                    wrong_font_items, actual_str=None, expected_str=expected_font
+                ),
+            ))
+        elif expected_font and total_captions > 0:
+            checks.append(ValidationCheckResult(
+                category="figures_tables", field="caption_font",
+                status="passed",
+                message=f"Font caption sesuai: {expected_font}",
+                expected=expected_font,
+                occurrences=_build_occurrences(
+                    font_pass_items, actual_str=None, expected_str=None
+                ),
+            ))
+
+        if wrong_size_items:
+            first_actual_size = wrong_size_items[0].get("actual", "")
+            msg = (
+                f"{len(wrong_size_items)} caption ukuran font tidak sesuai "
+                f"(seharusnya: {expected_size}pt). "
+                f'Contoh: "{wrong_size_items[0]["text"]}"'
+            )
+            issues.append(ValidationIssue(
+                category="figures_tables", field="caption_font_size",
+                severity="error", message=msg,
+                expected=f"{expected_size}pt", actual=first_actual_size,
+            ))
+            checks.append(ValidationCheckResult(
+                category="figures_tables", field="caption_font_size",
+                status="failed", message=msg,
+                expected=f"{expected_size}pt", actual=first_actual_size,
+                occurrences=_build_occurrences(
+                    wrong_size_items, actual_str=None, expected_str=f"{expected_size}pt"
+                ),
+            ))
+        elif expected_size and total_captions > 0:
+            checks.append(ValidationCheckResult(
+                category="figures_tables", field="caption_font_size",
+                status="passed",
+                message=f"Ukuran font caption sesuai: {expected_size}pt",
+                expected=f"{expected_size}pt",
+                occurrences=_build_occurrences(
+                    size_pass_items, actual_str=None, expected_str=None
+                ),
+            ))
+
+        if total_captions == 0:
+            for _fld in ("caption_alignment_figure", "caption_alignment_table"):
+                checks.append(ValidationCheckResult(
+                    category="figures_tables", field=_fld,
+                    status="skipped",
+                    message="Tidak ada caption gambar/tabel ditemukan",
+                    skip_reason="Tidak ada caption",
+                ))
+
+    except Exception as exc:
+        checks.append(ValidationCheckResult(
+            category="figures_tables", field="caption_alignment_figure",
+            status="skipped",
+            message=f"Pengecekan atribut caption dilewati: {exc}",
+            skip_reason=str(exc),
+        ))
+
+    return issues, checks
+
+
+def _check_figures_tables(
+    docx_path: Path,
+    metadata: DocumentMetadata,
+    doc: DocxDocument | None = None,
+) -> tuple[list[ValidationIssue], list[ValidationCheckResult]]:
+    """Validasi posisi caption dan format penomoran gambar/tabel + lampiran.
+
+    Kepemilikan field (tidak overlap dengan _check_lampiran_format):
+      - figure_caption_position / table_caption_position — posisi relatif gambar/tabel
+      - figure_caption_format / table_caption_format — template penomoran (via _build_content_elements)
+      - lampiran_caption_format — template penomoran header lampiran (via doc.paragraphs scan terpisah)
+      - lampiran_caption_alignment — alignment header lampiran
+
+    _check_lampiran_format() memiliki: lampiran_separator, lampiran_font, lampiran_spacing.
+    Keduanya scan _LAMPIRAN_BROAD_RE tetapi mengecek field yang berbeda.
+    """
+    issues: list[ValidationIssue] = []
+    checks: list[ValidationCheckResult] = []
+
+    ft = metadata.figures_and_tables
+    if ft is None:
+        checks.append(ValidationCheckResult(
+            category="figures_tables", field="caption",
+            status="skipped",
+            message="Tidak ada data figures_and_tables di metadata",
+            skip_reason="Tidak ada nilai di metadata",
+        ))
+        return issues, checks
+
+    tbl_pos_exp  = (ft.table_caption_position or "").upper()
+    fig_pos_exp  = (ft.figure_caption_position or "").upper()
+    fig_fmt_tpl  = ft.caption_format_figure
+    tbl_fmt_tpl  = ft.caption_format_table
+    lamp_fmt_tpl = ft.caption_format_lampiran
+    lamp_align_str = (ft.caption_alignment_lampiran or "").upper() or None
+
+    if not tbl_pos_exp and not fig_pos_exp and not fig_fmt_tpl and not tbl_fmt_tpl \
+            and not lamp_fmt_tpl and not lamp_align_str:
+        checks.append(ValidationCheckResult(
+            category="figures_tables", field="caption",
+            status="skipped",
+            message="Tidak ada aturan caption di metadata",
+            skip_reason="Tidak ada nilai di metadata",
+        ))
+        return issues, checks
+
+    try:
+        doc = doc or DocxDocument(str(docx_path))
+
+        fig_fmt_re  = _template_to_regex(fig_fmt_tpl)  if fig_fmt_tpl  else None
+        tbl_fmt_re  = _template_to_regex(tbl_fmt_tpl)  if tbl_fmt_tpl  else None
+        lamp_fmt_re = _template_to_regex(lamp_fmt_tpl) if lamp_fmt_tpl else None
+        lamp_align_val = (
+            _CAPTION_ALIGN_MAP.get(lamp_align_str)
+            if lamp_align_str else None
+        )
+
+        # Batasi scan hanya pada section dengan penomoran decimal,
+        # kecualikan DAFTAR PUSTAKA dan LAMPIRAN.
+        elements, scan_source = _build_content_elements(doc)
+
+        fig_pos_errors: list[str] = []
+        fig_fmt_errors: list[str] = []
+        tbl_pos_errors: list[str] = []
+        tbl_fmt_errors: list[str] = []
+        fig_count = 0
+        tbl_count = 0
+        fig_pos_pass_items: list[dict] = []
+        fig_fmt_pass_items: list[dict] = []
+        tbl_pos_pass_items: list[dict] = []
+        tbl_fmt_pass_items: list[dict] = []
+
+        for i, (etype, elem) in enumerate(elements):
+            if etype != "para":
+                continue
+            text = elem.text.strip() if hasattr(elem, 'text') and elem.text else ""
+            if not text:
+                continue
+
+            if _FIG_DETECT_RE.match(text):
+                fig_count += 1
+                fig_para_info = {"text": text[:100], "full_text": text, "style": "", "page": None, "bab": None, "para_idx": None}
+                if fig_fmt_re:
+                    if not fig_fmt_re.match(text):
+                        fig_fmt_errors.append(text[:70])
+                    else:
+                        fig_fmt_pass_items.append(fig_para_info)
+                # Cek posisi: BELOW → gambar sebelum caption
+                if fig_pos_exp == "BELOW":
+                    found_img = any(
+                        elements[j][0] == "para" and _para_contains_image(elements[j][1])
+                        for j in range(max(0, i - 3), i)
+                    )
+                    if not found_img:
+                        fig_pos_errors.append(f'"{text[:60]}"')
+                    else:
+                        fig_pos_pass_items.append(fig_para_info)
+                elif fig_pos_exp == "ABOVE":
+                    found_img = any(
+                        elements[j][0] == "para" and _para_contains_image(elements[j][1])
+                        for j in range(i + 1, min(len(elements), i + 4))
+                    )
+                    if not found_img:
+                        fig_pos_errors.append(f'"{text[:60]}"')
+                    else:
+                        fig_pos_pass_items.append(fig_para_info)
+
+            elif _TBL_DETECT_RE.match(text):
+                tbl_count += 1
+                tbl_para_info = {"text": text[:100], "full_text": text, "style": "", "page": None, "bab": None, "para_idx": None}
+                if tbl_fmt_re:
+                    if not tbl_fmt_re.match(text):
+                        tbl_fmt_errors.append(text[:70])
+                    else:
+                        tbl_fmt_pass_items.append(tbl_para_info)
+                # Cek posisi: ABOVE → tabel setelah caption
+                if tbl_pos_exp == "ABOVE":
+                    next_is_tbl = i + 1 < len(elements) and elements[i + 1][0] == "table"
+                    if not next_is_tbl:
+                        tbl_pos_errors.append(f'"{text[:60]}"')
+                    else:
+                        tbl_pos_pass_items.append(tbl_para_info)
+                elif tbl_pos_exp == "BELOW":
+                    prev_is_tbl = i > 0 and elements[i - 1][0] == "table"
+                    if not prev_is_tbl:
+                        tbl_pos_errors.append(f'"{text[:60]}"')
+                    else:
+                        tbl_pos_pass_items.append(tbl_para_info)
+
+        # Gambar — tidak ditemukan sama sekali dalam area yang di-scan
+        if fig_count == 0 and tbl_count == 0:
+            scan_label = (
+                "section dengan nomor halaman angka arab"
+                if scan_source == "decimal_section"
+                else "mulai BAB 1 (fallback — section decimal tidak ditemukan)"
+            )
+            checks.append(ValidationCheckResult(
+                category="figures_tables", field="caption",
+                status="skipped",
+                message=f"Tidak ditemukan caption gambar atau tabel di area scan: {scan_label}",
+                skip_reason="Tidak ada caption terdeteksi",
+            ))
+            return issues, checks
+
+        # Report gambar
+        if fig_count > 0:
+            if fig_pos_errors:
+                msg = (
+                    f"Caption gambar seharusnya {fig_pos_exp} gambar. "
+                    f"{len(fig_pos_errors)}x salah posisi. "
+                    f"Contoh: {fig_pos_errors[0]}"
+                )
+                occ_fig_pos = _build_occurrences(
+                    [{"text": t[:100], "full_text": t, "style": "",
+                      "page": None, "bab": None, "para_idx": None}
+                     for t in fig_pos_errors],
+                    actual_str=f"bukan {fig_pos_exp}", expected_str=fig_pos_exp,
+                ) or None
+                issues.append(ValidationIssue(
+                    category="figures_tables", field="figure_caption_position",
+                    severity="error", message=msg, expected=fig_pos_exp,
+                    actual=f"bukan {fig_pos_exp}",
+                ))
+                checks.append(ValidationCheckResult(
+                    category="figures_tables", field="figure_caption_position",
+                    status="failed", message=msg, expected=fig_pos_exp,
+                    actual=f"bukan {fig_pos_exp}", occurrences=occ_fig_pos,
+                ))
+            else:
+                checks.append(ValidationCheckResult(
+                    category="figures_tables", field="figure_caption_position",
+                    status="passed",
+                    message=f"Posisi caption gambar ({fig_pos_exp}): {fig_count} caption sesuai",
+                    expected=fig_pos_exp,
+                    occurrences=_build_occurrences(fig_pos_pass_items),
+                ))
+
+            if fig_fmt_re:
+                if fig_fmt_errors:
+                    msg = (
+                        f"Format caption gambar tidak sesuai pola '{fig_fmt_tpl}'. "
+                        f"{len(fig_fmt_errors)}x salah format. "
+                        f"Contoh: \"{fig_fmt_errors[0]}\""
+                    )
+                    occ_fig_fmt = _build_occurrences(
+                        [{"text": t[:100], "full_text": t, "style": "",
+                          "page": None, "bab": None, "para_idx": None}
+                         for t in fig_fmt_errors],
+                        actual_str=None, expected_str=fig_fmt_tpl,
+                    ) or None
+                    issues.append(ValidationIssue(
+                        category="figures_tables", field="figure_caption_format",
+                        severity="error", message=msg,
+                        expected=fig_fmt_tpl, actual=fig_fmt_errors[0],
+                    ))
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="figure_caption_format",
+                        status="failed", message=msg,
+                        expected=fig_fmt_tpl, actual=fig_fmt_errors[0],
+                        occurrences=occ_fig_fmt,
+                    ))
+                else:
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="figure_caption_format",
+                        status="passed",
+                        message=f"Format caption gambar '{fig_fmt_tpl}': {fig_count} caption sesuai",
+                        expected=fig_fmt_tpl,
+                        occurrences=_build_occurrences(fig_fmt_pass_items),
+                    ))
+
+        # Report tabel
+        if tbl_count > 0:
+            if tbl_pos_errors:
+                msg = (
+                    f"Caption tabel seharusnya {tbl_pos_exp} tabel. "
+                    f"{len(tbl_pos_errors)}x salah posisi. "
+                    f"Contoh: {tbl_pos_errors[0]}"
+                )
+                occ_tbl_pos = _build_occurrences(
+                    [{"text": t[:100], "full_text": t, "style": "",
+                      "page": None, "bab": None, "para_idx": None}
+                     for t in tbl_pos_errors],
+                    actual_str=f"bukan {tbl_pos_exp}", expected_str=tbl_pos_exp,
+                ) or None
+                issues.append(ValidationIssue(
+                    category="figures_tables", field="table_caption_position",
+                    severity="error", message=msg, expected=tbl_pos_exp,
+                    actual=f"bukan {tbl_pos_exp}",
+                ))
+                checks.append(ValidationCheckResult(
+                    category="figures_tables", field="table_caption_position",
+                    status="failed", message=msg, expected=tbl_pos_exp,
+                    actual=f"bukan {tbl_pos_exp}", occurrences=occ_tbl_pos,
+                ))
+            else:
+                checks.append(ValidationCheckResult(
+                    category="figures_tables", field="table_caption_position",
+                    status="passed",
+                    message=f"Posisi caption tabel ({tbl_pos_exp}): {tbl_count} caption sesuai",
+                    expected=tbl_pos_exp,
+                    occurrences=_build_occurrences(tbl_pos_pass_items),
+                ))
+
+            if tbl_fmt_re:
+                if tbl_fmt_errors:
+                    msg = (
+                        f"Format caption tabel tidak sesuai pola '{tbl_fmt_tpl}'. "
+                        f"{len(tbl_fmt_errors)}x salah format. "
+                        f"Contoh: \"{tbl_fmt_errors[0]}\""
+                    )
+                    occ_tbl_fmt = _build_occurrences(
+                        [{"text": t[:100], "full_text": t, "style": "",
+                          "page": None, "bab": None, "para_idx": None}
+                         for t in tbl_fmt_errors],
+                        actual_str=None, expected_str=tbl_fmt_tpl,
+                    ) or None
+                    issues.append(ValidationIssue(
+                        category="figures_tables", field="table_caption_format",
+                        severity="error", message=msg,
+                        expected=tbl_fmt_tpl, actual=tbl_fmt_errors[0],
+                    ))
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="table_caption_format",
+                        status="failed", message=msg,
+                        expected=tbl_fmt_tpl, actual=tbl_fmt_errors[0],
+                        occurrences=occ_tbl_fmt,
+                    ))
+                else:
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="table_caption_format",
+                        status="passed",
+                        message=f"Format caption tabel '{tbl_fmt_tpl}': {tbl_count} caption sesuai",
+                        expected=tbl_fmt_tpl,
+                        occurrences=_build_occurrences(tbl_fmt_pass_items),
+                    ))
+
+        # ── Lampiran scan (seluruh dokumen) ──────────────────────────────────
+        # _build_content_elements() berhenti sebelum LAMPIRAN → scan terpisah.
+        if lamp_fmt_re or lamp_align_val is not None:
+            lamp_count             = 0
+            lamp_fmt_errors:    list[str] = []
+            lamp_align_errors:  list[str] = []
+            lamp_fmt_pass_items:   list[dict] = []
+            lamp_align_pass_items: list[dict] = []
+
+            for para in doc.paragraphs:
+                text = para.text.strip()
+                if not text or not _LAMPIRAN_BROAD_RE.match(text):
+                    continue
+                lamp_count += 1
+                lamp_para_info = {"text": text[:100], "full_text": text, "style": para.style.name, "page": None, "bab": None, "para_idx": None}
+
+                if lamp_fmt_re:
+                    if not lamp_fmt_re.match(text):
+                        lamp_fmt_errors.append(text[:70])
+                    else:
+                        lamp_fmt_pass_items.append(lamp_para_info)
+
+                if lamp_align_val is not None:
+                    align = para.paragraph_format.alignment
+                    if align is None:
+                        try:
+                            align = para.style.paragraph_format.alignment
+                        except Exception:
+                            align = None
+                    if align is not None and align != lamp_align_val:
+                        lamp_align_errors.append(text[:70])
+                    else:
+                        lamp_align_pass_items.append(lamp_para_info)
+
+            # Emit format lampiran
+            if lamp_fmt_re:
+                if lamp_count == 0:
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="lampiran_caption_format",
+                        status="skipped",
+                        message="Tidak ditemukan caption lampiran di dokumen",
+                        skip_reason="Tidak ada paragraf diawali 'Lampiran '",
+                    ))
+                elif lamp_fmt_errors:
+                    msg = (
+                        f"Format caption lampiran tidak sesuai pola '{lamp_fmt_tpl}'. "
+                        f"{len(lamp_fmt_errors)}x salah. "
+                        f'Contoh: "{lamp_fmt_errors[0]}"'
+                    )
+                    occ_lamp_fmt = _build_occurrences(
+                        [{"text": t[:100], "full_text": t, "style": "",
+                          "page": None, "bab": None, "para_idx": None}
+                         for t in lamp_fmt_errors],
+                        actual_str=None, expected_str=lamp_fmt_tpl,
+                    ) or None
+                    issues.append(ValidationIssue(
+                        category="figures_tables", field="lampiran_caption_format",
+                        severity="error", message=msg,
+                        expected=lamp_fmt_tpl, actual=lamp_fmt_errors[0],
+                    ))
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="lampiran_caption_format",
+                        status="failed", message=msg,
+                        expected=lamp_fmt_tpl, actual=lamp_fmt_errors[0],
+                        occurrences=occ_lamp_fmt,
+                    ))
+                else:
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="lampiran_caption_format",
+                        status="passed",
+                        message=f"Format caption lampiran '{lamp_fmt_tpl}': {lamp_count} caption sesuai",
+                        expected=lamp_fmt_tpl,
+                        occurrences=_build_occurrences(lamp_fmt_pass_items),
+                    ))
+
+            # Emit alignment lampiran
+            if lamp_align_val is not None:
+                if lamp_count == 0:
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="lampiran_caption_alignment",
+                        status="skipped",
+                        message="Tidak ditemukan caption lampiran di dokumen",
+                        skip_reason="Tidak ada paragraf diawali 'Lampiran '",
+                    ))
+                elif lamp_align_errors:
+                    msg = (
+                        f"{len(lamp_align_errors)} caption lampiran tidak {lamp_align_str}. "
+                        f'Contoh: "{lamp_align_errors[0]}"'
+                    )
+                    occ_lamp_align = _build_occurrences(
+                        [{"text": t[:100], "full_text": t, "style": "",
+                          "page": None, "bab": None, "para_idx": None,
+                          "actual": f"bukan {lamp_align_str}"}
+                         for t in lamp_align_errors],
+                        actual_str=f"bukan {lamp_align_str}", expected_str=lamp_align_str,
+                    ) or None
+                    issues.append(ValidationIssue(
+                        category="figures_tables", field="lampiran_caption_alignment",
+                        severity="error", message=msg,
+                        expected=lamp_align_str, actual=f"bukan {lamp_align_str}",
+                    ))
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="lampiran_caption_alignment",
+                        status="failed", message=msg,
+                        expected=lamp_align_str, actual=f"bukan {lamp_align_str}",
+                        occurrences=occ_lamp_align,
+                    ))
+                else:
+                    checks.append(ValidationCheckResult(
+                        category="figures_tables", field="lampiran_caption_alignment",
+                        status="passed",
+                        message=f"Semua {lamp_count} caption lampiran alignment {lamp_align_str}",
+                        expected=lamp_align_str,
+                        occurrences=_build_occurrences(lamp_align_pass_items),
+                    ))
+
+    except Exception as exc:
+        checks.append(ValidationCheckResult(
+            category="figures_tables", field="caption",
+            status="skipped",
+            message=f"Pengecekan caption dilewati: {exc}",
+            skip_reason=str(exc),
+        ))
+
+    return issues, checks

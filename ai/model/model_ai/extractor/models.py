@@ -14,6 +14,7 @@ class Source(BaseModel):
 
 
 _VALID_CASE_STYLES = frozenset({"UPPERCASE", "LOWERCASE", "SENTENCE_CASE", "TOGGLE_CASE"})
+_VALID_TITLE_STYLES: frozenset[str] = frozenset({"BOLD_UPPERCASE", "BOLD", "UPPERCASE", "NORMAL"})
 
 
 class TypographyExtracted(BaseModel):
@@ -25,6 +26,11 @@ class TypographyExtracted(BaseModel):
     heading_3_case: Literal["UPPERCASE", "LOWERCASE", "SENTENCE_CASE", "TOGGLE_CASE"] | None = "SENTENCE_CASE"
     heading_4_case: Literal["UPPERCASE", "LOWERCASE", "SENTENCE_CASE", "TOGGLE_CASE"] | None = "SENTENCE_CASE"
     heading_5_case: Literal["UPPERCASE", "LOWERCASE", "SENTENCE_CASE", "TOGGLE_CASE"] | None = "SENTENCE_CASE"
+    # PKM-AI (Type B) — ukuran font per elemen artikel (caption ada di FiguresTablesExtracted)
+    font_size_title_pt: int | None = None
+    font_size_author_pt: int | None = None
+    font_size_abstract_pt: int | None = None
+    title_style: Literal["BOLD_UPPERCASE", "BOLD", "UPPERCASE", "NORMAL"] | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -44,6 +50,11 @@ class TypographyExtracted(BaseModel):
                 normalized[field] = val.strip().upper()
             if normalized.get(field) not in _VALID_CASE_STYLES:
                 normalized[field] = None
+        raw_style = normalized.get("title_style")
+        if isinstance(raw_style, str):
+            normalized["title_style"] = raw_style.strip().upper()
+        if normalized.get("title_style") not in _VALID_TITLE_STYLES:
+            normalized["title_style"] = None
         return normalized
 
 
@@ -69,6 +80,8 @@ class SpacingExtracted(BaseModel):
     line_spacing_rule: str | None = None
     paragraph_alignment: str | None = None
     heading_alignment: str = "CENTER"  # hanya berlaku untuk Heading 1; H2–H5 ikut paragraph_alignment
+    # PKM-AI (Type B) — halaman judul/abstrak memiliki spasi berbeda (1.0) dari body (1.15)
+    line_spacing_title_abstract: float | None = None
 
     _RULE_ALIASES: dict[str, str] = {
         "EXACT":          "EXACTLY",
@@ -110,8 +123,11 @@ class SpacingInfo(SpacingExtracted):
 
 
 _VALID_SECTION_TYPES = frozenset({
+    # Type A — proposal (PKM-KC, PKM-K, dll.)
     "daftar_isi", "daftar_gambar", "daftar_tabel", "daftar_lampiran",
     "daftar_pustaka", "bab", "sub_bab", "lampiran", "item_lampiran",
+    # Type B — artikel ilmiah (PKM-AI)
+    "judul_abstrak", "lampiran_utama",
 })
 _MAJOR_SECTION_TYPES = frozenset({
     "daftar_isi",
@@ -122,14 +138,18 @@ _MAJOR_SECTION_TYPES = frozenset({
     "bab",
     "sub_bab",
     "lampiran",
+    "judul_abstrak",
+    "lampiran_utama",
 })
 _NON_BAB_SECTION_TITLES = {
-    "daftar_isi": "DAFTAR ISI",
-    "daftar_gambar": "DAFTAR GAMBAR",
-    "daftar_tabel": "DAFTAR TABEL",
-    "daftar_lampiran": "DAFTAR LAMPIRAN",
+    "daftar_isi":     "DAFTAR ISI",
+    "daftar_gambar":  "DAFTAR GAMBAR",
+    "daftar_tabel":   "DAFTAR TABEL",
+    "daftar_lampiran":"DAFTAR LAMPIRAN",
     "daftar_pustaka": "DAFTAR PUSTAKA",
-    "lampiran": "LAMPIRAN",
+    "lampiran":       "LAMPIRAN",
+    "judul_abstrak":  "JUDUL DAN ABSTRAK",
+    "lampiran_utama": "LAMPIRAN",  # sama dengan "lampiran" — bedakan via field `type`, bukan `title`
 }
 
 
@@ -187,10 +207,18 @@ class DocumentStructureExtracted(BaseModel):
     # Null → gunakan default "."
 
 
-class DocumentStructureInfo(DocumentStructureExtracted):
+class _DocumentStructureDetailBase(DocumentStructureExtracted):
     sources: list[Source] = []
     user_placeholders: dict[str, str] = {}
     generated_placeholders: dict[str, str] = {}
+
+
+class DocumentStructureInfo(_DocumentStructureDetailBase):
+    """Struktur dokumen untuk Type A (proposal PKM-KC, PKM-K, dll.)."""
+
+
+class DocumentStructureArtikelInfo(_DocumentStructureDetailBase):
+    """Struktur dokumen untuk Type B (artikel ilmiah PKM-AI)."""
 
 
 class PageNumberConfig(BaseModel):
@@ -223,6 +251,9 @@ class FiguresTablesExtracted(BaseModel):
     caption_alignment_table:    str | None = None
     caption_alignment_lampiran: str | None = None
     budget_format_rules: "BudgetFormatRules | None" = None
+    # PKM-AI (Type B) — caption artikel memakai ukuran dan spasi khusus
+    caption_font_size: int | None = None
+    caption_line_spacing: float | None = None
 
     _VALID_CAPTION_ALIGNMENTS: ClassVar[frozenset[str]] = frozenset({"CENTER", "LEFT", "RIGHT", "JUSTIFY"})
 
@@ -260,6 +291,7 @@ class FiguresTablesInfo(FiguresTablesExtracted):
 
 _VALID_HALAMAN_INTI_SECTIONS = frozenset({
     "bab", "daftar_isi", "daftar_pustaka", "lampiran",
+    "judul_abstrak", "lampiran_utama",
 })
 
 
@@ -267,6 +299,9 @@ class PageCountExtracted(BaseModel):
     proposal_halaman_inti_maks: int | None = None
     halaman_inti_mulai: str = "bab"
     halaman_inti_selesai: str = "daftar_pustaka"
+    # PKM-AI (Type B) — artikel memiliki batas halaman berbeda (min 8, maks 15)
+    artikel_halaman_inti_min: int | None = None
+    artikel_halaman_inti_maks: int | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -296,6 +331,7 @@ class DocumentMetadata(BaseModel):
     page_layout: PageLayoutInfo | None = None
     spacing: SpacingInfo | None = None
     document_structure_proposal: DocumentStructureInfo | None = None
+    document_structure_artikel: DocumentStructureArtikelInfo | None = None
     numbering: NumberingInfo | None = None
     figures_and_tables: FiguresTablesInfo | None = None
     page_count_limits: PageCountInfo | None = None

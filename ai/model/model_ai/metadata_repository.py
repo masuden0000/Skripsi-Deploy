@@ -69,11 +69,10 @@ def upsert_document_metadata(metadata: DocumentMetadata, project_id: str | None 
     return project_id or "unknown"
 
 
-def save_generated_placeholders(project_id: str, generated: dict[str, str]) -> None:
-    """
-    Update hanya field document_structure_proposal.generated_placeholders di payload
-    tanpa menyentuh field lain di document_metadata.
-    """
+def save_generated_placeholders(project_id: str, generated: dict[str, str], skema: str = "PKM-KC") -> None:
+    """Update hanya field generated_placeholders di struktur dokumen yang sesuai skema."""
+    from model_ai.shared import is_type_b
+
     client = get_supabase_client()
 
     result = client.table("document_metadata") \
@@ -85,10 +84,11 @@ def save_generated_placeholders(project_id: str, generated: dict[str, str]) -> N
     if not result.data:
         return
 
+    structure_key = "document_structure_artikel" if is_type_b(skema) else "document_structure_proposal"
     payload: dict = result.data.get("payload") or {}
-    doc_structure: dict = payload.get("document_structure_proposal") or {}
+    doc_structure: dict = payload.get(structure_key) or {}
     doc_structure["generated_placeholders"] = generated
-    payload["document_structure_proposal"] = doc_structure
+    payload[structure_key] = doc_structure
 
     client.table("document_metadata").update({"payload": payload}) \
         .eq("project_id", project_id) \

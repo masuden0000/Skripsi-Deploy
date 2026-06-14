@@ -24,7 +24,12 @@ def generate_proposal_docx_bytes(
     """
     metadata = load_document_metadata(project_id)
 
-    doc_structure = metadata.document_structure_proposal
+    # Routing struktur berdasarkan skema: Type B (PKM-AI) → artikel; Type A → proposal
+    doc_structure = (
+        metadata.document_structure_artikel
+        if is_type_b(skema)
+        else metadata.document_structure_proposal
+    )
     format_nama_file = doc_structure.format_nama_file if doc_structure else None
     file_name = f"{format_nama_file or project_id}.docx"
     if format_nama_file:
@@ -32,11 +37,7 @@ def generate_proposal_docx_bytes(
 
     chunks = load_chunk_sources(project_id)
 
-    existing_placeholders = (
-        metadata.document_structure_proposal.generated_placeholders
-        if metadata.document_structure_proposal
-        else {}
-    ) or {}
+    existing_placeholders = (doc_structure.generated_placeholders if doc_structure else {}) or {}
 
     if existing_placeholders:
         print(f"[docx] Menggunakan {len(existing_placeholders)} placeholder dari DB (tidak generate ulang).", flush=True)
@@ -50,16 +51,12 @@ def generate_proposal_docx_bytes(
         )
         print(f"[docx] Placeholder selesai ({len(instructional_placeholders)} section). Menyimpan ke DB...", flush=True)
         try:
-            save_generated_placeholders(project_id, instructional_placeholders)
+            save_generated_placeholders(project_id, instructional_placeholders, skema=skema)
             print("[docx] Placeholder tersimpan ke DB.", flush=True)
         except Exception as exc:
             print(f"[docx] WARNING: Gagal menyimpan placeholder ke DB: {exc}", flush=True)
 
-    user_placeholders = (
-        metadata.document_structure_proposal.user_placeholders
-        if metadata.document_structure_proposal
-        else {}
-    ) or {}
+    user_placeholders = (doc_structure.user_placeholders if doc_structure else {}) or {}
     if user_placeholders:
         instructional_placeholders = {**instructional_placeholders, **user_placeholders}
 

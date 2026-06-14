@@ -4,8 +4,6 @@ from pathlib import Path
 
 import frontmatter as fm
 
-from model_ai.shared import is_type_b
-
 _PROMPTS_ROOT = Path(__file__).parent / "prompts"
 
 _PROMPT_FILES = [
@@ -13,6 +11,7 @@ _PROMPT_FILES = [
     "page_layout.md",
     "spacing.md",
     "document_structure_proposal.md",
+    "document_structure_artikel.md",
     "numbering.md",
     "figures_and_tables.md",
     "page_count_limits.md",
@@ -59,12 +58,9 @@ def _load_from_dir(filename: str, folder: Path) -> PromptConfig:
 def load_prompts_for_skema(skema: str) -> dict[str, PromptConfig]:
     """Muat semua PromptConfig untuk skema yang diberikan.
 
-    Type B (PKM-AI): kembalikan dict kosong — renderer-nya berbeda.
-    Type A (semua lainnya): muat dari folder skema. Error jika folder kosong atau tidak ada.
+    Setiap skema dimuat dari foldernya sendiri (PKM-KC/, PKM-AI/, dst.).
+    File yang tidak ada di folder skema dilewati secara otomatis.
     """
-    if is_type_b(skema):
-        return {}
-
     folder = _PROMPTS_ROOT / skema.upper()
     if not folder.is_dir() or not any(folder.glob("*.md")):
         raise FileNotFoundError(

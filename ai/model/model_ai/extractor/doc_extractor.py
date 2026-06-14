@@ -24,6 +24,7 @@ from model_ai.shared import (
 )
 from model_ai.extractor.models import (
     DocumentMetadata,
+    DocumentStructureArtikelInfo,
     DocumentStructureExtracted,
     DocumentStructureInfo,
     FiguresTablesExtracted,
@@ -54,13 +55,14 @@ CONFIG = get_config()
 LLM_MODEL = CONFIG.model_name
 
 _MODEL_MAP: list[tuple[str, Type[BaseModel], Type[BaseModel]]] = [
-    ("typography",                  TypographyExtracted,        TypographyInfo),
-    ("page_layout",                 PageLayoutExtracted,        PageLayoutInfo),
-    ("spacing",                     SpacingExtracted,           SpacingInfo),
-    ("document_structure_proposal", DocumentStructureExtracted, DocumentStructureInfo),
-    ("numbering",                   NumberingExtracted,         NumberingInfo),
-    ("figures_and_tables",          FiguresTablesExtracted,     FiguresTablesInfo),
-    ("page_count_limits",           PageCountExtracted,         PageCountInfo),
+    ("typography",                   TypographyExtracted,        TypographyInfo),
+    ("page_layout",                  PageLayoutExtracted,        PageLayoutInfo),
+    ("spacing",                      SpacingExtracted,           SpacingInfo),
+    ("document_structure_proposal",  DocumentStructureExtracted, DocumentStructureInfo),
+    ("document_structure_artikel",   DocumentStructureExtracted, DocumentStructureArtikelInfo),
+    ("numbering",                    NumberingExtracted,         NumberingInfo),
+    ("figures_and_tables",           FiguresTablesExtracted,     FiguresTablesInfo),
+    ("page_count_limits",            PageCountExtracted,         PageCountInfo),
 ]
 
 

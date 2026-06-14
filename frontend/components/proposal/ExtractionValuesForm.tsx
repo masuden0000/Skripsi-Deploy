@@ -326,6 +326,11 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
             {isArtikel ? (
               <>
                 <NumberFieldInput
+                  label="Ukuran Heading (pt)"
+                  value={data.typography.font_size_heading_pt}
+                  onChange={(v) => patch("typography", { font_size_heading_pt: v })}
+                />
+                <NumberFieldInput
                   label="Ukuran Judul Artikel (pt)"
                   value={data.typography.font_size_title_pt ?? null}
                   onChange={(v) => patch("typography", { font_size_title_pt: v })}

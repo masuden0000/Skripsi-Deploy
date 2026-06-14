@@ -75,17 +75,19 @@ def run_docx(project_id: str, skema: str = "PKM-KC", local_output: str | None = 
     return result_url
 
 
-def run_generate_placeholders(project_id: str) -> None:
+def run_generate_placeholders(project_id: str, skema: str = "PKM-KC") -> None:
     """Generate instructional placeholder via LLM dan simpan ke DB."""
     from model_ai.docx.chunk_loader import load_chunk_sources
     from model_ai.docx.instructional_placeholder_builder import build_instructional_placeholder_map
     from model_ai.metadata_repository import load_document_metadata, save_generated_placeholders
+    from model_ai.shared import is_type_b
 
-    print(f"[generate-placeholders] Memuat metadata dan chunks untuk project: {project_id}", flush=True)
+    print(f"[generate-placeholders] Memuat metadata dan chunks untuk project: {project_id} (skema: {skema})", flush=True)
     metadata = load_document_metadata(project_id)
     chunks = load_chunk_sources(project_id)
 
-    total = len(metadata.document_structure_proposal.sections) if metadata.document_structure_proposal else 0
+    doc_structure = metadata.document_structure_artikel if is_type_b(skema) else metadata.document_structure_proposal
+    total = len(doc_structure.sections) if doc_structure else 0
     print(f"[generate-placeholders] {total} section ditemukan. Memulai generate placeholder...", flush=True)
 
     generated = build_instructional_placeholder_map(
@@ -95,7 +97,7 @@ def run_generate_placeholders(project_id: str) -> None:
     )
 
     print(f"[generate-placeholders] {len(generated)} placeholder selesai. Menyimpan ke DB...", flush=True)
-    save_generated_placeholders(project_id, generated)
+    save_generated_placeholders(project_id, generated, skema=skema)
     print("[generate-placeholders] Selesai. Placeholder tersimpan ke DB.", flush=True)
 
 
@@ -251,6 +253,11 @@ def main() -> None:
         required=True,
         help="Project ID.",
     )
+    gen_ph_parser.add_argument(
+        "--skema",
+        default="PKM-KC",
+        help="Skema PKM project (contoh: PKM-KC, PKM-AI). Default: PKM-KC.",
+    )
 
     validate_parser = subparsers.add_parser(
         "validate",
@@ -288,7 +295,7 @@ def main() -> None:
         return
 
     if args.command == "generate-placeholders":
-        run_generate_placeholders(project_id=args.project_id)
+        run_generate_placeholders(project_id=args.project_id, skema=args.skema)
         return
 
     if args.command == "export-payload":

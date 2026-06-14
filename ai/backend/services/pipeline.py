@@ -384,6 +384,7 @@ async def run_pipeline(project_id: str, source_url: str, source_file: str) -> bo
     command_ph = [
         sys.executable, "manage.py", "generate-placeholders",
         "--project-id", project_id,
+        "--skema", skema,
     ]
     ph_success, ph_error = await stream_manage_command(
         step="placeholder",

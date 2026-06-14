@@ -49,11 +49,20 @@ def build_instructional_placeholder_map(
     use_llm: bool = True,
 ) -> dict[str, str]:
     placeholders: dict[str, str] = {}
-    structure = metadata.document_structure_proposal
+
+    # Routing: PKM-AI menggunakan document_structure_artikel; semua lainnya menggunakan document_structure_proposal
+    if metadata.document_structure_artikel is not None:
+        structure = metadata.document_structure_artikel
+        is_artikel = True
+    else:
+        structure = metadata.document_structure_proposal
+        is_artikel = False
+
     if structure is None:
         return placeholders
 
-    chapter_fmt = (metadata.numbering.chapter_format if metadata.numbering else None) or "BAB {n}"
+    default_chapter_fmt = "{n}." if is_artikel else "BAB {n}"
+    chapter_fmt = (metadata.numbering.chapter_format if metadata.numbering else None) or default_chapter_fmt
 
     llm_call_count = 0
     total_sections = len(structure.sections)
@@ -66,9 +75,10 @@ def build_instructional_placeholder_map(
             title = section.title or "[JUDUL_BAB_BELUM_TERDETEKSI]"
             heading_text = _make_bab_heading(section, chapter_fmt)
             key = make_instruction_key("bab", heading_text, number=section.number)
+            section_label = f"BAB {section.number}" if (section.number and not is_artikel) else str(section.number or "")
             sources = match_sources_for_section(
                 chunks=chunks,
-                section_label=f"BAB {section.number}" if section.number else "BAB",
+                section_label=section_label,
                 section_title=title,
             )
             placeholders[key] = _build_instruction_text(
@@ -76,6 +86,30 @@ def build_instructional_placeholder_map(
                 sources=sources,
                 use_llm=use_llm,
                 fallback_hint=f"jelaskan isi utama untuk bagian {heading_text.lower()}",
+            )
+        elif section.type == "judul_abstrak":
+            title = section.title or "JUDUL DAN ABSTRAK"
+            key = make_instruction_key("judul_abstrak", title)
+            sources = _match_named_section_sources(chunks, "JUDUL") or _match_named_section_sources(chunks, "ABSTRAK")
+            placeholders[key] = _build_instruction_text(
+                display_title=title,
+                sources=sources,
+                use_llm=use_llm,
+                fallback_hint=(
+                    "tulis judul artikel, nama seluruh penulis beserta afiliasi institusi, "
+                    "serta abstrak dalam bahasa Indonesia dan Inggris disertai kata kunci "
+                    "sesuai format artikel ilmiah PKM-AI"
+                ),
+            )
+        elif section.type == "lampiran_utama":
+            title = section.title or "LAMPIRAN"
+            key = make_instruction_key("lampiran_utama", title)
+            sources = _match_named_section_sources(chunks, title)
+            placeholders[key] = _build_instruction_text(
+                display_title=title,
+                sources=sources,
+                use_llm=use_llm,
+                fallback_hint="heading pembuka bagian lampiran artikel ilmiah",
             )
         elif section.type in {"daftar_pustaka", "lampiran", "daftar_isi", "daftar_gambar", "daftar_tabel", "daftar_lampiran"}:
             title = (section.title or section.type.upper().replace("_", " ")).strip()
@@ -117,7 +151,11 @@ def build_instructional_placeholder_map(
             sources = _match_named_section_sources(chunks, title)
             if not sources:
                 sources = _match_named_section_sources(chunks, lampiran_number)
-            fallback_hint = _get_lampiran_fallback_hint(title, lampiran_number)
+            fallback_hint = (
+                _get_artikel_lampiran_fallback_hint(title, lampiran_number)
+                if is_artikel
+                else _get_lampiran_fallback_hint(title, lampiran_number)
+            )
             placeholders[key] = _build_instruction_text(
                 display_title=heading_text,
                 sources=sources,
@@ -190,6 +228,36 @@ def _get_lampiran_fallback_hint(title: str, lampiran_number: str) -> str:
         )
     return (
         f"lengkapi isi {lampiran_number} sesuai ketentuan panduan; "
+        "pastikan format, kelengkapan data, dan urutan dokumen memenuhi syarat yang ditetapkan"
+    )
+
+
+def _get_artikel_lampiran_fallback_hint(title: str, lampiran_number: str) -> str:
+    """Kembalikan hint fallback kontekstual untuk lampiran artikel ilmiah PKM-AI."""
+    t = title.upper()
+    if "BIODATA" in t and "PENULIS" in t:
+        return (
+            "cantumkan biodata lengkap seluruh penulis meliputi nama lengkap, NIM/NIP, "
+            "program studi, perguruan tinggi, nomor telepon, email, dan tanda tangan asli (basah)"
+        )
+    if "SURAT PERNYATAAN" in t:
+        return (
+            "isi surat pernyataan ketua penulis yang menyatakan keaslian karya, "
+            "bebas plagiarisme, dan kesanggupan menyelesaikan program; "
+            "sertakan tanda tangan asli dan materai sesuai ketentuan"
+        )
+    if "SUSUNAN TIM" in t or "PEMBAGIAN TUGAS" in t:
+        return (
+            "cantumkan nama, NIM, program studi, bidang ilmu, alokasi waktu, "
+            "dan uraian tugas spesifik masing-masing anggota tim penulis"
+        )
+    if "BUKTI" in t or "LUARAN" in t or "CAPAIAN" in t:
+        return (
+            "lampirkan bukti luaran atau capaian yang relevan dengan artikel ilmiah, "
+            "seperti hasil pengujian, data pendukung, atau dokumentasi kegiatan"
+        )
+    return (
+        f"lengkapi isi {lampiran_number} sesuai ketentuan panduan PKM-AI; "
         "pastikan format, kelengkapan data, dan urutan dokumen memenuhi syarat yang ditetapkan"
     )
 

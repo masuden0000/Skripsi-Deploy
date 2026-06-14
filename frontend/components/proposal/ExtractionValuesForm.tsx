@@ -564,52 +564,56 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
       <div>
         <SectionHeader title="5. Penomoran" />
         <div className="mt-3 px-1 flex flex-col gap-4">
-          <p className="text-xs font-medium text-muted-foreground">Halaman Pendahuluan</p>
-          <FieldRow>
-            <SelectFieldInput
-              label="Format"
-              value={data.numbering.preliminary?.format ?? null}
-              options={[
-                { value: "lowerRoman",  label: "lowerRoman  (i, ii, iii)" },
-                { value: "upperRoman",  label: "upperRoman  (I, II, III)" },
-                { value: "decimal",     label: "decimal     (1, 2, 3)" },
-                { value: "lowerLetter", label: "lowerLetter (a, b, c)" },
-                { value: "upperLetter", label: "upperLetter (A, B, C)" },
-              ]}
-              onChange={(v) =>
-                patch("numbering", {
-                  preliminary: { ...data.numbering.preliminary, format: v } as PageNumberConfig,
-                })
-              }
-            />
-            <SelectFieldInput
-              label="Lokasi"
-              value={data.numbering.preliminary?.location?.toUpperCase() ?? null}
-              options={[
-                { value: "FOOTER", label: "Footer" },
-                { value: "HEADER", label: "Header" },
-              ]}
-              onChange={(v) =>
-                patch("numbering", {
-                  preliminary: { ...data.numbering.preliminary, location: v } as PageNumberConfig,
-                })
-              }
-            />
-            <SelectFieldInput
-              label="Alignment"
-              value={data.numbering.preliminary?.alignment?.toUpperCase() ?? null}
-              options={[
-                { value: "CENTER", label: "Center" },
-                { value: "RIGHT",  label: "Right" },
-                { value: "LEFT",   label: "Left" },
-              ]}
-              onChange={(v) =>
-                patch("numbering", {
-                  preliminary: { ...data.numbering.preliminary, alignment: v } as PageNumberConfig,
-                })
-              }
-            />
-          </FieldRow>
+          {!isArtikel && (
+            <>
+              <p className="text-xs font-medium text-muted-foreground">Halaman Pendahuluan</p>
+              <FieldRow>
+                <SelectFieldInput
+                  label="Format"
+                  value={data.numbering.preliminary?.format ?? null}
+                  options={[
+                    { value: "lowerRoman",  label: "lowerRoman  (i, ii, iii)" },
+                    { value: "upperRoman",  label: "upperRoman  (I, II, III)" },
+                    { value: "decimal",     label: "decimal     (1, 2, 3)" },
+                    { value: "lowerLetter", label: "lowerLetter (a, b, c)" },
+                    { value: "upperLetter", label: "upperLetter (A, B, C)" },
+                  ]}
+                  onChange={(v) =>
+                    patch("numbering", {
+                      preliminary: { ...data.numbering.preliminary, format: v } as PageNumberConfig,
+                    })
+                  }
+                />
+                <SelectFieldInput
+                  label="Lokasi"
+                  value={data.numbering.preliminary?.location?.toUpperCase() ?? null}
+                  options={[
+                    { value: "FOOTER", label: "Footer" },
+                    { value: "HEADER", label: "Header" },
+                  ]}
+                  onChange={(v) =>
+                    patch("numbering", {
+                      preliminary: { ...data.numbering.preliminary, location: v } as PageNumberConfig,
+                    })
+                  }
+                />
+                <SelectFieldInput
+                  label="Alignment"
+                  value={data.numbering.preliminary?.alignment?.toUpperCase() ?? null}
+                  options={[
+                    { value: "CENTER", label: "Center" },
+                    { value: "RIGHT",  label: "Right" },
+                    { value: "LEFT",   label: "Left" },
+                  ]}
+                  onChange={(v) =>
+                    patch("numbering", {
+                      preliminary: { ...data.numbering.preliminary, alignment: v } as PageNumberConfig,
+                    })
+                  }
+                />
+              </FieldRow>
+            </>
+          )}
 
           <p className="text-xs font-medium text-muted-foreground">Halaman Isi</p>
           <FieldRow>

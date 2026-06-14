@@ -3,7 +3,7 @@ queries:
   - "penomoran halaman artikel ilmiah PKM-AI letak sudut kanan atas bawah angka arab"
   - "nomor halaman artikel PKM format penomoran ketentuan penulisan"
   - "format penulisan bab sub bab artikel ilmiah PKM-AI angka arab"
-  - "penomoran bab pendahuluan metodologi artikel ilmiah ketentuan"
+  - "sistem penomoran halaman isi artikel format letak alignment"
 top_k: 10
 section_focus:
   - "Lampiran 7"
@@ -41,9 +41,9 @@ Gunakan prioritas bertingkat:
 - **[P3 — Last resort]** Baca konteks secara umum.
 
 **Langkah 2 — Cari aturan penomoran halaman:**
-Identifikasi aturan penomoran untuk artikel:
-- Apakah ada halaman preliminari (romawi)? Artikel PKM-AI biasanya langsung angka arab.
-- Format angka: arab (1, 2, 3), romawi kecil (i, ii), romawi besar (I, II)?
+Artikel PKM-AI TIDAK memiliki halaman preliminari (romawi) — `preliminary` selalu `null`.
+Identifikasi aturan penomoran untuk halaman isi:
+- Format angka: arab (1, 2, 3)?
 - Letak nomor halaman: header atau footer?
 - Alignment: kanan, kiri, atau tengah?
 - Mulai dari section mana?
@@ -71,7 +71,7 @@ Jika tidak ditemukan:
 - Gunakan JSON null untuk nilai yang benar-benar tidak bisa diinferensikan
 
 ## Output Fields
-- `preliminary`: `{format, location, alignment, start_at_section}` — halaman awal romawi (null jika tidak ada)
+- `preliminary`: selalu `null` — PKM-AI tidak memiliki halaman pendahuluan romawi
 - `content`: `{format, location, alignment, start_at_section}` — halaman isi angka arab
 - `chapter_format`: template format judul bab artikel (contoh: `"{n}."`)
 - `sub_chapter_format`: template format sub-bab (contoh: `"{bab}.{sub}"`)

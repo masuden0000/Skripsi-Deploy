@@ -741,12 +741,12 @@ def _check_document_structure(
     issues: list[ValidationIssue] = []
     checks: list[ValidationCheckResult] = []
 
-    ds = metadata.document_structure_proposal
+    ds = metadata.document_structure_artikel or metadata.document_structure_proposal
     if ds is None or not ds.sections:
         checks.append(ValidationCheckResult(
             category="document_structure", field="section_order",
             status="skipped",
-            message="Tidak ada data document_structure_proposal di metadata",
+            message="Tidak ada data document_structure di metadata",
             skip_reason="Tidak ada nilai di metadata",
         ))
         return issues, checks
@@ -1202,7 +1202,7 @@ def _check_lampiran_format(
     checks: list[ValidationCheckResult] = []
 
     t  = metadata.typography
-    ds = metadata.document_structure_proposal
+    ds = metadata.document_structure_artikel or metadata.document_structure_proposal
     expected_font    = t.font_family if t else None
     expected_size    = int(t.font_size_body_pt) if t and t.font_size_body_pt else None
     expected_spacing = _resolve_line_spacing(metadata)
@@ -2996,16 +2996,29 @@ def _check_page_count(
     checks: list[ValidationCheckResult] = []
 
     pc = metadata.page_count_limits
-    if pc is None or pc.proposal_halaman_inti_maks is None:
+    if pc is None:
+        checks.append(ValidationCheckResult(
+            category="page_count", field="halaman_inti",
+            status="skipped",
+            message="Batas halaman inti tidak dikonfigurasi di metadata",
+            skip_reason="page_count_limits tidak ada",
+        ))
+        return issues, checks
+
+    # PKM-AI (Type B) menggunakan artikel_halaman_inti_maks; lainnya menggunakan proposal_halaman_inti_maks
+    is_artikel = pc.artikel_halaman_inti_maks is not None
+    maks       = pc.artikel_halaman_inti_maks if is_artikel else pc.proposal_halaman_inti_maks
+    min_pages  = pc.artikel_halaman_inti_min if is_artikel else None
+
+    if maks is None:
         checks.append(ValidationCheckResult(
             category="page_count", field="halaman_inti",
             status="skipped",
             message="Batas maksimum halaman inti tidak dikonfigurasi di metadata",
-            skip_reason="proposal_halaman_inti_maks tidak ada",
+            skip_reason="halaman_inti_maks tidak ada",
         ))
         return issues, checks
 
-    maks         = pc.proposal_halaman_inti_maks
     mulai_type   = pc.halaman_inti_mulai    # default "bab"
     selesai_type = pc.halaman_inti_selesai  # default "daftar_pustaka"
 
@@ -3115,28 +3128,41 @@ def _check_page_count(
                 "expected" : None,
             })
 
-        expected_str = f"≤ {maks} halaman"
-        actual_str   = f"{count} halaman"
+        if min_pages is not None:
+            expected_str = f"{min_pages}–{maks} halaman"
+        else:
+            expected_str = f"≤ {maks} halaman"
+        actual_str = f"{count} halaman"
 
-        if count <= maks:
+        too_many = count > maks
+        too_few  = min_pages is not None and count < min_pages
+
+        if not too_many and not too_few:
             checks.append(ValidationCheckResult(
                 category="page_count", field="halaman_inti",
                 status="passed",
                 message=(
                     f"Jumlah halaman inti {count} halaman "
                     f"(halaman {start_page}–{end_page}): "
-                    f"sesuai batas maksimum {maks} halaman"
+                    f"sesuai batas {expected_str}"
                 ),
                 expected=expected_str,
                 actual=actual_str,
                 occurrences=occurrences,
             ))
         else:
-            msg = (
-                f"Jumlah halaman inti {count} halaman "
-                f"(halaman {start_page}–{end_page}) "
-                f"melebihi batas maksimum {maks} halaman."
-            )
+            if too_many:
+                msg = (
+                    f"Jumlah halaman inti {count} halaman "
+                    f"(halaman {start_page}–{end_page}) "
+                    f"melebihi batas maksimum {maks} halaman."
+                )
+            else:
+                msg = (
+                    f"Jumlah halaman inti {count} halaman "
+                    f"(halaman {start_page}–{end_page}) "
+                    f"kurang dari batas minimum {min_pages} halaman."
+                )
             issues.append(ValidationIssue(
                 category="page_count", field="halaman_inti",
                 severity="error", message=msg,

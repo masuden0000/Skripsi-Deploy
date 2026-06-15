@@ -1,7 +1,10 @@
 """
-FastAPI Router for Projects
-Dipakai oleh: Express Backend (sebagai internal API)
-Semua HTTP communication masuk melalui Express, FastAPI hanya untuk AI pipeline
+FastAPI Router untuk Projects.
+Entry point dari Express Backend ke pipeline AI. Mengelola lifecycle project di Supabase
+dan memicu run_pipeline (fase ekstraksi) serta run_docx_pipeline (fase generate DOCX) sebagai background tasks.
+
+Dipakai oleh: Express Backend (sebagai proxy internal — tidak diakses langsung dari frontend)
+Keyword: automated document generation
 """
 from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, Query
 from fastapi.responses import JSONResponse

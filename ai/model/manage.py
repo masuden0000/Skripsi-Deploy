@@ -1,4 +1,4 @@
-"""CLI entry point untuk menjalankan pipeline automated document extraction dan generation. Posisi pipeline: entry point utama (setup → extract → generate-placeholders → docx → validate)."""
+"""CLI entry point untuk menjalankan subperintah pipeline. Dipanggil oleh ai/backend/services/pipeline.py via subprocess. Posisi pipeline: entry point utama (setup → extract → generate-placeholders → docx → validate). Keyword: automated document generation"""
 import argparse
 import sys
 from pathlib import Path

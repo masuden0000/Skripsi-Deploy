@@ -1,4 +1,4 @@
-"""Figures & tables checks: caption format and positioning."""
+"""Figures & tables checks: caption format and positioning. Keyword: automated document validation"""
 from __future__ import annotations
 
 import re

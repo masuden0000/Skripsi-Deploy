@@ -1,4 +1,4 @@
-"""Page count checks: structural page counting and section start validation."""
+"""Page count checks: structural page counting and section start validation. Keyword: automated document validation"""
 from __future__ import annotations
 
 from pathlib import Path

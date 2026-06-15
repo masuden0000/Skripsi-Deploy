@@ -1,4 +1,4 @@
-"""Renderer Type B: menulis konten terstruktur ke dokumen .docx khusus PKM-AI (artikel ilmiah). Urutan eksekusi mengikuti Sistematika C panduan PKM-AI: judul_abstrak (halaman 1, spasi 1.0) → bab artikel (spasi 1.15) → daftar_pustaka (Harvard hanging indent) → lampiran. Posisi pipeline: instructional_placeholder_builder → docx_B_renderer → DOCX output."""
+"""Renderer Type B: menulis konten terstruktur ke dokumen .docx khusus PKM-AI (artikel ilmiah). Urutan eksekusi mengikuti Sistematika C panduan PKM-AI: judul_abstrak (halaman 1, spasi 1.0) → bab artikel (spasi 1.15) → daftar_pustaka (Harvard hanging indent) → lampiran. Posisi pipeline: instructional_placeholder_builder → docx_B_renderer → DOCX output. Keyword: automated document generation"""
 from io import BytesIO
 
 from docx import Document

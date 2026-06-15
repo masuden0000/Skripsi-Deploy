@@ -11,6 +11,7 @@ Logika check domain telah dipindah ke subpackage checks/:
   checks/figures_tables.py — _check_figures_tables, _check_caption_format
   checks/numbering.py      — _check_numbering
   checks/page_count.py     — _check_page_count
+Keyword: automated document validation
 """
 from __future__ import annotations
 

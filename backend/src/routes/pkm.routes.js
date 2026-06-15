@@ -2,11 +2,15 @@
  * Router Express untuk endpoint PKM (Program Kreativitas Mahasiswa).
  *
  * Peran dalam pipeline:
- *   - GET  /api/pkm/schemas        → Baca daftar skema PKM langsung dari Supabase
- *   - POST /api/pkm/validation/run → Proxy multipart/form-data ke FastAPI ai-backend
+ *   - GET  /api/pkm/schemas              → Baca daftar skema PKM dari Supabase
+ *   - POST /api/pkm/validation/run       → Proxy DOCX tunggal ke FastAPI ai-backend
+ *   - POST /api/pkm/validation/bulk      → Proxy banyak DOCX ke FastAPI (bulk session)
+ *   - POST /api/pkm/validation/summarize → Proxy JSON ke FastAPI (ringkasan LLM)
+ *   - GET  /api/pkm/validation/jobs/:id  → Proxy polling status session ke FastAPI
  *
  * Frontend tidak memanggil ai-backend langsung; semua request melewati Express ini.
  * Digunakan oleh: frontend/lib/api/pkm.ts
+ * Keyword: automated document validation
  */
 import { Router } from "express"
 import { adminClient } from "../config/supabase.js"

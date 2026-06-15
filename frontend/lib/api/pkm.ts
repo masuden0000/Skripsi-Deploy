@@ -2,10 +2,15 @@
  * Modul API client untuk fitur PKM (validasi dokumen dan skema).
  *
  * Alur pemanggilan dalam pipeline validasi:
- *   getPkmSchemas()       → GET  /api/pkm/schemas        (Express → Supabase)
- *   runDocumentValidation() → POST /api/pkm/validation/run (Express → FastAPI → Python validator)
+ *   getPkmSchemas()            → GET  /api/pkm/schemas              (Express → Supabase)
+ *   runDocumentValidation()    → POST /api/pkm/validation/run       (Express → FastAPI → Python validator)
+ *   runBulkValidation()        → POST /api/pkm/validation/bulk      (Express → FastAPI → background session)
+ *   summarizeValidation()      → POST /api/pkm/validation/summarize (Express → FastAPI → LLM)
+ *   checkSessionStatus()       → GET  /api/pkm/validation/jobs/:id  (Express → FastAPI → session status)
+ *   downloadBulkSummaryExcel() → GET  /api/pkm/validation/export/:id (Express → FastAPI → Excel)
  *
  * Digunakan oleh: frontend/components/reviewer/DocumentValidator.tsx
+ * Keyword: automated document validation
  */
 import { apiRequest } from "./client"
 import { z } from "zod"

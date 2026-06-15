@@ -1,4 +1,4 @@
-"""Shared constants and helper functions used across all check modules."""
+"""Shared constants and helper functions used across all check modules. Keyword: automated document validation"""
 from __future__ import annotations
 
 import io

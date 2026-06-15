@@ -2,6 +2,7 @@
 
 Dipakai oleh endpoint POST /api/validation/summarize untuk memberi reviewer
 catatan siap-pakai bergaya penilai dosen.
+Keyword: automated document validation
 """
 from __future__ import annotations
 

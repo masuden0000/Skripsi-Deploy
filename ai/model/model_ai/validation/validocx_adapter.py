@@ -1,6 +1,7 @@
 """Adapter: konversi DocumentMetadata Project 1 AI → requirements dict yang dikenali validocx.
 
 Posisi pipeline: jembatan antara metadata Pydantic dan engine validocx (validate()).
+Keyword: automated document validation
 """
 from __future__ import annotations
 

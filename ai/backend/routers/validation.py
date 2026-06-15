@@ -9,6 +9,7 @@ Endpoint:
   GET  /export/{session_id}   — generate Excel ringkasan LLM semua dokumen dalam bulk session
 
 Digunakan oleh: backend/src/routes/pkm.routes.js (sebagai proxy)
+Keyword: automated document validation
 """
 import asyncio
 import io

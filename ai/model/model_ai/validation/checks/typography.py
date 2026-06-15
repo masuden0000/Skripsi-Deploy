@@ -1,4 +1,4 @@
-"""Typography checks: heading case and body content formatting."""
+"""Typography checks: heading case and body content formatting. Keyword: automated document validation"""
 from __future__ import annotations
 
 from pathlib import Path

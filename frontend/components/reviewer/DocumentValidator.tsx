@@ -1,6 +1,12 @@
-﻿"use client"
+﻿/**
+ * Komponen utama validasi dokumen (single & bulk) untuk role Reviewer.
+ * Posisi pipeline: UI → pkm.ts (runDocumentValidation / runBulkValidation) → Express → FastAPI → Python validator.
+ * Keyword: automated document validation
+ */
+"use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { ReviewerSurfaceCard } from "./shared"
 import { Button } from "@/components/ui/button"
 import {
@@ -49,7 +55,6 @@ const MAX_FILE_SIZE     = 10 * 1024 * 1024   // 10 MB
 const SESSION_STORAGE_KEY  = "validation_bulk_session_id"
 const SINGLE_RESULT_KEY    = "validation_single_result"
 const SINGLE_META_KEY      = "validation_single_meta"
-const POLL_INTERVAL_MS = 3000
 
 const CATEGORY_LABELS: Record<string, string> = {
   typography        : "Typography",
@@ -1197,8 +1202,6 @@ export function DocumentValidator() {
   const [excelLoading, setExcelLoading]   = useState(false)
   const [excelError, setExcelError]       = useState<string | null>(null)
 
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
   // ── Restore state dari localStorage saat mount ────────────────────────────
   useEffect(() => {
     // Restore hasil single validation jika ada
@@ -1234,27 +1237,45 @@ export function DocumentValidator() {
     }
   }, [])
 
-  // ── Polling status session ────────────────────────────────────────────────
+  // ── Realtime status session ───────────────────────────────────────────────
   useEffect(() => {
     if (!sessionId || !isPolling) return
 
-    const poll = async () => {
+    const supabase = getSupabaseBrowserClient()
+
+    const applyUpdate = async () => {
       const { data } = await checkSessionStatus(sessionId)
-      if (data) {
-        setSessionStatus(data)
-        if (data.status === "completed" || data.status === "failed") {
-          setIsPolling(false)
-          // Pilih otomatis dokumen pertama yang selesai
-          const firstDone = data.items.findIndex((i) => i.status === "completed" || i.status === "failed")
-          if (firstDone >= 0) setSelectedDocIdx(firstDone)
-        }
+      if (!data) return
+      setSessionStatus(data)
+      if (data.status === "completed" || data.status === "failed") {
+        setIsPolling(false)
+        const firstDone = data.items.findIndex(
+          (i) => i.status === "completed" || i.status === "failed"
+        )
+        if (firstDone >= 0) setSelectedDocIdx(firstDone)
       }
     }
 
-    poll()
-    pollingRef.current = setInterval(poll, POLL_INTERVAL_MS)
+    const channel = supabase
+      .channel(`validation-session-${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "validation_sessions",
+          filter: `id=eq.${sessionId}`,
+        },
+        () => { applyUpdate() }
+      )
+      .subscribe(() => {
+        // Fetch status terkini saat subscription baru terbentuk —
+        // menangkap perubahan yang terjadi selama jeda setup WebSocket.
+        applyUpdate()
+      })
+
     return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current)
+      supabase.removeChannel(channel)
     }
   }, [sessionId, isPolling])
 
@@ -1383,7 +1404,6 @@ export function DocumentValidator() {
   }
 
   const handleClearJob = () => {
-    if (pollingRef.current) clearInterval(pollingRef.current)
     localStorage.removeItem(SESSION_STORAGE_KEY)
     setSessionId(null)
     setSessionStatus(null)

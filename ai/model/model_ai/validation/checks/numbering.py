@@ -1,4 +1,4 @@
-"""Numbering checks: page number format, location, and section start validation."""
+"""Numbering checks: page number format, location, and section start validation. Keyword: automated document validation"""
 from __future__ import annotations
 
 from pathlib import Path

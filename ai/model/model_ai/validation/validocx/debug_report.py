@@ -1,6 +1,7 @@
 """
 validocx/debug_report.py
 Parse log validasi dan hasilkan laporan debugging dalam format JSON.
+Keyword: automated document validation
 """
 
 import json

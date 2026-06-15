@@ -1,4 +1,4 @@
-"""Menyusun instructional placeholder per section DOCX dari chunk panduan berbasis LLM. Posisi pipeline: metadata_repository → instructional_placeholder_builder → generator."""
+"""Menyusun instructional placeholder per section DOCX dari chunk panduan berbasis LLM. Posisi pipeline: metadata_repository → instructional_placeholder_builder → generator. Keyword: automated document generation"""
 import re
 import time
 from pathlib import Path

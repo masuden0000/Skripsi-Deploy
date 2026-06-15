@@ -9,6 +9,7 @@ Alur:
      sisanya antri) menggunakan asyncio.Semaphore.
   5. Setiap item memperbarui completed_items setelah selesai.
   6. Session ditandai 'completed' setelah semua task selesai.
+Keyword: automated document validation
 """
 import asyncio
 import json

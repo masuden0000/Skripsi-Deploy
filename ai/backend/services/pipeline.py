@@ -3,9 +3,12 @@ Fungsi: Orkestrator pipeline AI untuk pembuatan DOCX proposal PKM secara otomati
 
 Digunakan oleh: routers/projects.py (dijalankan sebagai background task)
 
-Tujuan: Mengeksekusi 4 langkah pipeline secara berurutan —
-  run_setup → run_extraction → generate-placeholders → run_docx_pipeline —
-  masing-masing sebagai subprocess ke ai/manage.py.
+Tujuan: Mengelola dua fase pipeline yang terpisah —
+  Fase 1 (run_pipeline): download → run_setup → run_extraction → generate-placeholders
+    → berhenti di status "extracted", menunggu konfirmasi user.
+  Fase 2 (run_docx_pipeline): generate DOCX → cleanup lokal
+    → dipicu via POST /api/projects/{id}/generate setelah user konfirmasi.
+  Setiap langkah dijalankan sebagai subprocess ke ai/manage.py.
 
 Keyword: automated document generation
 """

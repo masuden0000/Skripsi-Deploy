@@ -1,4 +1,4 @@
-"""Schema Pydantic untuk hasil validasi dokumen. Posisi pipeline: dipakai oleh validocx_runner dan validator."""
+"""Schema Pydantic untuk hasil validasi dokumen. Posisi pipeline: dipakai oleh validocx_runner dan validator. Keyword: automated document validation"""
 from datetime import datetime, timezone
 from typing import Literal
 

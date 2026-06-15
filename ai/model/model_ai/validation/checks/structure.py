@@ -1,4 +1,4 @@
-"""Structure checks: document structure order and lampiran format."""
+"""Structure checks: document structure order and lampiran format. Keyword: automated document validation"""
 from __future__ import annotations
 
 import re

@@ -1,4 +1,4 @@
-"""Orkestrator utama pembuatan DOCX dari metadata, chunk, dan instructional placeholders. Posisi pipeline: instructional_placeholder_builder → generator → docx_A_renderer / docx_B_renderer → DOCX output."""
+"""Orkestrator utama pembuatan DOCX dari metadata, chunk, dan instructional placeholders. Posisi pipeline: instructional_placeholder_builder → generator → docx_A_renderer / docx_B_renderer → DOCX output. Keyword: automated document generation"""
 from pathlib import Path
 
 from model_ai.docx.chunk_loader import load_chunk_sources

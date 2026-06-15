@@ -1,3 +1,8 @@
+/**
+ * Halaman utama validasi dokumen untuk role Reviewer.
+ * Posisi pipeline: entry point UI → DocumentValidator → pkm.ts → Express → FastAPI.
+ * Keyword: automated document validation
+ */
 import { DocumentValidator } from "@/components/reviewer/DocumentValidator"
 import { ReviewerPageHeader } from "@/components/reviewer/shared"
 

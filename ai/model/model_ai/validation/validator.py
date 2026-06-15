@@ -1,4 +1,4 @@
-"""Main entry point validasi dokumen DOCX. Pipeline: payload (DocumentMetadata) → validocx engine → ValidationResult."""
+"""Main entry point validasi dokumen DOCX. Pipeline: payload (DocumentMetadata) → validocx engine → ValidationResult. Keyword: automated document validation"""
 from datetime import datetime, timezone
 from pathlib import Path
 

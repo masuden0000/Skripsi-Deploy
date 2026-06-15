@@ -1,4 +1,4 @@
-"""Paket validasi dokumen DOCX berbasis engine validocx. Posisi pipeline: DOCX output → validocx_adapter → validocx_runner → validator."""
+"""Paket validasi dokumen DOCX berbasis engine validocx. Posisi pipeline: DOCX output → validocx_adapter → validocx_runner → validator. Keyword: automated document validation"""
 from model_ai.validation.models import (
     ValidationCheckResult,
     ValidationIssue,

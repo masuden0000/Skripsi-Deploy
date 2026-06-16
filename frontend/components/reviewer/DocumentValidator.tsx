@@ -1244,8 +1244,17 @@ export function DocumentValidator() {
     const supabase = getSupabaseBrowserClient()
 
     const applyUpdate = async () => {
-      const { data } = await checkSessionStatus(sessionId)
-      if (!data) return
+      const { data, error } = await checkSessionStatus(sessionId)
+      if (!data) {
+        // Session tidak ditemukan (404) — bersihkan localStorage supaya tidak
+        // terus-menerus polling session yang sudah tidak ada.
+        if (error?.includes("404") || error?.toLowerCase().includes("tidak ditemukan")) {
+          localStorage.removeItem(SESSION_STORAGE_KEY)
+          setSessionId(null)
+          setIsPolling(false)
+        }
+        return
+      }
       setSessionStatus(data)
       if (data.status === "completed" || data.status === "failed") {
         setIsPolling(false)
@@ -1254,6 +1263,14 @@ export function DocumentValidator() {
         )
         if (firstDone >= 0) setSelectedDocIdx(firstDone)
       }
+    }
+
+    // Debounce: 5 item paralel bisa men-trigger banyak event berurutan.
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null
+    const scheduleUpdate = (source: string, payload?: unknown) => {
+      console.debug("[validator-rt]", source, payload)
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => { applyUpdate() }, 150)
     }
 
     const channel = supabase
@@ -1266,15 +1283,32 @@ export function DocumentValidator() {
           table: "validation_sessions",
           filter: `id=eq.${sessionId}`,
         },
-        () => { applyUpdate() }
+        (payload) => scheduleUpdate("session-update", payload)
       )
-      .subscribe(() => {
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "validation_results",
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => scheduleUpdate("result-change", payload)
+      )
+      .subscribe((status) => {
+        console.debug("[validator-rt] subscribe status:", status)
         // Fetch status terkini saat subscription baru terbentuk —
         // menangkap perubahan yang terjadi selama jeda setup WebSocket.
-        applyUpdate()
+        if (status === "SUBSCRIBED") applyUpdate()
       })
 
+    // Safety net: polling 4 detik kalau WebSocket realtime gagal connect
+    // (misal karena publication belum ter-migrate di environment lama).
+    const pollTimer = setInterval(applyUpdate, 4000)
+
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      clearInterval(pollTimer)
       supabase.removeChannel(channel)
     }
   }, [sessionId, isPolling])
@@ -1445,7 +1479,11 @@ export function DocumentValidator() {
       const url = URL.createObjectURL(blob)
       const a   = document.createElement("a")
       a.href     = url
-      a.download = `ringkasan-validasi-${sessionId.slice(0, 8)}.xlsx`
+      const now = new Date()
+      const dd = String(now.getDate()).padStart(2, "0")
+      const mm = String(now.getMonth() + 1).padStart(2, "0")
+      const yyyy = now.getFullYear()
+      a.download = `ringkasan review PKM_${dd}-${mm}-${yyyy}.xlsx`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)

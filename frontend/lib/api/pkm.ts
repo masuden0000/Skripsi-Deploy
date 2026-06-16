@@ -387,7 +387,7 @@ export async function checkSessionStatus(
     const json = await response.json()
 
     if (!response.ok) {
-      return { data: null, error: json.error || `Request gagal (${response.status})` }
+      return { data: null, error: json.error ?? json.detail ?? `Request gagal (${response.status})` }
     }
 
     // Pastikan result di setiap item di-parse dengan validationResultSchema

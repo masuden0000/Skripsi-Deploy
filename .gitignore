@@ -23,8 +23,19 @@ CLAUDE.md
 
 # App-generated data
 ai/model/data/
+ai/model/debug_output/
 # Temporary files for bulk validation background jobs
 ai/backend/jobs_temp/
+
+# Editor settings
+.vscode/
+
+# Test fixtures (binary, personal data)
+ai/model/tests/*.docx
+
+# Internal agent/tooling state
+.superpowers/
+TASKS.md
 
 # Supabase CLI working directory (generated, bukan source of truth)
 # Source of truth migration ada di database/supabase/migrations/

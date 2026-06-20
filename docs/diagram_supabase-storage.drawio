@@ -1,0 +1,192 @@
+﻿<mxfile host="app.diagrams.net">
+  <diagram id="supabase-storage-erd" name="Supabase Storage">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ============================================================ -->
+        <!-- STORAGE DOMAIN BAND -->
+        <!-- ============================================================ -->
+        <mxCell id="band_storage" parent="1" style="rounded=1;whiteSpace=wrap;html=1;strokeWidth=2;dashed=1;opacity=30;pointerEvents=0;fillColor=#f5f5f5;strokeColor=#666666;" value="" vertex="1">
+          <mxGeometry x="20" y="-40" width="760" height="440" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_storage" parent="1" style="text;html=0;align=center;verticalAlign=middle;fontStyle=1;fontSize=13;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="Storage Domain (Supabase Storage)" vertex="1">
+          <mxGeometry x="160" y="-10" width="400" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================================ -->
+        <!-- BUCKET 1: ai-source-files -->
+        <!-- ============================================================ -->
+        <mxCell id="t_ai_source" parent="1" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" tooltip="Bucket untuk menyimpan file PDF proposal PKM yang diunggah pengguna" value="ai-source-files" vertex="1">
+          <mxGeometry x="50" y="30" width="320" height="222" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r_as_name" parent="t_ai_source" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="r_as_name_l" parent="r_as_name" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="PK" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_as_name_r" parent="r_as_name" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=5;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="bucket_name : ai-source-files" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_as_filetype" parent="t_ai_source" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="54" as="geometry" />
+        </mxCell>
+        <mxCell id="r_as_filetype_l" parent="r_as_filetype" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_as_filetype_r" parent="r_as_filetype" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=0;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="file_type : Any (default PDF)" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_as_access" parent="t_ai_source" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="78" as="geometry" />
+        </mxCell>
+        <mxCell id="r_as_access_l" parent="r_as_access" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_as_access_r" parent="r_as_access" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=0;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="access : public" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_as_sizelimit" parent="t_ai_source" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="102" as="geometry" />
+        </mxCell>
+        <mxCell id="r_as_sizelimit_l" parent="r_as_sizelimit" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_as_sizelimit_r" parent="r_as_sizelimit" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=0;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="file_size_limit : 50 MB" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_as_path" parent="t_ai_source" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="r_as_path_l" parent="r_as_path" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_as_path_r" parent="r_as_path" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=0;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="path_format : {project_id}/file.pdf" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_as_folderkey" parent="t_ai_source" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="r_as_folderkey_l" parent="r_as_folderkey" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="ref" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_as_folderkey_r" parent="r_as_folderkey" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=0;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="folder_key → projects.id" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_as_dbref" parent="t_ai_source" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="174" as="geometry" />
+        </mxCell>
+        <mxCell id="r_as_dbref_l" parent="r_as_dbref" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="ref" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_as_dbref_r" parent="r_as_dbref" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=2;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="projects.source_file / source_url" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_as_dbref2" parent="t_ai_source" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="198" as="geometry" />
+        </mxCell>
+        <mxCell id="r_as_dbref2_l" parent="r_as_dbref2" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="ref" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_as_dbref2_r" parent="r_as_dbref2" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=2;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="document_chunks.source_file" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <!-- ============================================================ -->
+        <!-- BUCKET 2: ai-output-files -->
+        <!-- ============================================================ -->
+        <mxCell id="t_ai_output" parent="1" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" tooltip="Bucket untuk menyimpan file DOCX hasil generate dari pipeline AI" value="ai-output-files" vertex="1">
+          <mxGeometry x="430" y="30" width="320" height="198" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r_ao_name" parent="t_ai_output" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="r_ao_name_l" parent="r_ao_name" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="PK" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_ao_name_r" parent="r_ao_name" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=5;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="bucket_name : ai-output-files" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_ao_filetype" parent="t_ai_output" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="54" as="geometry" />
+        </mxCell>
+        <mxCell id="r_ao_filetype_l" parent="r_ao_filetype" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_ao_filetype_r" parent="r_ao_filetype" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=0;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="file_type : Any (default DOCX)" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_ao_access" parent="t_ai_output" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="78" as="geometry" />
+        </mxCell>
+        <mxCell id="r_ao_access_l" parent="r_ao_access" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_ao_access_r" parent="r_ao_access" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=0;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="access : public" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_ao_sizelimit" parent="t_ai_output" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="102" as="geometry" />
+        </mxCell>
+        <mxCell id="r_ao_sizelimit_l" parent="r_ao_sizelimit" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_ao_sizelimit_r" parent="r_ao_sizelimit" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=0;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="file_size_limit : 50 MB" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_ao_path" parent="t_ai_output" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="r_ao_path_l" parent="r_ao_path" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_ao_path_r" parent="r_ao_path" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=0;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="path_format : {project_id}/output.docx" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_ao_folderkey" parent="t_ai_output" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="r_ao_folderkey_l" parent="r_ao_folderkey" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="ref" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_ao_folderkey_r" parent="r_ao_folderkey" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=0;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="folder_key → projects.id" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_ao_dbref" parent="t_ai_output" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;top=0;left=0;right=0;bottom=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="24" width="320" y="174" as="geometry" />
+        </mxCell>
+        <mxCell id="r_ao_dbref_l" parent="r_ao_dbref" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;fontSize=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="ref" vertex="1">
+          <mxGeometry height="24" width="50" as="geometry"><mxRectangle height="24" width="50" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+        <mxCell id="r_ao_dbref_r" parent="r_ao_dbref" style="shape=partialRectangle;connectable=0;top=0;left=0;bottom=0;right=0;overflow=hidden;fontStyle=2;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="projects.result_url (public URL)" vertex="1">
+          <mxGeometry height="24" width="270" x="50" as="geometry"><mxRectangle height="24" width="270" as="alternateBounds" /></mxGeometry>
+        </mxCell>
+
+        <!-- ============================================================ -->
+        <!-- LEGEND -->
+        <!-- ============================================================ -->
+        <mxCell id="legend" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontStyle=0;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;rounded=1;" value="&lt;b&gt;Keterangan:&lt;/b&gt;&lt;br&gt;PK = nama bucket (identifier unik) &amp;nbsp;|&amp;nbsp; ref = referensi ke kolom tabel database (bukan FK relasional, melainkan path / URL string)&lt;br&gt;folder_key = ID yang digunakan sebagai nama folder di storage, identik dengan projects.id di tabel database" vertex="1">
+          <mxGeometry x="50" y="310" width="700" height="60" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

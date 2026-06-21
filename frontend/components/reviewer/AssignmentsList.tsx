@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { ReviewerSurfaceCard } from "./shared"
 import { Button } from "@/components/ui/button"
 import { CalendarIcon, ChevronIcon, CheckIcon, CopyIcon, LinkIcon, Loader2Icon } from "@/components/icons/public-icons"
-import { getReviewerAssignments, type Assignment } from "@/lib/api/reviewer-assignments"
+import { getReviewerAssignments, completeReviewerAssignment, type Assignment } from "@/lib/api/reviewer-assignments"
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr)
@@ -54,9 +54,11 @@ function CopyButton({ text }: { text: string }) {
 
 interface AssignmentCardProps {
   assignment: Assignment
+  onComplete: (id: string) => void
+  isUpdating: boolean
 }
 
-function AssignmentCard({ assignment }: AssignmentCardProps) {
+function AssignmentCard({ assignment, onComplete, isUpdating }: AssignmentCardProps) {
   const active = isActive(assignment.periodMulai || "", assignment.periodSelesai || "")
 
   return (
@@ -71,6 +73,9 @@ function AssignmentCard({ assignment }: AssignmentCardProps) {
               <span>
                 {formatDate(assignment.periodMulai || "")} – {formatDate(assignment.periodSelesai || "")}
               </span>
+              <span>
+                ({calculateDuration(assignment.periodMulai || "", assignment.periodSelesai || "")})
+              </span>
             </div>
           </div>
           <span
@@ -79,20 +84,35 @@ function AssignmentCard({ assignment }: AssignmentCardProps) {
               active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500",
             ].join(" ")}
           >
-            {active ? "Aktif" : "Selesai"}
+            {active ? "Aktif" : "Tidak Aktif"}
           </span>
         </div>
 
-        {/* Info */}
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="size-1.5 rounded-full bg-muted-foreground/30" />
-            <span>{calculateDuration(assignment.periodMulai || "", assignment.periodSelesai || "")}</span>
-          </div>
+        {/* Info + completion action */}
+        <div className="flex items-center justify-between gap-4 text-sm">
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <span className="size-1.5 rounded-full bg-muted-foreground/30" />
             <span>{assignment.fakultas}</span>
           </div>
+          {assignment.isCompleted ? (
+            <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-pkm-100 px-3 py-1 text-xs font-semibold text-pkm-700">
+              <CheckIcon className="size-3" />
+              Selesai
+            </span>
+          ) : active ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onComplete(assignment.id)}
+              disabled={isUpdating}
+              className="shrink-0 h-7 gap-1.5 border-pkm-300 text-pkm-700 hover:bg-pkm-50 text-xs"
+            >
+              {isUpdating
+                ? <Loader2Icon className="size-3.5 animate-spin" />
+                : <CheckIcon className="size-3.5" />}
+              Tandai Selesai
+            </Button>
+          ) : null}
         </div>
 
         {/* Links */}
@@ -181,6 +201,8 @@ export function AssignmentsList() {
   const [selectedYear, setSelectedYear] = useState<string>("all")
   const [activeExpanded, setActiveExpanded] = useState(true)
   const [inactiveExpanded, setInactiveExpanded] = useState(false)
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [completeError, setCompleteError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchAssignments() {
@@ -194,6 +216,18 @@ export function AssignmentsList() {
     }
     fetchAssignments()
   }, [])
+
+  async function handleComplete(id: string) {
+    setUpdatingId(id)
+    setCompleteError(null)
+    const result = await completeReviewerAssignment(id)
+    if (result.error) {
+      setCompleteError(result.error)
+    } else {
+      setAssignments(prev => prev.map(a => a.id === id ? { ...a, isCompleted: true } : a))
+    }
+    setUpdatingId(null)
+  }
 
   const availableYears = useMemo(() => {
     const years = assignments
@@ -255,6 +289,12 @@ export function AssignmentsList() {
 
   return (
     <div className="space-y-4">
+      {completeError ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+          {completeError}
+        </div>
+      ) : null}
+
       {availableYears.length > 1 && (
         <div className="flex items-center gap-2 flex-wrap">
           <button
@@ -298,7 +338,12 @@ export function AssignmentsList() {
             <p className="text-sm text-muted-foreground py-2">Tidak ada penugasan aktif.</p>
           ) : (
             activeAssignments.map(assignment => (
-              <AssignmentCard key={assignment.id} assignment={assignment} />
+              <AssignmentCard
+                key={assignment.id}
+                assignment={assignment}
+                onComplete={handleComplete}
+                isUpdating={updatingId === assignment.id}
+              />
             ))
           )}
         </CollapsibleSection>
@@ -313,7 +358,12 @@ export function AssignmentsList() {
             <p className="text-sm text-muted-foreground py-2">Tidak ada penugasan tidak aktif.</p>
           ) : (
             inactiveAssignments.map(assignment => (
-              <AssignmentCard key={assignment.id} assignment={assignment} />
+              <AssignmentCard
+                key={assignment.id}
+                assignment={assignment}
+                onComplete={handleComplete}
+                isUpdating={updatingId === assignment.id}
+              />
             ))
           )}
         </CollapsibleSection>

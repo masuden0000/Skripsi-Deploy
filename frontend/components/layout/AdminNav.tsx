@@ -51,7 +51,7 @@ const navItems = [
     ),
   },
   {
-    label: "Buat Dokumen Proposal",
+    label: "Buat Template Dokumen Proposal",
     href: "/admin/proposal",
     exact: false,
     icon: (

@@ -56,7 +56,7 @@ flowchart LR
       UC_SetProposalLink["Atur URL proposal"]
       UC_SetAssessmentLink["Atur URL pengumpulan nilai"]
 
-      UC_GenerateProposal["Buat dokumen proposal berbasis AI"]
+      UC_GenerateProposal["Buat Template Dokumen Proposal berbasis AI"]
       UC_InputProposalData["Isi skema, tahun, judul"]
       UC_UploadPdf["Upload file PDF proposal"]
       UC_RequestSignedUrl["Buat signed upload URL"]
@@ -200,7 +200,7 @@ flowchart LR
 8. Lihat detail periode review.
 9. Kelola tugas reviewer.
 10. Atur URL proposal dan URL pengumpulan nilai.
-11. Buat dokumen proposal berbasis AI.
+11. Buat Template Dokumen Proposal berbasis AI.
 12. Pantau status dan log proses AI.
 13. Unduh hasil DOCX.
 

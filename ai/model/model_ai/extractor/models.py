@@ -141,17 +141,6 @@ _MAJOR_SECTION_TYPES = frozenset({
     "judul_abstrak",
     "lampiran_utama",
 })
-_NON_BAB_SECTION_TITLES = {
-    "daftar_isi":     "DAFTAR ISI",
-    "daftar_gambar":  "DAFTAR GAMBAR",
-    "daftar_tabel":   "DAFTAR TABEL",
-    "daftar_lampiran":"DAFTAR LAMPIRAN",
-    "daftar_pustaka": "DAFTAR PUSTAKA",
-    "lampiran":       "LAMPIRAN",
-    "judul_abstrak":  "JUDUL DAN ABSTRAK",
-    "lampiran_utama": "LAMPIRAN",  # sama dengan "lampiran" — bedakan via field `type`, bukan `title`
-}
-
 
 def _normalize_section_type(raw: str) -> str:
     """Normalize LLM-generated section type to canonical snake_case.
@@ -190,9 +179,6 @@ class SectionItem(BaseModel):
         normalized["type"] = canonical_type
 
         normalized["is_major_section"] = canonical_type in _MAJOR_SECTION_TYPES
-
-        if canonical_type in _NON_BAB_SECTION_TITLES:
-            normalized["title"] = _NON_BAB_SECTION_TITLES[canonical_type]
 
         return normalized
 

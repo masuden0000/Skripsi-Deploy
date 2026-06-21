@@ -74,6 +74,26 @@ export async function getReviewerAssignments(): Promise<{
 }
 
 // ============================================================================
+// Complete Assignment (reviewer marks task as done)
+// ============================================================================
+export async function completeReviewerAssignment(id: string): Promise<{
+  data: Assignment | null
+  error: string | null
+}> {
+  const result = await apiRequest<{ data: Assignment }>(
+    "PATCH",
+    `/reviewer-assignments/${id}/complete`,
+  )
+
+  if (result.error) return { data: null, error: result.error }
+
+  const raw = result.data as { data?: unknown } | null
+  if (!raw?.data) return { data: null, error: "Gagal mendapatkan data tugas." }
+
+  return { data: raw.data as Assignment, error: null }
+}
+
+// ============================================================================
 // Get Active Assignments (assignments for active periods)
 // ============================================================================
 export async function getActiveAssignments(): Promise<{

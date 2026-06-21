@@ -38,6 +38,15 @@ type Reviewer = {
   fakultas: string
 }
 
+const ITEMS_PER_PAGE = 10
+
+function buildPageNumbers(current: number, total: number): Array<number | "…"> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  if (current <= 4) return [1, 2, 3, 4, 5, "…", total]
+  if (current >= total - 3) return [1, "…", total - 4, total - 3, total - 2, total - 1, total]
+  return [1, "…", current - 1, current, current + 1, "…", total]
+}
+
 async function readApiResponse(response: Response) {
   const text = await response.text()
   if (!text) return {}
@@ -122,12 +131,20 @@ export default function ReviewPeriodDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isNotFound, setIsNotFound] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
   const reviewPeriodId = Array.isArray(params.id) ? params.id[0] : params.id
 
   const completedCount = useMemo(
     () => assignments.filter((a) => a.isCompleted).length,
     [assignments]
+  )
+
+  const totalPeriodePages = Math.ceil(assignments.length / ITEMS_PER_PAGE)
+
+  const paginatedAssignments = useMemo(
+    () => assignments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [assignments, currentPage]
   )
 
   const loadData = useCallback(async () => {
@@ -312,10 +329,10 @@ export default function ReviewPeriodDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {assignments.map((assignment, index) => (
+                    {paginatedAssignments.map((assignment, index) => (
                       <tr key={assignment.id}>
                         <td className="border-b border-gray-50 py-4 pr-4 text-sm text-gray-500">
-                          {index + 1}
+                          {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                         </td>
                         <td className="border-b border-gray-50 py-4 pr-4 text-sm font-medium text-gray-800">
                           {getReviewerName(assignment.reviewerId)}
@@ -377,6 +394,45 @@ export default function ReviewPeriodDetailPage() {
                 </table>
               )}
             </div>
+            {totalPeriodePages > 1 ? (
+              <div className="flex items-center justify-between border-t border-gray-100 px-5 py-3">
+                <span className="text-xs text-gray-500">
+                  {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, assignments.length)} dari {assignments.length} item
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(p => p - 1)}
+                    disabled={currentPage === 1}
+                    className="rounded px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    ‹
+                  </button>
+                  {buildPageNumbers(currentPage, totalPeriodePages).map((page, i) =>
+                    page === "…" ? (
+                      <span key={`ellipsis-${i}`} className="px-1 text-xs text-gray-400">…</span>
+                    ) : (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => setCurrentPage(page as number)}
+                        className={["rounded px-2.5 py-1.5 text-xs font-medium", currentPage === page ? "bg-pkm-600 text-white" : "text-gray-600 hover:bg-gray-100"].join(" ")}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    disabled={currentPage === totalPeriodePages}
+                    className="rounded px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    ›
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </AdminSurfaceCard>
 
           {periode.updatedAt ? (

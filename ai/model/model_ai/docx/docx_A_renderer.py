@@ -114,7 +114,15 @@ def _apply_heading_case(text: str, case_style: str | None) -> str:
     if s == "LOWERCASE":
         return text.lower()
     if s == "SENTENCE_CASE":
-        return text.capitalize()
+        # str.capitalize() salah untuk teks yang diawali angka (mis. "4.1 Anggaran"
+        # → "4.1 anggaran") karena ia me-lowercase semua karakter setelah karakter
+        # pertama. Implementasi yang benar: lowercase semua, lalu uppercase huruf
+        # pertama yang ditemukan, sehingga "4.1 Anggaran" → "4.1 anggaran" → "4.1 Anggaran".
+        lowered = text.lower()
+        for i, ch in enumerate(lowered):
+            if ch.isalpha():
+                return lowered[:i] + ch.upper() + lowered[i + 1:]
+        return lowered
     if s == "TOGGLE_CASE":
         return text.swapcase()
     return text
@@ -407,8 +415,8 @@ def _render_daftar_isi_example(
             body_counter += 2
         elif sec_type == "sub_bab":
             sub_num = sec.get("sub_number") or ""
-            raw_sub_title = (sec.get("title") or "").title()
-            label = _apply_heading_case(f"{sub_num} {raw_sub_title}".strip(), h2_case)
+            raw_sub_title = sec.get("title") or ""
+            label = f"{sub_num} {raw_sub_title}".strip()
             bookmark = _bookmark_name("sub_bab", sub_num)
             entries.append((label, str(body_counter), bookmark))
             body_counter += 1
@@ -785,8 +793,8 @@ def _render_sub_bab_section(
 ) -> None:
     typography = typography or {}
     sub_num  = section.get("sub_number") or "?"
-    raw_title = (section.get("title") or "[SUB_BAB_TANPA_JUDUL]").title()
-    heading_text = _apply_heading_case(f"{sub_num} {raw_title}".strip(), typography.get("heading_2_case"))
+    raw_title = section.get("title") or "[SUB_BAB_TANPA_JUDUL]"
+    heading_text = f"{sub_num} {raw_title}".strip()
 
     sep = document.add_paragraph()
     sep.paragraph_format.space_before = Pt(0)
@@ -903,24 +911,18 @@ def _render_item_lampiran_section(
     figures_tables: dict | None = None,
 ) -> None:
     typography = typography or {}
-    lampiran_number_raw = (section.get("lampiran_number") or "Lampiran ?").title()
-    title               = (section.get("title") or "[LAMPIRAN_TANPA_JUDUL]").title()
+    lampiran_number_raw = section.get("lampiran_number") or "Lampiran ?"
+    title               = section.get("title") or "[LAMPIRAN_TANPA_JUDUL]"
 
     lampiran_fmt = (figures_tables or {}).get("caption_format_lampiran")
     if lampiran_fmt:
         # Ekstrak ordinal dari "Lampiran 1" → "1", "Lampiran A" → "A"
         parts = lampiran_number_raw.strip().split(None, 1)
         ordinal = parts[1] if len(parts) == 2 and parts[0].upper() == "LAMPIRAN" else lampiran_number_raw
-        heading_text = _apply_heading_case(
-            lampiran_fmt.replace("{n}", ordinal).replace("{title}", title),
-            typography.get("heading_2_case"),
-        )
+        heading_text = lampiran_fmt.replace("{n}", ordinal).replace("{title}", title)
     else:
         sep_str = f"{lampiran_separator} " if lampiran_separator else " "
-        heading_text = _apply_heading_case(
-            f"{lampiran_number_raw}{sep_str}{title}".strip(),
-            typography.get("heading_2_case"),
-        )
+        heading_text = f"{lampiran_number_raw}{sep_str}{title}".strip()
 
     sep = document.add_paragraph()
     sep.paragraph_format.space_before = Pt(0)

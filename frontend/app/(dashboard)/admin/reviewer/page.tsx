@@ -28,6 +28,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+const ITEMS_PER_PAGE = 10
+
+function buildPageNumbers(current: number, total: number): Array<number | "…"> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  if (current <= 4) return [1, 2, 3, 4, 5, "…", total]
+  if (current >= total - 3) return [1, "…", total - 4, total - 3, total - 2, total - 1, total]
+  return [1, "…", current - 1, current, current + 1, "…", total]
+}
+
 type ReviewerStatus = "Aktif" | "Tidak Aktif"
 
 type Reviewer = {
@@ -88,6 +97,7 @@ async function readApiResponse(response: Response) {
 
 function ReviewerModal({
   reviewer,
+  reviewers,
   faculties,
   isSubmitting,
   errorMessage,
@@ -95,6 +105,7 @@ function ReviewerModal({
   onSave,
 }: {
   reviewer: Reviewer | null
+  reviewers: Reviewer[]
   faculties: Faculty[]
   isSubmitting: boolean
   errorMessage: string | null
@@ -119,6 +130,20 @@ function ReviewerModal({
 
     if (!isEditMode && password.length < 8) {
       setLocalError("Password reviewer minimal 8 karakter.")
+      return
+    }
+
+    const others = reviewers.filter((r) => r.id !== reviewer?.id)
+    const namaTrimmed = nama.trim().toLowerCase()
+    const emailTrimmed = email.trim().toLowerCase()
+
+    if (others.some((r) => r.nama.toLowerCase() === namaTrimmed)) {
+      setLocalError("Nama reviewer sudah terdaftar. Gunakan nama lain.")
+      return
+    }
+
+    if (others.some((r) => r.email.toLowerCase() === emailTrimmed)) {
+      setLocalError("Email sudah terdaftar. Gunakan email lain.")
       return
     }
 
@@ -245,9 +270,16 @@ export default function ReviewerManagementPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [statusSort, setStatusSort] = useState<"none" | "asc" | "desc">("none")
 
   const totalAktif = useMemo(
     () => reviewers.filter((reviewer) => reviewer.isActive).length,
+    [reviewers]
+  )
+
+  const totalTidakAktif = useMemo(
+    () => reviewers.filter((reviewer) => !reviewer.isActive).length,
     [reviewers]
   )
 
@@ -261,6 +293,21 @@ export default function ReviewerManagementPage() {
         reviewer.fakultas.toLowerCase().includes(query)
     )
   }, [reviewers, searchQuery])
+
+  const sortedFilteredReviewers = useMemo(() => {
+    if (statusSort === "none") return filteredReviewers
+    return [...filteredReviewers].sort((a, b) => {
+      if (statusSort === "asc") return a.isActive === b.isActive ? 0 : a.isActive ? -1 : 1
+      return a.isActive === b.isActive ? 0 : a.isActive ? 1 : -1
+    })
+  }, [filteredReviewers, statusSort])
+
+  const totalReviewerPages = Math.ceil(sortedFilteredReviewers.length / ITEMS_PER_PAGE)
+
+  const paginatedReviewers = useMemo(
+    () => sortedFilteredReviewers.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [sortedFilteredReviewers, currentPage]
+  )
 
   const loadReviewerDependencies = useCallback(async () => {
     setIsLoading(true)
@@ -313,6 +360,10 @@ export default function ReviewerManagementPage() {
 
     return () => window.clearTimeout(timeoutId)
   }, [loadReviewerDependencies])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, statusSort])
 
   function handleOpenCreateModal() {
     setEditingReviewer(null)
@@ -390,6 +441,7 @@ export default function ReviewerManagementPage() {
       {isModalOpen ? (
         <ReviewerModal
           reviewer={editingReviewer}
+          reviewers={reviewers}
           faculties={faculties}
           isSubmitting={isSubmitting}
           errorMessage={formError}
@@ -421,7 +473,7 @@ export default function ReviewerManagementPage() {
           </div>
         ) : null}
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <AdminMetricCard
             title="Total Reviewer"
             value={String(reviewers.length)}
@@ -433,6 +485,12 @@ export default function ReviewerManagementPage() {
             value={String(totalAktif)}
             accentClassName="bg-pkm-100 text-pkm-700"
             icon={<GraduationIcon />}
+          />
+          <AdminMetricCard
+            title="Tidak Aktif"
+            value={String(totalTidakAktif)}
+            accentClassName="bg-gray-100 text-gray-500"
+            icon={<UserIcon />}
           />
         </div>
 
@@ -477,7 +535,14 @@ export default function ReviewerManagementPage() {
                       Fakultas
                     </th>
                     <th className="border-b border-gray-100 pb-3 pr-4 text-xs font-semibold text-gray-700">
-                      Status
+                      <button
+                        type="button"
+                        onClick={() => setStatusSort(s => s === "none" ? "asc" : s === "asc" ? "desc" : "none")}
+                        className="flex items-center gap-1 hover:text-gray-900"
+                      >
+                        Status
+                        <span className="text-gray-400">{statusSort === "asc" ? "↑" : statusSort === "desc" ? "↓" : "↕"}</span>
+                      </button>
                     </th>
                     <th className="border-b border-gray-100 pb-3 text-right text-xs font-semibold text-gray-700">
                       Aksi
@@ -485,7 +550,7 @@ export default function ReviewerManagementPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredReviewers.map((reviewer) => (
+                  {paginatedReviewers.map((reviewer) => (
                     <tr key={reviewer.id}>
                       <td className="border-b border-gray-50 py-4 pr-4">
                         <div className="flex items-center gap-4">
@@ -547,6 +612,45 @@ export default function ReviewerManagementPage() {
               </table>
             )}
           </div>
+          {totalReviewerPages > 1 ? (
+            <div className="flex items-center justify-between border-t border-gray-100 px-5 py-3">
+              <span className="text-xs text-gray-500">
+                {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, sortedFilteredReviewers.length)} dari {sortedFilteredReviewers.length} item
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => p - 1)}
+                  disabled={currentPage === 1}
+                  className="rounded px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  ‹
+                </button>
+                {buildPageNumbers(currentPage, totalReviewerPages).map((page, i) =>
+                  page === "…" ? (
+                    <span key={`ellipsis-${i}`} className="px-1 text-xs text-gray-400">…</span>
+                  ) : (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCurrentPage(page as number)}
+                      className={["rounded px-2.5 py-1.5 text-xs font-medium", currentPage === page ? "bg-pkm-600 text-white" : "text-gray-600 hover:bg-gray-100"].join(" ")}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => p + 1)}
+                  disabled={currentPage === totalReviewerPages}
+                  className="rounded px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          ) : null}
         </AdminSurfaceCard>
       </div>
     </>

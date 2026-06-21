@@ -10,13 +10,12 @@
  */
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   AdminPageHeader,
   AdminSurfaceCard,
 } from "@/components/admin/shared"
+import { AlertCircleIcon, CheckCircleIcon, DocumentIcon, FileTextIcon, HistoryIcon, Loader2Icon, UploadIcon } from "@/components/icons/public-icons"
+import { ExtractionValuesForm, type ExtractionPayload } from "@/components/proposal/ExtractionValuesForm"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import {
@@ -27,9 +26,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { YearPicker } from "@/components/ui/year-picker"
-import { DocumentIcon, FileTextIcon, UploadIcon, CheckCircleIcon, AlertCircleIcon, Loader2Icon, HistoryIcon } from "@/components/icons/public-icons"
-import { ExtractionValuesForm, type ExtractionPayload } from "@/components/proposal/ExtractionValuesForm"
 import { getPkmSchemas, getPkmSchemeLabel, type PkmSchema } from "@/lib/api/pkm"
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
+import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 // Types
 type ProjectStatus = "pending" | "uploading" | "extracting" | "extracted" | "generating" | "completed" | "failed" | "pending_upload"
@@ -719,7 +719,7 @@ export default function ProposalDocumentPage() {
     return (
       <div className="px-8 py-8">
         <AdminPageHeader
-          title="Buat Dokumen Proposal"
+          title="Buat Template Dokumen Proposal"
           description="Upload dokumen proposal PKM untuk diproses dan divisualisasikan"
           action={riwayatButton}
         />
@@ -733,7 +733,7 @@ export default function ProposalDocumentPage() {
   return (
     <div className="px-8 py-8">
       <AdminPageHeader
-        title="Buat Dokumen Proposal"
+        title="Buat Template Dokumen Proposal"
         description="Upload dokumen proposal PKM untuk diproses dan divisualisasikan"
         action={riwayatButton}
       />

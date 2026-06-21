@@ -93,3 +93,4 @@ def save_generated_placeholders(project_id: str, generated: dict[str, str], skem
     client.table("document_metadata").update({"payload": payload}) \
         .eq("project_id", project_id) \
         .execute()
+

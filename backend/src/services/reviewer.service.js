@@ -152,6 +152,9 @@ export async function createReviewer(payload) {
   })
 
   if (authError || !authData.user) {
+    if (authError?.status === 422 || authError?.message?.toLowerCase().includes("already registered")) {
+      throw new AppError("Email sudah terdaftar. Gunakan email lain.", 409)
+    }
     throw new AppError(authError?.message ?? "Gagal membuat akun auth reviewer.", 500)
   }
 
@@ -181,6 +184,15 @@ export async function createReviewer(payload) {
     }
   } catch (error) {
     await adminClient.auth.admin.deleteUser(authData.user.id).catch(() => null)
+
+    if (error instanceof AppError) {
+      throw error
+    }
+
+    if (error?.code === "23505") {
+      throw new AppError("Nama reviewer sudah terdaftar. Gunakan nama lain.", 409)
+    }
+
     throw new AppError("Gagal menyimpan reviewer baru ke database.", 500)
   }
 
@@ -262,5 +274,14 @@ export async function deleteReviewer(id) {
 
   if (error) {
     throw new AppError(error.message || "Gagal menghapus reviewer.", 500)
+  }
+}
+
+export async function getReviewerProfile(userId) {
+  const row = await getReviewerRowById(userId)
+  return {
+    nama: row.profiles?.full_name ?? "",
+    fakultas: row.faculties?.name ?? "",
+    fakultasKode: row.faculties?.code ?? "",
   }
 }

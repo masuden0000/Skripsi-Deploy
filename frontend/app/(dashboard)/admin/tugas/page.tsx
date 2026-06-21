@@ -48,6 +48,15 @@ type Period = {
   tanggalSelesai: string
 }
 
+const ITEMS_PER_PAGE = 10
+
+function buildPageNumbers(current: number, total: number): Array<number | "…"> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  if (current <= 4) return [1, 2, 3, 4, 5, "…", total]
+  if (current >= total - 3) return [1, "…", total - 4, total - 3, total - 2, total - 1, total]
+  return [1, "…", current - 1, current, current + 1, "…", total]
+}
+
 function isPeriodActive(period: Period): boolean {
   const now = new Date()
   const mulai = new Date(period.tanggalMulai)
@@ -85,6 +94,7 @@ async function readApiResponse(response: Response) {
 
 function AssignmentModal({
   assignment,
+  assignments,
   periods,
   reviewers,
   isSubmitting,
@@ -93,6 +103,7 @@ function AssignmentModal({
   onSave,
 }: {
   assignment: Assignment | null
+  assignments: Assignment[]
   periods: Period[]
   reviewers: Reviewer[]
   isSubmitting: boolean
@@ -118,6 +129,24 @@ function AssignmentModal({
     if (!proposalLink.trim() && !assessmentLink.trim()) {
       setLocalError("Minimal satu link wajib diisi.")
       return
+    }
+
+    if (!isEditMode) {
+      const sudahDitugaskanDiPeriode = assignments.some(
+        (a) => a.reviewerId === reviewerId && a.periodId === periodId
+      )
+      if (sudahDitugaskanDiPeriode) {
+        setLocalError("Reviewer ini sudah ditugaskan pada periode yang sama.")
+        return
+      }
+
+      const masihAdaTugasBelumSelesai = assignments.some(
+        (a) => a.reviewerId === reviewerId && !a.isCompleted
+      )
+      if (masihAdaTugasBelumSelesai) {
+        setLocalError("Reviewer ini masih memiliki tugas yang belum selesai dan belum bisa ditugaskan kembali.")
+        return
+      }
     }
 
     setLocalError(null)
@@ -239,11 +268,32 @@ export default function AssignmentManagementPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [statusSort, setStatusSort] = useState<"none" | "asc" | "desc">("none")
 
   const totalAssignments = assignments.length
   const completedCount = useMemo(
     () => assignments.filter((a) => a.isCompleted).length,
     [assignments]
+  )
+  const pendingCount = useMemo(
+    () => assignments.filter((a) => !a.isCompleted).length,
+    [assignments]
+  )
+
+  const sortedAssignments = useMemo(() => {
+    if (statusSort === "none") return assignments
+    return [...assignments].sort((a, b) => {
+      if (statusSort === "asc") return a.isCompleted === b.isCompleted ? 0 : a.isCompleted ? -1 : 1
+      return a.isCompleted === b.isCompleted ? 0 : a.isCompleted ? 1 : -1
+    })
+  }, [assignments, statusSort])
+
+  const totalAssignmentPages = Math.ceil(sortedAssignments.length / ITEMS_PER_PAGE)
+
+  const paginatedAssignments = useMemo(
+    () => sortedAssignments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [sortedAssignments, currentPage]
   )
 
   const loadDependencies = useCallback(async () => {
@@ -306,6 +356,10 @@ export default function AssignmentManagementPage() {
     const timeoutId = window.setTimeout(() => void loadDependencies(), 0)
     return () => window.clearTimeout(timeoutId)
   }, [loadDependencies])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [statusSort])
 
   function handleOpenCreateModal() {
     setEditingAssignment(null)
@@ -381,6 +435,7 @@ export default function AssignmentManagementPage() {
       {isModalOpen ? (
         <AssignmentModal
           assignment={editingAssignment}
+          assignments={assignments}
           periods={editingAssignment ? periods : activePeriods}
           reviewers={reviewers}
           isSubmitting={isSubmitting}
@@ -418,7 +473,7 @@ export default function AssignmentManagementPage() {
           </div>
         ) : null}
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <AdminMetricCard
             title="Total Tugas"
             value={String(totalAssignments)}
@@ -429,6 +484,12 @@ export default function AssignmentManagementPage() {
             title="Selesai"
             value={String(completedCount)}
             accentClassName="bg-pkm-100 text-pkm-700"
+            icon={<LinkIcon />}
+          />
+          <AdminMetricCard
+            title="Belum Selesai"
+            value={String(pendingCount)}
+            accentClassName="bg-gray-100 text-gray-500"
             icon={<LinkIcon />}
           />
         </div>
@@ -466,7 +527,14 @@ export default function AssignmentManagementPage() {
                       Link Penilaian
                     </th>
                     <th className="border-b border-gray-100 pb-3 pr-4 text-xs font-semibold text-gray-700">
-                      Status
+                      <button
+                        type="button"
+                        onClick={() => setStatusSort(s => s === "none" ? "asc" : s === "asc" ? "desc" : "none")}
+                        className="flex items-center gap-1 hover:text-gray-900"
+                      >
+                        Status
+                        <span className="text-gray-400">{statusSort === "asc" ? "↑" : statusSort === "desc" ? "↓" : "↕"}</span>
+                      </button>
                     </th>
                     <th className="border-b border-gray-100 pb-3 text-right text-xs font-semibold text-gray-700">
                       Aksi
@@ -474,10 +542,10 @@ export default function AssignmentManagementPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {assignments.map((assignment, index) => (
+                  {paginatedAssignments.map((assignment, index) => (
                     <tr key={assignment.id}>
                       <td className="border-b border-gray-50 py-4 pr-4 text-sm text-gray-500">
-                        {index + 1}
+                        {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                       </td>
                       <td className="border-b border-gray-50 py-4 pr-4 text-sm font-medium text-gray-800">
                         {assignment.reviewer || "—"}
@@ -562,6 +630,45 @@ export default function AssignmentManagementPage() {
               </table>
             )}
           </div>
+          {totalAssignmentPages > 1 ? (
+            <div className="flex items-center justify-between border-t border-gray-100 px-5 py-3">
+              <span className="text-xs text-gray-500">
+                {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, sortedAssignments.length)} dari {sortedAssignments.length} item
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => p - 1)}
+                  disabled={currentPage === 1}
+                  className="rounded px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  ‹
+                </button>
+                {buildPageNumbers(currentPage, totalAssignmentPages).map((page, i) =>
+                  page === "…" ? (
+                    <span key={`ellipsis-${i}`} className="px-1 text-xs text-gray-400">…</span>
+                  ) : (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCurrentPage(page as number)}
+                      className={["rounded px-2.5 py-1.5 text-xs font-medium", currentPage === page ? "bg-pkm-600 text-white" : "text-gray-600 hover:bg-gray-100"].join(" ")}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => p + 1)}
+                  disabled={currentPage === totalAssignmentPages}
+                  className="rounded px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          ) : null}
         </AdminSurfaceCard>
       </div>
     </>

@@ -28,6 +28,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+const ITEMS_PER_PAGE = 10
+
+function buildPageNumbers(current: number, total: number): Array<number | "…"> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  if (current <= 4) return [1, 2, 3, 4, 5, "…", total]
+  if (current >= total - 3) return [1, "…", total - 4, total - 3, total - 2, total - 1, total]
+  return [1, "…", current - 1, current, current + 1, "…", total]
+}
+
 type Faculty = {
   id: string
   code: string
@@ -87,12 +96,14 @@ function mapStatusLabel(isActive: boolean) {
 
 function FacultyModal({
   faculty,
+  faculties,
   isSubmitting,
   errorMessage,
   onClose,
   onSave,
 }: {
   faculty: Faculty | null
+  faculties: Faculty[]
   isSubmitting: boolean
   errorMessage: string | null
   onClose: () => void
@@ -111,10 +122,24 @@ function FacultyModal({
       return
     }
 
+    const others = faculties.filter((f) => f.id !== faculty?.id)
+    const namaNormalized = name.trim().toLowerCase()
+    const kodeNormalized = code.trim().toUpperCase()
+
+    if (others.some((f) => f.name.toLowerCase() === namaNormalized)) {
+      setLocalError("Nama fakultas sudah terdaftar. Gunakan nama lain.")
+      return
+    }
+
+    if (others.some((f) => f.code.toUpperCase() === kodeNormalized)) {
+      setLocalError("Kode fakultas sudah terdaftar. Gunakan kode lain.")
+      return
+    }
+
     setLocalError(null)
     await onSave({
       name: name.trim(),
-      code: code.trim().toUpperCase(),
+      code: kodeNormalized,
     })
   }
 
@@ -557,6 +582,7 @@ export default function FacultyManagementPage() {
   const [editingFaculty, setEditingFaculty] = useState<Faculty | null>(null)
   const [viewingFaculty, setViewingFaculty] = useState<Faculty | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
 
   const totalReviewers = useMemo(
     () => faculties.reduce((total, faculty) => total + faculty.reviewerCount, 0),
@@ -572,6 +598,13 @@ export default function FacultyManagementPage() {
         faculty.code.toLowerCase().includes(query)
     )
   }, [faculties, searchQuery])
+
+  const totalFacultyPages = Math.ceil(filteredFaculties.length / ITEMS_PER_PAGE)
+
+  const paginatedFaculties = useMemo(
+    () => filteredFaculties.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [filteredFaculties, currentPage]
+  )
 
   const loadFaculties = useCallback(async () => {
     setIsLoading(true)
@@ -606,6 +639,10 @@ export default function FacultyManagementPage() {
 
     return () => window.clearTimeout(timeoutId)
   }, [loadFaculties])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
 
   function handleOpenModal(faculty: Faculty | null = null) {
     setEditingFaculty(faculty)
@@ -696,6 +733,7 @@ export default function FacultyManagementPage() {
       {isModalOpen ? (
         <FacultyModal
           faculty={editingFaculty}
+          faculties={faculties}
           isSubmitting={isSubmitting}
           errorMessage={formError}
           onClose={handleCloseModal}
@@ -734,7 +772,7 @@ export default function FacultyManagementPage() {
             icon={<GraduationIcon />}
           />
           <AdminMetricCard
-            title="Total Reviewer Terhubung"
+            title="Total Reviewer"
             value={String(totalReviewers)}
             accentClassName="bg-pkm-100 text-pkm-700"
             icon={<UserIcon />}
@@ -790,10 +828,10 @@ export default function FacultyManagementPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredFaculties.map((faculty, index) => (
+                  {paginatedFaculties.map((faculty, index) => (
                     <tr key={faculty.id}>
                       <td className="border-b border-gray-50 py-4 pr-4 text-sm text-gray-500">
-                        {index + 1}
+                        {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                       </td>
                       <td className="border-b border-gray-50 py-4 pr-4">
                         <span className="text-sm font-medium text-gray-800">{faculty.name}</span>
@@ -845,6 +883,45 @@ export default function FacultyManagementPage() {
               </table>
             )}
           </div>
+          {totalFacultyPages > 1 ? (
+            <div className="flex items-center justify-between border-t border-gray-100 px-5 py-3">
+              <span className="text-xs text-gray-500">
+                {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredFaculties.length)} dari {filteredFaculties.length} item
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => p - 1)}
+                  disabled={currentPage === 1}
+                  className="rounded px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  ‹
+                </button>
+                {buildPageNumbers(currentPage, totalFacultyPages).map((page, i) =>
+                  page === "…" ? (
+                    <span key={`ellipsis-${i}`} className="px-1 text-xs text-gray-400">…</span>
+                  ) : (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCurrentPage(page as number)}
+                      className={["rounded px-2.5 py-1.5 text-xs font-medium", currentPage === page ? "bg-pkm-600 text-white" : "text-gray-600 hover:bg-gray-100"].join(" ")}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => p + 1)}
+                  disabled={currentPage === totalFacultyPages}
+                  className="rounded px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          ) : null}
         </AdminSurfaceCard>
       </div>
     </>

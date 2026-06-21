@@ -1,6 +1,7 @@
 import BrandLogo from "@/components/BrandLogo"
 import ReviewerNav from "@/components/layout/ReviewerNav"
 import LogoutButton from "@/components/auth/LogoutButton"
+import { ReviewerSidebarProfile } from "@/components/reviewer/ReviewerSidebarProfile"
 
 export default function ReviewerLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -37,9 +38,7 @@ export default function ReviewerLayout({ children }: { children: React.ReactNode
           className="px-5 py-4 border-t"
           style={{ borderColor: "rgba(0,153,102,0.12)" }}
         >
-          <p className="text-xs" style={{ color: "rgba(0,0,0,0.3)" }}>
-            Panel Reviewer
-          </p>
+          <ReviewerSidebarProfile />
 
           <div className="mt-3 flex flex-col gap-1">
             <LogoutButton />

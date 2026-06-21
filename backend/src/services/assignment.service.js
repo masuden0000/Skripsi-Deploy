@@ -230,6 +230,53 @@ export async function getAssignmentsByReviewerId(reviewerId) {
   return rows.map((row) => mapAssignmentRow(row, emailById.get(row.reviewer_id)))
 }
 
+export async function completeAssignment(id, reviewerId) {
+  const { data: existing, error: fetchError } = await adminClient
+    .from("assignments")
+    .select("id, reviewer_id, is_completed")
+    .eq("id", id)
+    .eq("reviewer_id", reviewerId)
+    .single()
+
+  if (fetchError || !existing) {
+    throw new AppError("Tugas tidak ditemukan.", 404)
+  }
+
+  if (existing.is_completed) {
+    throw new AppError("Tugas sudah ditandai selesai.", 409)
+  }
+
+  const { data, error } = await adminClient
+    .from("assignments")
+    .update({ is_completed: true })
+    .eq("id", id)
+    .eq("reviewer_id", reviewerId)
+    .select(`
+      id,
+      period_id,
+      reviewer_id,
+      proposal_link,
+      assessment_link,
+      is_completed,
+      created_at,
+      updated_at,
+      period:pkm_review_periods!inner(id, nama, tanggal_mulai, tanggal_selesai),
+      reviewer:reviewer_profiles!inner(
+        id,
+        profiles!inner(full_name),
+        faculties!inner(id, name, code)
+      )
+    `)
+    .single()
+
+  if (error) {
+    throw new AppError("Gagal menandai tugas selesai.", 500)
+  }
+
+  const emailById = await buildEmailMap([data.reviewer_id])
+  return mapAssignmentRow(data, emailById.get(data.reviewer_id))
+}
+
 export async function getActiveAssignmentsByReviewerId(reviewerId) {
   // PostgREST doesn't support filtering on nested relations, so we:
   // 1. Get all assignments for this reviewer

@@ -1,10 +1,10 @@
 <mxfile host="app.diagrams.net" agent="Claude">
-  <diagram id="proposal-doc-activity" name="Activity Diagram Buat Dokumen Proposal">
+  <diagram id="proposal-doc-activity" name="Activity Diagram Buat Template Dokumen Proposal">
     <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1000" pageHeight="1440" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="nzHOn-Q8sbqzfCDHBK1R-1" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" value="&lt;b&gt;Activity Diagram Buat Dokumen Proposal&lt;/b&gt;" vertex="1">
+        <mxCell id="nzHOn-Q8sbqzfCDHBK1R-1" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" value="&lt;b&gt;Activity Diagram Buat Template Dokumen Proposal&lt;/b&gt;" vertex="1">
           <mxGeometry height="30" width="920" x="45" y="30" as="geometry" />
         </mxCell>
         <mxCell id="nzHOn-Q8sbqzfCDHBK1R-2" parent="1" style="swimlane;html=1;rounded=0;whiteSpace=wrap;horizontal=1;startSize=28;fillColor=#F3F4F6;strokeColor=#4B5563;fontStyle=1;" value="Frontend" vertex="1">

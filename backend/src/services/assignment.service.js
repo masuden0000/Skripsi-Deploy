@@ -2,13 +2,15 @@ import { adminClient } from "../config/supabase.js"
 import { AppError } from "../utils/app-error.js"
 
 function mapAssignmentRow(row, reviewerEmail) {
+  const reviewStatus = row.review_status ?? null
   return {
     id: row.id,
     periodId: row.period_id,
     reviewerId: row.reviewer_id,
     proposalLink: row.proposal_link ?? "",
     assessmentLink: row.assessment_link ?? "",
-    isCompleted: Boolean(row.is_completed),
+    isCompleted: reviewStatus === "selesai",
+    reviewStatus,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     reviewer: row.reviewer?.profiles?.full_name ?? "",
@@ -83,6 +85,7 @@ export async function listAssignments() {
       reviewer_id,
       proposal_link,
       assessment_link,
+      review_status,
       is_completed,
       created_at,
       updated_at,
@@ -118,6 +121,7 @@ export async function createAssignment(payload) {
       reviewer_id,
       proposal_link,
       assessment_link,
+      review_status,
       is_completed,
       created_at,
       updated_at,
@@ -164,6 +168,7 @@ export async function updateAssignment(id, payload) {
       reviewer_id,
       proposal_link,
       assessment_link,
+      review_status,
       is_completed,
       created_at,
       updated_at,
@@ -207,6 +212,7 @@ export async function getAssignmentsByReviewerId(reviewerId) {
       reviewer_id,
       proposal_link,
       assessment_link,
+      review_status,
       is_completed,
       created_at,
       updated_at,
@@ -233,7 +239,7 @@ export async function getAssignmentsByReviewerId(reviewerId) {
 export async function completeAssignment(id, reviewerId) {
   const { data: existing, error: fetchError } = await adminClient
     .from("assignments")
-    .select("id, reviewer_id, is_completed")
+    .select("id, reviewer_id, review_status")
     .eq("id", id)
     .eq("reviewer_id", reviewerId)
     .single()
@@ -242,13 +248,13 @@ export async function completeAssignment(id, reviewerId) {
     throw new AppError("Tugas tidak ditemukan.", 404)
   }
 
-  if (existing.is_completed) {
-    throw new AppError("Tugas sudah ditandai selesai.", 409)
+  if (existing.review_status === "menunggu_validasi" || existing.review_status === "selesai") {
+    throw new AppError("Tugas sudah ditandai selesai atau sedang menunggu validasi.", 409)
   }
 
   const { data, error } = await adminClient
     .from("assignments")
-    .update({ is_completed: true })
+    .update({ review_status: "menunggu_validasi" })
     .eq("id", id)
     .eq("reviewer_id", reviewerId)
     .select(`
@@ -257,6 +263,7 @@ export async function completeAssignment(id, reviewerId) {
       reviewer_id,
       proposal_link,
       assessment_link,
+      review_status,
       is_completed,
       created_at,
       updated_at,
@@ -277,6 +284,56 @@ export async function completeAssignment(id, reviewerId) {
   return mapAssignmentRow(data, emailById.get(data.reviewer_id))
 }
 
+export async function validateAssignment(id, approved) {
+  const { data: existing, error: fetchError } = await adminClient
+    .from("assignments")
+    .select("id, review_status")
+    .eq("id", id)
+    .single()
+
+  if (fetchError || !existing) {
+    throw new AppError("Tugas tidak ditemukan.", 404)
+  }
+
+  if (existing.review_status !== "menunggu_validasi") {
+    throw new AppError("Tugas tidak dalam status menunggu validasi.", 409)
+  }
+
+  const updateData = approved
+    ? { review_status: "selesai", is_completed: true }
+    : { review_status: null, is_completed: false }
+
+  const { data, error } = await adminClient
+    .from("assignments")
+    .update(updateData)
+    .eq("id", id)
+    .select(`
+      id,
+      period_id,
+      reviewer_id,
+      proposal_link,
+      assessment_link,
+      review_status,
+      is_completed,
+      created_at,
+      updated_at,
+      period:pkm_review_periods!inner(id, nama, tanggal_mulai, tanggal_selesai),
+      reviewer:reviewer_profiles!inner(
+        id,
+        profiles!inner(full_name),
+        faculties!inner(id, name, code)
+      )
+    `)
+    .single()
+
+  if (error) {
+    throw new AppError("Gagal memvalidasi tugas.", 500)
+  }
+
+  const emailById = await buildEmailMap([data.reviewer_id])
+  return mapAssignmentRow(data, emailById.get(data.reviewer_id))
+}
+
 export async function getActiveAssignmentsByReviewerId(reviewerId) {
   // PostgREST doesn't support filtering on nested relations, so we:
   // 1. Get all assignments for this reviewer
@@ -289,6 +346,7 @@ export async function getActiveAssignmentsByReviewerId(reviewerId) {
       reviewer_id,
       proposal_link,
       assessment_link,
+      review_status,
       is_completed,
       created_at,
       updated_at,

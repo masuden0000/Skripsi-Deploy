@@ -5,6 +5,8 @@ from langchain_text_splitters import MarkdownTextSplitter
 
 PREFACE_LABEL = "PREFACE"
 HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
+BOLD_HEADING_PATTERN = re.compile(r"^\*\*(.+?)\*\*$")
+BOLD_HEADING_PREFIX_PATTERN = re.compile(r"^\*\*(.+?)\*\*")
 DOC_PAGE_PATTERN = re.compile(r"^\s*(\d{1,3})\s*$")
 STRIKETHROUGH_PATTERN = re.compile(r"~~[^~]*~~")
 PICTURE_ARTIFACT_PATTERN = re.compile(
@@ -210,6 +212,24 @@ def build_sections_from_ranges(
 
     heading_lines: dict[str, list[dict]] = {r["heading"]: [] for r in bab_ranges}
 
+    # Pre-scan: temukan halaman yang memiliki TOC heading detectable (via Layer 2 / 2b).
+    # Digunakan oleh page-transition fallback untuk memutuskan apakah perlu buffer +1.
+    # Halaman yang punya heading detectable dibiarkan ditangani Layer 2 (bukan fallback).
+    heading_transition_pages: set[int] = set()
+    for _line in iter_page_lines(page_chunks[first_arabic_idx:]):
+        _stripped = _line["text"].strip()
+        _hm = HEADING_PATTERN.match(_stripped)
+        if _hm:
+            _norm = normalize_heading(_hm.group(2)).upper()
+            if _norm in bab_heading_lookup:
+                heading_transition_pages.add(_line["page"])
+        else:
+            _bm = BOLD_HEADING_PATTERN.match(_stripped)
+            if _bm:
+                _norm = normalize_heading(_bm.group(1)).upper()
+                if _norm in bab_heading_lookup:
+                    heading_transition_pages.add(_line["page"])
+
     # current_heading: heading yang sedang aktif, diperbarui saat heading bab_ranges
     # ditemukan di dalam konten (bukan reset per page).
     # page_to_heading hanya dipakai sebagai bootstrap saat current_heading belum diset.
@@ -232,25 +252,66 @@ def build_sections_from_ranges(
                     heading_lines[current_heading].append(line)
                     continue
 
+        # Lapis 2b: bold-only heading (**teks**) yang cocok dengan entri TOC.
+        # Menangani kasus PDF merender heading sebagai bold text, bukan markdown #,
+        # sehingga HEADING_PATTERN tidak mendeteksinya. Syarat keamanan sama dengan
+        # Lapis 2: hanya aktif jika halaman sesuai ekspektasi TOC atau lapisan 1 setuju.
+        if not heading_match:
+            bold_match = BOLD_HEADING_PATTERN.match(stripped)
+            if bold_match:
+                raw = bold_match.group(1)
+                normalized = normalize_heading(raw).upper()
+                if normalized in bab_heading_lookup:
+                    target_heading = bab_heading_lookup[normalized]
+                    expected_page = bab_expected_page.get(normalized, 0)
+                    sudah_di_zona = line["page"] == expected_page
+                    lapisan1_setuju = page_to_heading.get(line["page"]) == target_heading
+                    if sudah_di_zona or lapisan1_setuju:
+                        current_heading = target_heading
+                        heading_lines[current_heading].append(line)
+                        continue
+
+        # Lapis 2c: **TOC_HEADING prefix** di awal baris (baris tidak harus seluruhnya bold).
+        # Menangani kasus konten lampiran yang diawali **LAMPIRAN Lampiran N. ...** tanpa
+        # heading markdown #. Menggunakan toleransi ±1 halaman dari ekspektasi TOC karena
+        # TOC sering mencatat page start 1 halaman setelah konten sesungguhnya dimulai.
+        if not heading_match:
+            prefix_match = BOLD_HEADING_PREFIX_PATTERN.match(stripped)
+            if prefix_match:
+                raw_pfx = prefix_match.group(1)
+                normalized_pfx = normalize_heading(raw_pfx).upper()
+                _lapis2c_found = False
+                for norm_key, target_heading in bab_heading_lookup.items():
+                    after_key = normalized_pfx[len(norm_key):]
+                    if normalized_pfx.startswith(norm_key) and (not after_key or after_key[0] in " \t."):
+                        expected_page = bab_expected_page.get(norm_key, 0)
+                        if abs(line["page"] - expected_page) <= 1:
+                            current_heading = target_heading
+                            heading_lines[current_heading].append(line)
+                            _lapis2c_found = True
+                            break
+                if _lapis2c_found:
+                    continue
+
         # Bootstrap: gunakan page_to_heading hanya jika current_heading belum diset
         if current_heading is None:
             current_heading = page_to_heading.get(line["page"])
         elif current_heading:
             # Page-transition fallback: jika halaman saat ini sudah melewati akhir
             # rentang section aktif, pindah ke section berikutnya dari page_to_heading.
-            # Menangani kasus heading pembuka section tidak muncul tepat di halaman TOC
-            # karena pada halaman sebelumnya muncul sebagai deskripsi sistematika.
             #
-            # PENTING: fallback hanya aktif mulai halaman ke-2 setelah batas section
-            # (current_end + 2, bukan current_end + 1). Halaman tepat di batas transisi
-            # (current_end + 1 = page_start section berikutnya) dibiarkan ditangani oleh
-            # Lapis 2 (deteksi heading # / ##) agar teks sebelum heading tetap masuk
-            # ke section sebelumnya. Contoh: Sistematika ends page 11, Seleksi starts
-            # page 12 — pada page 12 fallback tidak aktif, Lapis 2 memotong tepat di
-            # heading "# Seleksi dan Penilaian Proposal".
+            # Threshold: jika halaman boundary (current_end + 1) memiliki TOC heading
+            # detectable (ada di heading_transition_pages), fallback diberi buffer +1
+            # sehingga Layer 2 yang menangani transisi dan pre-heading content tetap masuk
+            # ke section sebelumnya. Jika boundary page tidak punya heading detectable
+            # (misal LAMPIRAN yang konten lampirannya tidak pakai ## heading), fallback
+            # langsung aktif di halaman boundary agar section tidak terlambat 1 halaman.
             normalized_current = normalize_heading(current_heading).upper()
             current_end = bab_heading_end_page.get(normalized_current, 9999)
-            if line["page"] > current_end + 1:
+            boundary_page = current_end + 1
+            has_heading_on_boundary = boundary_page in heading_transition_pages
+            threshold = current_end + 1 if has_heading_on_boundary else current_end
+            if line["page"] > threshold:
                 new_heading = page_to_heading.get(line["page"])
                 if new_heading and new_heading in heading_lines:
                     current_heading = new_heading

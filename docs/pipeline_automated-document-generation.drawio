@@ -1,0 +1,221 @@
+<mxfile host="app.diagrams.net" agent="Claude">
+  <diagram id="pipeline-adg" name="Pipeline Automated Document Generation">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1000" pageHeight="1580" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ======================================================= -->
+        <!-- TITLE                                                     -->
+        <!-- ======================================================= -->
+        <mxCell id="title" parent="1"
+          style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;"
+          value="Pipeline Automated Document Generation" vertex="1">
+          <mxGeometry x="30" y="20" width="940" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================= -->
+        <!-- HTTP ENTRY LAYER                                          -->
+        <!-- ======================================================= -->
+        <mxCell id="http-label" parent="1"
+          style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=11;fontStyle=1;"
+          value="HTTP Entry" vertex="1">
+          <mxGeometry x="30" y="60" width="200" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Frontend -->
+        <mxCell id="fe" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;align=left;spacingLeft=6;"
+          value="&lt;b&gt;Frontend — Next.js :3000&lt;/b&gt;&#xa;User upload file + skema PKM&#xa;Next.js Route Handler&#xa;lib/backend-api.ts  proxyToBackend()" vertex="1">
+          <mxGeometry x="30" y="82" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Express Backend -->
+        <mxCell id="exp" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;align=left;spacingLeft=6;"
+          value="&lt;b&gt;Express Backend — :4000&lt;/b&gt;&#xa;authenticateSession + requireRole&#xa;Proxy raw multipart/form-data&#xa;routes/projects.routes.js" vertex="1">
+          <mxGeometry x="310" y="82" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- FastAPI AI Backend -->
+        <mxCell id="fapi" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;align=left;spacingLeft=6;"
+          value="&lt;b&gt;FastAPI AI Backend — :8000&lt;/b&gt;&#xa;create_project()&#xa;Upload file ke Storage, insert DB&#xa;routers/projects.py" vertex="1">
+          <mxGeometry x="590" y="82" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: Frontend → Express -->
+        <mxCell id="arr-fe-exp" parent="1" edge="1" source="fe" target="exp"
+          style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;"
+          value="multipart/form-data + cookie">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: Express → FastAPI -->
+        <mxCell id="arr-exp-fapi" parent="1" edge="1" source="exp" target="fapi"
+          style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;"
+          value="raw proxy">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================= -->
+        <!-- FASE 1 CONTAINER                                          -->
+        <!-- ======================================================= -->
+        <mxCell id="fase1-bg" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;"
+          value="FASE 1 — Extraction Pipeline     (ai/backend/services/pipeline.py → run_pipeline)" vertex="1">
+          <mxGeometry x="30" y="190" width="760" height="640" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: FastAPI → Fase 1 -->
+        <mxCell id="arr-fapi-fase1" parent="1" edge="1" source="fapi" target="s1"
+          style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;"
+          value="BackgroundTasks.add_task(run_pipeline)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Step 1: Download -->
+        <mxCell id="s1" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;align=left;spacingLeft=6;"
+          value="&lt;b&gt;Step 1 — download_source_file()&lt;/b&gt;&#xa;Download PDF dari Supabase Storage bucket ai-source-files/{project_id}/source_file&#xa;Simpan lokal ke: ai/model/data/{project_id}/source.pdf" vertex="1">
+          <mxGeometry x="70" y="250" width="680" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Step 2: Setup -->
+        <mxCell id="s2" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;align=left;spacingLeft=6;"
+          value="&lt;b&gt;Step 2 — run_setup()  →  subprocess: manage.py setup --project-id&lt;/b&gt;&#xa;① pdf_extractor.extract_chunks() — pymupdf4llm → MarkdownTextSplitter → output_chunks.json&#xa;   TOC-based chunk_parent atau HEADING regex fallback (chunk_builder.py)&#xa;② supabase_ingest.upsert_embeddings() — Gemini embedding-001, batch=20&#xa;   Tulis ke: Supabase table document_chunks (pgvector, upsert on project_id+chunk_index)" vertex="1">
+          <mxGeometry x="70" y="360" width="680" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Step 3: Extraction -->
+        <mxCell id="s3" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;align=left;spacingLeft=6;"
+          value="&lt;b&gt;Step 3 — run_extraction()  →  subprocess: manage.py extract --project-id --skema&lt;/b&gt;&#xa;doc_extractor.extract_document_metadata() — loop 8 key per skema PKM&#xa;Per key: vector search document_chunks → render prompt → LLM Groq/Gemini (with_structured_output)&#xa;Tulis ke: Supabase table document_metadata (payload JSON, upsert on project_id)" vertex="1">
+          <mxGeometry x="70" y="510" width="680" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Step 4: Placeholder -->
+        <mxCell id="s4" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;align=left;spacingLeft=6;"
+          value="&lt;b&gt;Step 4 — run_generate_placeholders()  →  subprocess: manage.py generate-placeholders&lt;/b&gt;&#xa;build_instructional_placeholder_map() — LLM generate teks panduan per section dokumen&#xa;save_generated_placeholders() — update document_metadata.payload.generated_placeholders" vertex="1">
+          <mxGeometry x="70" y="660" width="680" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Status: extracted -->
+        <mxCell id="s-extracted" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontSize=10;fontStyle=1;align=center;"
+          value="projects.status = 'extracted'   —   Pipeline berhenti, menunggu konfirmasi user" vertex="1">
+          <mxGeometry x="70" y="780" width="680" height="38" as="geometry" />
+        </mxCell>
+
+        <!-- Arrows dalam Fase 1 -->
+        <mxCell id="arr-s1-s2" parent="1" edge="1" source="s1" target="s2"
+          style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-s2-s3" parent="1" edge="1" source="s2" target="s3"
+          style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-s3-s4" parent="1" edge="1" source="s3" target="s4"
+          style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-s4-ext" parent="1" edge="1" source="s4" target="s-extracted"
+          style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================= -->
+        <!-- USER CONFIRMATION                                         -->
+        <!-- ======================================================= -->
+        <mxCell id="user-confirm" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#000000;strokeWidth=2;fontSize=10;fontStyle=1;align=left;spacingLeft=8;"
+          value="User review hasil ekstraksi → klik Generate Dokumen&#xa;POST /api/projects/{id}/generate  →  Express  →  FastAPI  →  BackgroundTasks.add_task(run_docx_pipeline)" vertex="1">
+          <mxGeometry x="30" y="870" width="760" height="54" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: extracted → user-confirm -->
+        <mxCell id="arr-ext-user" parent="1" edge="1" source="s-extracted" target="user-confirm"
+          style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================= -->
+        <!-- FASE 2 CONTAINER                                          -->
+        <!-- ======================================================= -->
+        <mxCell id="fase2-bg" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;"
+          value="FASE 2 — DOCX Generation     (ai/backend/services/pipeline.py → run_docx_pipeline)" vertex="1">
+          <mxGeometry x="30" y="964" width="760" height="558" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: user-confirm → Fase 2 -->
+        <mxCell id="arr-user-s5" parent="1" edge="1" source="user-confirm" target="s5"
+          style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Step 5: DOCX Generation -->
+        <mxCell id="s5" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;align=left;spacingLeft=6;"
+          value="&lt;b&gt;Step 5 — run_docx_generation()  →  subprocess: manage.py docx --type proposal --project-id --skema&lt;/b&gt;&#xa;generator.generate_proposal_docx_bytes()&#xa;① load_document_metadata(project_id) — baca dari Supabase document_metadata&#xa;② load_chunk_sources(project_id) — baca dari Supabase document_chunks&#xa;③ merge generated_placeholders + user_placeholders (user override menang)&#xa;④ routing: is_type_b(skema)? → docx_B_renderer.py (PKM-AI) : docx_A_renderer.py (semua lain)&#xa;Output: DOCX bytes di memori (tidak pernah ditulis ke disk)" vertex="1">
+          <mxGeometry x="70" y="1020" width="680" height="130" as="geometry" />
+        </mxCell>
+
+        <!-- Step 6: Upload Storage -->
+        <mxCell id="s6" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;align=left;spacingLeft=6;"
+          value="&lt;b&gt;Step 6 — upload_docx_to_storage()&lt;/b&gt;&#xa;Upload bytes ke Supabase Storage bucket ai-output-files/{project_id}/{filename}.docx&#xa;Cetak RESULT_URL=... ke stdout — dibaca pipeline.py dari output subprocess" vertex="1">
+          <mxGeometry x="70" y="1200" width="680" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Step 7: Update DB -->
+        <mxCell id="s7" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;align=left;spacingLeft=6;"
+          value="&lt;b&gt;Step 7 — Update Supabase projects&lt;/b&gt;&#xa;projects.result_url = RESULT_URL (public URL file DOCX di Storage)&#xa;projects.status = 'completed'" vertex="1">
+          <mxGeometry x="70" y="1320" width="680" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Step 8: Cleanup -->
+        <mxCell id="s8" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;align=left;spacingLeft=6;"
+          value="&lt;b&gt;Step 8 — _cleanup_project_data()&lt;/b&gt;&#xa;shutil.rmtree(ai/model/data/{project_id}/) — hapus semua file sementara lokal (PDF, JSON, MD)" vertex="1">
+          <mxGeometry x="70" y="1430" width="680" height="54" as="geometry" />
+        </mxCell>
+
+        <!-- Arrows dalam Fase 2 -->
+        <mxCell id="arr-s5-s6" parent="1" edge="1" source="s5" target="s6"
+          style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-s6-s7" parent="1" edge="1" source="s6" target="s7"
+          style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-s7-s8" parent="1" edge="1" source="s7" target="s8"
+          style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;strokeColor=#000000;" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ======================================================= -->
+        <!-- CATATAN SIDE CHANNEL: project_logs                       -->
+        <!-- ======================================================= -->
+        <mxCell id="logs-note" parent="1"
+          style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9;align=left;spacingLeft=6;strokeDasharray=6 4;"
+          value="&lt;b&gt;Side channel — project_logs (Supabase)&lt;/b&gt;&#xa;log_event() menulis setiap baris stdout subprocess&#xa;Express SSE poll 1 detik → stream ke frontend" vertex="1">
+          <mxGeometry x="820" y="250" width="160" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: Fase 1 → logs note -->
+        <mxCell id="arr-fase1-logs" parent="1" edge="1" source="s2" target="logs-note"
+          style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;strokeColor=#000000;dashed=1;fontSize=8;"
+          value="log tiap step">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

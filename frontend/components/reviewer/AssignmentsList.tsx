@@ -94,10 +94,14 @@ function AssignmentCard({ assignment, onComplete, isUpdating }: AssignmentCardPr
             <span className="size-1.5 rounded-full bg-muted-foreground/30" />
             <span>{assignment.fakultas}</span>
           </div>
-          {assignment.isCompleted ? (
+          {assignment.reviewStatus === "selesai" ? (
             <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-pkm-100 px-3 py-1 text-xs font-semibold text-pkm-700">
               <CheckIcon className="size-3" />
               Selesai
+            </span>
+          ) : assignment.reviewStatus === "menunggu_validasi" ? (
+            <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+              Menunggu Validasi
             </span>
           ) : active ? (
             <Button
@@ -224,7 +228,7 @@ export function AssignmentsList() {
     if (result.error) {
       setCompleteError(result.error)
     } else {
-      setAssignments(prev => prev.map(a => a.id === id ? { ...a, isCompleted: true } : a))
+      setAssignments(prev => prev.map(a => a.id === id ? { ...a, reviewStatus: "menunggu_validasi" as const } : a))
     }
     setUpdatingId(null)
   }

@@ -3,6 +3,7 @@ import {
   deleteAssignment,
   listAssignments,
   updateAssignment,
+  validateAssignment,
 } from "../services/assignment.service.js"
 
 export async function list(_req, res) {
@@ -34,5 +35,15 @@ export async function remove(req, res) {
 
   res.status(200).json({
     message: "Tugas berhasil dihapus.",
+  })
+}
+
+export async function validate(req, res) {
+  const approved = Boolean(req.body?.approved)
+  const assignment = await validateAssignment(req.params.id, approved)
+
+  res.status(200).json({
+    data: assignment,
+    message: approved ? "Tugas berhasil divalidasi." : "Tugas dikembalikan ke belum selesai.",
   })
 }

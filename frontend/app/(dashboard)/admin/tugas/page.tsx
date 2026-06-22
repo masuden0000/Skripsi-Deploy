@@ -19,6 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+type ReviewStatus = "menunggu_validasi" | "selesai" | null
+
 type Assignment = {
   id: string
   periodId: string
@@ -26,6 +28,7 @@ type Assignment = {
   proposalLink: string
   assessmentLink: string
   isCompleted: boolean
+  reviewStatus: ReviewStatus
   createdAt: string
   reviewer: string
   period: string
@@ -141,7 +144,7 @@ function AssignmentModal({
       }
 
       const masihAdaTugasBelumSelesai = assignments.some(
-        (a) => a.reviewerId === reviewerId && !a.isCompleted
+        (a) => a.reviewerId === reviewerId && a.reviewStatus !== "selesai"
       )
       if (masihAdaTugasBelumSelesai) {
         setLocalError("Reviewer ini masih memiliki tugas yang belum selesai dan belum bisa ditugaskan kembali.")
@@ -273,19 +276,29 @@ export default function AssignmentManagementPage() {
 
   const totalAssignments = assignments.length
   const completedCount = useMemo(
-    () => assignments.filter((a) => a.isCompleted).length,
+    () => assignments.filter((a) => a.reviewStatus === "selesai").length,
+    [assignments]
+  )
+  const menungguValidasiCount = useMemo(
+    () => assignments.filter((a) => a.reviewStatus === "menunggu_validasi").length,
     [assignments]
   )
   const pendingCount = useMemo(
-    () => assignments.filter((a) => !a.isCompleted).length,
+    () => assignments.filter((a) => !a.reviewStatus).length,
     [assignments]
   )
+
+  function statusOrder(s: ReviewStatus): number {
+    if (s === "selesai") return 2
+    if (s === "menunggu_validasi") return 1
+    return 0
+  }
 
   const sortedAssignments = useMemo(() => {
     if (statusSort === "none") return assignments
     return [...assignments].sort((a, b) => {
-      if (statusSort === "asc") return a.isCompleted === b.isCompleted ? 0 : a.isCompleted ? -1 : 1
-      return a.isCompleted === b.isCompleted ? 0 : a.isCompleted ? 1 : -1
+      const diff = statusOrder(a.reviewStatus) - statusOrder(b.reviewStatus)
+      return statusSort === "asc" ? -diff : diff
     })
   }, [assignments, statusSort])
 
@@ -398,6 +411,33 @@ export default function AssignmentManagementPage() {
     }
   }
 
+  async function handleValidate(id: string, approved: boolean) {
+    try {
+      const response = await fetch(`/api/assignments/${id}/validate`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ approved }),
+      })
+      const payload = await readApiResponse(response)
+
+      if (!response.ok) {
+        alert((payload as ApiResponse).error ?? "Gagal memvalidasi tugas.")
+        return
+      }
+
+      const updated = (payload as ApiResponse).data as Assignment | undefined
+      if (updated) {
+        setAssignments(prev =>
+          prev.map(a => a.id === id ? { ...a, reviewStatus: updated.reviewStatus, isCompleted: updated.isCompleted } : a)
+        )
+      } else {
+        await loadDependencies()
+      }
+    } catch {
+      alert("Tidak bisa terhubung ke server.")
+    }
+  }
+
   async function handleSaveAssignment(data: AssignmentFormData) {
     setIsSubmitting(true)
     setFormError(null)
@@ -473,7 +513,7 @@ export default function AssignmentManagementPage() {
           </div>
         ) : null}
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <AdminMetricCard
             title="Total Tugas"
             value={String(totalAssignments)}
@@ -489,7 +529,13 @@ export default function AssignmentManagementPage() {
           <AdminMetricCard
             title="Belum Selesai"
             value={String(pendingCount)}
-            accentClassName="bg-gray-100 text-gray-500"
+            accentClassName="bg-pkm-100 text-pkm-700"
+            icon={<LinkIcon />}
+          />
+          <AdminMetricCard
+            title="Menunggu Validasi"
+            value={String(menungguValidasiCount)}
+            accentClassName="bg-pkm-100 text-pkm-700"
             icon={<LinkIcon />}
           />
         </div>
@@ -535,6 +581,9 @@ export default function AssignmentManagementPage() {
                         Status
                         <span className="text-gray-400">{statusSort === "asc" ? "↑" : statusSort === "desc" ? "↓" : "↕"}</span>
                       </button>
+                    </th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-xs font-semibold text-gray-700">
+                      Validasi
                     </th>
                     <th className="border-b border-gray-100 pb-3 text-right text-xs font-semibold text-gray-700">
                       Aksi
@@ -593,13 +642,43 @@ export default function AssignmentManagementPage() {
                         <span
                           className={[
                             "inline-flex rounded-full px-3 py-1 text-xs font-medium",
-                            assignment.isCompleted
+                            assignment.reviewStatus === "selesai"
                               ? "bg-green-100 text-green-700"
+                              : assignment.reviewStatus === "menunggu_validasi"
+                              ? "bg-amber-100 text-amber-700"
                               : "bg-gray-100 text-gray-500",
                           ].join(" ")}
                         >
-                          {assignment.isCompleted ? "Selesai" : "Belum Selesai"}
+                          {assignment.reviewStatus === "selesai"
+                            ? "Selesai"
+                            : assignment.reviewStatus === "menunggu_validasi"
+                            ? "Menunggu Validasi"
+                            : "Belum Selesai"}
                         </span>
+                      </td>
+                      <td className="border-b border-gray-50 py-4 pr-4">
+                        {assignment.reviewStatus === "menunggu_validasi" ? (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => void handleValidate(assignment.id, true)}
+                              className="h-7 border-0 bg-green-600 text-white hover:bg-green-700 text-xs"
+                            >
+                              Ya
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => void handleValidate(assignment.id, false)}
+                              className="h-7 border-0 bg-red-600 text-white hover:bg-red-700 text-xs"
+                            >
+                              Tidak
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">—</span>
+                        )}
                       </td>
                       <td className="border-b border-gray-50 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">

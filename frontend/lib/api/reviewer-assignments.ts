@@ -11,6 +11,7 @@ export const assignmentSchema = z.object({
   proposalLink: z.string().nullable(),
   assessmentLink: z.string().nullable(),
   isCompleted: z.boolean(),
+  reviewStatus: z.enum(["menunggu_validasi", "selesai"]).nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   reviewer: z.string(),

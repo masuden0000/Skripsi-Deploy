@@ -57,8 +57,7 @@ Jika ada yang terlewat, tambahkan sebelum finalisasi output.
 
 ## Normalization Rules
 - Gunakan JSON null (bukan string "null") untuk nilai yang tidak ditemukan
-- Judul BAB WAJIB ALL CAPS: "PENDAHULUAN", "BIAYA DAN JADWAL KEGIATAN", dst.
-- Judul sub-BAB menggunakan Title Case (huruf awal tiap kata besar): "Anggaran Biaya", "Jadwal Kegiatan"
+- title: salin persis dari dokumen sumber — jangan ubah huruf besar/kecil
 - Nilai bool: true atau false (bukan string)
 - required: true = wajib ada; false = opsional (sertakan jika ada konten)
 
@@ -81,7 +80,7 @@ Setiap entry di `sections` adalah objek dengan fields berikut:
 - required: true jika wajib ada, false jika opsional — hanya untuk non-bab sections
 - number: nomor BAB (integer) — hanya untuk type "bab"
 - sub_number: nomor sub-BAB seperti "4.1" (string) — hanya untuk type "sub_bab"
-- title: untuk type "bab" gunakan ALL CAPS; untuk type "sub_bab" gunakan Title Case (contoh: "Anggaran Biaya"); untuk type "lampiran" gunakan ALL CAPS
+- title: salin persis dari dokumen sumber — jangan ubah huruf besar/kecil; untuk type "daftar_isi", "daftar_gambar", "daftar_tabel", "daftar_lampiran", "daftar_pustaka": jika tidak ada judul eksplisit di sumber, gunakan nama standar (mis. "Daftar Isi", "Daftar Pustaka")
 - lampiran_number: nomor lampiran seperti "Lampiran 1" (string) — hanya untuk type "lampiran" atau "item_lampiran"
 
 ## Aturan Sub-BAB
@@ -100,7 +99,7 @@ Setiap entry di `sections` adalah objek dengan fields berikut:
   - Lampiran 5: Gambaran Teknologi yang akan Dikembangkan
   - *(Lampiran tambahan mungkin ada tergantung versi panduan — selalu ikuti dokumen sumber)*
 - **JANGAN skip lampiran** yang ada di dokumen sumber hanya karena tidak ada di daftar referensi di atas
-- Format item lampiran: `{"type": "item_lampiran", "lampiran_number": "Lampiran 1", "title": "BIODATA KETUA DAN ANGGOTA, SERTA DOSEN PENDAMPING"}`
+- Format item lampiran: `{"type": "item_lampiran", "lampiran_number": "Lampiran 1", "title": "Biodata Ketua dan Anggota, serta Dosen Pendamping"}`
 
 ## Aturan Kelengkapan BAB
 - **WAJIB sertakan SEMUA BAB** yang disebutkan dalam dokumen sumber. Jangan lewatkan satu pun BAB.
@@ -109,25 +108,25 @@ Setiap entry di `sections` adalah objek dengan fields berikut:
 
 ## Aturan DAFTAR PUSTAKA
 - Cek apakah dokumen sumber menyebutkan adanya DAFTAR PUSTAKA untuk proposal.
-- Jika ada, WAJIB sertakan `{"type": "daftar_pustaka", "required": true}` setelah BAB terakhir.
+- Jika ada, WAJIB sertakan `{"type": "daftar_pustaka", "required": true, "title": "Daftar Pustaka"}` setelah BAB terakhir.
 - Jika tidak ada referensi eksplisit, tetap sertakan dengan `required: true` (standar akademik PKM).
 
 Contoh sections untuk proposal:
 ```json
 [
-  {"type": "daftar_isi", "required": true},
-  {"type": "daftar_gambar", "required": false},
-  {"type": "daftar_tabel", "required": false},
-  {"type": "daftar_lampiran", "required": false},
+  {"type": "daftar_isi", "required": true, "title": "Daftar Isi"},
+  {"type": "daftar_gambar", "required": false, "title": "Daftar Gambar"},
+  {"type": "daftar_tabel", "required": false, "title": "Daftar Tabel"},
+  {"type": "daftar_lampiran", "required": false, "title": "Daftar Lampiran"},
   {"type": "bab", "number": 1, "title": "PENDAHULUAN"},
   {"type": "bab", "number": 2, "title": "TINJAUAN PUSTAKA"},
   {"type": "bab", "number": 3, "title": "TAHAP PELAKSANAAN"},
   {"type": "bab", "number": 4, "title": "BIAYA DAN JADWAL KEGIATAN"},
   {"type": "sub_bab", "sub_number": "4.1", "title": "Anggaran Biaya"},
   {"type": "sub_bab", "sub_number": "4.2", "title": "Jadwal Kegiatan"},
-  {"type": "daftar_pustaka", "required": true},
-  {"type": "lampiran", "title": "LAMPIRAN"},
-  {"type": "item_lampiran", "lampiran_number": "Lampiran 1", "title": "BIODATA KETUA DAN ANGGOTA, SERTA DOSEN PENDAMPING"},
+  {"type": "daftar_pustaka", "required": true, "title": "Daftar Pustaka"},
+  {"type": "lampiran", "title": "Lampiran"},
+  {"type": "item_lampiran", "lampiran_number": "Lampiran 1", "title": "Biodata Ketua dan Anggota, serta Dosen Pendamping"},
   {"type": "item_lampiran", "lampiran_number": "Lampiran 2", "title": "JUSTIFIKASI ANGGARAN KEGIATAN"},
   {"type": "item_lampiran", "lampiran_number": "Lampiran 3", "title": "SUSUNAN TIM PENGUSUL DAN PEMBAGIAN TUGAS"},
   {"type": "item_lampiran", "lampiran_number": "Lampiran 4", "title": "SURAT PERNYATAAN KETUA TIM PENGUSUL"},

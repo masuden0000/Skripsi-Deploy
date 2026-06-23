@@ -39,12 +39,24 @@ def run_setup(project_id: str, skip_ingest: bool = False) -> None:
     total_chunks, output_path = extract_chunks(project_id=project_id)
     print(f"[setup] Berhasil membuat {total_chunks} chunk: {output_path}")
 
+    if total_chunks == 0:
+        raise SystemExit(
+            "[setup] FATAL: PDF tidak menghasilkan chunk. "
+            "Periksa apakah file PDF valid, tidak kosong, dan formatnya didukung."
+        )
+
     if skip_ingest:
         print("[setup] Ingest ke Supabase dilewati.")
         return
 
     total_rows = upsert_embeddings(project_id=project_id)
     print(f"[setup] Berhasil upsert {total_rows} chunk ke Supabase.")
+
+    if total_rows == 0:
+        raise SystemExit(
+            "[setup] FATAL: 0 chunk berhasil diingest ke Supabase. "
+            "Periksa koneksi Supabase dan konfigurasi environment."
+        )
 
 
 def run_extract(project_id: str | None = None, skema: str = "PKM-KC") -> None:

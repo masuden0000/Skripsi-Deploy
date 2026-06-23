@@ -120,6 +120,26 @@ def build_sections(page_chunks: list[dict]) -> list[dict]:
             current_lines = [line]
             continue
 
+        # Deteksi bold-only heading (**teks**) — PDF panduan sering menggunakan bold
+        # untuk judul section tanpa markdown heading marker.
+        if not heading_match:
+            bold_match = BOLD_HEADING_PATTERN.match(stripped_line)
+            if bold_match:
+                raw_heading = bold_match.group(1)
+                # Baris tabel yang di-strip outer '|' oleh iter_page_lines meninggalkan
+                # '|' di dalam raw_heading. Ini konten, bukan section heading.
+                if "|" in raw_heading:
+                    pass
+                elif is_noise_heading(raw_heading):
+                    in_noise_section = True
+                    continue
+                else:
+                    flush_section()
+                    in_noise_section = False
+                    current_heading = normalize_heading(raw_heading)
+                    current_lines = [line]
+                    continue
+
         if in_noise_section:
             continue
 
@@ -333,7 +353,18 @@ def build_sections_from_ranges(
 
         main_sections.append({"heading": heading, "text": section_text, "fragments": _build_fragment_spans(lines)})
 
-    return pre_sections + main_sections
+    result = pre_sections + main_sections
+    if not result:
+        # Nomor halaman TOC (document page) tidak cocok dengan nomor halaman yang terdeteksi
+        # oleh iter_page_lines (physical page). Seluruh konten tidak ter-assign ke section manapun.
+        # Fallback ke HEADING_PATTERN agar pipeline tetap menghasilkan chunk yang dapat digunakan.
+        print(
+            "[chunk_builder] WARNING: 0 section dihasilkan dari bab_ranges. "
+            "Kemungkinan page numbering TOC tidak cocok dengan embedded page markers. "
+            "Fallback ke build_sections (HEADING_PATTERN)."
+        )
+        return build_sections(page_chunks)
+    return result
 
 
 def build_payload(sections: list[dict], splitter: MarkdownTextSplitter) -> list[dict]:

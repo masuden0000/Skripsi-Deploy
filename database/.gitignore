@@ -1,9 +1,0 @@
-# Local environment files
-.env
-.env.*
-!.env.example
-
-# Supabase local state
-.branches/
-.temp/
-

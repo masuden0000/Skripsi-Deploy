@@ -58,7 +58,7 @@ def _parse_entries_with_dots(toc_text: str) -> list[tuple[str, int]]:
         line = _strip_table_cell(line)
         match = _ENTRY_WITH_DOTS.match(line)
         if match:
-            heading = match.group(1).strip()
+            heading = _strip_markdown(match.group(1))
             if not _is_subbab(heading):
                 entries.append((heading, int(match.group(2))))
     return entries
@@ -70,7 +70,7 @@ def _parse_entries_no_dots(toc_text: str) -> list[tuple[str, int]]:
         line = _strip_table_cell(line)
         match = _ENTRY_NO_DOTS.match(line)
         if match:
-            heading = match.group(1).strip()
+            heading = _strip_markdown(match.group(1))
             if not _is_subbab(heading):
                 entries.append((heading, int(match.group(2))))
     return entries

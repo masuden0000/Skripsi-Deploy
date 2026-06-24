@@ -7,8 +7,8 @@ from pydantic import BaseModel, model_validator
 
 class Source(BaseModel):
     chunk_index: int
-    page_start: int
-    page_end: int
+    page_start: int | None = None
+    page_end: int | None = None
     header: str
     snippet: str
 

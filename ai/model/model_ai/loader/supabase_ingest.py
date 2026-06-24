@@ -27,8 +27,8 @@ def get_chunks_file(project_id: str) -> Path:
 
 
 class PageRange(BaseModel):
-    start: int
-    end: int
+    start: int | None
+    end: int | None
 
 
 class ChunkRecord(BaseModel):

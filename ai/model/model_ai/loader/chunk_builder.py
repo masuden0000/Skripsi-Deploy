@@ -8,6 +8,7 @@ HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 BOLD_HEADING_PATTERN = re.compile(r"^\*\*(.+?)\*\*$")
 BOLD_HEADING_PREFIX_PATTERN = re.compile(r"^\*\*(.+?)\*\*")
 DOC_PAGE_PATTERN = re.compile(r"^\s*(\d{1,3})\s*$")
+ROMAN_PAGE_PATTERN = re.compile(r"^\s*(x{0,2}(?:ix|iv|v?i{0,3}))\s*$", re.IGNORECASE)
 STRIKETHROUGH_PATTERN = re.compile(r"~~[^~]*~~")
 PICTURE_ARTIFACT_PATTERN = re.compile(
     r"^\*\*\s*==>.*?<==\s*\*\*$"
@@ -49,10 +50,14 @@ def iter_page_lines(page_chunks: list[dict]) -> list[dict]:
     
         page_lines: list[str] = []
         found_doc_page: int | None = None
+        found_roman: bool = False
         for line in text.splitlines():
             doc_page_match = DOC_PAGE_PATTERN.match(line)
             if doc_page_match:
                 found_doc_page = int(doc_page_match.group(1))
+                continue
+            if ROMAN_PAGE_PATTERN.match(line):
+                found_roman = True
                 continue
             if PICTURE_ARTIFACT_PATTERN.match(line.strip()):
                 continue
@@ -69,8 +74,10 @@ def iter_page_lines(page_chunks: list[dict]) -> list[dict]:
             page_lines.append(cleaned)
 
         if found_doc_page is not None:
-            doc_page = found_doc_page
+            doc_page: int | None = found_doc_page
             current_doc_page = found_doc_page
+        elif found_roman:
+            doc_page = None
         elif current_doc_page is not None:
             current_doc_page += 1
             doc_page = current_doc_page
@@ -179,7 +186,10 @@ def resolve_page_range(fragments: list[dict], chunk_start: int, chunk_end: int) 
     ]
     if not touched_pages:
         raise ValueError("Chunk tidak memiliki halaman asal.")
-    return {"start": min(touched_pages), "end": max(touched_pages)}
+    valid_pages = [p for p in touched_pages if p is not None]
+    if not valid_pages:
+        return {"start": None, "end": None}
+    return {"start": min(valid_pages), "end": max(valid_pages)}
 
 
 def _find_first_arabic_page_idx(page_chunks: list[dict]) -> int:
@@ -237,6 +247,8 @@ def build_sections_from_ranges(
     # Halaman yang punya heading detectable dibiarkan ditangani Layer 2 (bukan fallback).
     heading_transition_pages: set[int] = set()
     for _line in iter_page_lines(page_chunks[first_arabic_idx:]):
+        if _line["page"] is None:
+            continue
         _stripped = _line["text"].strip()
         _hm = HEADING_PATTERN.match(_stripped)
         if _hm:
@@ -256,6 +268,8 @@ def build_sections_from_ranges(
     current_heading: str | None = None
 
     for line in iter_page_lines(page_chunks[first_arabic_idx:]):
+        if line["page"] is None:
+            continue
         stripped = line["text"].strip()
         heading_match = HEADING_PATTERN.match(stripped)
 

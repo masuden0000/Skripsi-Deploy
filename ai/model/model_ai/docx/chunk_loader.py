@@ -8,8 +8,8 @@ from model_ai.shared import get_supabase_client
 @dataclass(frozen=True)
 class ChunkSource:
     chunk_parent: str
-    page_start: int
-    page_end: int
+    page_start: int | None
+    page_end: int | None
     content: str
 
 
@@ -33,9 +33,11 @@ def load_chunk_sources(project_id: str) -> list[ChunkSource]:
     for item in result.data:
         parent = str(item.get("chunk_parent") or "").strip()
         content = str(item.get("content") or "").strip()
-        start = int(item.get("page_start") or 0)
-        end = int(item.get("page_end") or start)
-        if not parent or start <= 0 or end <= 0:
+        raw_start = item.get("page_start")
+        raw_end = item.get("page_end")
+        start = int(raw_start) if raw_start is not None else None
+        end = int(raw_end) if raw_end is not None else start
+        if not parent:
             continue
         sources.append(ChunkSource(
             chunk_parent=parent,
@@ -70,7 +72,12 @@ def match_sources_for_section(
             scored.append((score, chunk))
 
     scored.sort(
-        key=lambda item: (-item[0], item[1].page_start, item[1].page_end, item[1].chunk_parent)
+        key=lambda item: (
+            -item[0],
+            item[1].page_start if item[1].page_start is not None else float("inf"),
+            item[1].page_end if item[1].page_end is not None else float("inf"),
+            item[1].chunk_parent,
+        )
     )
 
     unique: list[ChunkSource] = []

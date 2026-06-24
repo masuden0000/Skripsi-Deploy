@@ -22,12 +22,11 @@ class AppConfig(BaseModel):
     model_name: str
     temperature: float
     embedding_model_name: str
-    gemini_model_name: str = "gemini-2.5-flash"
-    chat_host: str = "127.0.0.1"
-    chat_port: int = 8000
-    rag_top_k: int = 5
-    rag_min_context_similarity: float = 0.45
-
+    gemini_model_name: str
+    chat_host: str
+    chat_port: int
+    rag_top_k: int
+    rag_min_context_similarity: float
     _groq_index: int = 0
     _google_index: int = 0
     _groq_exhausted: bool = False
@@ -124,11 +123,9 @@ def get_config() -> AppConfig:
         model_name=_get_required_env("MODEL_NAME"),
         temperature=float(_get_required_env("TEMPERATURE")),
         embedding_model_name=_get_required_env("EMBEDDING_MODEL_NAME"),
-        gemini_model_name=os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash").strip() or "gemini-2.5-flash",
-        chat_host=os.getenv("CHAT_HOST", "127.0.0.1").strip() or "127.0.0.1",
-        chat_port=int(os.getenv("CHAT_PORT", "8000")),
-        rag_top_k=int(os.getenv("RAG_TOP_K", "5")),
-        rag_min_context_similarity=float(
-            os.getenv("RAG_MIN_CONTEXT_SIMILARITY", "0.45")
-        ),
+        gemini_model_name=_get_required_env("GEMINI_MODEL_NAME"),
+        chat_host=_get_required_env("CHAT_HOST"),
+        chat_port=int(_get_required_env("CHAT_PORT")),
+        rag_top_k=int(_get_required_env("RAG_TOP_K")),
+        rag_min_context_similarity=float(_get_required_env("RAG_MIN_CONTEXT_SIMILARITY")),
     )

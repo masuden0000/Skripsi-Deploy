@@ -6,24 +6,14 @@ Tujuan: Upload/download file DOCX proposal ke/dari bucket Supabase Storage.
   - ai-source-files : DOCX sumber yang diupload reviewer/admin (input pipeline)
   - ai-output-files : DOCX hasil generate AI (output pipeline)
 """
-import os
-from pathlib import Path
-from supabase import create_client
-from dotenv import load_dotenv
-
-_AI_ROOT = Path(__file__).resolve().parent.parent.parent
-load_dotenv(_AI_ROOT / ".env")
-load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=False)
-
-SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+from ._supabase import supabase_client
 
 BUCKET_SOURCE = "ai-source-files"
 BUCKET_OUTPUT = "ai-output-files"
 
 
 def get_supabase_client():
-    return create_client(SUPABASE_URL, SUPABASE_KEY)
+    return supabase_client
 
 
 async def upload_file(bucket_name: str, file_content: bytes, file_name: str, project_id: str) -> str:

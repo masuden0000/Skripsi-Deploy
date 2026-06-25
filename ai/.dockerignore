@@ -1,0 +1,30 @@
+# Environment & secrets — jangan masuk ke image
+.env
+.env.*
+*.env
+
+# Data runtime — dibuat ulang saat container berjalan
+data/
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE & OS
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore

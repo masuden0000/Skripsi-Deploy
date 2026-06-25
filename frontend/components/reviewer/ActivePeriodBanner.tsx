@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { ReviewerSurfaceCard } from "./shared"
+import { Card, CardContent } from "@/components/ui/card"
 import { Loader2Icon, CalendarIcon, UserIcon } from "@/components/icons/public-icons"
 import { getActiveAssignments, type Assignment } from "@/lib/api/reviewer-assignments"
 

@@ -6,6 +6,11 @@ _MODEL_DIR = str(Path(__file__).resolve().parent.parent / "model")
 if _MODEL_DIR not in sys.path:
     sys.path.insert(0, _MODEL_DIR)
 
+# Tambahkan ai/backend/ ke sys.path agar module seperti routers, services bisa diimport
+_BACKEND_DIR = str(Path(__file__).resolve().parent)
+if _BACKEND_DIR not in sys.path:
+    sys.path.insert(0, _BACKEND_DIR)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import health, pkm, projects, validation

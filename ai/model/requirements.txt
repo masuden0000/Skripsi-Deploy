@@ -1,4 +1,4 @@
-pymupdf4llm
+pymupdf4llm==1.27.2.3
 langchain-text-splitters>=1.1,<2
 langchain-core>=1.2,<2
 langchain-google-genai>=2.1,<3

@@ -200,6 +200,28 @@ def _find_first_arabic_page_idx(page_chunks: list[dict]) -> int:
     return 0
 
 
+def _detect_page_offset(page_chunks: list[dict], bab_ranges: list[dict], scan_start: int) -> int:
+    """Deteksi offset antara nomor halaman iter_page_lines dan nomor dokumen dari TOC.
+    Mengembalikan (physical_page - toc_doc_page), atau 0 jika tidak terdeteksi.
+    Digunakan saat DOC_PAGE_PATTERN tidak mendeteksi angka halaman embedded di PDF."""
+    bab_headings = {normalize_heading(r["heading"]).upper(): r["page_start"] for r in bab_ranges}
+    for line in iter_page_lines(page_chunks[scan_start:]):
+        if line["page"] is None:
+            continue
+        stripped = line["text"].strip()
+        heading_match = HEADING_PATTERN.match(stripped)
+        if heading_match:
+            norm = normalize_heading(heading_match.group(2)).upper()
+            if norm in bab_headings:
+                return line["page"] - bab_headings[norm]
+        bold_match = BOLD_HEADING_PATTERN.match(stripped)
+        if bold_match:
+            norm = normalize_heading(bold_match.group(1)).upper()
+            if norm in bab_headings:
+                return line["page"] - bab_headings[norm]
+    return 0
+
+
 def build_sections_from_ranges(
     page_chunks: list[dict],
     bab_ranges: list[dict],
@@ -210,6 +232,23 @@ def build_sections_from_ranges(
     first_arabic_idx = _find_first_arabic_page_idx(page_chunks)
     pre_start = min(toc_page_idx, first_arabic_idx)
     pre_sections = build_sections(page_chunks[pre_start:first_arabic_idx]) if first_arabic_idx > pre_start else []
+
+    # Deteksi offset antara physical page dan document page dari TOC.
+    # Terjadi saat PDF tidak menyematkan page numbers sebagai baris standalone,
+    # sehingga iter_page_lines() fallback ke physical_page (cover dihitung sebagai halaman 1)
+    # sedangkan TOC mencatat document page (mulai dari 1 setelah halaman romawi).
+    scan_start_idx = max(first_arabic_idx, toc_page_idx + 1)
+    page_offset = _detect_page_offset(page_chunks, bab_ranges, scan_start_idx)
+    if page_offset != 0:
+        print(f"[chunk_builder] Page offset terdeteksi: +{page_offset}. Menyesuaikan rentang halaman TOC.")
+        bab_ranges = [
+            {
+                "heading": r["heading"],
+                "page_start": r["page_start"] + page_offset,
+                "page_end": r["page_end"] + page_offset if r["page_end"] != 9999 else 9999,
+            }
+            for r in bab_ranges
+        ]
 
     # Lapis 1: page-based range dari TOC → titik awal heading per page
     page_to_heading: dict[int, str] = {}

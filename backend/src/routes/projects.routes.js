@@ -100,11 +100,14 @@ router.get("/:id/logs", async (req, res, next) => {
     let lastStatus = null
 
     const fetchLogs = async () => {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 8000)
       try {
         const [logsResponse, statusResponse] = await Promise.all([
-          fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}/logs${sinceParam}`),
-          fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}`),
+          fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}/logs${sinceParam}`, { signal: controller.signal }),
+          fetch(`${projectsService.AI_BACKEND_URL}/api/projects/${id}`, { signal: controller.signal }),
         ])
+        clearTimeout(timeoutId)
 
         if (logsResponse.ok) {
           const data = await logsResponse.json()
@@ -133,12 +136,16 @@ router.get("/:id/logs", async (req, res, next) => {
           }
         }
       } catch (error) {
-        console.error("[ProjectsRoute] Error fetching logs:", error)
+        clearTimeout(timeoutId)
+        if (error.name !== "AbortError") {
+          console.error("[ProjectsRoute] Error fetching logs:", error)
+        }
       }
     }
 
-    // Poll for logs and status every 1 second
-    const intervalId = setInterval(fetchLogs, 1000)
+    // Poll setiap 3 detik — cukup untuk update real-time tanpa membebani AI service
+    // yang sedang menjalankan pipeline berat (LLM extraction, subprocess).
+    const intervalId = setInterval(fetchLogs, 3000)
 
     // Also fetch immediately on connection
     fetchLogs()

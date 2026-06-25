@@ -69,6 +69,19 @@ def log_event(step: str, message: str, project_id: str | None = None) -> None:
         persist_project_log(project_id, step, cleaned_message)
 
 
+def _do_bulk_insert(rows: list[dict]) -> None:
+    """Synchronous Supabase bulk insert — dijalankan via asyncio.to_thread agar tidak blokir event loop."""
+    global PROJECT_LOGS_ENABLED
+    if not PROJECT_LOGS_ENABLED or not rows:
+        return
+    try:
+        supabase = get_supabase()
+        supabase.table("project_logs").insert(rows).execute()
+    except Exception as exc:
+        PROJECT_LOGS_ENABLED = False
+        log_console("log", f"Warning: gagal simpan project log batch, streaming dimatikan: {exc}")
+
+
 async def stream_manage_command(
     step: str,
     command: Sequence[str],
@@ -90,6 +103,7 @@ async def stream_manage_command(
 
     stdout_lines: list[str] = []
     stderr_lines: list[str] = []
+    log_buffer: list[dict] = []
 
     async def read_stream(
         stream: asyncio.StreamReader | None,
@@ -109,11 +123,32 @@ async def stream_manage_command(
 
             if is_stderr:
                 stderr_lines.append(line)
-                log_event(step, f"[stderr] {line}", project_id)
+                msg = f"[stderr] {line}"
+                log_console(step, msg)
+                if project_id and PROJECT_LOGS_ENABLED:
+                    log_buffer.append({"project_id": project_id, "step": step, "message": msg})
             else:
                 stdout_lines.append(line)
-                log_event(step, line, project_id)
+                log_console(step, line)
+                if project_id and PROJECT_LOGS_ENABLED:
+                    log_buffer.append({"project_id": project_id, "step": step, "message": line})
 
+            # Flush langsung saat buffer mencapai 20 baris — non-blocking via create_task
+            if len(log_buffer) >= 20:
+                rows = log_buffer.copy()
+                log_buffer.clear()
+                asyncio.create_task(asyncio.to_thread(_do_bulk_insert, rows))
+
+    async def periodic_flush() -> None:
+        """Flush sisa buffer tiap 1 detik agar log tidak tertahan lama di memory."""
+        while True:
+            await asyncio.sleep(1)
+            if log_buffer:
+                rows = log_buffer.copy()
+                log_buffer.clear()
+                await asyncio.to_thread(_do_bulk_insert, rows)
+
+    flush_task = asyncio.create_task(periodic_flush())
     stdout_task = asyncio.create_task(read_stream(process.stdout))
     stderr_task = asyncio.create_task(read_stream(process.stderr, is_stderr=True))
 
@@ -122,10 +157,24 @@ async def stream_manage_command(
     except asyncio.TimeoutError:
         process.kill()
         await process.wait()
-        await asyncio.gather(stdout_task, stderr_task, return_exceptions=True)
+        flush_task.cancel()
+        await asyncio.gather(stdout_task, stderr_task, flush_task, return_exceptions=True)
+        # Final flush untuk log yang belum terkirim
+        if log_buffer:
+            await asyncio.to_thread(_do_bulk_insert, log_buffer.copy())
+            log_buffer.clear()
         return False, f"Timeout setelah {timeout_seconds} detik"
 
     await asyncio.gather(stdout_task, stderr_task)
+    flush_task.cancel()
+    try:
+        await flush_task
+    except asyncio.CancelledError:
+        pass
+    # Final flush untuk sisa log setelah proses selesai
+    if log_buffer:
+        await asyncio.to_thread(_do_bulk_insert, log_buffer.copy())
+        log_buffer.clear()
 
     if return_code != 0:
         error_output = stderr_lines[-1] if stderr_lines else ""

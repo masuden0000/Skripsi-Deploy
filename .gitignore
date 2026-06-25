@@ -67,3 +67,5 @@ TASKS.md
 # Pakai /supabase/ (dengan slash depan) agar hanya root-level yang diabaikan,
 # tidak menimpa database/supabase/ yang merupakan source of truth.
 /supabase/
+sync.sh
+antigravity.config

@@ -33,11 +33,13 @@ def ensure_supported_python() -> None:
 
 
 def run_setup(project_id: str, skip_ingest: bool = False) -> None:
+    print("[setup] Memuat modul loader...", flush=True)
     from model_ai.loader.pdf_extractor import extract_chunks
     from model_ai.loader.supabase_ingest import upsert_embeddings
 
+    print("[setup] Memulai ekstraksi PDF → chunks...", flush=True)
     total_chunks, output_path = extract_chunks(project_id=project_id)
-    print(f"[setup] Berhasil membuat {total_chunks} chunk: {output_path}")
+    print(f"[setup] Berhasil membuat {total_chunks} chunk: {output_path}", flush=True)
 
     if total_chunks == 0:
         raise SystemExit(
@@ -46,11 +48,12 @@ def run_setup(project_id: str, skip_ingest: bool = False) -> None:
         )
 
     if skip_ingest:
-        print("[setup] Ingest ke Supabase dilewati.")
+        print("[setup] Ingest ke Supabase dilewati.", flush=True)
         return
 
+    print("[setup] Memulai embedding + ingest ke Supabase...", flush=True)
     total_rows = upsert_embeddings(project_id=project_id)
-    print(f"[setup] Berhasil upsert {total_rows} chunk ke Supabase.")
+    print(f"[setup] Berhasil upsert {total_rows} chunk ke Supabase.", flush=True)
 
     if total_rows == 0:
         raise SystemExit(

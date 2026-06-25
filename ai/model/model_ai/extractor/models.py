@@ -26,6 +26,11 @@ class TypographyExtracted(BaseModel):
     heading_3_case: Literal["UPPERCASE", "LOWERCASE", "SENTENCE_CASE", "TOGGLE_CASE"] | None = "SENTENCE_CASE"
     heading_4_case: Literal["UPPERCASE", "LOWERCASE", "SENTENCE_CASE", "TOGGLE_CASE"] | None = "SENTENCE_CASE"
     heading_5_case: Literal["UPPERCASE", "LOWERCASE", "SENTENCE_CASE", "TOGGLE_CASE"] | None = "SENTENCE_CASE"
+    heading_1_bold: bool = True
+    heading_2_bold: bool = True
+    heading_3_bold: bool = True
+    heading_4_bold: bool = True
+    heading_5_bold: bool = True
     # PKM-AI (Type B) — ukuran font per elemen artikel (caption ada di FiguresTablesExtracted)
     font_size_title_pt: int | None = None
     font_size_author_pt: int | None = None
@@ -50,6 +55,12 @@ class TypographyExtracted(BaseModel):
                 normalized[field] = val.strip().upper()
             if normalized.get(field) not in _VALID_CASE_STYLES:
                 normalized[field] = None
+        for field in ("heading_1_bold", "heading_2_bold", "heading_3_bold", "heading_4_bold", "heading_5_bold"):
+            val = normalized.get(field)
+            if isinstance(val, str):
+                normalized[field] = val.strip().lower() not in ("false", "0", "tidak", "no")
+            elif val is None:
+                normalized[field] = True
         raw_style = normalized.get("title_style")
         if isinstance(raw_style, str):
             normalized["title_style"] = raw_style.strip().upper()
@@ -79,7 +90,12 @@ class SpacingExtracted(BaseModel):
     line_spacing: float | None = None
     line_spacing_rule: str | None = None
     paragraph_alignment: str | None = None
-    heading_alignment: str = "CENTER"  # hanya berlaku untuk Heading 1; H2–H5 ikut paragraph_alignment
+    heading_alignment: str = "CENTER"  # alias legacy untuk heading_1_alignment
+    heading_1_alignment: str | None = None  # None → pakai heading_alignment
+    heading_2_alignment: str | None = None  # None → pakai paragraph_alignment
+    heading_3_alignment: str | None = None
+    heading_4_alignment: str | None = None
+    heading_5_alignment: str | None = None
     # PKM-AI (Type B) — halaman judul/abstrak memiliki spasi berbeda (1.0) dari body (1.15)
     line_spacing_title_abstract: float | None = None
 
@@ -100,21 +116,32 @@ class SpacingExtracted(BaseModel):
         {"SINGLE", "ONE_POINT_FIVE", "DOUBLE", "MULTIPLE", "AT_LEAST", "EXACTLY"}
     )
 
-    _VALID_HEADING_ALIGNMENTS: frozenset[str] = frozenset({"CENTER", "LEFT", "RIGHT"})
+    _VALID_HEADING_ALIGNMENTS: frozenset[str] = frozenset({"CENTER", "LEFT", "RIGHT", "JUSTIFY"})
 
     @model_validator(mode="after")
     def _normalize_rule(self) -> "SpacingExtracted":
-        if self.line_spacing_rule is None:
-            return self
-        raw = self.line_spacing_rule.strip().upper()
-        normalized = self._RULE_ALIASES.get(raw, raw)
-        self.line_spacing_rule = normalized if normalized in self._VALID_RULES else None
-
-        if self.line_spacing_rule in {"SINGLE", "ONE_POINT_FIVE", "DOUBLE"}:
-            self.line_spacing = None
+        if self.line_spacing_rule is not None:
+            raw = self.line_spacing_rule.strip().upper()
+            normalized = self._RULE_ALIASES.get(raw, raw)
+            self.line_spacing_rule = normalized if normalized in self._VALID_RULES else None
+            if self.line_spacing_rule in {"SINGLE", "ONE_POINT_FIVE", "DOUBLE"}:
+                self.line_spacing = None
 
         val = (self.heading_alignment or "CENTER").strip().upper()
         self.heading_alignment = val if val in self._VALID_HEADING_ALIGNMENTS else "CENTER"
+
+        for field, default in (
+            ("heading_1_alignment", None),
+            ("heading_2_alignment", None),
+            ("heading_3_alignment", None),
+            ("heading_4_alignment", None),
+            ("heading_5_alignment", None),
+        ):
+            raw_val = getattr(self, field)
+            if raw_val is None:
+                continue
+            normalized_val = raw_val.strip().upper()
+            setattr(self, field, normalized_val if normalized_val in self._VALID_HEADING_ALIGNMENTS else None)
         return self
 
 

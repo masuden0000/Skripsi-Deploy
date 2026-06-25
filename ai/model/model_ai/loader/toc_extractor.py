@@ -21,10 +21,11 @@ _SUBBAB_PREFIX = re.compile(r"^(?:[A-Z]\.|[a-z]\.|[IVXLC]{1,5}\.|[0-9]+\.|Lampir
 
 
 def _strip_markdown(line: str) -> str:
+    line = re.sub(r"<[^>]+>", " ", line)
     line = re.sub(r"\*\*(.*?)\*\*", r"\1", line)
     line = re.sub(r"__(.*?)__", r"\1", line)
     line = re.sub(r"^#{1,6}\s+", "", line)
-    return line.strip()
+    return " ".join(line.split())
 
 
 def _strip_table_cell(line: str) -> str:
@@ -57,7 +58,7 @@ def _parse_entries_with_dots(toc_text: str) -> list[tuple[str, int]]:
         line = _strip_table_cell(line)
         match = _ENTRY_WITH_DOTS.match(line)
         if match:
-            heading = match.group(1).strip()
+            heading = _strip_markdown(match.group(1))
             if not _is_subbab(heading):
                 entries.append((heading, int(match.group(2))))
     return entries
@@ -69,9 +70,29 @@ def _parse_entries_no_dots(toc_text: str) -> list[tuple[str, int]]:
         line = _strip_table_cell(line)
         match = _ENTRY_NO_DOTS.match(line)
         if match:
-            heading = match.group(1).strip()
+            heading = _strip_markdown(match.group(1))
             if not _is_subbab(heading):
                 entries.append((heading, int(match.group(2))))
+    return entries
+
+
+def _parse_entries_table(toc_text: str) -> list[tuple[str, int]]:
+    """Parse daftar isi berformat tabel markdown: `|Heading|8|`."""
+    entries: list[tuple[str, int]] = []
+    for line in toc_text.splitlines():
+        line = line.strip()
+        if not (line.startswith("|") and line.endswith("|")):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        page_raw = cells[-1]
+        if not page_raw.isdigit():
+            continue
+        heading = _strip_markdown(cells[0])
+        if not heading or _is_subbab(heading):
+            continue
+        entries.append((heading, int(page_raw)))
     return entries
 
 
@@ -90,7 +111,8 @@ def extract_bab_ranges(
 
     jalur:
       'main'          — halaman TOC ditemukan + titik-titik berhasil diparsing
-      'fallback_2a'   — halaman TOC ditemukan tapi tanpa titik-titik
+      'fallback_2a'   — halaman TOC ditemukan tapi tanpa titik-titik (spasi lebar)
+      'fallback_2b'   — halaman TOC ditemukan tapi format tabel markdown (`|heading|page|`)
       'fallback_total'— halaman TOC tidak ditemukan atau tidak ada entri yang valid
     toc_page_idx: 0-indexed posisi fisik halaman TOC (0 jika tidak ditemukan)
     """
@@ -108,5 +130,9 @@ def extract_bab_ranges(
     entries = _parse_entries_no_dots(toc_text)
     if entries:
         return _build_ranges(entries), "fallback_2a", toc_page_idx
+
+    entries = _parse_entries_table(toc_text)
+    if entries:
+        return _build_ranges(entries), "fallback_2b", toc_page_idx
 
     return None, "fallback_total", toc_page_idx

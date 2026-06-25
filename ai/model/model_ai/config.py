@@ -114,7 +114,7 @@ def _load_api_key_list(prefix: str, suffix_max: int = 5) -> list[SecretStr]:
 
 def get_config() -> AppConfig:
     return AppConfig(
-        groq_api_keys=_load_api_key_list("GROQ_API_KEY"),
+        groq_api_keys=_load_api_key_list("GROQ_API_KEY", suffix_max=10),
         google_api_keys=_load_api_key_list("GOOGLE_API_KEY"),
         supabase_service_role_key=SecretStr(
             _get_required_env("SUPABASE_SERVICE_ROLE_KEY")

@@ -258,9 +258,6 @@ def _apply_base_styles(document: Document, typography: dict, spacing: dict, figu
     body_font    = typography.get("font_family", "Times New Roman")
     body_size    = typography.get("font_size_body_pt", 12)
     heading_size  = typography.get("font_size_heading_pt", body_size)
-    h1_case = (typography.get("heading_1_case") or "").upper()
-    h2_case = (typography.get("heading_2_case") or "").upper()
-    line_spacing  = spacing.get("line_spacing", 1.15)
     alignment_str = (spacing.get("paragraph_alignment") or "JUSTIFY").upper()
 
     normal_style = document.styles["Normal"]
@@ -274,25 +271,31 @@ def _apply_base_styles(document: Document, typography: dict, spacing: dict, figu
     normal_style.paragraph_format.space_before = Pt(0)
     normal_style.paragraph_format.space_after  = Pt(0)
 
-    for style_name in ("Heading 1", "Heading 2", "Heading 3", "Heading 4"):
+    for style_name in ("Heading 1", "Heading 2", "Heading 3", "Heading 4", "Heading 5"):
         try:
             h = document.styles[style_name]
         except KeyError:
             continue
+        level = int(style_name.split()[-1])
+        h_case = (typography.get(f"heading_{level}_case") or "").upper()
+        h_bold = typography.get(f"heading_{level}_bold")
+        if h_bold is None:
+            h_bold = True
+        # Resolusi alignment: per-level override → H1 default CENTER, H2-H5 default JUSTIFY
+        h_align_raw = spacing.get(f"heading_{level}_alignment")
+        if h_align_raw:
+            h_align = _map_alignment(h_align_raw.upper())
+        elif level == 1:
+            h_align = _map_alignment((spacing.get("heading_alignment") or "CENTER").upper())
+        else:
+            h_align = _map_alignment(alignment_str)
+
         h.font.name      = body_font
         h.font.size      = Pt(heading_size)
-        if style_name == "Heading 1":
-            h.font.all_caps = (h1_case == "UPPERCASE")
-        elif style_name == "Heading 2":
-            h.font.all_caps = (h2_case == "UPPERCASE")
-        else:
-            h.font.all_caps = False
+        h.font.bold      = bool(h_bold)
+        h.font.all_caps  = (h_case == "UPPERCASE")
         h.font.color.rgb = RGBColor(0, 0, 0)
-        # H1 = CENTER, H2–H4 = JUSTIFY (ikut body)
-        if style_name == "Heading 1":
-            h.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        else:
-            h.paragraph_format.alignment = _map_alignment(alignment_str)
+        h.paragraph_format.alignment    = h_align
         h.paragraph_format.space_before = Pt(0)
         h.paragraph_format.space_after  = Pt(0)
 
@@ -418,7 +421,7 @@ def _render_daftar_isi_example(
             raw_sub_title = sec.get("title") or ""
             label = f"{sub_num} {raw_sub_title}".strip()
             bookmark = _bookmark_name("sub_bab", sub_num)
-            entries.append((label, str(body_counter), bookmark))
+            entries.append((_apply_heading_case(label, h2_case), str(body_counter), bookmark))
             body_counter += 1
         elif sec_type in ("daftar_pustaka", "lampiran"):
             entries.append((_apply_heading_case(title, h1_case), str(body_counter), _bookmark_name(sec_type)))
@@ -794,7 +797,10 @@ def _render_sub_bab_section(
     typography = typography or {}
     sub_num  = section.get("sub_number") or "?"
     raw_title = section.get("title") or "[SUB_BAB_TANPA_JUDUL]"
-    heading_text = f"{sub_num} {raw_title}".strip()
+    heading_text = _apply_heading_case(
+        f"{sub_num} {raw_title}".strip(),
+        typography.get("heading_2_case"),
+    )
 
     sep = document.add_paragraph()
     sep.paragraph_format.space_before = Pt(0)

@@ -1,7 +1,9 @@
 """Renderer Type B: menulis konten terstruktur ke dokumen .docx khusus PKM-AI (artikel ilmiah). Urutan eksekusi mengikuti Sistematika C panduan PKM-AI: judul_abstrak (halaman 1, spasi 1.0) → bab artikel (spasi 1.15) → daftar_pustaka (Harvard hanging indent) → lampiran. Posisi pipeline: instructional_placeholder_builder → docx_B_renderer → DOCX output. Keyword: automated document generation"""
 from io import BytesIO
+from pathlib import Path
 
 from docx import Document
+from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Cm, Pt, RGBColor
 from docx.text.paragraph import Paragraph
@@ -79,7 +81,7 @@ def _spacing_title_abstract(spacing: dict) -> dict:
     return {"line_spacing_rule": "MULTIPLE", "line_spacing": val}
 
 
-def _apply_base_styles_artikel(document: Document, typography: dict, spacing: dict) -> None:
+def _apply_base_styles_artikel(document: Document, typography: dict, spacing: dict, figures_tables: dict | None = None) -> None:
     """Style dasar artikel ilmiah PKM-AI: TNR 12 body, 1.15 spasi, justify."""
     body_font = typography.get("font_family") or "Times New Roman"
     body_size = typography.get("font_size_body_pt") or 12
@@ -124,6 +126,31 @@ def _apply_base_styles_artikel(document: Document, typography: dict, spacing: di
     except KeyError:
         pass
 
+    # Caption style — ukuran dan spasi dari metadata PKM-AI
+    ft = figures_tables or {}
+    caption_size = ft.get("caption_font_size") or body_size
+    caption_ls   = ft.get("caption_line_spacing") or 1.0
+    cap_spacing  = (
+        {"line_spacing_rule": "SINGLE", "line_spacing": None}
+        if caption_ls == 1.0
+        else {"line_spacing_rule": "MULTIPLE", "line_spacing": caption_ls}
+    )
+    try:
+        caption_style = document.styles["Caption"]
+    except KeyError:
+        caption_style = document.styles.add_style("Caption", WD_STYLE_TYPE.PARAGRAPH)
+    caption_style.font.name      = body_font
+    caption_style.font.size      = Pt(caption_size)
+    caption_style.font.bold      = False
+    caption_style.font.italic    = False
+    caption_style.font.color.rgb = RGBColor(0, 0, 0)
+    caption_style.paragraph_format.alignment    = _map_alignment(
+        (ft.get("caption_alignment_figure") or "CENTER").upper()
+    )
+    caption_style.paragraph_format.space_before = Pt(0)
+    caption_style.paragraph_format.space_after  = Pt(0)
+    _apply_line_spacing(caption_style.paragraph_format, cap_spacing)
+
 
 def _add_run(paragraph, text: str, font_name: str, size_pt: int,
              bold: bool = False, italic: bool = False, superscript: bool = False) -> None:
@@ -166,6 +193,132 @@ def _add_section_note(document: Document, body_font: str) -> None:
     _force_paragraph_runs_black(note)
 
 
+def _format_caption_artikel(format_template: str | None, prefix: str, num: int, title: str) -> str:
+    """Format string caption menggunakan template dari metadata atau default."""
+    if not format_template:
+        return f"{prefix} {num}. {title}"
+    return (
+        format_template
+        .replace("{n}", str(num))
+        .replace("{num}", str(num))
+        .replace("{bab}", "1")
+        .replace("{title}", title)
+        .replace("{caption}", title)
+        .replace("{source}", "Sumber: Dokumentasi Penelitian")
+    )
+
+
+def _add_example_figure_artikel(
+    document: Document,
+    caption: str | None,
+    figures_tables: dict,
+    body_font: str,
+    body_size: int,
+) -> None:
+    """Sisipkan contoh gambar dengan caption sesuai posisi dan alignment dari metadata."""
+    caption_pos   = (figures_tables.get("figure_caption_position") or "BELOW").upper()
+    caption_align = _map_alignment((figures_tables.get("caption_alignment_figure") or "CENTER").upper())
+
+    sep = document.add_paragraph()
+    sep.paragraph_format.space_before = Pt(0)
+    sep.paragraph_format.space_after  = Pt(0)
+
+    if caption and caption_pos == "ABOVE":
+        cap_p = document.add_paragraph(caption, style="Caption")
+        cap_p.alignment = caption_align
+        cap_p.paragraph_format.space_before = Pt(0)
+        cap_p.paragraph_format.space_after  = Pt(0)
+        _force_paragraph_runs_black(cap_p)
+
+    possible_paths = [
+        Path(__file__).parent.parent.parent / "data" / "images.jpg",
+        Path(__file__).parent.parent / "data" / "images.jpg",
+        Path("ai/data/images.jpg"),
+        Path("data/images.jpg"),
+    ]
+    figure_image_path = None
+    for p in possible_paths:
+        if p.exists() and p.is_file():
+            figure_image_path = p
+            break
+
+    if figure_image_path:
+        document.add_picture(str(figure_image_path), width=Cm(10))
+        document.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
+    else:
+        ph = document.add_paragraph("[Gambar: sisipkan gambar yang relevan di sini]")
+        ph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        if ph.runs:
+            ph.runs[0].italic = True
+            ph.runs[0].font.name = body_font
+            ph.runs[0].font.size = Pt(body_size)
+        _force_paragraph_runs_black(ph)
+
+    if caption and caption_pos != "ABOVE":
+        cap_p = document.add_paragraph(caption, style="Caption")
+        cap_p.alignment = caption_align
+        cap_p.paragraph_format.space_before = Pt(0)
+        cap_p.paragraph_format.space_after  = Pt(0)
+        _force_paragraph_runs_black(cap_p)
+
+
+def _add_example_table_artikel(
+    document: Document,
+    caption: str | None,
+    figures_tables: dict,
+    body_font: str,
+    body_size: int,
+) -> None:
+    """Sisipkan contoh tabel dengan caption sesuai posisi dan alignment dari metadata."""
+    caption_pos   = (figures_tables.get("table_caption_position") or "ABOVE").upper()
+    caption_align = _map_alignment((figures_tables.get("caption_alignment_table") or "CENTER").upper())
+
+    sep = document.add_paragraph()
+    sep.paragraph_format.space_before = Pt(0)
+    sep.paragraph_format.space_after  = Pt(0)
+
+    if caption and caption_pos != "BELOW":
+        cap_p = document.add_paragraph(caption, style="Caption")
+        cap_p.alignment = caption_align
+        cap_p.paragraph_format.space_before = Pt(0)
+        cap_p.paragraph_format.space_after  = Pt(0)
+        _force_paragraph_runs_black(cap_p)
+
+    table = document.add_table(rows=4, cols=3)
+    table.style = "Table Grid"
+    headers = ["No", "Variabel / Indikator", "Nilai / Keterangan"]
+    for ci, header_text in enumerate(headers):
+        cell = table.rows[0].cells[ci]
+        cell.text = header_text
+        cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+        if cell.paragraphs[0].runs:
+            cell.paragraphs[0].runs[0].bold = True
+            cell.paragraphs[0].runs[0].font.name = body_font
+            cell.paragraphs[0].runs[0].font.size = Pt(body_size)
+
+    sample_rows = [
+        ("1", "Contoh variabel pertama", "[nilai]"),
+        ("2", "Contoh variabel kedua",   "[nilai]"),
+        ("3", "Contoh variabel ketiga",  "[nilai]"),
+    ]
+    for ri, (no, var, val) in enumerate(sample_rows, start=1):
+        row = table.rows[ri]
+        for ci, cell_text in enumerate((no, var, val)):
+            row.cells[ci].text = cell_text
+            if ci == 0:
+                row.cells[ci].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+            if row.cells[ci].paragraphs[0].runs:
+                row.cells[ci].paragraphs[0].runs[0].font.name = body_font
+                row.cells[ci].paragraphs[0].runs[0].font.size = Pt(body_size)
+
+    if caption and caption_pos == "BELOW":
+        cap_p = document.add_paragraph(caption, style="Caption")
+        cap_p.alignment = caption_align
+        cap_p.paragraph_format.space_before = Pt(0)
+        cap_p.paragraph_format.space_after  = Pt(0)
+        _force_paragraph_runs_black(cap_p)
+
+
 def _render_judul_abstrak(
     document: Document,
     typography: dict,
@@ -190,7 +343,7 @@ def _render_judul_abstrak(
     if not title_is_upper:
         title_text = title_text.title()
 
-    p_title = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing, space_after_pt=6)
+    p_title = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing, space_after_pt=0)
     _add_run(p_title, title_text, body_font, title_size, bold=title_is_bold)
     _add_bookmark_to_paragraph(p_title, _bookmark_id_artikel("judul_abstrak"), _bookmark_name_artikel("judul_abstrak"))
 
@@ -216,7 +369,7 @@ def _render_judul_abstrak(
     _add_run(p_inst2, "Nama institusi dan alamat institusi dari penulis tiga dan terakhir", body_font, author_size)
 
     # Penulis korespondensi
-    p_corr = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing, space_after_pt=6)
+    p_corr = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing, space_after_pt=0)
     _add_run(p_corr, "*Penulis korespondensi: penulis_terakhir@univ.ac.id", body_font, author_size)
 
     # Note instruksi (LLM-generated)
@@ -227,14 +380,14 @@ def _render_judul_abstrak(
         "tulis judul artikel, nama seluruh penulis beserta afiliasi institusi, "
         "serta abstrak dalam bahasa Indonesia dan Inggris disertai kata kunci.",
     )
-    p_note = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=6)
+    p_note = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
     _add_run(p_note, f"Instruksi: {instr_text}", body_font, 10, italic=True)
 
     # ABSTRAK (Bahasa Indonesia)
     p_abstrak_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
     _add_run(p_abstrak_head, "ABSTRAK", body_font, abstract_sz, bold=False)
 
-    p_abstrak_body = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=6)
+    p_abstrak_body = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
     _add_run(
         p_abstrak_body,
         "[Tulis abstrak dalam Bahasa Indonesia di sini dalam format satu paragraf, "
@@ -244,7 +397,7 @@ def _render_judul_abstrak(
         body_font, abstract_sz,
     )
 
-    p_kata_kunci = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=12)
+    p_kata_kunci = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
     _add_run(p_kata_kunci, "Kata-kata kunci: ", body_font, abstract_sz, bold=True)
     _add_run(p_kata_kunci, "[latar belakang], [tujuan], [metode], [hasil], [kesimpulan]. (3-5 kata/frasa)", body_font, abstract_sz)
 
@@ -252,7 +405,7 @@ def _render_judul_abstrak(
     p_abstract_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
     _add_run(p_abstract_head, "ABSTRACT", body_font, abstract_sz, italic=True)
 
-    p_abstract_body = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=6)
+    p_abstract_body = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
     _add_run(
         p_abstract_body,
         "[Write the abstract in English here as a single paragraph, italic style, "
@@ -275,8 +428,9 @@ def _render_artikel_bab_section(
     spacing: dict,
     numbering: dict,
     instructional_placeholders: dict[str, str],
+    figures_tables: dict | None = None,
 ) -> None:
-    """Render satu bab artikel: heading "{n}. {title}" bold + body placeholder."""
+    """Render satu bab artikel: heading Heading 1 "{n}. {title}" + body placeholder + contoh gambar/tabel."""
     body_font   = typography.get("font_family") or "Times New Roman"
     body_size   = typography.get("font_size_body_pt") or 12
     chapter_fmt = numbering.get("chapter_format") or "{n}."
@@ -289,7 +443,10 @@ def _render_artikel_bab_section(
     heading_text = f"{bab_label} {title}".strip()
 
     _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing)
-    p_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing)
+    p_head = document.add_paragraph(style="Heading 1")
+    p_head.paragraph_format.space_before = Pt(0)
+    p_head.paragraph_format.space_after  = Pt(0)
+    _apply_line_spacing(p_head.paragraph_format, body_spacing)
     _add_run(p_head, heading_text, body_font, body_size, bold=True)
     _add_bookmark_to_paragraph(p_head, _bookmark_id_artikel("bab", num), _bookmark_name_artikel("bab", num))
 
@@ -301,8 +458,21 @@ def _render_artikel_bab_section(
         make_instruction_key("bab", heading_text, number=num),
         f"Instruksi pengisian untuk {heading_text}: lengkapi isi bagian ini sesuai panduan PKM-AI.",
     )
-    p_body = _add_styled_paragraph(document, align_body, body_spacing, space_after_pt=6)
+    p_body = _add_styled_paragraph(document, align_body, body_spacing)
     _add_run(p_body, body_text, body_font, body_size)
+
+    # Contoh gambar pada bab pertama
+    ft = figures_tables or {}
+    if num and str(num) == "1":
+        fig_fmt = ft.get("caption_format_figure")
+        fig_caption = _format_caption_artikel(fig_fmt, "Gambar", 1, "Contoh Gambar Penelitian")
+        _add_example_figure_artikel(document, fig_caption, ft, body_font, body_size)
+
+    # Contoh tabel pada bab kedua
+    if num and str(num) == "2":
+        tbl_fmt = ft.get("caption_format_table")
+        tbl_caption = _format_caption_artikel(tbl_fmt, "Tabel", 1, "Contoh Data Penelitian")
+        _add_example_table_artikel(document, tbl_caption, ft, body_font, body_size)
 
 
 def _render_artikel_daftar_pustaka(
@@ -349,7 +519,7 @@ def _render_artikel_lampiran_utama(
     document.add_page_break()
 
     title = section.get("title") or "LAMPIRAN"
-    p_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing, space_after_pt=6)
+    p_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing, space_after_pt=0)
     _add_run(p_head, title, body_font, body_size, bold=True)
     _add_bookmark_to_paragraph(p_head, _bookmark_id_artikel("lampiran_utama"), _bookmark_name_artikel("lampiran_utama"))
 
@@ -388,7 +558,7 @@ def _render_artikel_item_lampiran(
         make_instruction_key("item_lampiran", heading_text),
         f"Instruksi pengisian untuk {heading_text}: lengkapi sesuai ketentuan panduan PKM-AI.",
     )
-    p_body = _add_styled_paragraph(document, align_body, body_spacing, space_after_pt=6)
+    p_body = _add_styled_paragraph(document, align_body, body_spacing, space_after_pt=0)
     _add_run(p_body, body_text, body_font, body_size)
 
 
@@ -399,6 +569,7 @@ def _render_artikel_body(
     spacing: dict,
     numbering: dict,
     instructional_placeholders: dict[str, str],
+    figures_tables: dict | None = None,
 ) -> None:
     """Iterasi seluruh section setelah judul_abstrak mengikuti urutan Sistematika C.
 
@@ -408,12 +579,13 @@ def _render_artikel_body(
     if lampiran_sep is None:
         lampiran_sep = "."
 
+    ft = figures_tables or {}
     for section in doc_structure.get("sections", []):
         sec_type = section.get("type")
         if sec_type == "judul_abstrak":
             continue  # sudah dirender di halaman pertama
         if sec_type == "bab":
-            _render_artikel_bab_section(document, section, typography, spacing, numbering, instructional_placeholders)
+            _render_artikel_bab_section(document, section, typography, spacing, numbering, instructional_placeholders, ft)
         elif sec_type == "daftar_pustaka":
             _render_artikel_daftar_pustaka(document, section, typography, spacing)
         elif sec_type == "lampiran_utama":
@@ -441,11 +613,12 @@ def render_article_docx_bytes(
     spacing        = output_data.get("spacing") or {}
     numbering      = output_data.get("numbering") or {}
     doc_structure  = output_data.get("document_structure_artikel") or {}
+    figures_tables = output_data.get("figures_and_tables") or {}
 
     document = Document()
     first_section = document.sections[0]
     _configure_page_layout(first_section, page_layout)
-    _apply_base_styles_artikel(document, typography, spacing)
+    _apply_base_styles_artikel(document, typography, spacing, figures_tables)
 
     content_num = numbering.get("content") or {}
     _apply_page_numbering(
@@ -466,7 +639,7 @@ def render_article_docx_bytes(
         _render_judul_abstrak(document, typography, spacing, instructional_placeholders, judul_section)
         document.add_page_break()
 
-    _render_artikel_body(document, doc_structure, typography, spacing, numbering, instructional_placeholders)
+    _render_artikel_body(document, doc_structure, typography, spacing, numbering, instructional_placeholders, figures_tables)
 
     format_nama_file = doc_structure.get("format_nama_file")
     if format_nama_file:

@@ -70,11 +70,7 @@ def _resolve_line_spacing(metadata: DocumentMetadata) -> float:
 
 
 def _build_heading_font_attrs(metadata: DocumentMetadata, level: int) -> list[Any]:
-    """Font attributes untuk Heading 1–5 (size + font family, tanpa bold).
-
-    Semua level heading menggunakan font_size_heading_pt.
-    Bold tidak divalidasi karena konvensi dokumen bervariasi.
-    """
+    """Font attributes untuk Heading 1–5 (size + font family + bold sesuai metadata)."""
     t = metadata.typography
     attrs: list[Any] = []
     if t is None:
@@ -84,6 +80,11 @@ def _build_heading_font_attrs(metadata: DocumentMetadata, level: int) -> list[An
         attrs.append(int(size))
     if t.font_family:
         attrs.append(t.font_family)
+    bold = getattr(t, f"heading_{level}_bold", True)
+    if bold is None:
+        bold = True
+    if bold:
+        attrs.append("bold")
     return attrs
 
 
@@ -101,12 +102,27 @@ def _build_normal_font_attrs(metadata: DocumentMetadata) -> list[Any]:
     return attrs
 
 
+def _resolve_heading_alignment(spacing, level: int) -> Any:
+    """Resolusi alignment untuk heading level tertentu.
+
+    Prioritas: heading_{level}_alignment → heading_alignment (H1) / paragraph_alignment (H2–H5).
+    """
+    if spacing is None:
+        return _resolve_alignment(None, default="CENTER" if level == 1 else "JUSTIFY")
+    per_level = getattr(spacing, f"heading_{level}_alignment", None)
+    if per_level:
+        return _resolve_alignment(per_level, default="CENTER" if level == 1 else "JUSTIFY")
+    if level == 1:
+        return _resolve_alignment(getattr(spacing, "heading_alignment", None), default="CENTER")
+    return _resolve_alignment(getattr(spacing, "paragraph_alignment", None), default="JUSTIFY")
+
+
 def metadata_to_requirements(metadata: DocumentMetadata) -> dict:
     """Bangun dict requirements (styles + sections) sesuai schema validocx.
 
-    Semua heading H1–H5 dicek font, alignment, dan line_spacing. Bold tidak divalidasi.
-    ─ H1      : alignment CENTER (dari admin), font size heading.
-    ─ H2–H5   : alignment JUSTIFY (body), font size heading.
+    Semua heading H1–H5 dicek font (termasuk bold), alignment, dan line_spacing.
+    ─ H1      : alignment CENTER by default (bisa dioverride per metadata).
+    ─ H2–H5   : alignment JUSTIFY by default (bisa dioverride per metadata).
     ─ Normal  : alignment JUSTIFY, font size body, line_spacing 1.15.
     """
     s = metadata.spacing
@@ -114,9 +130,6 @@ def metadata_to_requirements(metadata: DocumentMetadata) -> dict:
 
     body_alignment = _resolve_alignment(
         s.paragraph_alignment if s else None, default="JUSTIFY"
-    )
-    heading_alignment = _resolve_alignment(
-        s.heading_alignment if s else None, default="CENTER"
     )
     line_spacing = _resolve_line_spacing(metadata)
 
@@ -142,12 +155,11 @@ def metadata_to_requirements(metadata: DocumentMetadata) -> dict:
     }
 
     # ── Template Heading H1–H5 ────────────────────────────────────────────────
-    # H1 : alignment CENTER (dari admin), size heading, line spacing dicek.
-    # H2 : alignment JUSTIFY (body), size heading, line spacing dicek.
-    # H3–H5: alignment JUSTIFY (body), size body, line spacing dicek.
-    # Bold tidak divalidasi di semua level.
+    # H1      : alignment default CENTER, bold dari metadata.heading_1_bold.
+    # H2–H5   : alignment default JUSTIFY, bold dari metadata.heading_{n}_bold.
+    # Alignment bisa dioverride per level via heading_{n}_alignment di spacing.
     def _make_heading_style(level: int) -> dict:
-        alignment = heading_alignment if level == 1 else body_alignment
+        alignment = _resolve_heading_alignment(s, level)
         return {
             "font": {
                 "unit": "pt",

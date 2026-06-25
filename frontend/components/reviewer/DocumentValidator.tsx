@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Komponen utama validasi dokumen (single & bulk) untuk role Reviewer.
  * Posisi pipeline: UI → pkm.ts (runDocumentValidation / runBulkValidation) → Express → FastAPI → Python validator.
  * Keyword: automated document validation
@@ -658,7 +658,7 @@ function PassedDetailPanel({ check }: { check: ValidationCheck | null }) {
 }
 // ─── Helper: DisplayIssue (union ValidationIssue + skipped flag) ──────────────
 
-type DisplayIssue = ValidationIssue & { _isSkipped?: boolean }
+type DisplayIssue = ValidationIssue & { _isSkipped?: boolean; location?: string | null }
 
 function skippedCheckToIssue(check: ValidationCheck): DisplayIssue {
   return {

@@ -64,6 +64,11 @@ export type ExtractionPayload = {
     title_style?: "BOLD_UPPERCASE" | "BOLD" | "UPPERCASE" | "NORMAL" | null
     heading_4_case: "UPPERCASE" | "LOWERCASE" | "SENTENCE_CASE" | "TOGGLE_CASE" | null
     heading_5_case: "UPPERCASE" | "LOWERCASE" | "SENTENCE_CASE" | "TOGGLE_CASE" | null
+    heading_1_bold: boolean | null
+    heading_2_bold: boolean | null
+    heading_3_bold: boolean | null
+    heading_4_bold: boolean | null
+    heading_5_bold: boolean | null
   }
   page_layout: {
     margin_top_cm: number | null
@@ -77,6 +82,11 @@ export type ExtractionPayload = {
     line_spacing: number | null
     line_spacing_rule: string | null
     paragraph_alignment: string | null
+    heading_1_alignment: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
+    heading_2_alignment: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
+    heading_3_alignment: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
+    heading_4_alignment: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
+    heading_5_alignment: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
     // PKM-AI
     line_spacing_title_abstract?: number | null
   }
@@ -831,6 +841,7 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
       <div>
         <SectionHeader title="7. Pengaturan Format" />
         <div className="mt-3 px-1">
+          {/* H1 */}
           <FieldRow>
             <SelectFieldInput
               label="Style Huruf Heading 1"
@@ -839,12 +850,56 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
               onChange={(v) => patch("typography", { heading_1_case: (v || null) as ExtractionPayload["typography"]["heading_1_case"] })}
             />
             <SelectFieldInput
+              label="Alignment Heading 1"
+              value={data.spacing.heading_1_alignment ?? "CENTER"}
+              options={[
+                { value: "CENTER",  label: "Center" },
+                { value: "LEFT",    label: "Left" },
+                { value: "RIGHT",   label: "Right" },
+                { value: "JUSTIFY", label: "Justify" },
+              ]}
+              onChange={(v) => patch("spacing", { heading_1_alignment: v as ExtractionPayload["spacing"]["heading_1_alignment"] })}
+            />
+            <SelectFieldInput
+              label="Bold Heading 1"
+              value={(data.typography.heading_1_bold ?? true) ? "ya" : "tidak"}
+              options={[
+                { value: "ya",    label: "Ya" },
+                { value: "tidak", label: "Tidak" },
+              ]}
+              onChange={(v) => patch("typography", { heading_1_bold: v === "ya" })}
+            />
+          </FieldRow>
+          {/* H2 */}
+          <FieldRow>
+            <SelectFieldInput
               label="Style Huruf Heading 2"
               value={data.typography.heading_2_case ?? "SENTENCE_CASE"}
               options={HEADING_CASE_OPTIONS}
               onChange={(v) => patch("typography", { heading_2_case: (v || null) as ExtractionPayload["typography"]["heading_2_case"] })}
             />
+            <SelectFieldInput
+              label="Alignment Heading 2"
+              value={data.spacing.heading_2_alignment ?? "JUSTIFY"}
+              options={[
+                { value: "JUSTIFY", label: "Justify" },
+                { value: "LEFT",    label: "Left" },
+                { value: "CENTER",  label: "Center" },
+                { value: "RIGHT",   label: "Right" },
+              ]}
+              onChange={(v) => patch("spacing", { heading_2_alignment: v as ExtractionPayload["spacing"]["heading_2_alignment"] })}
+            />
+            <SelectFieldInput
+              label="Bold Heading 2"
+              value={(data.typography.heading_2_bold ?? true) ? "ya" : "tidak"}
+              options={[
+                { value: "ya",    label: "Ya" },
+                { value: "tidak", label: "Tidak" },
+              ]}
+              onChange={(v) => patch("typography", { heading_2_bold: v === "ya" })}
+            />
           </FieldRow>
+          {/* H3 */}
           <FieldRow>
             <SelectFieldInput
               label="Style Huruf Heading 3"
@@ -853,16 +908,82 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
               onChange={(v) => patch("typography", { heading_3_case: (v || null) as ExtractionPayload["typography"]["heading_3_case"] })}
             />
             <SelectFieldInput
+              label="Alignment Heading 3"
+              value={data.spacing.heading_3_alignment ?? "JUSTIFY"}
+              options={[
+                { value: "JUSTIFY", label: "Justify" },
+                { value: "LEFT",    label: "Left" },
+                { value: "CENTER",  label: "Center" },
+                { value: "RIGHT",   label: "Right" },
+              ]}
+              onChange={(v) => patch("spacing", { heading_3_alignment: v as ExtractionPayload["spacing"]["heading_3_alignment"] })}
+            />
+            <SelectFieldInput
+              label="Bold Heading 3"
+              value={(data.typography.heading_3_bold ?? true) ? "ya" : "tidak"}
+              options={[
+                { value: "ya",    label: "Ya" },
+                { value: "tidak", label: "Tidak" },
+              ]}
+              onChange={(v) => patch("typography", { heading_3_bold: v === "ya" })}
+            />
+          </FieldRow>
+          {/* H4 */}
+          <FieldRow>
+            <SelectFieldInput
               label="Style Huruf Heading 4"
               value={data.typography.heading_4_case ?? "SENTENCE_CASE"}
               options={HEADING_CASE_OPTIONS}
               onChange={(v) => patch("typography", { heading_4_case: (v || null) as ExtractionPayload["typography"]["heading_4_case"] })}
             />
             <SelectFieldInput
+              label="Alignment Heading 4"
+              value={data.spacing.heading_4_alignment ?? "JUSTIFY"}
+              options={[
+                { value: "JUSTIFY", label: "Justify" },
+                { value: "LEFT",    label: "Left" },
+                { value: "CENTER",  label: "Center" },
+                { value: "RIGHT",   label: "Right" },
+              ]}
+              onChange={(v) => patch("spacing", { heading_4_alignment: v as ExtractionPayload["spacing"]["heading_4_alignment"] })}
+            />
+            <SelectFieldInput
+              label="Bold Heading 4"
+              value={(data.typography.heading_4_bold ?? true) ? "ya" : "tidak"}
+              options={[
+                { value: "ya",    label: "Ya" },
+                { value: "tidak", label: "Tidak" },
+              ]}
+              onChange={(v) => patch("typography", { heading_4_bold: v === "ya" })}
+            />
+          </FieldRow>
+          {/* H5 */}
+          <FieldRow>
+            <SelectFieldInput
               label="Style Huruf Heading 5"
               value={data.typography.heading_5_case ?? "SENTENCE_CASE"}
               options={HEADING_CASE_OPTIONS}
               onChange={(v) => patch("typography", { heading_5_case: (v || null) as ExtractionPayload["typography"]["heading_5_case"] })}
+            />
+            <SelectFieldInput
+              label="Alignment Heading 5"
+              value={data.spacing.heading_5_alignment ?? "JUSTIFY"}
+              options={[
+                { value: "JUSTIFY", label: "Justify" },
+                { value: "LEFT",    label: "Left" },
+                { value: "CENTER",  label: "Center" },
+                { value: "RIGHT",   label: "Right" },
+              ]}
+              onChange={(v) => patch("spacing", { heading_5_alignment: v as ExtractionPayload["spacing"]["heading_5_alignment"] })}
+            />
+            <SelectFieldInput
+              label="Bold Heading 5"
+              value={(data.typography.heading_5_bold ?? true) ? "ya" : "tidak"}
+              options={[
+                { value: "ya",    label: "Ya" },
+                { value: "tidak", label: "Tidak" },
+              ]}
+              onChange={(v) => patch("typography", { heading_5_bold: v === "ya" })}
             />
           </FieldRow>
         </div>

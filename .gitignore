@@ -1,16 +1,41 @@
-# Python virtual environment
+# Python virtual environment and tools
 .venv/
 **/.venv/
+venv/
+**/venv/
+env/
+**/env/
 __pycache__/
+**/__pycache__/
 *.py[cod]
+**/*.py[cod]
+.pytest_cache/
+**/.pytest_cache/
+.mypy_cache/
+**/.mypy_cache/
+.ruff_cache/
+**/.ruff_cache/
+
+# Node dependencies and builds
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+.next/
+**/.next/
+out/
+**/out/
+
 
 # Environment and secrets
 .env
 .env.*
 **/.env
 **/.env.*
-!.env.example
-!**/.env.example
+!.env*.example
+!**/.env*.example
 
 # Local agent/app state
 .claude/settings.local.json*
@@ -42,3 +67,5 @@ TASKS.md
 # Pakai /supabase/ (dengan slash depan) agar hanya root-level yang diabaikan,
 # tidak menimpa database/supabase/ yang merupakan source of truth.
 /supabase/
+sync.sh
+antigravity.config

@@ -32,6 +32,15 @@ def is_noise_heading(raw_heading: str) -> bool:
         return True
     if "\\" in text or "!" in text:
         return True
+    # Halaman daftar isi (TOC) sering dirender PyMuPDF sebagai satu baris bold panjang
+    # berisi semua entri TOC. Ada dua format umum:
+    # (1) Pakai titik-titik leader: "BAB I PENDAHULUAN .......... 1"
+    # (2) Pakai spasi biasa:        "BAB I PENDAHULUAN          1"
+    # Keduanya ditangkap dengan dua cek berikut:
+    if re.search(r'\.{3,}', text):  # format (1): ada 3+ titik berturut-turut
+        return True
+    if len(text) > 120:  # format (2): heading valid tidak pernah sepanjang ini
+        return True
     plain = re.sub(r"[*_`]", "", text).strip()
     words = re.findall(r"[a-zA-Z]+", plain)
     if words and all(len(w) <= 3 for w in words):

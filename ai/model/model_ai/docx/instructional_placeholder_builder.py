@@ -269,9 +269,13 @@ def _build_instruction_text(
     fallback_hint: str,
 ) -> str:
     if use_llm and sources:
+        print(f"[placeholder] '{display_title}': {len(sources)} sumber chunk ditemukan, panggil LLM...", flush=True)
         result = _build_instruction_text_with_llm(display_title, sources)
         if result:
             return result
+        print(f"[placeholder] '{display_title}': LLM tidak menghasilkan output, pakai fallback.", flush=True)
+    elif use_llm and not sources:
+        print(f"[placeholder] '{display_title}': 0 sumber chunk ditemukan, pakai fallback langsung.", flush=True)
     return fallback_hint
 
 

@@ -14,5 +14,11 @@ venv/
 .mypy_cache/
 .ruff_cache/
 
-# Generated extraction output
-data/
+# Generated extraction output (folder data/ diizinkan agar asset statis ikut ter-push)
+# Hanya file yang di-generate otomatis saat runtime yang dikecualikan:
+data/*.json
+data/*.md
+data/*.pdf
+data/**/*.json
+data/**/*.md
+data/**/*.pdf

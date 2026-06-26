@@ -52,7 +52,7 @@ def extract_chunks(
 
     splitter = MarkdownTextSplitter(chunk_size=1000, chunk_overlap=150)
 
-    bab_ranges, jalur, toc_page_idx = extract_bab_ranges(page_chunks)
+    bab_ranges, jalur, toc_page_idx = extract_bab_ranges(page_chunks, pdf_path=source_pdf)
     if bab_ranges:
         sections = build_sections_from_ranges(page_chunks, bab_ranges, toc_page_idx)
         print(f"[setup] chunk_parent sumber: TOC ({jalur}), {len(bab_ranges)} entri ditemukan")

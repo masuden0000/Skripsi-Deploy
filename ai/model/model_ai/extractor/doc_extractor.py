@@ -326,9 +326,31 @@ def _extract_key(
             break
         except Exception as e:
             err_str = str(e)
-            if "429" in err_str or "rate_limit_exceeded" in err_str or "quota" in err_str.lower():
-                import re
-                wait_match = re.search(r"try again in (\d+)m(\d+(?:\.\d+)?)s", err_str)
+            err_type = type(e).__name__
+            # Log exact error untuk diagnosis di Railway — jangan potong pesan
+            print(f"[extract] ERROR attempt {attempt + 1}: [{err_type}] {err_str[:300]}", flush=True)
+
+            is_rate_limit = "429" in err_str or "rate_limit_exceeded" in err_str or "quota" in err_str.lower()
+            # RPD (Request Per Day) habis — tidak ada gunanya retry karena reset 24 jam
+            is_daily_limit = is_rate_limit and ("daily" in err_str.lower() or "per day" in err_str.lower() or "day limit" in err_str.lower())
+
+            if is_daily_limit:
+                if not CONFIG._groq_exhausted:
+                    CONFIG._groq_exhausted = True
+                    print(f"[extract] Groq RPD (daily limit) habis. Switch ke Gemini secara permanen.", flush=True)
+                    llm = _build_llm()
+                    chain = llm.with_structured_output(extracted_cls)
+                    continue
+                else:
+                    raise RuntimeError(
+                        f"[extract] Groq + Gemini daily limit habis. "
+                        f"Semua key ({len(CONFIG.groq_api_keys)} Groq, {len(CONFIG.google_api_keys)} Google) "
+                        f"telah mencapai batas harian. Coba lagi besok atau tambah API key baru."
+                    )
+
+            if is_rate_limit:
+                import re as _re
+                wait_match = _re.search(r"try again in (\d+)m(\d+(?:\.\d+)?)s", err_str)
                 if wait_match:
                     wait_secs = int(wait_match.group(1)) * 60 + float(wait_match.group(2)) + 5
                 else:
@@ -340,14 +362,14 @@ def _extract_key(
                     groq_keys_tried += 1
                     if groq_keys_tried < len(CONFIG.groq_api_keys):
                         CONFIG.rotate_groq_key()
-                        print(f"[extract] Rate limit hit. Rotasi ke Groq key berikutnya ({groq_keys_tried}/{len(CONFIG.groq_api_keys)}) percobaan {attempt + 1}...")
+                        print(f"[extract] Rate limit hit. Rotasi ke Groq key berikutnya ({groq_keys_tried}/{len(CONFIG.groq_api_keys)}) percobaan {attempt + 1}...", flush=True)
                     else:
                         CONFIG._groq_exhausted = True
-                        print(f"[extract] Semua {len(CONFIG.groq_api_keys)} Groq key exhausted, switch ke Gemini (percobaan {attempt + 1})...")
+                        print(f"[extract] Semua {len(CONFIG.groq_api_keys)} Groq key exhausted, switch ke Gemini (percobaan {attempt + 1})...", flush=True)
                 else:
                     if len(CONFIG.google_api_keys) > 1:
                         CONFIG.rotate_google_key()
-                    print(f"[extract] Rate limit hit pada Gemini. Menunggu {wait_secs:.0f} detik (percobaan {attempt + 1}/{max_retries})...")
+                    print(f"[extract] Rate limit hit pada Gemini. Menunggu {wait_secs:.0f} detik (percobaan {attempt + 1}/{max_retries})...", flush=True)
                     time.sleep(wait_secs)
 
                 llm = _build_llm()
@@ -384,6 +406,19 @@ def extract_document_metadata(
         raise ValueError(
             f"[extract] Skema '{skema}' tidak dikenali atau belum memiliki prompt. "
             f"Pastikan folder prompts/{skema}/ tersedia dan berisi file yang valid."
+        )
+
+    # Diagnostic: log jumlah key yang terload — bantu diagnosis di Railway
+    print(
+        f"[extract] API key loaded: {len(CONFIG.groq_api_keys)} Groq, "
+        f"{len(CONFIG.google_api_keys)} Google. "
+        f"groq_exhausted={CONFIG._groq_exhausted}",
+        flush=True,
+    )
+    if not CONFIG.groq_api_keys and not CONFIG.google_api_keys:
+        raise RuntimeError(
+            "[extract] FATAL: Tidak ada API key yang terload. "
+            "Periksa env var GROQ_API_KEY dan GOOGLE_API_KEY di Railway."
         )
 
     results: dict[str, Any] = {}

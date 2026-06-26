@@ -15,4 +15,4 @@ venv/
 .ruff_cache/
 
 # Generated extraction output
-data/
+data_debug/

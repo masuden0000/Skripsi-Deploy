@@ -7,8 +7,7 @@ queries:
   - "gagasan kesimpulan sub bab proposal PKM-GFT"
   - "rekapitulasi anggaran biaya format tabel PKM"
 section_focus:
-  - "SISTEMATIKA PENULISAN PROPOSAL"
-  - "SISTEMATIKA PROPOSAL KEGIATAN"
+  - "Sistematika Gagasan Futuristik Tertulis"
 ---
 
 # Tugas Ekstraksi: Struktur Dokumen Proposal PKM

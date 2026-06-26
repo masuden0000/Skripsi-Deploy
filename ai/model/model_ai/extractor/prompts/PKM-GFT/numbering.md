@@ -7,8 +7,7 @@ queries:
   - "sub bab gagasan kesimpulan contoh penomoran format"
 top_k: 10
 section_focus:
-  - "SISTEMATIKA PENULISAN PROPOSAL"
-  - "SISTEMATIKA PROPOSAL KEGIATAN"
+  - "Sistematika Gagasan Futuristik Tertulis"
 ---
 
 # Tugas Ekstraksi: Sistem Penomoran Dokumen

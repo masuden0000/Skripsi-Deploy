@@ -5,8 +5,7 @@ queries:
   - "ukuran font body heading pt tipografi ketentuan penulisan"
   - "jenis huruf font yang digunakan dokumen proposal PKM"
 section_focus:
-  - "SISTEMATIKA PENULISAN PROPOSAL"
-  - "SISTEMATIKA PROPOSAL KEGIATAN"
+  - "Sistematika Gagasan Futuristik Tertulis"
 ---
 
 # Tugas Ekstraksi: Tipografi

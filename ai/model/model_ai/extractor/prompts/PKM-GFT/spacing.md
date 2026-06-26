@@ -4,8 +4,7 @@ queries:
   - "spasi antar baris 1.5 ganda tunggal multiple ketentuan penulisan"
   - "paragraf rata kanan kiri justify alignment format teks body"
 section_focus:
-  - "SISTEMATIKA PENULISAN PROPOSAL"
-  - "SISTEMATIKA PROPOSAL KEGIATAN"
+  - "Sistematika Gagasan Futuristik Tertulis"
 ---
 
 # Tugas Ekstraksi: Spasi dan Format Paragraf

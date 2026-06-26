@@ -5,8 +5,7 @@ queries:
   - "batas maksimum halaman bagian inti dari BAB sampai Daftar Pustaka"
   - "halaman inti dimulai BAB Pendahuluan berakhir Daftar Pustaka proposal"
 section_focus:
-  - "SISTEMATIKA PENULISAN PROPOSAL"
-  - "SISTEMATIKA PROPOSAL KEGIATAN"
+  - "Sistematika Gagasan Futuristik Tertulis"
 ---
 
 # Tugas Ekstraksi: Batas Halaman Proposal PKM

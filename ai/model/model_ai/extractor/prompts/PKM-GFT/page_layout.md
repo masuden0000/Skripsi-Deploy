@@ -5,8 +5,7 @@ queries:
   - "batas tepi kiri 4 kanan 3 atas 3 bawah 3 margin penulisan"
   - "ketentuan format halaman kertas orientasi portrait landscape"
 section_focus:
-  - "SISTEMATIKA PENULISAN PROPOSAL"
-  - "SISTEMATIKA PROPOSAL KEGIATAN"
+  - "Sistematika Gagasan Futuristik Tertulis"
 ---
 
 # Tugas Ekstraksi: Tata Letak Halaman

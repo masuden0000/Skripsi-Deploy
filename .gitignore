@@ -46,7 +46,11 @@ CLAUDE.md
 *.pdf
 **/*.pdf
 
-# App-generated data
+# App-generated data (folder data/ diizinkan agar image.jpg ikut ter-push)
+# Hanya file yang di-generate otomatis saat runtime yang dikecualikan:
+ai/model/data/**/*.pdf
+ai/model/data/**/*.json
+ai/model/data/**/*.md
 ai/model/data_debug/
 ai/model/debug_output/
 # Temporary files for bulk validation background jobs

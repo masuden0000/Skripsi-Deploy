@@ -97,6 +97,18 @@ def _parse_entries_table(toc_text: str) -> list[tuple[str, int]]:
     entries: list[tuple[str, int]] = []
     for line in toc_text.splitlines():
         line = line.strip()
+        
+        # Cek apakah ini squashed table (banyak kolom/tabel digabung dalam 1 baris)
+        # Karakteristiknya: punya banyak simbol pipa '|' dan sangat panjang
+        if line.count("|") > 4 and len(line) > 150:
+            # Cari pola | Teks | Angka | berulang kali di dalam baris
+            for match in re.finditer(r"\|\s*([^|]+?)\s*\|\s*(\d+)\s*\|", line):
+                heading = _strip_markdown(match.group(1)).strip()
+                if not heading or _is_subbab(heading):
+                    continue
+                entries.append((heading, int(match.group(2))))
+            continue
+            
         if not (line.startswith("|") and line.endswith("|")):
             continue
         cells = [c.strip() for c in line.strip("|").split("|")]

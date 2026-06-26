@@ -47,7 +47,7 @@ CLAUDE.md
 **/*.pdf
 
 # App-generated data
-ai/model/data_debug/
+ai/model/data/
 ai/model/debug_output/
 # Temporary files for bulk validation background jobs
 ai/backend/jobs_temp/

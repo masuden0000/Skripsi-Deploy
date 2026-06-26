@@ -9,6 +9,7 @@ from supabase import Client
 
 from model_ai.config import get_config
 from model_ai.shared import (
+    EMBED_INTER_BATCH_DELAY,
     EMBED_MAX_RETRY_CYCLES,
     EMBED_RATE_LIMIT_WAIT,
     EMBEDDING_DIMENSION,
@@ -141,8 +142,9 @@ def upsert_embeddings(project_id: str) -> int:
 
     source_file = f"{project_id}/source.pdf"
 
+    all_batches = batched(chunks, BATCH_SIZE)
     total_rows = 0
-    for chunk_batch in batched(chunks, BATCH_SIZE):
+    for batch_idx, chunk_batch in enumerate(all_batches):
         contents = [chunk.content for chunk in chunk_batch]
         embeddings = _embed_documents_with_retry(contents)
         rows = build_rows(chunk_batch, embeddings, source_file, project_id)
@@ -151,6 +153,8 @@ def upsert_embeddings(project_id: str) -> int:
             on_conflict="project_id,chunk_index",
         ).execute()
         total_rows += len(rows)
+        if batch_idx < len(all_batches) - 1:
+            time.sleep(EMBED_INTER_BATCH_DELAY)
 
     return total_rows
 

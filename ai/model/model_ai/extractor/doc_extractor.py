@@ -19,6 +19,8 @@ from model_ai.shared import (
     EMBED_RATE_LIMIT_WAIT,
     EMBEDDING_DIMENSION,
     EXCLUDED_PARENTS,
+    GEMINI_MIN_CALL_INTERVAL,
+    GROQ_MIN_CALL_INTERVAL,
     format_vector,
     get_supabase_client,
 )
@@ -49,10 +51,30 @@ from model_ai.extractor.prompts import (
 
 APP_DIR = Path(__file__).resolve().parents[2]
 
-MAX_RATE_LIMIT_WAIT = 120
+# Batas atas wait saat rate limit — cukup 90s; lebih dari itu sebaiknya gagal dan coba key lain
+MAX_RATE_LIMIT_WAIT = 90
 
 CONFIG = get_config()
 LLM_MODEL = CONFIG.model_name
+
+# Waktu panggilan LLM terakhir — dipakai untuk spacing proaktif antar panggilan
+_last_llm_call_time: float = 0.0
+
+
+def _wait_for_llm_interval() -> None:
+    """Pastikan jeda minimum antar panggilan LLM sesuai limit provider aktif.
+
+    Groq 12k TPM → ~15 detik aman; Gemini 10 RPM → 7 detik minimum.
+    Mencegah rate limit sebelum terjadi, bukan sekadar retry setelah error.
+    """
+    global _last_llm_call_time
+    interval = GEMINI_MIN_CALL_INTERVAL if CONFIG._groq_exhausted else GROQ_MIN_CALL_INTERVAL
+    elapsed = time.time() - _last_llm_call_time
+    if elapsed < interval:
+        wait = interval - elapsed
+        print(f"[extract] Spacing {wait:.1f}s sebelum panggil LLM (limit: {interval:.0f}s/panggilan)...", flush=True)
+        time.sleep(wait)
+    _last_llm_call_time = time.time()
 
 _MODEL_MAP: list[tuple[str, Type[BaseModel], Type[BaseModel]]] = [
     ("typography",                   TypographyExtracted,        TypographyInfo),
@@ -299,6 +321,7 @@ def _extract_key(
     max_retries = len(CONFIG.groq_api_keys) + len(CONFIG.google_api_keys) + 2
     for attempt in range(max_retries):
         try:
+            _wait_for_llm_interval()
             extracted = chain.invoke(prompt)
             break
         except Exception as e:
@@ -309,7 +332,8 @@ def _extract_key(
                 if wait_match:
                     wait_secs = int(wait_match.group(1)) * 60 + float(wait_match.group(2)) + 5
                 else:
-                    wait_secs = 30
+                    # Tanpa retry-after header: asumsikan RPM limit → tunggu 1 menit penuh
+                    wait_secs = 65
                 wait_secs = min(wait_secs, MAX_RATE_LIMIT_WAIT)
 
                 if not CONFIG._groq_exhausted:

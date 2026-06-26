@@ -24,13 +24,22 @@ TOC_SECTION_DENYLIST: frozenset[str] = frozenset({
 
 EMBEDDING_DIMENSION: int = 768
 
-EMBED_MAX_RETRY_CYCLES: int = 5
-EMBED_RATE_LIMIT_WAIT: int = 60  # detik
+# 3 siklus × 30 detik = max 60 detik tunggu embedding → jauh di bawah 300s timeout subprocess
+EMBED_MAX_RETRY_CYCLES: int = 3
+EMBED_RATE_LIMIT_WAIT: int = 30  # detik; Google embedding reset per menit
+EMBED_INTER_BATCH_DELAY: float = 2.0  # detik antar batch embedding (hindari burst)
+
+# ─── LLM Rate-limit Interval ─────────────────────────────────────────────────
+
+# Groq free: 12.000 TPM → ~3k token/panggilan → maks 4 panggilan/menit → 15 detik aman
+GROQ_MIN_CALL_INTERVAL: float = 15.0
+# Gemini 2.5 Flash free: 10 RPM → 1 panggilan per 6 detik → +1 detik buffer
+GEMINI_MIN_CALL_INTERVAL: float = 7.0
 
 # ─── Batch / Rate-limit Pause ─────────────────────────────────────────────────
 
-BATCH_PAUSE_EVERY: int = 2
-BATCH_PAUSE_SECONDS: int = 30  # detik
+BATCH_PAUSE_EVERY: int = 3
+BATCH_PAUSE_SECONDS: int = 12  # detik; interval per-panggilan sudah ditangani di doc_extractor
 
 # ─── Utilities ────────────────────────────────────────────────────────────────
 

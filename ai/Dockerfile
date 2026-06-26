@@ -4,6 +4,7 @@ FROM python:3.13-slim
 # ── System dependencies ────────────────────────────────────────────────────────
 # Font sistem dibutuhkan PyMuPDF/MuPDF agar ekstraksi teks konsisten di Linux
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        fontconfig \
         fonts-liberation \
         fonts-dejavu-core \
         libglib2.0-0 \

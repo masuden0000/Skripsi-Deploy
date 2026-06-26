@@ -56,6 +56,22 @@ def _parse_entries_with_dots(toc_text: str) -> list[tuple[str, int]]:
     entries: list[tuple[str, int]] = []
     for line in toc_text.splitlines():
         line = _strip_table_cell(line)
+        
+        # Cek apakah line ini hasil squashed (banyak entri digabung dalam 1 baris)
+        # Karakteristiknya: punya banyak titik-titik (....) dan sangat panjang
+        if line.count("....") > 1 and len(line) > 150:
+            # Ekstrak berulang kali. Regex ini mencari teks yang TIDAK mengandung "....",
+            # lalu diikuti oleh "...." dan angka (halaman).
+            for match in re.finditer(r"((?:(?!\.{4,}).)+?)\s*\.{4,}\s*(\d+)", line):
+                heading = _strip_markdown(match.group(1)).strip()
+                # Buang sisa angka romawi halaman sebelumnya yang menempel di awal teks
+                heading = re.sub(r"^(?:[ivxlcdmIVXLCDM]+)\s+", "", heading)
+                heading = re.sub(r"^[a-zA-Z]\s+", "", heading) # Buang huruf tunggal
+                
+                if not _is_subbab(heading) and heading:
+                    entries.append((heading, int(match.group(2))))
+            continue
+
         match = _ENTRY_WITH_DOTS.match(line)
         if match:
             heading = _strip_markdown(match.group(1))

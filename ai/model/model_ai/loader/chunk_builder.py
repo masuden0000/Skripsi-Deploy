@@ -201,12 +201,26 @@ def resolve_page_range(fragments: list[dict], chunk_start: int, chunk_end: int) 
     return {"start": min(valid_pages), "end": max(valid_pages)}
 
 
-def _find_first_arabic_page_idx(page_chunks: list[dict]) -> int:
+def _find_first_content_page_idx(page_chunks: list[dict], bab_ranges: list[dict], toc_page_idx: int) -> int:
     for i, page in enumerate(page_chunks):
         for line in page.get("text", "").splitlines():
             if DOC_PAGE_PATTERN.match(line):
                 return i
-    return 0
+                
+    if bab_ranges:
+        first_heading = normalize_heading(bab_ranges[0]["heading"]).upper()
+        for i, page in enumerate(page_chunks[toc_page_idx:], start=toc_page_idx):
+            text = page.get("text", "")
+            for line in text.splitlines():
+                stripped = line.strip()
+                hm = HEADING_PATTERN.match(stripped)
+                if hm and normalize_heading(hm.group(2)).upper() == first_heading:
+                    return i
+                bm = BOLD_HEADING_PATTERN.match(stripped)
+                if bm and normalize_heading(bm.group(1)).upper() == first_heading:
+                    return i
+
+    return toc_page_idx + 1
 
 
 def _detect_page_offset(page_chunks: list[dict], bab_ranges: list[dict], scan_start: int) -> int:
@@ -238,7 +252,7 @@ def build_sections_from_ranges(
 ) -> list[dict]:
     # Halaman dari TOC page sampai penanda angka pertama — pakai heading detection
     # (halaman cover sebelum TOC dilewati)
-    first_arabic_idx = _find_first_arabic_page_idx(page_chunks)
+    first_arabic_idx = _find_first_content_page_idx(page_chunks, bab_ranges, toc_page_idx)
     pre_start = min(toc_page_idx, first_arabic_idx)
     pre_sections = build_sections(page_chunks[pre_start:first_arabic_idx]) if first_arabic_idx > pre_start else []
 

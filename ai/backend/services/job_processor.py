@@ -133,7 +133,6 @@ async def _validate_item(session_id: str, meta: dict, sb) -> None:
     finally:
         _delete_temp(session_id, pos)
 
-    # Perbarui hitungan progress setelah item ini selesai (completed atau failed)
     rows = (
         sb.table("validation_results")
         .select("status")

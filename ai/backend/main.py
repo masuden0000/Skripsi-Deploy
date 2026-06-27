@@ -1,12 +1,10 @@
 import sys
 from pathlib import Path
 
-# Tambahkan ai/model/ ke sys.path agar model_ai package bisa diimport dari backend
 _MODEL_DIR = str(Path(__file__).resolve().parent.parent / "model")
 if _MODEL_DIR not in sys.path:
     sys.path.insert(0, _MODEL_DIR)
 
-# Tambahkan ai/backend/ ke sys.path agar module seperti routers, services bisa diimport
 _BACKEND_DIR = str(Path(__file__).resolve().parent)
 if _BACKEND_DIR not in sys.path:
     sys.path.insert(0, _BACKEND_DIR)
@@ -21,7 +19,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware for frontend access
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,7 +27,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
 app.include_router(health.router, prefix="/api")
 app.include_router(pkm.router, prefix="/api/pkm")
 app.include_router(projects.router, prefix="/api/projects")

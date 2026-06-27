@@ -1,4 +1,4 @@
-"""Typography checks: heading case and body content formatting. Keyword: automated document validation"""
+﻿"""Typography checks: heading case and body content formatting. Keyword: automated document validation"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -175,7 +175,8 @@ def _check_body_content(
     checks: list[ValidationCheckResult] = []
 
     t = metadata.typography
-    expected_align   = WD_ALIGN_PARAGRAPH.JUSTIFY
+    _body_align_str = (metadata.spacing.paragraph_alignment if metadata.spacing else None) or "JUSTIFY"
+    expected_align  = _CAPTION_ALIGN_MAP.get(_body_align_str.upper(), WD_ALIGN_PARAGRAPH.JUSTIFY)
     expected_font    = t.font_family if t else None
     expected_size    = int(t.font_size_body_pt) if t and t.font_size_body_pt else None
     expected_spacing = _resolve_line_spacing(metadata)

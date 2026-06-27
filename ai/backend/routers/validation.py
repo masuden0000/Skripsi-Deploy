@@ -29,7 +29,7 @@ from services.job_processor import build_validation_dict, process_bulk_session, 
 
 logger = logging.getLogger(__name__)
 
-MAX_DOCX_SIZE  = 20 * 1024 * 1024  # 20 MB
+MAX_DOCX_SIZE  = 20 * 1024 * 1024
 MAX_BULK_ITEMS = 20
 
 
@@ -44,7 +44,6 @@ def _utcnow() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-# ─── Helper bersama: ambil metadata validasi dari Supabase ───────────────────
 
 async def _fetch_metadata(schema_id: str, tahun: str) -> dict:
     """Ambil payload document_metadata untuk skema + tahun tertentu."""
@@ -84,7 +83,6 @@ async def _fetch_metadata(schema_id: str, tahun: str) -> dict:
     return payload
 
 
-# ─── POST /run — validasi satu dokumen ───────────────────────────────────────
 
 @router.post("/run")
 async def run_validation(
@@ -137,7 +135,6 @@ async def run_validation(
 
     result_dict = build_validation_dict(result)
 
-    # Simpan hasil ke Supabase (session tunggal)
     try:
         supabase = get_supabase()
         now = _utcnow()
@@ -169,13 +166,11 @@ async def run_validation(
                 "updated_at":  now,
             }).execute()
     except Exception as db_exc:
-        # Gagal menyimpan ke DB tidak boleh menggagalkan response ke frontend
         logger.warning("Gagal menyimpan hasil validasi ke DB: %s", db_exc)
 
     return result_dict
 
 
-# ─── POST /summarize — ringkasan naratif LLM dari issue ──────────────────────
 
 @router.post("/summarize")
 async def summarize_validation(body: SummarizeRequest):
@@ -195,7 +190,6 @@ async def summarize_validation(body: SummarizeRequest):
     return {"summary": summary, "generated_at": _utcnow()}
 
 
-# ─── GET /export/{session_id} — Excel ringkasan LLM per dokumen ─────────────
 
 def _extract_ketua(file_name: str) -> str:
     """Ekstrak nama ketua dari nama file.
@@ -262,7 +256,6 @@ async def export_bulk_summary(session_id: str, schema_name: str | None = None):
         *[_summarize_item(item) for item in results_row.data]
     )
 
-    # ── Build workbook ────────────────────────────────────────────────────────
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Ringkasan Validasi"
@@ -284,7 +277,6 @@ async def export_bulk_summary(session_id: str, schema_name: str | None = None):
         for cell in row:
             cell.alignment = Alignment(wrap_text=True, vertical="top")
 
-    # ── Serialize ke BytesIO dan kembalikan sebagai StreamingResponse ─────────
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
@@ -299,7 +291,6 @@ async def export_bulk_summary(session_id: str, schema_name: str | None = None):
     )
 
 
-# ─── POST /bulk — validasi banyak dokumen (async) ────────────────────────────
 
 @router.post("/bulk")
 async def run_bulk_validation(request: Request, background_tasks: BackgroundTasks):
@@ -330,7 +321,6 @@ async def run_bulk_validation(request: Request, background_tasks: BackgroundTask
             detail=f"Maksimal {MAX_BULK_ITEMS} dokumen per batch.",
         )
 
-    # Validasi dan baca semua file sebelum membuat session
     items_bytes: list[dict] = []
     for i in range(count):
         schema_id = str(form.get(f"schema_id_{i}") or "").strip().upper()
@@ -366,7 +356,6 @@ async def run_bulk_validation(request: Request, background_tasks: BackgroundTask
             "content":   content,
         })
 
-    # Buat session + result rows di Supabase
     supabase = get_supabase()
     now = _utcnow()
 
@@ -387,7 +376,6 @@ async def run_bulk_validation(request: Request, background_tasks: BackgroundTask
 
     session_id = session_row.data[0]["id"]
 
-    # Buat baris per item di validation_results
     result_rows = [
         {
             "session_id": session_id,
@@ -403,11 +391,9 @@ async def run_bulk_validation(request: Request, background_tasks: BackgroundTask
     ]
     supabase.table("validation_results").insert(result_rows).execute()
 
-    # Simpan file ke storage sementara
     for item in items_bytes:
         save_temp_file(session_id, item["position"], item["content"])
 
-    # Jadwalkan background task
     items_meta = [
         {
             "position":  item["position"],
@@ -422,7 +408,6 @@ async def run_bulk_validation(request: Request, background_tasks: BackgroundTask
     return {"session_id": session_id}
 
 
-# ─── GET /sessions/{session_id} — status + hasil validasi bulk ───────────────
 
 @router.get("/sessions/{session_id}")
 async def get_session_status(session_id: str):

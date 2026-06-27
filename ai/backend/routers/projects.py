@@ -55,18 +55,15 @@ async def create_project(
     """
     supabase = get_supabase()
 
-    # Check if project with same skema and tahun already exists
     existing = supabase.table("projects").select("id, status").eq("skema", skema).eq("tahun", tahun).execute()
 
     project_id: str
     is_update = False
 
     if existing.data:
-        # Update existing project
         is_update = True
         project_id = existing.data[0]["id"]
 
-        # Hapus file lama dari storage agar upload baru tidak terkena error Duplicate
         if file:
             old_source_file = existing.data[0].get("source_file")
             if old_source_file:
@@ -75,7 +72,6 @@ async def create_project(
                 except Exception:
                     pass
 
-        # Reset status to pending if it's completed or failed (allow re-run)
         current_status = existing.data[0].get("status", "")
         if current_status in ("completed", "failed", "completed_with_errors"):
             supabase.table("projects").update({
@@ -85,7 +81,6 @@ async def create_project(
             }).eq("id", project_id).execute()
 
     else:
-        # Create new project
         project_data = {
             "judul": f"Proposal {skema.upper()} {tahun}",
             "skema": skema,
@@ -126,7 +121,6 @@ async def create_project(
             "status": "uploading"
         }).eq("id", project_id).execute()
 
-    # Start background pipeline
     if source_url and source_file:
         background_tasks.add_task(run_pipeline, project_id, source_url, source_file)
 
@@ -206,7 +200,6 @@ async def get_project_logs(project_id: str, since_id: int = Query(0, ge=0)):
     try:
         supabase = get_supabase()
 
-        # Verify project exists
         project_result = supabase.table("projects").select("id").eq("id", project_id).execute()
         if not project_result.data:
             return JSONResponse(
@@ -214,7 +207,6 @@ async def get_project_logs(project_id: str, since_id: int = Query(0, ge=0)):
                 content={"success": False, "error": "Project not found"}
             )
 
-        # Get logs ordered by timestamp, optionally filtered by since_id
         query = supabase.table("project_logs").select("*").eq("project_id", project_id)
         if since_id > 0:
             query = query.gt("id", since_id)
@@ -336,17 +328,14 @@ async def delete_project(project_id: str):
 
         result_url = project.get("result_url")
         if result_url:
-            # Ekstrak path dari URL: .../object/public/{bucket}/{path}
             marker = f"/{BUCKET_OUTPUT}/"
             idx = result_url.find(marker)
             if idx != -1:
                 output_path = result_url[idx + len(marker):]
                 await delete_file(BUCKET_OUTPUT, output_path)
             else:
-                # Fallback: hapus seluruh folder project di bucket output
                 await delete_folder(BUCKET_OUTPUT, project_id)
         else:
-            # Belum ada result_url (status extracted/failed), tetap bersihkan folder output
             await delete_folder(BUCKET_OUTPUT, project_id)
 
         supabase.table("projects").delete().eq("id", project_id).execute()

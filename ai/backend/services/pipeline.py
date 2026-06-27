@@ -25,9 +25,7 @@ from .storage import download_file
 BUCKET_SOURCE = "ai-source-files"
 BUCKET_OUTPUT = "ai-output-files"
 
-# Root of the ai/ service (parent of backend/)
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-# Model directory (where manage.py and model_ai/ live)
 AI_DIR = os.path.join(PROJECT_ROOT, "model")
 AI_PATH = Path(AI_DIR)
 
@@ -133,7 +131,6 @@ async def stream_manage_command(
                 if project_id and PROJECT_LOGS_ENABLED:
                     log_buffer.append({"project_id": project_id, "step": step, "message": line})
 
-            # Flush langsung saat buffer mencapai 20 baris — non-blocking via create_task
             if len(log_buffer) >= 20:
                 rows = log_buffer.copy()
                 log_buffer.clear()
@@ -159,7 +156,6 @@ async def stream_manage_command(
         await process.wait()
         flush_task.cancel()
         await asyncio.gather(stdout_task, stderr_task, flush_task, return_exceptions=True)
-        # Final flush untuk log yang belum terkirim
         if log_buffer:
             await asyncio.to_thread(_do_bulk_insert, log_buffer.copy())
             log_buffer.clear()
@@ -171,7 +167,6 @@ async def stream_manage_command(
         await flush_task
     except asyncio.CancelledError:
         pass
-    # Final flush untuk sisa log setelah proses selesai
     if log_buffer:
         await asyncio.to_thread(_do_bulk_insert, log_buffer.copy())
         log_buffer.clear()
@@ -351,7 +346,6 @@ async def run_docx_generation(project_id: str, skema: str = "PKM-KC") -> bool:
             pass
         return False
 
-    # Parse RESULT_URL from manage.py stdout
     result_url = None
     for line in error_message.splitlines():
         if "RESULT_URL=" in line:
@@ -394,11 +388,9 @@ async def run_pipeline(project_id: str, source_url: str, source_file: str) -> bo
     log_event("pipeline", f"MULAI PIPELINE untuk project: {project_id}", project_id)
     log_event("pipeline", "=" * 60, project_id)
 
-    # Baca skema dari DB sebelum memulai pipeline
     skema = _get_project_skema(project_id)
     log_event("pipeline", f"Skema PKM terdeteksi: {skema}", project_id)
 
-    # Step 1: Download source file from storage
     try:
         log_event("pipeline", "Step 1/3: Download file dari Supabase Storage...", project_id)
         await download_source_file(source_url, project_id, source_file)
@@ -415,7 +407,6 @@ async def run_pipeline(project_id: str, source_url: str, source_file: str) -> bo
             pass
         return False
 
-    # Step 2: Run setup (extract chunks + ingest)
     log_event("pipeline", "Step 2/3: Setup (chunk extraction + ingest)...", project_id)
     setup_success = await run_setup(project_id)
     if not setup_success:
@@ -423,7 +414,6 @@ async def run_pipeline(project_id: str, source_url: str, source_file: str) -> bo
         return False
     log_event("pipeline", "Step 2/3: Setup selesai.", project_id)
 
-    # Step 3: Run extraction
     log_event("pipeline", "Step 3/3: Ekstraksi metadata (RAG + LLM)...", project_id)
     extraction_success = await run_extraction(project_id, skema=skema)
     if not extraction_success:
@@ -431,7 +421,6 @@ async def run_pipeline(project_id: str, source_url: str, source_file: str) -> bo
         return False
     log_event("pipeline", "Step 3/3: Ekstraksi selesai.", project_id)
 
-    # Step 4: Generate placeholder hints (LLM) dan simpan ke DB
     log_event("pipeline", "Step 4/4: Generate instructional placeholder...", project_id)
     command_ph = [
         sys.executable, "manage.py", "generate-placeholders",
@@ -449,7 +438,6 @@ async def run_pipeline(project_id: str, source_url: str, source_file: str) -> bo
     else:
         log_event("pipeline", "Step 4/4: Placeholder tersimpan ke DB.", project_id)
 
-    # Mark as extracted — user reviews and confirms before DOCX generation
     try:
         supabase = get_supabase()
         supabase.table("projects").update({"status": "extracted"}).eq("id", project_id).execute()

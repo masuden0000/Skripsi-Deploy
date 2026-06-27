@@ -276,20 +276,52 @@ def _check_document_structure(
                         occurrences=occ_bab_missing,
                     ))
                 else:
+                    # Cek judul BAB: nomor urut benar, tapi judul harus sesuai skema
+                    _bab_title_re = re.compile(r'^BAB\s+\d+[\s.]*', re.IGNORECASE)
+                    bab_title_mismatches: list[tuple] = []
+                    for _exp_bab in expected_bab_sections:
+                        _actual_text = bab_num_to_text.get(_exp_bab.number, "")
+                        if _exp_bab.title and _actual_text:
+                            _actual_title = _bab_title_re.sub("", _actual_text).strip().upper()
+                            _expected_title = _exp_bab.title.strip().upper()
+                            if _actual_title != _expected_title:
+                                bab_title_mismatches.append(
+                                    (_exp_bab.number, _exp_bab.title, _actual_text)
+                                )
                     occ_bab = _build_occurrences(
                         [{"text": s["text"][:100], "full_text": s["text"],
                           "style": "", "page": None, "bab": None, "para_idx": None}
                          for s in bab_actuals],
                         actual_str=None, expected_str=None,
                     ) or None
-                    checks.append(ValidationCheckResult(
-                        category="document_structure", field="bab_order",
-                        status="passed",
-                        message=f"BAB berurutan dengan benar: {' → '.join(actual_bab_labels)}",
-                        expected=' → '.join(expected_bab_labels),
-                        actual=' → '.join(actual_bab_labels),
-                        occurrences=occ_bab,
-                    ))
+                    if bab_title_mismatches:
+                        _wrong_parts = [
+                            f"BAB {num}: ditemukan '{act}', seharusnya '{_bab_label(num, exp)}'"
+                            for num, exp, act in bab_title_mismatches
+                        ]
+                        msg = f"Judul BAB tidak sesuai skema. {'; '.join(_wrong_parts)}"
+                        issues.append(ValidationIssue(
+                            category="document_structure", field="bab_order",
+                            severity="error", message=msg,
+                            expected=' → '.join(expected_bab_labels),
+                            actual=' → '.join(actual_bab_labels),
+                        ))
+                        checks.append(ValidationCheckResult(
+                            category="document_structure", field="bab_order",
+                            status="failed", message=msg,
+                            expected=' → '.join(expected_bab_labels),
+                            actual=' → '.join(actual_bab_labels),
+                            occurrences=occ_bab,
+                        ))
+                    else:
+                        checks.append(ValidationCheckResult(
+                            category="document_structure", field="bab_order",
+                            status="passed",
+                            message=f"BAB berurutan dengan benar: {' → '.join(actual_bab_labels)}",
+                            expected=' → '.join(expected_bab_labels),
+                            actual=' → '.join(actual_bab_labels),
+                            occurrences=occ_bab,
+                        ))
 
         def _section_label(section_type: str, title: str | None = None) -> str:
             if section_type == "sub_bab":

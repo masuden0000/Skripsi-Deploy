@@ -28,16 +28,12 @@ _ORIENTATION_MAP: dict[str, int] = {
 }
 
 _GRUP_A_LINE_SPACING: dict[str, float] = {
-    "SINGLE":         1.0,   # Word "Single"      → 1.0×  (w:line="240")
-    "ONE_POINT_FIVE": 1.5,   # Word "1.5 lines"   → 1.5×  (w:line="360")
-    "DOUBLE":         2.0,   # Word "Double"       → 2.0×  (w:line="480")
-    # Catatan: 1.15× (Multiple 1.15) bukan named rule — disimpan sebagai
-    # line_spacing=1.15 langsung dan ditangani via cabang else di bawah.
+    "SINGLE":         1.0,
+    "ONE_POINT_FIVE": 1.5,
+    "DOUBLE":         2.0,
 }
 
-# AT_LEAST / EXACTLY: admin input dalam pt, python-docx membaca sebagai Length
-# dan wrapper.py mengonversinya ke cm via .cm. Konversi pt → cm agar setara.
-_PT_TO_CM = 2.54 / 72  # 1 pt = 25.4mm / 72 = 0.03528 cm
+_PT_TO_CM = 2.54 / 72
 
 _GRUP_C_LINE_SPACING = frozenset({"AT_LEAST", "EXACTLY"})
 
@@ -64,7 +60,6 @@ def _resolve_line_spacing(metadata: DocumentMetadata) -> float:
     if rule in _GRUP_A_LINE_SPACING:
         return _GRUP_A_LINE_SPACING[rule]
     if rule in _GRUP_C_LINE_SPACING and s.line_spacing is not None:
-        # AT_LEAST / EXACTLY: admin input pt, docx dibaca dalam cm oleh wrapper.
         return s.line_spacing * _PT_TO_CM
     return s.line_spacing if s.line_spacing is not None else 1.15
 
@@ -98,7 +93,6 @@ def _build_normal_font_attrs(metadata: DocumentMetadata) -> list[Any]:
         attrs.append(int(t.font_size_body_pt))
     if t.font_family:
         attrs.append(t.font_family)
-    # Tidak ada bold — normal paragraf tidak pernah diwajibkan bold.
     return attrs
 
 
@@ -133,13 +127,8 @@ def metadata_to_requirements(metadata: DocumentMetadata) -> dict:
     )
     line_spacing = _resolve_line_spacing(metadata)
 
-    # ── Template Normal ───────────────────────────────────────────────────────
-    # Dipakai oleh: Normal, Heading 3–5, dan semua alias style paragraf.
     normal_font_attrs = _build_normal_font_attrs(metadata)
     normal_style: dict = {
-        # Exclude paragraf yang tidak perlu divalidasi via fallback Normal:
-        # (1) angka halaman saja
-        # (2) caption gambar/tabel — divalidasi terpisah via _check_caption_format
         "exclude": {"text_regex": r"(^\s*(\d{1,3})?\s*$|^(Gambar|Tabel)\s+\d+)"},
         "font": {
             "unit": "pt",
@@ -154,10 +143,6 @@ def metadata_to_requirements(metadata: DocumentMetadata) -> dict:
         },
     }
 
-    # ── Template Heading H1–H5 ────────────────────────────────────────────────
-    # H1      : alignment default CENTER, bold dari metadata.heading_1_bold.
-    # H2–H5   : alignment default JUSTIFY, bold dari metadata.heading_{n}_bold.
-    # Alignment bisa dioverride per level via heading_{n}_alignment di spacing.
     def _make_heading_style(level: int) -> dict:
         alignment = _resolve_heading_alignment(s, level)
         return {
@@ -178,30 +163,19 @@ def metadata_to_requirements(metadata: DocumentMetadata) -> dict:
         "Normal": normal_style,
     }
 
-    # H1–H5 dan alias Judul N
     for level in (1, 2, 3, 4, 5):
         style_def = _make_heading_style(level)
         styles[f"Heading {level}"] = style_def
         styles[f"Judul{level}"]    = style_def
         styles[f"Judul {level}"]   = style_def
 
-    # ── Style TOC & TOF ───────────────────────────────────────────────────────
-    # "table of figures" → entri Daftar Gambar, Daftar Tabel, Daftar Lampiran
-    # "TOC 1"–"TOC 5"    → entri Daftar Isi per level
-    #
-    # Aturan: identik dengan Normal (JUSTIFY, 12pt, TNR, 1.15) TANPA exclude.
-    # Exclude Normal sengaja tidak dipakai agar entri "Gambar N." / "Tabel N."
-    # di halaman Daftar Gambar/Tabel tidak ter-skip (exclude itu untuk caption
-    # inline di BAB yang sudah dicek terpisah via _check_caption_format).
     toc_tof_style = copy.deepcopy({k: v for k, v in normal_style.items() if k != "exclude"})
     for name in (
-        "table of figures",  # Word built-in style name, must be lowercase
+        "table of figures",
         "TOC 1", "TOC 2", "TOC 3", "TOC 4", "TOC 5",
     ):
         styles[name] = toc_tof_style
 
-    # Caption tidak lagi divalidasi via style name — terlalu dinamis (Gambar, Gambar (Lampiran), dll).
-    # Validasi caption dilakukan di runner via text-pattern detection (_check_caption_format).
 
     section_attrs: dict[str, Any] = {}
     if l is not None:
@@ -237,10 +211,6 @@ _HEADING_NAME_TO_LEVEL: dict[str, int] = {
     "Judul1": 1,  "Judul2": 2,  "Judul3": 3,  "Judul4": 4,  "Judul5": 5,
 }
 
-# Cache hasil traversal _heading_level_from_style per style name.
-# Thread-local agar tiap thread (request) punya cache sendiri dan tidak
-# terkontaminasi oleh dokumen lain yang diproses thread berbeda.
-# Di-reset oleh clear_style_level_cache() di awal setiap run_validocx().
 _style_level_local: threading.local = threading.local()
 
 

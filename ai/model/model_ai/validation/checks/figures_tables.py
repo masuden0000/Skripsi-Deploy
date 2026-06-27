@@ -31,8 +31,6 @@ def _template_to_regex(template: str) -> re.Pattern:
     escaped = escaped.replace(r'\{n\}', r'\d+')
     escaped = escaped.replace(r'\{bab\}', r'\d+')
     escaped = escaped.replace(r'\{title\}', r'.+')
-    # Izinkan spasi opsional setelah setiap titik literal agar format
-    # "4.1." maupun "4. 1." sama-sama cocok dengan pola.
     escaped = escaped.replace(r'\.', r'\.\s*')
     return re.compile(r'^' + escaped, re.IGNORECASE)
 
@@ -74,9 +72,8 @@ def _build_content_elements(doc) -> tuple[list[tuple[str, object]], str]:
     para_by_el = {id(p._element): p for p in doc.paragraphs}
     tbl_by_el  = {id(t._element): t for t in doc.tables}
 
-    # Satu pass: bangun daftar elemen + deteksi section break dalam setiap paragraf
     all_elements: list[tuple[str, object]] = []
-    section_ends: list[tuple[int, str | None]] = []  # (element_idx, pgNumType fmt)
+    section_ends: list[tuple[int, str | None]] = []
 
     for child in body:
         tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
@@ -92,12 +89,10 @@ def _build_content_elements(doc) -> tuple[list[tuple[str, object]], str]:
         elif tag == 'tbl' and id(child) in tbl_by_el:
             all_elements.append(("table", tbl_by_el[id(child)]))
 
-    # Section terakhir ditandai oleh sectPr di level body
     body_sectPr = body.find(qn('w:sectPr'))
     if body_sectPr is not None:
         section_ends.append((len(all_elements) - 1, _get_page_number_format_for_content(body_sectPr)))
 
-    # Cari range section decimal (bisa lebih dari satu section berturut-turut)
     decimal_start: int | None = None
     decimal_end:   int | None = None
     prev_end = -1
@@ -112,7 +107,6 @@ def _build_content_elements(doc) -> tuple[list[tuple[str, object]], str]:
         candidate = all_elements[decimal_start : decimal_end + 1]
         source = "decimal_section"
     else:
-        # Fallback: mulai dari BAB pertama
         bab1_idx = next(
             (i for i, (etype, elem) in enumerate(all_elements)
              if etype == "para"
@@ -123,7 +117,6 @@ def _build_content_elements(doc) -> tuple[list[tuple[str, object]], str]:
         candidate = all_elements[bab1_idx:]
         source = "bab1_fallback"
 
-    # Potong sebelum DAFTAR PUSTAKA atau LAMPIRAN
     _EXCLUDED_HEADINGS = frozenset({"DAFTAR PUSTAKA", "LAMPIRAN"})
     cutoff = len(candidate)
     for i, (etype, elem) in enumerate(candidate):
@@ -156,7 +149,6 @@ def _check_caption_format(
     expected_font = t.font_family if t else None
     expected_size = int(t.font_size_body_pt) if t and t.font_size_body_pt else None
 
-    # Baca alignment per tipe dari metadata; default CENTER jika null
     fig_align_str = ((ft.caption_alignment_figure or "CENTER").upper() if ft else "CENTER")
     tbl_align_str = ((ft.caption_alignment_table  or "CENTER").upper() if ft else "CENTER")
     fig_align_val = _CAPTION_ALIGN_MAP.get(fig_align_str)
@@ -167,8 +159,8 @@ def _check_caption_format(
 
         wrong_fig_alignment: list[dict] = []
         wrong_tbl_alignment: list[dict] = []
-        wrong_font_items:    list[dict] = []   # dict dengan field "actual" per item
-        wrong_size_items:    list[dict] = []   # dict dengan field "actual" per item
+        wrong_font_items:    list[dict] = []
+        wrong_size_items:    list[dict] = []
         fig_total = 0
         tbl_total = 0
         fig_pass_align_items: list[dict] = []
@@ -193,7 +185,6 @@ def _check_caption_format(
 
             para_info = {"text": text[:100], "full_text": text, "style": para.style.name, "page": None, "bab": None, "para_idx": None}
 
-            # ── Alignment ────────────────────────────────────────────────────
             align = para.paragraph_format.alignment
             if align is None:
                 try:
@@ -214,9 +205,6 @@ def _check_caption_format(
                     else:
                         tbl_pass_align_items.append(para_info)
 
-            # ── Font family & size (run pertama non-empty saja) ──────────────
-            # Font/size sering di-inherit dari style, bukan eksplisit di run.
-            # Fallback: run → paragraph style → None.
             for run in para.runs:
                 if not run.text.strip():
                     continue
@@ -253,9 +241,8 @@ def _check_caption_format(
                     else:
                         size_pass_items.append(item)
 
-                break  # cukup satu run
+                break
 
-        # ── Emit alignment gambar ─────────────────────────────────────────────
         if fig_total > 0:
             if wrong_fig_alignment:
                 first_act = wrong_fig_alignment[0].get("actual", f"bukan {fig_align_str}")
@@ -285,7 +272,6 @@ def _check_caption_format(
                     occurrences=_build_occurrences(fig_pass_align_items),
                 ))
 
-        # ── Emit alignment tabel ──────────────────────────────────────────────
         if tbl_total > 0:
             if wrong_tbl_alignment:
                 first_act = wrong_tbl_alignment[0].get("actual", f"bukan {tbl_align_str}")
@@ -315,7 +301,6 @@ def _check_caption_format(
                     occurrences=_build_occurrences(tbl_pass_align_items),
                 ))
 
-        # ── Emit font (gabungan gambar + tabel) ───────────────────────────────
         total_captions = fig_total + tbl_total
         if wrong_font_items:
             first_actual = wrong_font_items[0].get("actual", "")
@@ -456,8 +441,6 @@ def _check_figures_tables(
             if lamp_align_str else None
         )
 
-        # Batasi scan hanya pada section dengan penomoran decimal,
-        # kecualikan DAFTAR PUSTAKA dan LAMPIRAN.
         elements, scan_source = _build_content_elements(doc)
 
         fig_pos_errors: list[str] = []
@@ -486,7 +469,6 @@ def _check_figures_tables(
                         fig_fmt_errors.append(text[:70])
                     else:
                         fig_fmt_pass_items.append(fig_para_info)
-                # Cek posisi: BELOW → gambar sebelum caption
                 if fig_pos_exp == "BELOW":
                     found_img = any(
                         elements[j][0] == "para" and _para_contains_image(elements[j][1])
@@ -514,7 +496,6 @@ def _check_figures_tables(
                         tbl_fmt_errors.append(text[:70])
                     else:
                         tbl_fmt_pass_items.append(tbl_para_info)
-                # Cek posisi: ABOVE → tabel setelah caption
                 if tbl_pos_exp == "ABOVE":
                     next_is_tbl = i + 1 < len(elements) and elements[i + 1][0] == "table"
                     if not next_is_tbl:
@@ -528,7 +509,6 @@ def _check_figures_tables(
                     else:
                         tbl_pos_pass_items.append(tbl_para_info)
 
-        # Gambar — tidak ditemukan sama sekali dalam area yang di-scan
         if fig_count == 0 and tbl_count == 0:
             scan_label = (
                 "section dengan nomor halaman angka arab"
@@ -543,7 +523,6 @@ def _check_figures_tables(
             ))
             return issues, checks
 
-        # Report gambar
         if fig_count > 0:
             if fig_pos_errors:
                 msg = (
@@ -609,7 +588,6 @@ def _check_figures_tables(
                         occurrences=_build_occurrences(fig_fmt_pass_items),
                     ))
 
-        # Report tabel
         if tbl_count > 0:
             if tbl_pos_errors:
                 msg = (
@@ -675,8 +653,6 @@ def _check_figures_tables(
                         occurrences=_build_occurrences(tbl_fmt_pass_items),
                     ))
 
-        # ── Lampiran scan (seluruh dokumen) ──────────────────────────────────
-        # _build_content_elements() berhenti sebelum LAMPIRAN → scan terpisah.
         if lamp_fmt_re or lamp_align_val is not None:
             lamp_count             = 0
             lamp_fmt_errors:    list[str] = []
@@ -709,7 +685,6 @@ def _check_figures_tables(
                     else:
                         lamp_align_pass_items.append(lamp_para_info)
 
-            # Emit format lampiran
             if lamp_fmt_re:
                 if lamp_count == 0:
                     checks.append(ValidationCheckResult(
@@ -750,7 +725,6 @@ def _check_figures_tables(
                         occurrences=_build_occurrences(lamp_fmt_pass_items),
                     ))
 
-            # Emit alignment lampiran
             if lamp_align_val is not None:
                 if lamp_count == 0:
                     checks.append(ValidationCheckResult(

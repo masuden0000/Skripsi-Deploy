@@ -25,12 +25,11 @@ MAX_OCCURRENCES_PER_ISSUE = 20
 TEXT_PREVIEW_LEN = 80
 MAX_RATE_LIMIT_WAIT = 60
 
-# ── Concurrency & per-key rate tracking ──────────────────────────────────────
 _CONCURRENT_LIMIT = 3
 _LLM_SEMAPHORE    = threading.Semaphore(_CONCURRENT_LIMIT)
 
-_RPM = 30       # max requests per minute per key
-_RPD = 1_000    # max requests per day per key
+_RPM = 30
+_RPD = 1_000
 
 
 class _KeyState:
@@ -128,9 +127,7 @@ def _get_pool() -> _KeyPool:
     return _pool
 
 
-# ── Tabel translasi: nilai teknis → bahasa Indonesia yang mudah dipahami ─────
 
-# Alignment (WD_ALIGN_PARAGRAPH: int 0-3 dan nama enum)
 _ALIGN_LABEL: dict[str, str] = {
     "0":       "rata kiri",
     "1":       "rata tengah",
@@ -141,14 +138,12 @@ _ALIGN_LABEL: dict[str, str] = {
     "right":   "rata kanan",
     "justify": "rata kanan-kiri (justify)",
     "none":    "tidak diatur",
-    # Dengan tambahan label dari validocx_runner
     "rata kiri (left)":              "rata kiri",
     "rata tengah (center)":          "rata tengah",
     "rata kanan (right)":            "rata kanan",
     "rata kanan-kiri (justify)":     "rata kanan-kiri (justify)",
 }
 
-# Line spacing (float string → deskripsi)
 _SPACING_LABEL: dict[str, str] = {
     "1.0": "1 spasi (tunggal)",
     "1":   "1 spasi (tunggal)",
@@ -158,22 +153,18 @@ _SPACING_LABEL: dict[str, str] = {
     "2":   "2 spasi (ganda)",
 }
 
-# Boolean
 _BOOL_LABEL: dict[str, str] = {
     "true":  "ya",
     "false": "tidak",
 }
 
-# Field name → deskripsi bahasa Indonesia
 _FIELD_LABEL: dict[str, str] = {
-    # Font
     "font_body":               "font teks isi",
     "font_heading":            "font heading/judul",
     "font_size_body":          "ukuran font teks isi",
     "font_size_heading":       "ukuran font heading",
     "font_family":             "jenis font",
     "font_size":               "ukuran font",
-    # Spasi
     "line_spacing":            "spasi baris",
     "line_spacing_body":       "spasi baris teks isi",
     "line_spacing_heading1":   "spasi baris Heading 1",
@@ -181,28 +172,23 @@ _FIELD_LABEL: dict[str, str] = {
     "line_spacing_heading3":   "spasi baris Heading 3",
     "space_before":            "spasi sebelum paragraf",
     "space_after":             "spasi setelah paragraf",
-    # Perataan
     "alignment":               "perataan teks",
     "alignment_body":          "perataan teks isi",
     "alignment_heading":       "perataan heading",
     "alignment_caption":       "perataan caption",
-    # Margin
     "margin_top":              "margin atas",
     "margin_bottom":           "margin bawah",
     "margin_left":             "margin kiri",
     "margin_right":            "margin kanan",
-    # Halaman
     "halaman_inti":            "jumlah halaman inti",
     "page_size":               "ukuran halaman",
     "page_orientation":        "orientasi halaman",
     "page_numbering":          "penomoran halaman",
-    # Struktur
     "heading_level":           "level heading",
     "toc":                     "daftar isi",
     "cover":                   "halaman sampul",
     "abstract":                "abstrak/ringkasan",
     "daftar_pustaka":          "daftar pustaka",
-    # Lain-lain
     "bold":                    "tebal (bold)",
     "italic":                  "miring (italic)",
     "underline":               "garis bawah",
@@ -211,9 +197,6 @@ _FIELD_LABEL: dict[str, str] = {
     "indent":                  "indentasi",
 }
 
-# Category → deskripsi bahasa Indonesia
-# Kategori resmi sesuai Literal di models.py:
-#   typography, page_layout, spacing, document_structure, numbering, figures_tables, page_count
 _CATEGORY_LABEL: dict[str, str] = {
     "typography":          "tipografi (font)",
     "spacing":             "spasi",
@@ -222,7 +205,6 @@ _CATEGORY_LABEL: dict[str, str] = {
     "document_structure":  "struktur dokumen",
     "figures_tables":      "gambar & tabel",
     "numbering":           "penomoran",
-    # Alias lama untuk kompatibilitas mundur
     "structure":           "struktur dokumen",
     "content":             "konten",
     "margin":              "margin",
@@ -244,32 +226,24 @@ def _humanize_value(raw: Any, hint: str = "") -> Any:
     sl = s.lower()
     hint_l = hint.lower()
 
-    # Boolean
     if sl in _BOOL_LABEL:
         return _BOOL_LABEL[sl]
 
-    # Alignment — berdasarkan hint atau nama enum arah teks yang eksplisit.
-    # Tidak pakai 'sl in _ALIGN_LABEL' karena "none" ada di dict itu dan bisa
-    # salah ter-translate jika hint bukan alignment (mis. field bold = None).
     if "align" in hint_l or sl.upper() in ("LEFT", "CENTER", "RIGHT", "JUSTIFY"):
         label = _ALIGN_LABEL.get(sl) or _ALIGN_LABEL.get(sl.lower()) or _ALIGN_LABEL.get(sl.upper())
         if label:
             return label
 
-    # Line spacing — berdasarkan hint
     if "spacing" in hint_l or "spasi" in hint_l:
         try:
             rounded = f"{float(s):.2f}".rstrip("0").rstrip(".")
             label = _SPACING_LABEL.get(rounded) or _SPACING_LABEL.get(s)
             if label:
                 return label
-            # Kembalikan dengan satuan agar tidak membingungkan
             return f"{rounded} spasi"
         except ValueError:
             pass
 
-    # Angka murni tanpa konteks — kembalikan apa adanya
-    # (mis. ukuran font "12" tetap "12" bukan diterjemahkan)
     return raw
 
 
@@ -277,16 +251,13 @@ def _humanize_field(field: str | None) -> str:
     """Terjemahkan nama field teknis ke deskripsi bahasa Indonesia."""
     if not field:
         return "-"
-    # Coba match langsung
     label = _FIELD_LABEL.get(field.strip().lower())
     if label:
         return label
-    # Coba match parsial (mis. "body_alignment" → "alignment_body")
     fl = field.strip().lower()
     for key, val in _FIELD_LABEL.items():
         if key in fl or fl in key:
             return val
-    # Fallback: bersihkan underscore
     return field.replace("_", " ")
 
 
@@ -297,7 +268,6 @@ def _humanize_category(category: str | None) -> str:
     return _CATEGORY_LABEL.get(category.strip().lower(), category.replace("_", " "))
 
 
-# ── Prompt-injection defence ──────────────────────────────────────────────────
 _WS_RE    = re.compile(r"\s+")
 _ANGLE_RE = re.compile(r"[<>]")
 _ANGLE_MAP = {"<": "‹", ">": "›"}
@@ -320,7 +290,6 @@ def _sanitize_doc_text(text: str) -> str:
 
 
 def _compact_occurrence(occ: dict[str, Any], field_hint: str = "") -> dict[str, Any]:
-    # Sanitasi teks dokumen sebelum dipakai — cegah prompt injection
     text = _sanitize_doc_text(occ.get("text") or "")
     if len(text) > TEXT_PREVIEW_LEN:
         text = text[:TEXT_PREVIEW_LEN].rstrip() + "..."
@@ -487,11 +456,8 @@ def _strip_scratchpad(text: str) -> str:
       Pass 2 — buang sisa <pikiran> tanpa penutup beserta seluruh teks di
                 belakangnya; tanpa ini draf berpikir bocor ke output reviewer.
     """
-    # Pass 1: blok tersegel
     cleaned = re.sub(r"<pikiran>.*?</pikiran>", "", text, flags=re.DOTALL | re.IGNORECASE)
-    # Pass 2: sisa <pikiran> tanpa </pikiran> — greedy, buang sampai akhir teks
     cleaned = re.sub(r"<pikiran>.*", "", cleaned, flags=re.DOTALL | re.IGNORECASE)
-    # Bersihkan baris kosong berlebih yang tersisa
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
     return cleaned.strip()
 
@@ -533,10 +499,6 @@ def summarize_issues(
         for attempt in range(max_attempts):
             state = pool.pick_groq() or pool.pick_google()
             if state is None:
-                # Semua key habis — tidak ada key yang tersedia saat ini.
-                # Menunggu di sini (time.sleep) akan memblokir thread server hingga
-                # menit-an. Lempar exception agar caller merespons dengan HTTP 503/429
-                # daripada menahan thread secara synchronous.
                 raise RuntimeError(
                     "Semua key LLM sedang rate-limited. "
                     "Ringkasan otomatis tidak tersedia saat ini — coba lagi dalam beberapa menit."

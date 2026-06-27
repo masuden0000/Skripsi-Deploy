@@ -31,7 +31,6 @@ class TypographyExtracted(BaseModel):
     heading_3_bold: bool = True
     heading_4_bold: bool = True
     heading_5_bold: bool = True
-    # PKM-AI (Type B) — ukuran font per elemen artikel (caption ada di FiguresTablesExtracted)
     font_size_title_pt: int | None = None
     font_size_author_pt: int | None = None
     font_size_abstract_pt: int | None = None
@@ -90,13 +89,12 @@ class SpacingExtracted(BaseModel):
     line_spacing: float | None = None
     line_spacing_rule: str | None = None
     paragraph_alignment: str | None = None
-    heading_alignment: str = "CENTER"  # alias legacy untuk heading_1_alignment
-    heading_1_alignment: str | None = None  # None → pakai heading_alignment
-    heading_2_alignment: str | None = None  # None → pakai paragraph_alignment
+    heading_alignment: str = "CENTER"
+    heading_1_alignment: str | None = None
+    heading_2_alignment: str | None = None
     heading_3_alignment: str | None = None
     heading_4_alignment: str | None = None
     heading_5_alignment: str | None = None
-    # PKM-AI (Type B) — halaman judul/abstrak memiliki spasi berbeda (1.0) dari body (1.15)
     line_spacing_title_abstract: float | None = None
 
     _RULE_ALIASES: dict[str, str] = {
@@ -150,10 +148,8 @@ class SpacingInfo(SpacingExtracted):
 
 
 _VALID_SECTION_TYPES = frozenset({
-    # Type A — proposal (PKM-KC, PKM-K, dll.)
     "daftar_isi", "daftar_gambar", "daftar_tabel", "daftar_lampiran",
     "daftar_pustaka", "bab", "sub_bab", "lampiran", "item_lampiran",
-    # Type B — artikel ilmiah (PKM-AI)
     "judul_abstrak", "lampiran_utama",
 })
 _MAJOR_SECTION_TYPES = frozenset({
@@ -214,10 +210,6 @@ class DocumentStructureExtracted(BaseModel):
     sections: list[SectionItem] = []
     format_nama_file: str | None = None
     lampiran_heading_separator: str | None = "."
-    # Separator antara nomor dan judul lampiran.
-    # "."  → "Lampiran 1. Biodata..."   (paling umum di PKM)
-    # ""   → "Lampiran 1 Biodata..."    (tanpa titik)
-    # Null → gunakan default "."
 
 
 class _DocumentStructureDetailBase(DocumentStructureExtracted):
@@ -258,13 +250,10 @@ class FiguresTablesExtracted(BaseModel):
     caption_format_figure: str | None = None
     caption_format_table: str | None = None
     caption_format_lampiran: str | None = None
-    # Alignment caption per tipe — CENTER | LEFT | RIGHT | JUSTIFY.
-    # Null berarti gunakan CENTER sebagai default (backward-compatible).
     caption_alignment_figure:   str | None = None
     caption_alignment_table:    str | None = None
     caption_alignment_lampiran: str | None = None
     budget_format_rules: "BudgetFormatRules | None" = None
-    # PKM-AI (Type B) — caption artikel memakai ukuran dan spasi khusus
     caption_font_size: int | None = None
     caption_line_spacing: float | None = None
 
@@ -312,7 +301,6 @@ class PageCountExtracted(BaseModel):
     proposal_halaman_inti_maks: int | None = None
     halaman_inti_mulai: str = "bab"
     halaman_inti_selesai: str = "daftar_pustaka"
-    # PKM-AI (Type B) — artikel memiliki batas halaman berbeda (min 8, maks 15)
     artikel_halaman_inti_min: int | None = None
     artikel_halaman_inti_maks: int | None = None
 

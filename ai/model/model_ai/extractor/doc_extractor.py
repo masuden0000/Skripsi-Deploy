@@ -51,13 +51,11 @@ from model_ai.extractor.prompts import (
 
 APP_DIR = Path(__file__).resolve().parents[2]
 
-# Batas atas wait saat rate limit — cukup 90s; lebih dari itu sebaiknya gagal dan coba key lain
 MAX_RATE_LIMIT_WAIT = 90
 
 CONFIG = get_config()
 LLM_MODEL = CONFIG.model_name
 
-# Waktu panggilan LLM terakhir — dipakai untuk spacing proaktif antar panggilan
 _last_llm_call_time: float = 0.0
 
 
@@ -332,7 +330,6 @@ def _extract_key(
                 if wait_match:
                     wait_secs = int(wait_match.group(1)) * 60 + float(wait_match.group(2)) + 5
                 else:
-                    # Tanpa retry-after header: asumsikan RPM limit → tunggu 1 menit penuh
                     wait_secs = 65
                 wait_secs = min(wait_secs, MAX_RATE_LIMIT_WAIT)
 

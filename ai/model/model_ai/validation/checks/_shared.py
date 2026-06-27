@@ -12,7 +12,6 @@ from docx.oxml.ns import qn
 from model_ai.validation.models import ValidationCheckResult, ValidationIssue
 
 
-# ── Constants ─────────────────────────────────────────────────────────────────
 
 _SECTION_ATTR_KEYS = frozenset({
     "left_margin", "right_margin", "top_margin", "bottom_margin",
@@ -26,7 +25,6 @@ _CATEGORY_MAP: dict[str, tuple[str, str]] = {
     "attr_inherited":   ("spacing",      "paragraph_inherited"),
 }
 
-# Mapping teks heading ke tipe section
 _HEADING_TITLE_MAP: dict[str, str] = {
     "DAFTAR ISI": "daftar_isi",
     "DAFTAR GAMBAR": "daftar_gambar",
@@ -37,35 +35,19 @@ _HEADING_TITLE_MAP: dict[str, str] = {
 }
 _BAB_RE = re.compile(r'^BAB\s+(\d+)\b', re.IGNORECASE)
 _SUB_BAB_RE = re.compile(r'^(\d+)\.(\d+)\b')
-# Fallback: titik+spasi setelah nomor ("Lampiran 1. Judul").
-# Hanya dipakai bila _classify_heading() dipanggil tanpa lampiran_re eksplisit.
 _LAMPIRAN_ITEM_RE = re.compile(r'^Lampiran\s+(\d+)\.\s', re.IGNORECASE)
-# Broad: menangkap SEMUA paragraf berawalan "Lampiran <angka>" (dipakai _check_lampiran_format)
 _LAMPIRAN_BROAD_RE = re.compile(r'^Lampiran\s+\d+', re.IGNORECASE)
-# Faktor pengali untuk mendeteksi "dokumen belum dirender Word".
-# Bila hitung halaman > maks × faktor ini, hasil dianggap tidak realistis.
 _UNREALISTIC_PAGE_FACTOR = 10
-# Namespace logger untuk seluruh engine validocx.
-# Dipakai di _capture_log agar handler hanya menerima log dari paket ini,
-# bukan dari library eksternal (lxml, docx, jsonschema, django, dll.).
 _VALIDOCX_LOG_NAMESPACE = "model_ai.validation.validocx"
 
-# Style TOC/TOF — dipakai sebagai filter di _check_lampiran_format dan
-# _check_body_content (agar entri daftar yang teksnya diawali "Gambar/Tabel/Lampiran"
-# tidak salah dikira caption inline).
-# Word menyimpan style name dengan case yang bervariasi (mis. "toc 1" lowercase),
-# sehingga kedua varian (upper dan lower) didaftarkan.
 _TOC_TOF_STYLE_NAMES: frozenset[str] = frozenset({
     "table of figures",
     "TOC 1", "TOC 2", "TOC 3", "TOC 4", "TOC 5",
     "toc 1", "toc 2", "toc 3", "toc 4", "toc 5",
 })
 
-# Inverse dari _HEADING_TITLE_MAP: tipe section → teks heading
 _HEADING_TITLE_MAP_INV: dict[str, str] = {v: k for k, v in _HEADING_TITLE_MAP.items()}
 
-# Normalisasi format penomoran halaman: alias → nilai kanonik ODF.
-# Digunakan di _classify_sections_by_metadata dan _check_numbering.
 _FORMAT_ALIAS: dict[str, str] = {
     "arabic":      "decimal",
     "number":      "decimal",
@@ -76,12 +58,10 @@ _FORMAT_ALIAS: dict[str, str] = {
     "upperletter": "upperLetter",
 }
 
-# Pola deteksi caption gambar / tabel / lampiran
 _FIG_DETECT_RE  = re.compile(r'^Gambar\s+\d+', re.IGNORECASE)
 _TBL_DETECT_RE  = re.compile(r'^Tabel\s+\d+',  re.IGNORECASE)
 _LAMP_DETECT_RE = re.compile(r'^Lampiran\s+',   re.IGNORECASE)
 
-# Mapping string alignment dari metadata → enum WD_ALIGN_PARAGRAPH
 _CAPTION_ALIGN_MAP: dict[str, "WD_ALIGN_PARAGRAPH"] = {
     "CENTER":  WD_ALIGN_PARAGRAPH.CENTER,
     "LEFT":    WD_ALIGN_PARAGRAPH.LEFT,
@@ -89,10 +69,8 @@ _CAPTION_ALIGN_MAP: dict[str, "WD_ALIGN_PARAGRAPH"] = {
     "JUSTIFY": WD_ALIGN_PARAGRAPH.JUSTIFY,
 }
 
-# Keyword untuk mendeteksi heading dari style name / inheritance chain.
 _HEADING_STYLE_KEYWORDS: frozenset[str] = frozenset({"heading", "judul"})
 
-# Format nomor halaman
 _NUM_FORMAT_DISPLAY: dict[str, str] = {
     "lowerRoman": "romawi kecil (i, ii, iii, ...)",
     "upperRoman": "romawi besar (I, II, III, ...)",
@@ -101,21 +79,17 @@ _NUM_FORMAT_DISPLAY: dict[str, str] = {
     "upperLetter": "huruf besar (A, B, C, ...)",
 }
 
-# ── Human-readable labels untuk nilai atribut ─────────────────────────────────
-# Alignment: python-docx WD_ALIGN_PARAGRAPH integer → label Indonesia
 _ALIGNMENT_LABELS: dict[str, str] = {
     "0": "rata kiri (LEFT)",
     "1": "rata tengah (CENTER)",
     "2": "rata kanan (RIGHT)",
     "3": "rata kanan-kiri (JUSTIFY)",
-    # Nama enum (kadang muncul di actual)
     "LEFT":    "rata kiri (LEFT)",
     "CENTER":  "rata tengah (CENTER)",
     "RIGHT":   "rata kanan (RIGHT)",
     "JUSTIFY": "rata kanan-kiri (JUSTIFY)",
 }
 
-# Line spacing: float string → label
 _LINE_SPACING_LABELS: dict[str, str] = {
     "1.0":  "1.0 (spasi tunggal)",
     "1.15": "1.15",
@@ -126,7 +100,6 @@ _LINE_SPACING_LABELS: dict[str, str] = {
 _ALIGN_LABEL: dict[int, str] = {0: "LEFT", 1: "CENTER", 2: "RIGHT", 3: "JUSTIFY"}
 
 
-# ── Helper functions ──────────────────────────────────────────────────────────
 
 def _build_lampiran_re(separator: str | None) -> re.Pattern:
     """Bangun regex deteksi judul lampiran berdasarkan separator dari metadata.
@@ -162,19 +135,16 @@ def _humanize_attr_value(attr_name: str, raw_value: str | None) -> str | None:
     attr_lower = (attr_name or "").lower()
 
     if "alignment" in attr_lower:
-        # Coba match numeric (0-3) atau nama enum
         label = _ALIGNMENT_LABELS.get(raw_value.strip()) or _ALIGNMENT_LABELS.get(key)
         if label:
             return label
 
     if "line_spacing" in attr_lower or "spacing" in attr_lower:
-        # Bulatkan ke 2 desimal untuk lookup dan sebagai fallback display
         try:
             rounded = f"{float(raw_value.strip()):.2f}".rstrip("0").rstrip(".")
             label = _LINE_SPACING_LABELS.get(rounded) or _LINE_SPACING_LABELS.get(raw_value.strip())
             if label:
                 return label
-            # Tidak ada label → kembalikan nilai yang sudah dibulatkan (bukan raw float panjang)
             return rounded
         except ValueError:
             pass
@@ -246,20 +216,12 @@ def _capture_log(docx_path, requirements: dict, validate_fn, doc=None) -> str:
     from pathlib import Path
     buf = io.StringIO()
     handler = logging.StreamHandler(buf)
-    # Format HARUS cocok dengan LOG_PATTERN di debug_report.parse_entries
-    # yang mengharapkan timestamp dengan millisecond: "2026-01-01 12:00:00.123 LEVEL"
     handler.setFormatter(logging.Formatter(
         "%(asctime)s.%(msecs)03d %(levelname)s (%(module)s) %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     ))
-    # Filter log hanya dari thread ini — isolasi antar-user di lingkungan concurrent.
     handler.addFilter(_ThreadFilter())
 
-    # Attach ke logger SPESIFIK paket validocx — bukan root logger global.
-    # Root logger menyebabkan library eksternal (lxml, jsonschema, docx, dll.)
-    # ikut masuk ke buffer sehingga membengkak ribuan baris tak relevan dan
-    # memperlambat parse_entries(). Engine validocx hanya emit INFO/WARNING/ERROR,
-    # tidak ada DEBUG — sehingga setLevel(INFO) sudah mencakup semua log yang dibutuhkan.
     target = logging.getLogger(_VALIDOCX_LOG_NAMESPACE)
     orig_level = target.level
     target.addHandler(handler)
@@ -296,11 +258,8 @@ def _build_occurrences(
     for detail in para_details:
         if not isinstance(detail, dict):
             continue
-        # Lewati paragraf kosong (misal heading tanpa teks yang tidak sengaja diberi style)
         if not (detail.get("text") or "").strip():
             continue
-        # Jika actual_str tidak diberikan, coba ambil dari item itu sendiri
-        # (berguna untuk kasus di mana tiap paragraf punya actual value berbeda).
         item_actual = actual_str if actual_str is not None else detail.get("actual")
         result.append({
             "page"      : detail.get("page"),
@@ -334,7 +293,6 @@ def _normal_formatting_label(requirements: dict) -> str | None:
 
     parts: list[str] = []
 
-    # ── Font ──────────────────────────────────────────────────────────────────
     font_block = normal.get("font", {})
     font_size  = font_block.get("size")
     font_name  = font_block.get("name")
@@ -346,14 +304,12 @@ def _normal_formatting_label(requirements: dict) -> str | None:
             font_str += f" {font_name}"
         parts.append(font_str)
 
-    # ── Line spacing ──────────────────────────────────────────────────────────
     para_attrs = normal.get("paragraph", {}).get("attributes", {})
     if isinstance(para_attrs, dict):
         ls = para_attrs.get("line_spacing")
         if ls is not None:
             parts.append(f"Spasi: {ls}")
 
-        # ── Alignment ─────────────────────────────────────────────────────────
         align = para_attrs.get("alignment")
         if align is not None:
             label = _ALIGN_LABEL.get(align, str(align))
@@ -380,10 +336,8 @@ def _build_issues_checks(
     issues: list[ValidationIssue] = []
     checks: list[ValidationCheckResult] = []
 
-    # ── Section missing ──────────────────────────────────────────────────────
     for item in report["errors"].get("section_missing", []):
         msg = item.get("message", "Section attribute missing")
-        # Coba ekstrak atribut yang diharapkan dari pesan
         attr_m = _re.search(r"'([^']+)'", msg)
         expected_attr = attr_m.group(1) if attr_m else "attribute"
         occ_sec_missing = _build_occurrences(
@@ -404,7 +358,6 @@ def _build_issues_checks(
             occurrences=occ_sec_missing,
         ))
 
-    # ── Value mismatch ───────────────────────────────────────────────────────
     for item in report["errors"].get("value_mismatch", []):
         key = item.get("key", "")
         count = item.get("count", 1)
@@ -416,17 +369,14 @@ def _build_issues_checks(
         example_str = f' Contoh: "{examples[0]}"' if examples else ""
         msg = f"{key} ({count}x mismatch).{example_str}"
 
-        # Parse actual/expected dari format key: "Style.attr: actual=X expected=Y"
         vm_actual = _re.search(r"actual=(\S+)", key)
         vm_expected = _re.search(r"expected=(\S+)", key)
         vm_actual_raw = vm_actual.group(1) if vm_actual else None
         vm_expected_raw = vm_expected.group(1) if vm_expected else None
 
-        # Ekstrak nama atribut dari key (mis. "Heading 2.alignment: ..." → "alignment")
         attr_match = _re.search(r"\.(\w+)\s*:", key)
         attr_name = attr_match.group(1) if attr_match else ""
 
-        # Konversi ke label yang mudah dibaca (mis. "1" → "rata tengah (CENTER)")
         vm_actual_str   = _humanize_attr_value(attr_name, vm_actual_raw)
         vm_expected_str = _humanize_attr_value(attr_name, vm_expected_raw)
 
@@ -445,7 +395,6 @@ def _build_issues_checks(
             occurrences=occurrences,
         ))
 
-    # ── Font mismatch ────────────────────────────────────────────────────────
     for item in report["errors"].get("font_mismatch", []):
         key = item.get("key", "")
         count = item.get("count", 1)
@@ -456,7 +405,6 @@ def _build_issues_checks(
         example_str = f' Contoh: "{examples[0]}"' if examples else ""
         msg = f"Font mismatch: {key} ({count}x).{example_str}"
 
-        # Pisahkan actual/expected dari key: "Style: actual=[X] expected=[Y]"
         fm_actual = _re.search(r"actual=\[([^\]]+)\]", key)
         fm_expected = _re.search(r"expected=\[([^\]]+)\]", key)
         fm_actual_str = fm_actual.group(1) if fm_actual else None
@@ -477,10 +425,6 @@ def _build_issues_checks(
             occurrences=occurrences,
         ))
 
-    # ── Undefined styles ─────────────────────────────────────────────────────
-    # Nilai "Seharusnya" pada occurrence undefined_style menggunakan nilai formatting
-    # dari style Normal (fallback yang juga dipakai validator.py), bukan daftar nama style.
-    # Contoh: "Font: 12pt Times New Roman | Spasi: 1.15 | Rata: JUSTIFY"
     normal_fmt_label = _normal_formatting_label(requirements) if requirements else None
 
     for item in report["warnings"].get("undefined_styles", []):
@@ -504,7 +448,6 @@ def _build_issues_checks(
             occurrences=occurrences,
         ))
 
-    # ── Attr inherited ───────────────────────────────────────────────────────
     for item in report["warnings"].get("attr_inherited", []):
         attr = item.get("attribute", "?")
         count = item.get("count", 1)
@@ -526,14 +469,7 @@ def _build_issues_checks(
             occurrences=occurrences,
         ))
 
-    # ── Parameter summary heading: DINONAKTIFKAN ─────────────────────────────
-    # Sebelumnya loop ini meng-emit field `validocx_param.<param>_(Heading X)`
-    # untuk style heading. Dihapus atas permintaan reviewer karena nilai yang
-    # sama sudah ditampilkan oleh mekanisme lain (typography/spacing dari body
-    # content check + per-attribute issue) — entri validocx_param.* tampak
-    # sebagai duplikat di UI.
 
-    # ── Summary check ────────────────────────────────────────────────────────
     s = report["summary"]
     total_err = s["total_error"]
     total_warn = s["total_warning"]

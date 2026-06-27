@@ -24,7 +24,6 @@ def generate_proposal_docx_bytes(
     """
     metadata = load_document_metadata(project_id)
 
-    # Routing struktur berdasarkan skema: Type B (PKM-AI) → artikel; Type A → proposal
     doc_structure = (
         metadata.document_structure_artikel
         if is_type_b(skema)

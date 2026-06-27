@@ -157,5 +157,3 @@ def upsert_embeddings(project_id: str) -> int:
             time.sleep(EMBED_INTER_BATCH_DELAY)
 
     return total_rows
-
-

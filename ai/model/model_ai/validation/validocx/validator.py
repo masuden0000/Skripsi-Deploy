@@ -34,7 +34,6 @@ class Validator(object):
         Jika dokumen memiliki lebih banyak section daripada yang didefinisikan
         di requirements, requirements terakhir diterapkan ke semua section sisa.
         """
-        # requirements terakhir dijadikan fallback untuk section tambahan
         fallback = section_requirements[-1]
 
         for i, section in enumerate(self._docx.iter_sections()):
@@ -49,7 +48,7 @@ class Validator(object):
                            "{3}".format(i, attr, fetched_attr[attr], v))
                     logger.error(msg)
                 else:
-                    pass  # section attribute OK, tidak perlu dicatat
+                    pass
 
     def validate_styles(self, style_requirements):
         """Validate styles of a document, i.e. font and paragraph.
@@ -68,7 +67,6 @@ class Validator(object):
             if style_name in style_requirements:
                 req = style_requirements[style_name]
             elif _FALLBACK_STYLE in style_requirements:
-                # Style tidak dikenal → validasi sebagai Normal (format dasar)
                 logger.info(
                     "Style '{0}' [para#{1}] tidak terdaftar, "
                     "divalidasi sebagai '{2}'.".format(
@@ -80,7 +78,6 @@ class Validator(object):
                     style_name, para_idx))
                 continue
 
-            # Cek exclude rule — skip paragraf yang cocok dengan pola teks
             exclude_pattern = req.get('exclude', {}).get('text_regex')
             if exclude_pattern and re.match(exclude_pattern, paragraph.text):
                 logger.info("SKIP para#{0} (excluded by text_regex): '{1}'".format(

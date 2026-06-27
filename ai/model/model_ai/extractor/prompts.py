@@ -74,5 +74,3 @@ def load_prompts_for_skema(skema: str) -> dict[str, PromptConfig]:
             key = filename.removesuffix(".md")
             result[key] = _load_from_dir(filename, folder)
     return result
-
-

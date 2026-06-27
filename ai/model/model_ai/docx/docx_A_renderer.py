@@ -114,10 +114,6 @@ def _apply_heading_case(text: str, case_style: str | None) -> str:
     if s == "LOWERCASE":
         return text.lower()
     if s == "SENTENCE_CASE":
-        # str.capitalize() salah untuk teks yang diawali angka (mis. "4.1 Anggaran"
-        # → "4.1 anggaran") karena ia me-lowercase semua karakter setelah karakter
-        # pertama. Implementasi yang benar: lowercase semua, lalu uppercase huruf
-        # pertama yang ditemukan, sehingga "4.1 Anggaran" → "4.1 anggaran" → "4.1 Anggaran".
         lowered = text.lower()
         for i, ch in enumerate(lowered):
             if ch.isalpha():
@@ -281,7 +277,6 @@ def _apply_base_styles(document: Document, typography: dict, spacing: dict, figu
         h_bold = typography.get(f"heading_{level}_bold")
         if h_bold is None:
             h_bold = True
-        # Resolusi alignment: per-level override → H1 default CENTER, H2-H5 default JUSTIFY
         h_align_raw = spacing.get(f"heading_{level}_alignment")
         if h_align_raw:
             h_align = _map_alignment(h_align_raw.upper())
@@ -614,8 +609,6 @@ def _render_proposal_body(
     instructional_placeholders: dict[str, str],
     typography: dict | None = None,
 ) -> None:
-    # Separator antara nomor dan judul lampiran — dibaca dari doc_structure,
-    # fallback ke "." jika tidak ada (paling umum di PKM).
     lampiran_sep = doc_structure.get("lampiran_heading_separator")
     if lampiran_sep is None:
         lampiran_sep = "."
@@ -922,7 +915,6 @@ def _render_item_lampiran_section(
 
     lampiran_fmt = (figures_tables or {}).get("caption_format_lampiran")
     if lampiran_fmt:
-        # Ekstrak ordinal dari "Lampiran 1" → "1", "Lampiran A" → "A"
         parts = lampiran_number_raw.strip().split(None, 1)
         ordinal = parts[1] if len(parts) == 2 and parts[0].upper() == "LAMPIRAN" else lampiran_number_raw
         heading_text = lampiran_fmt.replace("{n}", ordinal).replace("{title}", title)

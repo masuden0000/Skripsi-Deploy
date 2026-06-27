@@ -97,7 +97,6 @@ def _apply_base_styles_artikel(document: Document, typography: dict, spacing: di
     normal.paragraph_format.space_before = Pt(0)
     normal.paragraph_format.space_after = Pt(0)
 
-    # Heading 1 = judul section artikel (TNR 12 bold, kiri, tidak ALL CAPS)
     try:
         h1 = document.styles["Heading 1"]
         h1.font.name = body_font
@@ -126,7 +125,6 @@ def _apply_base_styles_artikel(document: Document, typography: dict, spacing: di
     except KeyError:
         pass
 
-    # Caption style — ukuran dan spasi dari metadata PKM-AI
     ft = figures_tables or {}
     caption_size = ft.get("caption_font_size") or body_size
     caption_ls   = ft.get("caption_line_spacing") or 1.0
@@ -347,7 +345,6 @@ def _render_judul_abstrak(
     _add_run(p_title, title_text, body_font, title_size, bold=title_is_bold)
     _add_bookmark_to_paragraph(p_title, _bookmark_id_artikel("judul_abstrak"), _bookmark_name_artikel("judul_abstrak"))
 
-    # Baris penulis
     p_authors = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
     _add_run(p_authors, "Penulis Satu", body_font, author_size)
     _add_run(p_authors, "1)", body_font, author_size, superscript=True)
@@ -358,21 +355,17 @@ def _render_judul_abstrak(
     _add_run(p_authors, ", Penulis Terakhir", body_font, author_size)
     _add_run(p_authors, "2)*", body_font, author_size, superscript=True)
 
-    # Alamat institusi 1
     p_inst1 = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
     _add_run(p_inst1, "1", body_font, author_size, superscript=True)
     _add_run(p_inst1, "Nama institusi dan alamat institusi dari penulis satu dan dua", body_font, author_size)
 
-    # Alamat institusi 2
     p_inst2 = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
     _add_run(p_inst2, "2", body_font, author_size, superscript=True)
     _add_run(p_inst2, "Nama institusi dan alamat institusi dari penulis tiga dan terakhir", body_font, author_size)
 
-    # Penulis korespondensi
     p_corr = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing, space_after_pt=0)
     _add_run(p_corr, "*Penulis korespondensi: penulis_terakhir@univ.ac.id", body_font, author_size)
 
-    # Note instruksi (LLM-generated)
     _add_section_note(document, body_font)
     instr_key = make_instruction_key("judul_abstrak", section.get("title") or "JUDUL DAN ABSTRAK")
     instr_text = instructional_placeholders.get(
@@ -383,7 +376,6 @@ def _render_judul_abstrak(
     p_note = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
     _add_run(p_note, f"Instruksi: {instr_text}", body_font, 10, italic=True)
 
-    # ABSTRAK (Bahasa Indonesia)
     p_abstrak_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
     _add_run(p_abstrak_head, "ABSTRAK", body_font, abstract_sz, bold=False)
 
@@ -401,7 +393,6 @@ def _render_judul_abstrak(
     _add_run(p_kata_kunci, "Kata-kata kunci: ", body_font, abstract_sz, bold=True)
     _add_run(p_kata_kunci, "[latar belakang], [tujuan], [metode], [hasil], [kesimpulan]. (3-5 kata/frasa)", body_font, abstract_sz)
 
-    # ABSTRACT (Bahasa Inggris, italic)
     p_abstract_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
     _add_run(p_abstract_head, "ABSTRACT", body_font, abstract_sz, italic=True)
 
@@ -450,10 +441,8 @@ def _render_artikel_bab_section(
     _add_run(p_head, heading_text, body_font, body_size, bold=True)
     _add_bookmark_to_paragraph(p_head, _bookmark_id_artikel("bab", num), _bookmark_name_artikel("bab", num))
 
-    # Catatan instruksi
     _add_section_note(document, body_font)
 
-    # Body placeholder
     body_text = instructional_placeholders.get(
         make_instruction_key("bab", heading_text, number=num),
         f"Instruksi pengisian untuk {heading_text}: lengkapi isi bagian ini sesuai panduan PKM-AI.",
@@ -461,14 +450,12 @@ def _render_artikel_bab_section(
     p_body = _add_styled_paragraph(document, align_body, body_spacing)
     _add_run(p_body, body_text, body_font, body_size)
 
-    # Contoh gambar pada bab pertama
     ft = figures_tables or {}
     if num and str(num) == "1":
         fig_fmt = ft.get("caption_format_figure")
         fig_caption = _format_caption_artikel(fig_fmt, "Gambar", 1, "Contoh Gambar Penelitian")
         _add_example_figure_artikel(document, fig_caption, ft, body_font, body_size)
 
-    # Contoh tabel pada bab kedua
     if num and str(num) == "2":
         tbl_fmt = ft.get("caption_format_table")
         tbl_caption = _format_caption_artikel(tbl_fmt, "Tabel", 1, "Contoh Data Penelitian")
@@ -583,7 +570,7 @@ def _render_artikel_body(
     for section in doc_structure.get("sections", []):
         sec_type = section.get("type")
         if sec_type == "judul_abstrak":
-            continue  # sudah dirender di halaman pertama
+            continue
         if sec_type == "bab":
             _render_artikel_bab_section(document, section, typography, spacing, numbering, instructional_placeholders, ft)
         elif sec_type == "daftar_pustaka":

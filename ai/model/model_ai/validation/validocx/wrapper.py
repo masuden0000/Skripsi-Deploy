@@ -46,7 +46,6 @@ class DocumentWrapper(object):
         defaults = {}
         try:
             styles_el = self._document.styles.element
-            # ── Line spacing (pPrDefault) ─────────────────────────────────────
             spacing = styles_el.find(
                 f'.//{qn("w:pPrDefault")}/{qn("w:pPr")}/{qn("w:spacing")}'
             )
@@ -54,9 +53,7 @@ class DocumentWrapper(object):
                 line      = spacing.get(qn('w:line'))
                 line_rule = spacing.get(qn('w:lineRule'))
                 if line and line_rule == 'auto':
-                    # "auto" = MULTIPLE — nilai dalam 240ths of a line
                     defaults['line_spacing'] = int(line) / 240
-            # ── Font defaults (rPrDefault) ────────────────────────────────────
             rPr = styles_el.find(f'.//{qn("w:rPrDefault")}/{qn("w:rPr")}')
             if rPr is not None:
                 rFonts = rPr.find(qn('w:rFonts'))
@@ -69,7 +66,7 @@ class DocumentWrapper(object):
                 if sz is not None:
                     val = sz.get(qn('w:val'))
                     if val:
-                        defaults['font_size_pt'] = int(val) / 2  # half-points → pt
+                        defaults['font_size_pt'] = int(val) / 2
         except Exception:
             pass
         return defaults
@@ -107,12 +104,10 @@ class DocumentWrapper(object):
 
         for child in body:
             if child.tag == qn("w:p"):
-                # paragraf biasa langsung di body
                 para = Paragraph(child, self._document)
                 if not styles or para.style.name in styles:
                     yield para
             elif child.tag == qn("w:sdt"):
-                # content control (TOC, caption field, dll) — telusuri semua w:p di dalamnya
                 for p_el in child.iter(qn("w:p")):
                     para = Paragraph(p_el, self._document)
                     if not styles or para.style.name in styles:
@@ -123,8 +118,6 @@ class DocumentWrapper(object):
         for section in self._document.sections:
             yield section
 
-    # Atribut font yang diabaikan saat perbandingan — tidak relevan untuk validasi format PKM.
-    # cs_bold/cs_italic: artefak Word untuk Complex Script, selalu mengikuti bold/italic biasa.
     _IGNORE_FONT_ATTRS = frozenset({'italic', 'cs_italic', 'cs_bold'})
 
     def _get_normal_style_font_attr(self, attr):
@@ -198,7 +191,7 @@ class DocumentWrapper(object):
                     self._find_paragraph_attribute(
                         paragraph.style, 'paragraph_format', attr) or
                     self._doc_defaults.get(attr) or
-                    self._get_normal_style_attr(attr)   # ← final fallback ke Normal
+                    self._get_normal_style_attr(attr)
                 )
                 fetched_attributes[attr] = self._convert_unit(value, unit)
         return fetched_attributes
@@ -210,7 +203,6 @@ class DocumentWrapper(object):
             value = normal.paragraph_format.__getattribute__(attr)
             if value is not None:
                 return value
-            # Normal juga bisa mewarisi — traverse base_style-nya
             return self._find_paragraph_attribute(normal, 'paragraph_format', attr)
         except (KeyError, AttributeError):
             return None

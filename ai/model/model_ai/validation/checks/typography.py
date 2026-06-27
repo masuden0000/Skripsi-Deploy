@@ -59,7 +59,6 @@ def _check_heading_case(
 
     h1_case = t.heading_1_case
 
-    # H2–H5 tidak ada fallback, hanya dari field eksplisit.
     case_per_level: dict[int, str | None] = {
         1: h1_case,
         2: t.heading_2_case,
@@ -107,8 +106,6 @@ def _check_heading_case(
             mismatches = mismatch_per_level[level]
             passes     = pass_per_level[level]
 
-            # Jika tidak ada paragraf sama sekali untuk level ini,
-            # heading tidak digunakan di dokumen → tidak perlu emit check.
             if not mismatches and not passes:
                 continue
 
@@ -181,8 +178,6 @@ def _check_body_content(
     expected_align   = WD_ALIGN_PARAGRAPH.JUSTIFY
     expected_font    = t.font_family if t else None
     expected_size    = int(t.font_size_body_pt) if t and t.font_size_body_pt else None
-    # Gunakan _resolve_line_spacing agar rule seperti ONE_POINT_FIVE/SINGLE/DOUBLE
-    # juga menghasilkan nilai float yang benar (bukan None).
     expected_spacing = _resolve_line_spacing(metadata)
 
     try:
@@ -206,9 +201,6 @@ def _check_body_content(
                 continue
             if _is_heading_para(para):
                 continue
-            # Entri TOC/TOF divalidasi oleh engine validocx — skip di sini agar
-            # teksnya (mis. "DAFTAR ISI i", "Gambar 1. Judul...3") tidak muncul
-            # sebagai elemen body. Konsisten dengan _check_lampiran_format.
             if para.style.name not in _TOC_TOF_STYLE_NAMES and (
                 _FIG_DETECT_RE.match(text)
                 or _TBL_DETECT_RE.match(text)
@@ -225,7 +217,6 @@ def _check_body_content(
                 "page"     : None,
             }
 
-            # ── Alignment ─────────────────────────────────────────────────────
             align = para.paragraph_format.alignment
             if align is None:
                 try:
@@ -237,7 +228,6 @@ def _check_body_content(
             else:
                 align_fail.append({**para_info, "actual": str(int(align))})
 
-            # ── Font family & font size (run pertama yang punya teks) ─────────
             _run_checked = False
             for run in para.runs:
                 if not run.text.strip():
@@ -250,7 +240,6 @@ def _check_body_content(
                     else:
                         font_pass.append(para_info)
                 else:
-                    # Font None = inherited — anggap lolos (backward-compatible)
                     font_pass.append(para_info)
                 fs = run.font.size
                 if fs is not None:
@@ -260,20 +249,15 @@ def _check_body_content(
                     else:
                         size_pass.append(para_info)
                 else:
-                    # Size None = inherited — anggap lolos
                     size_pass.append(para_info)
-                break  # cukup satu run
+                break
             if not _run_checked:
-                # Tidak ada run dengan teks — anggap font/size lolos (inherited)
                 font_pass.append(para_info)
                 size_pass.append(para_info)
 
-            # ── Line spacing ──────────────────────────────────────────────────
             if expected_spacing:
                 ls = para.paragraph_format.line_spacing
                 if ls is None:
-                    # Inherited dari style/dokumen default — anggap lolos,
-                    # konsisten dengan penanganan font/size yang juga None = lolos.
                     spacing_pass.append(para_info)
                 else:
                     try:
@@ -285,10 +269,6 @@ def _check_body_content(
                     except (TypeError, ValueError):
                         spacing_pass.append(para_info)
 
-        # ── Emit satu check per parameter ────────────────────────────────────
-        # Occurrences hanya disertakan pada satu check — body_alignment — agar
-        # para_idx lintas semua checks tetap monotone (sesuai urutan dokumen).
-        # Check lain (font, size, spacing) hanya melaporkan jumlah tanpa occurrences.
         def _emit(
             field: str,
             label: str,

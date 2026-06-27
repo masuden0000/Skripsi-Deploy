@@ -8,9 +8,8 @@ import json
 import re
 from collections import defaultdict
 
-# ── Kategori ───────────────────────────────────────────────────────────────
 CAT_CHECK           = "CHECK"
-CAT_ATTR_INHERITED  = "ATTR INHERITED (not explicit)"   # WARNING — bukan error nyata
+CAT_ATTR_INHERITED  = "ATTR INHERITED (not explicit)"
 CAT_VALUE_MISMATCH  = "VALUE MISMATCH"
 CAT_FONT_MISMATCH   = "FONT MISMATCH"
 CAT_UNDEF_STYLE     = "UNDEFINED STYLE"
@@ -153,12 +152,10 @@ def _dedup(items, key_fn):
         key = key_fn(item)
         counts[key]["count"] += 1
 
-        # Simpan nomor paragraf
         idx = _extract_para_idx(item)
         if idx is not None and idx not in counts[key]["paragraphs"]:
             counts[key]["paragraphs"].append(idx)
 
-        # Simpan contoh teks (max 3)
         text = _extract_paragraph_text(item)
         if text and text not in counts[key]["examples"] and len(counts[key]["examples"]) < 3:
             counts[key]["examples"].append(text)
@@ -180,14 +177,12 @@ def _build_parameter_summary(check_msgs):
       CHECK [para#N] alignment (Style) FAIL actual=V expected=W
       CHECK [para#N] line_spacing (Style) INHERITED
     """
-    # key = "parameter (Style)", value = {pass, fail, inherited, paragraphs_pass, paragraphs_fail}
     summary = defaultdict(lambda: {
         "pass": 0, "fail": 0, "inherited": 0,
         "paragraphs_pass": [], "paragraphs_fail": [],
     })
 
     for msg in check_msgs:
-        # Ambil para_idx, parameter, style, dan hasil
         m = re.search(r"CHECK \[para#(\d+)\] (\S+) \(([^)]+)\) (PASS|FAIL|INHERITED)", msg)
         if not m:
             continue
@@ -258,18 +253,12 @@ def build_report(entries, docx_path=None, para_map=None, *, doc=None):
     total_errors   = sum(1 for l, _, __ in entries if l == "ERROR")
     total_warnings = sum(1 for l, _, __ in entries if l == "WARNING")
 
-    # ── Section missing ────────────────────────────────────────────────────
     section_missing = [
         {"message": msg}
         for msg in buckets.get(CAT_SECTION_MISSING, [])
     ]
 
-    # ── Value mismatch ─────────────────────────────────────────────────────
     def vm_key(msg):
-        # format: "[para#N] ...paragraph 'ATTR' (STYLE) with value VAL does not match..."
-        # [^']+ agar nama atribut boleh mengandung karakter non-word (future-proof).
-        # (.+?) non-greedy agar style name boleh mengandung tanda kurung nested,
-        # mis. "Custom (Style 2)" — anchored oleh ") with value" di sebelah kanannya.
         m = re.search(
             r"paragraph '([^']+)' \((.+?)\) with value (.+?) does not match required value (.+?):",
             msg,
@@ -280,10 +269,7 @@ def build_report(entries, docx_path=None, para_map=None, *, doc=None):
 
     value_mismatch = _dedup(buckets.get(CAT_VALUE_MISMATCH, []), vm_key)
 
-    # ── Font mismatch ──────────────────────────────────────────────────────
     def fm_key(msg):
-        # format: "[para#N] Font attributes (A,B) mismatch required (X,Y)..."
-        # (.+?) non-greedy agar nilai font boleh mengandung tanda kurung.
         m = re.search(
             r"Font attributes \((.+?)\) mismatch required \((.+?)\).*style '([^']+)'",
             msg,
@@ -294,7 +280,6 @@ def build_report(entries, docx_path=None, para_map=None, *, doc=None):
 
     font_mismatch = _dedup(buckets.get(CAT_FONT_MISMATCH, []), fm_key)
 
-    # ── Undefined styles ───────────────────────────────────────────────────
     undef_data = defaultdict(lambda: {"count": 0, "paragraphs": []})
     for msg in buckets.get(CAT_UNDEF_STYLE, []):
         m = re.search(r"'([^']+)'", msg)
@@ -309,12 +294,8 @@ def build_report(entries, docx_path=None, para_map=None, *, doc=None):
         for s, v in sorted(undef_data.items(), key=lambda x: -x[1]["count"])
     ]
 
-    # ── Attr inherited ─────────────────────────────────────────────────────
     inh_data = defaultdict(lambda: {"count": 0, "paragraphs": []})
     for msg in buckets.get(CAT_ATTR_INHERITED, []):
-        # [^']+ agar nama atribut boleh mengandung non-word chars (future-proof).
-        # (.+?) non-greedy dengan anchor ") is not set" agar style name boleh
-        # mengandung tanda kurung nested, mis. "Heading (Custom)".
         m = re.search(r"paragraph '([^']+)' \((.+?)\) is not set", msg)
         if m:
             key = f"{m.group(2)}.{m.group(1)}"
@@ -327,10 +308,8 @@ def build_report(entries, docx_path=None, para_map=None, *, doc=None):
         for k, v in sorted(inh_data.items(), key=lambda x: -x[1]["count"])
     ]
 
-    # ── Parameter summary ──────────────────────────────────────────────────
     parameter_summary = _build_parameter_summary(buckets.get(CAT_CHECK, []))
 
-    # Inject detail paragraf jika docx tersedia
     if para_map:
         value_mismatch  = _inject_para_details(value_mismatch,  para_map)
         font_mismatch   = _inject_para_details(font_mismatch,   para_map)
@@ -376,7 +355,6 @@ def build_report(entries, docx_path=None, para_map=None, *, doc=None):
     return report
 
 
-# ── Standalone usage ───────────────────────────────────────────────────────
 if __name__ == "__main__":
     import argparse, io, sys
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")

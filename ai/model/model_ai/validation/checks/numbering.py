@@ -105,7 +105,6 @@ def _classify_sections_by_metadata(
 
     para_idx_by_id = {id(p._p): i for i, p in enumerate(para_list)}
 
-    # ── Kumpulkan section boundaries ─────────────────────────────────────────
     raw_sections: list[dict] = []
     prev_end = 0
 
@@ -128,7 +127,6 @@ def _classify_sections_by_metadata(
         })
         prev_end = para_idx + 1
 
-    # Section terakhir (body-level sectPr)
     body_sectPr = body.find(qn('w:sectPr'))
     if body_sectPr is not None:
         raw_sections.append({
@@ -140,7 +138,6 @@ def _classify_sections_by_metadata(
     if not raw_sections:
         return {"preliminary": None, "content": None}
 
-    # ── Baca info tiap section ────────────────────────────────────────────────
     def _sec_info(sec: dict) -> dict:
         sp = sec["sectPr"]
         fmt, start_num = _read_section_page_numbering(sp)
@@ -179,7 +176,6 @@ def _classify_sections_by_metadata(
 
     section_infos = [_sec_info(s) for s in raw_sections]
 
-    # ── Normalisasi format metadata (case-insensitive + alias umum) ───────────
     def _norm_fmt(fmt: str | None) -> str | None:
         if not fmt:
             return fmt
@@ -188,9 +184,6 @@ def _classify_sections_by_metadata(
     prelim_fmt_exp  = _norm_fmt(prelim_fmt_exp)
     content_fmt_exp = _norm_fmt(content_fmt_exp)
 
-    # ── Cari BAB 1 sebagai tiebreaker — hanya dari heading level 1 ───────────
-    # Penting: hanya paragraf ber-style Heading 1 yang diterima, bukan entri
-    # daftar isi yang juga berawalan "BAB" (teks "BAB 1 PENDAHULUAN......1").
     _HEADING_STYLE_KW = ("heading", "judul", "bab")
     bab1_para_idx: int | None = None
     for i, para in enumerate(para_list):
@@ -198,13 +191,10 @@ def _classify_sections_by_metadata(
         text_upper = (para.text or "").strip().upper()
         if not text_upper.startswith("BAB"):
             continue
-        # Hanya diterima jika style mengandung kata "heading"/"judul"/"bab"
-        # (bukan paragraf biasa seperti entri daftar isi)
         if any(k in style_val for k in _HEADING_STYLE_KW):
             bab1_para_idx = i
             break
 
-    # ── Cocokkan ke zone ──────────────────────────────────────────────────────
     prelim_info:  dict | None = None
     content_info: dict | None = None
 
@@ -218,16 +208,13 @@ def _classify_sections_by_metadata(
         elif content_fmt_exp and fmt == content_fmt_exp:
             content_candidates.append(info)
         else:
-            # Format tidak cocok dengan keduanya — tebak dari tipe umum
             if not prelim_fmt_exp and fmt in ("lowerRoman", "upperRoman"):
                 prelim_candidates.append(info)
             elif not content_fmt_exp and fmt == "decimal":
                 content_candidates.append(info)
 
-    # Pilih preliminary: section pertama yang cocok
     prelim_info = prelim_candidates[0] if prelim_candidates else None
 
-    # Pilih content: terapkan tiebreaker via BAB 1 sebelum memilih
     if content_candidates:
         if bab1_para_idx is not None:
             bab_match = next(
@@ -239,30 +226,23 @@ def _classify_sections_by_metadata(
         else:
             content_info = content_candidates[0]
 
-    # Fallback 1: gunakan posisi heading BAB 1 jika format match gagal
     if content_info is None and bab1_para_idx is not None:
         for info in section_infos:
             if info["start_para_idx"] <= bab1_para_idx <= info["end_para_idx"]:
                 content_info = info
                 break
 
-    # Fallback 2: doc.sections[-1] sebagai last resort untuk content zone.
-    # Dalam dokumen PKM, section terakhir selalu merupakan section isi (arabic).
-    # Ini menangani kasus di mana format pada sectPr tidak cocok dengan metadata.
     if content_info is None and len(doc.sections) >= 1:
         last_sp = doc.sections[-1]._sectPr
-        # Cek apakah body sectPr ini sudah ada di section_infos (cegah duplikasi).
         existing = next(
             (info for info in section_infos if info["sectPr"] is last_sp),
             None,
         )
         if existing is not None:
-            # Body sectPr sudah dalam section_infos — gunakan langsung
             content_info = {k: v for k, v in existing.items() if k != "sectPr"}
             content_info["fmt"] = _norm_fmt(existing["fmt"]) or existing["fmt"]
         else:
             fmt_last, start_last = _read_section_page_numbering(last_sp)
-            # start_para_idx: tepat setelah section sebelumnya berakhir
             prev_end_idx = (section_infos[-1]["end_para_idx"] + 1
                             if section_infos else 0)
             content_info = {
@@ -275,7 +255,6 @@ def _classify_sections_by_metadata(
                 "start_para_idx":  prev_end_idx,
                 "end_para_idx":    len(para_list) - 1,
             }
-            # Coba cek header/footer pada section terakhir
             try:
                 last_sec = doc.sections[-1]
                 has_own_hdr = bool(last_sp.findall(qn('w:headerReference')))
@@ -311,7 +290,6 @@ def _check_start_section(
 ) -> None:
     """Verifikasi bahwa titik mulai penomoran (start_at_section) ada di dokumen."""
     import re
-    # "bab_1" → BAB 1, "daftar_isi" → heading DAFTAR ISI, dst.
     bab_m = re.match(r'^bab_(\d+)$', start_at, re.IGNORECASE)
     if bab_m:
         target_num = int(bab_m.group(1))
@@ -324,7 +302,6 @@ def _check_start_section(
         )
         label = f"BAB {target_num}"
     else:
-        # Cari heading yang cocok dengan tipe section
         expected_title = _HEADING_TITLE_MAP_INV.get(start_at, start_at.upper().replace("_", " "))
         found = any(
             _heading_level_from_style(para.style) is not None
@@ -401,9 +378,6 @@ def _check_numbering(
     try:
         doc = doc or DocxDocument(str(docx_path))
 
-        # Klasifikasi section berdasarkan format yang diexpect dari metadata.
-        # Lebih andal daripada pendekatan sebelumnya karena tidak bergantung
-        # semata-mata pada posisi heading BAB 1 sebagai penanda zone.
         zones        = _classify_sections_by_metadata(doc, metadata)
         prelim_zone  = zones["preliminary"]
         content_zone = zones["content"]
@@ -414,11 +388,10 @@ def _check_numbering(
         if content_zone:
             all_formats.add(content_zone["fmt"])
 
-        # ── Preliminary (romawi) ──────────────────────────────────────────────
         if prelim:
             exp_fmt = _FORMAT_ALIAS.get((prelim.format or "").lower(), prelim.format)
-            exp_loc = (prelim.location or "").upper()  # "HEADER" atau "FOOTER"
-            exp_start = prelim.start_at_section  # e.g. "daftar_isi"
+            exp_loc = (prelim.location or "").upper()
+            exp_start = prelim.start_at_section
 
             zone = prelim_zone
             fmt_match = zone is not None and zone["fmt"] == exp_fmt
@@ -434,7 +407,6 @@ def _check_numbering(
                     expected=exp_fmt,
                     occurrences=_build_occurrences([{"text": exp_fmt, "full_text": _NUM_FORMAT_DISPLAY.get(exp_fmt, exp_fmt), "style": "", "page": None, "bab": None, "para_idx": None}]),
                 ))
-                # Cek lokasi
                 if exp_loc in ("HEADER", "FOOTER") and zone["has_any_page"]:
                     loc_ok = (
                         (exp_loc == "HEADER" and zone["has_header_page"])
@@ -504,11 +476,10 @@ def _check_numbering(
             if exp_start:
                 _check_start_section(exp_start, doc, issues, checks, zone="awal")
 
-        # ── Content (angka arab) ──────────────────────────────────────────────
         if content:
             exp_fmt = _FORMAT_ALIAS.get((content.format or "").lower(), content.format)
             exp_loc = (content.location or "").upper()
-            exp_start = content.start_at_section  # e.g. "bab_1"
+            exp_start = content.start_at_section
 
             zone = content_zone
             fmt_match = zone is not None and zone["fmt"] == exp_fmt
@@ -525,7 +496,6 @@ def _check_numbering(
                     expected=exp_fmt,
                     occurrences=_build_occurrences([{"text": exp_fmt, "full_text": _NUM_FORMAT_DISPLAY.get(exp_fmt, exp_fmt), "style": "", "page": None, "bab": None, "para_idx": None}]),
                 ))
-                # Cek lokasi
                 if exp_loc in ("HEADER", "FOOTER") and zone["has_any_page"]:
                     loc_ok = (
                         (exp_loc == "HEADER" and zone["has_header_page"])

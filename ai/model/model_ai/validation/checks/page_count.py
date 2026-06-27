@@ -59,7 +59,6 @@ def _count_pages_structural(doc) -> dict[int, int]:
 
             result[idx] = current_page
 
-            # Inline sectPr → paragraf BERIKUTNYA mulai halaman baru
             pPr = p.find(qn("w:pPr"))
             if pPr is not None and pPr.find(qn("w:sectPr")) is not None:
                 current_page += 1
@@ -96,11 +95,8 @@ def _build_displayed_page_map(doc) -> dict[int, int]:
     if not para_list:
         return {}
 
-    # Map element-id → body para index agar result bisa diisi saat iterasi semua para
     body_para_ids: dict[int, int] = {id(p._p): i for i, p in enumerate(para_list)}
 
-    # Kumpulkan batas section: (end_para_idx, sectPr)
-    # Inline sectPr di pPr → paragraf tsb adalah paragraf terakhir section-nya
     section_ends: list[tuple[int, object]] = []
     for idx, para in enumerate(para_list):
         pPr = para._p.find(qn("w:pPr"))
@@ -109,7 +105,6 @@ def _build_displayed_page_map(doc) -> dict[int, int]:
             if sectPr is not None:
                 section_ends.append((idx, sectPr))
 
-    # Section terakhir → body-level sectPr
     try:
         body_sectPr = doc.element.body.find(qn("w:sectPr"))
     except Exception:
@@ -121,9 +116,8 @@ def _build_displayed_page_map(doc) -> dict[int, int]:
 
     for end_idx, sectPr in section_ends:
         if end_idx < sec_start:
-            continue  # Lewati jika section kosong
+            continue
 
-        # Baca nomor halaman awal section dari w:pgNumType w:start
         if sectPr is not None:
             _, section_start_page = _read_section_page_numbering(sectPr)
         else:
@@ -131,14 +125,12 @@ def _build_displayed_page_map(doc) -> dict[int, int]:
 
         current_page = section_start_page
 
-        # Elemen batas section dalam XML (body paragraphs)
         start_elem = para_list[sec_start]._p
         end_elem   = para_list[end_idx]._p
 
         found_start     = False
         first_in_section = True
 
-        # Iterasi SEMUA paragraf (body + tabel) dalam urutan dokumen
         for p_elem in doc.element.body.iter(qn("w:p")):
             if not found_start:
                 if p_elem is start_elem:
@@ -146,13 +138,6 @@ def _build_displayed_page_map(doc) -> dict[int, int]:
                 else:
                     continue
 
-            # Paragraf menandai transisi halaman jika punya rendered page break
-            # (w:lastRenderedPageBreak) ATAU explicit page break (w:br type="page").
-            # Explicit break di paragraf X dan rendered break di paragraf X+1 yang
-            # berdekatan tetap dihitung sebagai 2 transisi terpisah karena Word
-            # memang merendernya sebagai 2 halaman berbeda (terverifikasi pada
-            # dokumen test: explicit-only di body[112] + rendered-only di body[113]
-            # DAFTAR PUSTAKA → halaman 9 lalu 10).
             if not first_in_section:
                 has_break = bool(
                     p_elem.findall(".//" + qn("w:lastRenderedPageBreak"))
@@ -165,7 +150,6 @@ def _build_displayed_page_map(doc) -> dict[int, int]:
             else:
                 first_in_section = False
 
-            # Catat page number hanya untuk paragraf body-level
             body_idx = body_para_ids.get(id(p_elem))
             if body_idx is not None:
                 result[body_idx] = current_page
@@ -240,7 +224,6 @@ def _check_page_count(
         ))
         return issues, checks
 
-    # PKM-AI (Type B) menggunakan artikel_halaman_inti_maks; lainnya menggunakan proposal_halaman_inti_maks
     is_artikel = pc.artikel_halaman_inti_maks is not None
     maks       = pc.artikel_halaman_inti_maks if is_artikel else pc.proposal_halaman_inti_maks
     min_pages  = pc.artikel_halaman_inti_min if is_artikel else None
@@ -254,14 +237,13 @@ def _check_page_count(
         ))
         return issues, checks
 
-    mulai_type   = pc.halaman_inti_mulai    # default "bab"
-    selesai_type = pc.halaman_inti_selesai  # default "daftar_pustaka"
+    mulai_type   = pc.halaman_inti_mulai
+    selesai_type = pc.halaman_inti_selesai
 
     try:
         doc = doc or DocxDocument(str(docx_path))
         para_list = list(doc.paragraphs)
 
-        # ── Cari heading START ────────────────────────────────────────────────
         start_idx, start_text = _find_section_para_idx(para_list, mulai_type)
 
         if start_idx is None:
@@ -280,7 +262,6 @@ def _check_page_count(
             ))
             return issues, checks
 
-        # ── Cari heading END (mulai dari paragraf setelah START) ─────────────
         end_idx, end_text = _find_section_para_idx(
             para_list, selesai_type, search_from=start_idx + 1
         )
@@ -301,12 +282,9 @@ def _check_page_count(
             ))
             return issues, checks
 
-        # ── Hitung halaman (berdasarkan nomor header, bukan fisik) ───────────
         page_map   = _build_displayed_page_map(doc)
         start_page = page_map.get(start_idx, 1)
         end_page   = page_map.get(end_idx, 1)
-        # end_page adalah halaman DAFTAR PUSTAKA (batas eksklusif):
-        # Halaman inti inklusif: BAB 1 (start_page) s.d. DAFTAR PUSTAKA (end_page)
         count      = end_page - start_page + 1
 
         if count <= 0:
@@ -336,9 +314,6 @@ def _check_page_count(
             ))
             return issues, checks
 
-        # ── Kumpulkan semua heading antara START dan END (inklusif) ─────────────
-        # Setiap heading utama (BAB, DAFTAR PUSTAKA, sub-bab, dll.) yang ada di
-        # rentang start_idx..end_idx ditampilkan beserta nomor halamannya.
         occurrences: list[dict] = []
         current_bab: str | None = start_text
         for i in range(start_idx, end_idx + 1):
@@ -349,7 +324,6 @@ def _check_page_count(
             if _heading_level_from_style(para.style) is None:
                 continue
             pg = page_map.get(i, 1)
-            # Lacak BAB aktif untuk konteks
             if _BAB_RE.match(text.upper()):
                 current_bab = text
             occurrences.append({

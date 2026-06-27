@@ -50,7 +50,6 @@ def build_instructional_placeholder_map(
 ) -> dict[str, str]:
     placeholders: dict[str, str] = {}
 
-    # Routing: PKM-AI menggunakan document_structure_artikel; semua lainnya menggunakan document_structure_proposal
     if metadata.document_structure_artikel is not None:
         structure = metadata.document_structure_artikel
         is_artikel = True

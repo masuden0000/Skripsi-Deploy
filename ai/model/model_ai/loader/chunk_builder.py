@@ -32,14 +32,9 @@ def is_noise_heading(raw_heading: str) -> bool:
         return True
     if "\\" in text or "!" in text:
         return True
-    # Halaman daftar isi (TOC) sering dirender PyMuPDF sebagai satu baris bold panjang
-    # berisi semua entri TOC. Ada dua format umum:
-    # (1) Pakai titik-titik leader: "BAB I PENDAHULUAN .......... 1"
-    # (2) Pakai spasi biasa:        "BAB I PENDAHULUAN          1"
-    # Keduanya ditangkap dengan dua cek berikut:
-    if re.search(r'\.{3,}', text):  # format (1): ada 3+ titik berturut-turut
+    if re.search(r'\.{3,}', text):
         return True
-    if len(text) > 120:  # format (2): heading valid tidak pernah sepanjang ini
+    if len(text) > 120:
         return True
     plain = re.sub(r"[*_`]", "", text).strip()
     words = re.findall(r"[a-zA-Z]+", plain)
@@ -136,14 +131,10 @@ def build_sections(page_chunks: list[dict]) -> list[dict]:
             current_lines = [line]
             continue
 
-        # Deteksi bold-only heading (**teks**) — PDF panduan sering menggunakan bold
-        # untuk judul section tanpa markdown heading marker.
         if not heading_match:
             bold_match = BOLD_HEADING_PATTERN.match(stripped_line)
             if bold_match:
                 raw_heading = bold_match.group(1)
-                # Baris tabel yang di-strip outer '|' oleh iter_page_lines meninggalkan
-                # '|' di dalam raw_heading. Ini konten, bukan section heading.
                 if "|" in raw_heading:
                     pass
                 elif is_noise_heading(raw_heading):
@@ -250,16 +241,10 @@ def build_sections_from_ranges(
     bab_ranges: list[dict],
     toc_page_idx: int = 0,
 ) -> list[dict]:
-    # Halaman dari TOC page sampai penanda angka pertama — pakai heading detection
-    # (halaman cover sebelum TOC dilewati)
     first_arabic_idx = _find_first_content_page_idx(page_chunks, bab_ranges, toc_page_idx)
     pre_start = min(toc_page_idx, first_arabic_idx)
     pre_sections = build_sections(page_chunks[pre_start:first_arabic_idx]) if first_arabic_idx > pre_start else []
 
-    # Deteksi offset antara physical page dan document page dari TOC.
-    # Terjadi saat PDF tidak menyematkan page numbers sebagai baris standalone,
-    # sehingga iter_page_lines() fallback ke physical_page (cover dihitung sebagai halaman 1)
-    # sedangkan TOC mencatat document page (mulai dari 1 setelah halaman romawi).
     scan_start_idx = max(first_arabic_idx, toc_page_idx + 1)
     page_offset = _detect_page_offset(page_chunks, bab_ranges, scan_start_idx)
     if page_offset != 0:
@@ -273,26 +258,15 @@ def build_sections_from_ranges(
             for r in bab_ranges
         ]
 
-    # Lapis 1: page-based range dari TOC → titik awal heading per page
     page_to_heading: dict[int, str] = {}
     for r in bab_ranges:
         for page in range(r["page_start"], r["page_end"] + 1):
             page_to_heading[page] = r["heading"]
 
-    # Lapis 2: lookup normalized heading → original heading string dari bab_ranges,
-    # untuk mendeteksi transisi heading di dalam page yang sama.
-    # Kasus: konten BAB A dan awal BAB B berada di page yang sama — page_to_heading
-    # mengirim seluruh page ke satu heading, padahal perlu dipotong lebih halus.
     bab_heading_lookup: dict[str, str] = {
         normalize_heading(r["heading"]).upper(): r["heading"]
         for r in bab_ranges
     }
-    # Lapis 2 hanya memicu switch jika salah satu dari dua kondisi terpenuhi:
-    # (1) halaman saat ini tepat sama dengan halaman ekspektasi dari daftar isi, ATAU
-    # (2) peta halaman lapisan 1 memang menetapkan halaman ini ke bagian yang sama.
-    # Kondisi (1) menggunakan kecocokan tepat (==) agar heading yang muncul lebih awal
-    # di halaman lain (misalnya sebagai deskripsi sistematika) tidak salah diaktifkan.
-    # Kondisi (2) menjadi jaring pengaman untuk kasus di mana halaman sinkron dengan TOC.
     bab_expected_page: dict[str, int] = {
         normalize_heading(r["heading"]).upper(): r["page_start"]
         for r in bab_ranges
@@ -304,9 +278,6 @@ def build_sections_from_ranges(
 
     heading_lines: dict[str, list[dict]] = {r["heading"]: [] for r in bab_ranges}
 
-    # Pre-scan: temukan halaman yang memiliki TOC heading detectable (via Layer 2 / 2b).
-    # Digunakan oleh page-transition fallback untuk memutuskan apakah perlu buffer +1.
-    # Halaman yang punya heading detectable dibiarkan ditangani Layer 2 (bukan fallback).
     heading_transition_pages: set[int] = set()
     for _line in iter_page_lines(page_chunks[first_arabic_idx:]):
         if _line["page"] is None:
@@ -324,9 +295,6 @@ def build_sections_from_ranges(
                 if _norm in bab_heading_lookup:
                     heading_transition_pages.add(_line["page"])
 
-    # current_heading: heading yang sedang aktif, diperbarui saat heading bab_ranges
-    # ditemukan di dalam konten (bukan reset per page).
-    # page_to_heading hanya dipakai sebagai bootstrap saat current_heading belum diset.
     current_heading: str | None = None
 
     for line in iter_page_lines(page_chunks[first_arabic_idx:]):
@@ -348,10 +316,6 @@ def build_sections_from_ranges(
                     heading_lines[current_heading].append(line)
                     continue
 
-        # Lapis 2b: bold-only heading (**teks**) yang cocok dengan entri TOC.
-        # Menangani kasus PDF merender heading sebagai bold text, bukan markdown #,
-        # sehingga HEADING_PATTERN tidak mendeteksinya. Syarat keamanan sama dengan
-        # Lapis 2: hanya aktif jika halaman sesuai ekspektasi TOC atau lapisan 1 setuju.
         if not heading_match:
             bold_match = BOLD_HEADING_PATTERN.match(stripped)
             if bold_match:
@@ -367,10 +331,6 @@ def build_sections_from_ranges(
                         heading_lines[current_heading].append(line)
                         continue
 
-        # Lapis 2c: **TOC_HEADING prefix** di awal baris (baris tidak harus seluruhnya bold).
-        # Menangani kasus konten lampiran yang diawali **LAMPIRAN Lampiran N. ...** tanpa
-        # heading markdown #. Menggunakan toleransi ±1 halaman dari ekspektasi TOC karena
-        # TOC sering mencatat page start 1 halaman setelah konten sesungguhnya dimulai.
         if not heading_match:
             prefix_match = BOLD_HEADING_PREFIX_PATTERN.match(stripped)
             if prefix_match:
@@ -389,19 +349,9 @@ def build_sections_from_ranges(
                 if _lapis2c_found:
                     continue
 
-        # Bootstrap: gunakan page_to_heading hanya jika current_heading belum diset
         if current_heading is None:
             current_heading = page_to_heading.get(line["page"])
         elif current_heading:
-            # Page-transition fallback: jika halaman saat ini sudah melewati akhir
-            # rentang section aktif, pindah ke section berikutnya dari page_to_heading.
-            #
-            # Threshold: jika halaman boundary (current_end + 1) memiliki TOC heading
-            # detectable (ada di heading_transition_pages), fallback diberi buffer +1
-            # sehingga Layer 2 yang menangani transisi dan pre-heading content tetap masuk
-            # ke section sebelumnya. Jika boundary page tidak punya heading detectable
-            # (misal LAMPIRAN yang konten lampirannya tidak pakai ## heading), fallback
-            # langsung aktif di halaman boundary agar section tidak terlambat 1 halaman.
             normalized_current = normalize_heading(current_heading).upper()
             current_end = bab_heading_end_page.get(normalized_current, 9999)
             boundary_page = current_end + 1
@@ -431,9 +381,6 @@ def build_sections_from_ranges(
 
     result = pre_sections + main_sections
     if not result:
-        # Nomor halaman TOC (document page) tidak cocok dengan nomor halaman yang terdeteksi
-        # oleh iter_page_lines (physical page). Seluruh konten tidak ter-assign ke section manapun.
-        # Fallback ke HEADING_PATTERN agar pipeline tetap menghasilkan chunk yang dapat digunakan.
         print(
             "[chunk_builder] WARNING: 0 section dihasilkan dari bab_ranges. "
             "Kemungkinan page numbering TOC tidak cocok dengan embedded page markers. "

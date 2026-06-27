@@ -3,6 +3,8 @@ import re
 
 from langchain_text_splitters import MarkdownTextSplitter
 
+from model_ai.shared import EXCLUDED_PARENTS
+
 PREFACE_LABEL = "PREFACE"
 HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 BOLD_HEADING_PATTERN = re.compile(r"^\*\*(.+?)\*\*$")
@@ -394,6 +396,8 @@ def build_payload(sections: list[dict], splitter: MarkdownTextSplitter) -> list[
     payload: list[dict] = []
 
     for section in sections:
+        if section["heading"].upper() in EXCLUDED_PARENTS:
+            continue
         section_text = section["text"]
         chunk_texts = splitter.split_text(section_text)
         section_chunk_indexes: list[int] = []

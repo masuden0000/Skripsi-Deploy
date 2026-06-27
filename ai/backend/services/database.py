@@ -1,3 +1,4 @@
+"""Fungsi utilitas untuk mengambil instansi Supabase client yang terhubung ke database. Keyword: backend API."""
 from supabase import Client
 
 from ._supabase import supabase_client

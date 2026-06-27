@@ -1,3 +1,4 @@
+"""Entry point utama untuk FastAPI AI Proposal Backend. Mengatur routing dan middleware CORS. Keyword: backend API."""
 import sys
 from pathlib import Path
 

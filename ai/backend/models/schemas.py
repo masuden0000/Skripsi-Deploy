@@ -1,3 +1,4 @@
+"""Skema model Pydantic untuk data project dan payload respon API backend. Keyword: backend API."""
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime

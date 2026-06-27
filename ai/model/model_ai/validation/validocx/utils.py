@@ -1,3 +1,4 @@
+"""Fungsi utilitas pembantu validocx. Keyword: automated document validation"""
 #
 #    Copyright 2017 Vitalii Kulanov
 #

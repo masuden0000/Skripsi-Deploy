@@ -1,3 +1,4 @@
+"""Engine validator validocx. Keyword: automated document validation"""
 #
 #    Copyright 2017 Vitalii Kulanov
 #

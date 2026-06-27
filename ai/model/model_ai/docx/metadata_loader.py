@@ -1,4 +1,4 @@
-"""Memuat metadata hasil ekstraksi proposal dari Supabase berdasarkan project_id. Posisi pipeline: metadata_repository → metadata_loader → generator."""
+"""Memuat metadata hasil ekstraksi proposal dari Supabase berdasarkan project_id. Posisi pipeline: metadata_repository → metadata_loader → generator. Keyword: automated document generation"""
 from typing import Any
 
 from model_ai.extractor.models import DocumentMetadata

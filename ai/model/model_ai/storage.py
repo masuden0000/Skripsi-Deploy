@@ -1,4 +1,4 @@
-"""Upload file DOCX ke Supabase Storage. Posisi pipeline: generator → storage (upload output akhir)."""
+"""Upload file DOCX ke Supabase Storage. Posisi pipeline: generator → storage (upload output akhir). Keyword: automated document generation"""
 from model_ai.shared import get_supabase_client
 
 BUCKET_OUTPUT = "ai-output-files"

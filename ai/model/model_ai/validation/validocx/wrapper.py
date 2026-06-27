@@ -1,3 +1,4 @@
+"""Wrapper w:document python-docx. Keyword: automated document validation"""
 #
 #    Copyright 2017 Vitalii Kulanov
 #

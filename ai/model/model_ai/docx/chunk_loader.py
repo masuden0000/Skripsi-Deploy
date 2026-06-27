@@ -1,4 +1,4 @@
-"""Memuat dan menormalkan data chunk dari Supabase sebagai sumber isi DOCX. Posisi pipeline: metadata_repository → chunk_loader → generator → docx_renderer."""
+"""Memuat dan menormalkan data chunk dari Supabase sebagai sumber isi DOCX. Posisi pipeline: metadata_repository → chunk_loader → generator → docx_renderer. Keyword: automated document generation"""
 import re
 from dataclasses import dataclass
 

@@ -14,6 +14,7 @@ from model_ai.validation.validocx_adapter import (
 )
 
 from ._shared import (
+    _CAPTION_ALIGN_MAP,
     _FIG_DETECT_RE,
     _TBL_DETECT_RE,
     _LAMPIRAN_BROAD_RE,

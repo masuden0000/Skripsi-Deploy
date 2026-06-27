@@ -18,7 +18,6 @@ from model_ai.shared import (
     EMBED_MAX_RETRY_CYCLES,
     EMBED_RATE_LIMIT_WAIT,
     EMBEDDING_DIMENSION,
-    EXCLUDED_PARENTS,
     GEMINI_MIN_CALL_INTERVAL,
     GROQ_MIN_CALL_INTERVAL,
     format_vector,
@@ -270,7 +269,7 @@ def _retrieve_chunks_multi(queries: list[str], top_k: int, project_id: str | Non
     rpc_params: dict = {
         "query_embedding": None,
         "match_count": top_k,
-        "excluded_parents": list(EXCLUDED_PARENTS),
+        "excluded_parents": [],
     }
     if project_id:
         rpc_params["filter_project_id"] = project_id

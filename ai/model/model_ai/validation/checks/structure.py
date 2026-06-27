@@ -1,4 +1,4 @@
-"""Structure checks: document structure order and lampiran format. Keyword: automated document validation"""
+﻿"""Structure checks: document structure order and lampiran format. Keyword: automated document validation"""
 from __future__ import annotations
 
 import re
@@ -13,8 +13,8 @@ from model_ai.validation.validocx_adapter import (
     _resolve_line_spacing,
     _heading_level_from_style,
 )
-
 from ._shared import (
+    _CAPTION_ALIGN_MAP,
     _BAB_RE,
     _SUB_BAB_RE,
     _LAMPIRAN_ITEM_RE,
@@ -66,7 +66,14 @@ def _check_document_structure(
     issues: list[ValidationIssue] = []
     checks: list[ValidationCheckResult] = []
 
-    ds = metadata.document_structure_artikel or metadata.document_structure_proposal
+    _ds_p = metadata.document_structure_proposal
+    _ds_a = metadata.document_structure_artikel
+    if _ds_p and _ds_p.sections:
+        ds = _ds_p
+    elif _ds_a and _ds_a.sections:
+        ds = _ds_a
+    else:
+        ds = _ds_p or _ds_a
     if ds is None or not ds.sections:
         checks.append(ValidationCheckResult(
             category="document_structure", field="section_order",
@@ -79,13 +86,9 @@ def _check_document_structure(
     try:
         doc = doc or DocxDocument(str(docx_path))
 
-        # Build lampiran regex dari metadata agar sesuai separator per skema.
         _ds_sep = ds.lampiran_heading_separator if ds else None
         _lampiran_re = _build_lampiran_re(_ds_sep if _ds_sep is not None else ".")
 
-        # Ekstrak heading dari docx dan klasifikasikan.
-        # Gunakan _heading_level_from_style agar style kustom (Judul 1, Judul 2, dll.)
-        # yang mewarisi Heading atau punya outline level ikut terdeteksi.
         actual_classified: list[dict] = []
         for para in doc.paragraphs:
             text = para.text.strip()
@@ -98,15 +101,13 @@ def _check_document_structure(
             if section_type:
                 actual_classified.append({"type": section_type, "text": text, **extra})
 
-        # Ambil hanya major sections dari metadata sebagai expected order
         expected_major = [s for s in ds.sections if s.is_major_section]
-        # required_types: hanya untuk non-BAB (BAB dicek per nomor agar BAB 1 ≠ BAB 2)
         required_non_bab_types = {
-            s.type for s in expected_major if s.required is True and s.type != "bab"
+            s.type for s in expected_major if s.required is not False and s.type != "bab"
         }
         required_bab_nums = {
             s.number for s in expected_major
-            if s.type == "bab" and s.required is True and s.number is not None
+            if s.type == "bab" and s.required is not False and s.number is not None
         }
         actual_types_set = {s["type"] for s in actual_classified}
         actual_bab_nums  = {
@@ -114,7 +115,6 @@ def _check_document_structure(
             if s["type"] == "bab" and "number" in s
         }
 
-        # 1. Cek section wajib hadir
         def _req_label(section_type: str, title: str | None) -> str:
             """Label terbaca manusia untuk sebuah tipe section."""
             if section_type == "bab":
@@ -125,7 +125,6 @@ def _check_document_structure(
                 return title
             return _HEADING_TITLE_MAP_INV.get(section_type, section_type.replace("_", " ").upper())
 
-        # Kelompokkan section metadata: wajib vs opsional (deduplikasi by type)
         seen_meta: set[str] = set()
         required_labels: list[str] = []
         optional_labels: list[str] = []
@@ -134,12 +133,11 @@ def _check_document_structure(
                 continue
             seen_meta.add(s.type)
             lbl = _req_label(s.type, s.title)
-            if s.required is True:
+            if s.required is not False:
                 required_labels.append(lbl)
             else:
                 optional_labels.append(lbl)
 
-        # Section aktual yang ditemukan (hanya major, BAB di-expand individual)
         major_types_set = {s.type for s in expected_major}
         seen_actual: set[str] = set()
         actual_section_texts: list[str] = []
@@ -147,18 +145,16 @@ def _check_document_structure(
             if s["type"] not in major_types_set:
                 continue
             if s["type"] == "bab":
-                actual_section_texts.append(s["text"])  # tiap BAB ditampilkan
+                actual_section_texts.append(s["text"])
             elif s["type"] not in seen_actual:
                 actual_section_texts.append(s["text"])
                 seen_actual.add(s["type"])
 
-        # Format display
         req_part = ', '.join(required_labels) if required_labels else "–"
         opt_part = ', '.join(optional_labels) if optional_labels else "–"
         expected_display_req = f"Wajib: {req_part} | Opsional: {opt_part}"
         actual_display_req   = ', '.join(actual_section_texts) if actual_section_texts else "Tidak ada"
 
-        # Occurrences: semua major section yang ditemukan (tampil di passed & failed)
         actual_major_found = [s for s in actual_classified if s["type"] in major_types_set]
         occ_req = _build_occurrences(
             [{"text": s["text"][:100], "full_text": s["text"],
@@ -167,20 +163,17 @@ def _check_document_structure(
             actual_str=None, expected_str=None,
         ) or None
 
-        # Hitung yang hilang — non-BAB by type, BAB by nomor individual
         missing_non_bab = required_non_bab_types - actual_types_set
         missing_bab_nums = required_bab_nums - actual_bab_nums
         total_required   = len(required_non_bab_types) + len(required_bab_nums)
 
         if missing_non_bab or missing_bab_nums:
             missing_labels: list[str] = []
-            # Non-BAB hilang
             seen_ml: set[str] = set()
             for s in expected_major:
                 if s.type != "bab" and s.type in missing_non_bab and s.type not in seen_ml:
                     seen_ml.add(s.type)
                     missing_labels.append(_req_label(s.type, s.title))
-            # BAB hilang — tampilkan nama individual
             for s in sorted(
                 [x for x in expected_major if x.type == "bab" and x.number in missing_bab_nums],
                 key=lambda x: x.number or 0,
@@ -211,12 +204,11 @@ def _check_document_structure(
                 occurrences=occ_req,
             ))
 
-        # 2. Cek BAB berurutan — gunakan nama BAB dari metadata, bukan angka
         bab_actuals = [s for s in actual_classified if s["type"] == "bab"]
         bab_numbers = [s["number"] for s in bab_actuals if "number" in s]
         expected_bab_sections = sorted(
             [s for s in expected_major if s.type == "bab" and s.number is not None],
-            key=lambda s: s.number,  # type: ignore[arg-type]
+            key=lambda s: s.number,
         )
         expected_bab_numbers = [s.number for s in expected_bab_sections]
 
@@ -226,8 +218,7 @@ def _check_document_structure(
                 return f"BAB {number} {title.upper()}"
             return f"BAB {number}"
 
-        # Label expected (dari metadata) dan actual (dari teks heading dokumen)
-        expected_bab_labels = [_bab_label(s.number, s.title) for s in expected_bab_sections]  # type: ignore[arg-type]
+        expected_bab_labels = [_bab_label(s.number, s.title) for s in expected_bab_sections]
         actual_bab_labels   = [s["text"] for s in bab_actuals]
         bab_num_to_text: dict[int, str] = {
             s["number"]: s["text"] for s in bab_actuals if "number" in s
@@ -235,9 +226,8 @@ def _check_document_structure(
 
         if expected_bab_numbers and bab_numbers:
             if bab_numbers != sorted(bab_numbers):
-                # Urutan salah — tampilkan nama, bukan angka
                 actual_ordered_labels   = [bab_num_to_text.get(n, f"BAB {n}") for n in bab_numbers]
-                expected_sorted_labels  = [_bab_label(s.number, s.title) for s in expected_bab_sections]  # type: ignore[arg-type]
+                expected_sorted_labels  = [_bab_label(s.number, s.title) for s in expected_bab_sections]
                 msg = f"BAB tidak berurutan. Ditemukan: {' → '.join(actual_ordered_labels)}"
                 occ_bab_err = _build_occurrences(
                     [{"text": s["text"][:100], "full_text": s["text"],
@@ -262,7 +252,7 @@ def _check_document_structure(
                 missing_bab_nums = set(expected_bab_numbers) - set(bab_numbers)
                 if missing_bab_nums:
                     missing_labels = [
-                        _bab_label(s.number, s.title)  # type: ignore[arg-type]
+                        _bab_label(s.number, s.title)
                         for s in expected_bab_sections if s.number in missing_bab_nums
                     ]
                     msg = f"BAB berikut tidak ditemukan: {', '.join(missing_labels)}"
@@ -286,23 +276,53 @@ def _check_document_structure(
                         occurrences=occ_bab_missing,
                     ))
                 else:
+                    # Cek judul BAB: nomor urut benar, tapi judul harus sesuai skema
+                    _bab_title_re = re.compile(r'^BAB\s+\d+[\s.]*', re.IGNORECASE)
+                    bab_title_mismatches: list[tuple] = []
+                    for _exp_bab in expected_bab_sections:
+                        _actual_text = bab_num_to_text.get(_exp_bab.number, "")
+                        if _exp_bab.title and _actual_text:
+                            _actual_title = _bab_title_re.sub("", _actual_text).strip().upper()
+                            _expected_title = _exp_bab.title.strip().upper()
+                            if _actual_title != _expected_title:
+                                bab_title_mismatches.append(
+                                    (_exp_bab.number, _exp_bab.title, _actual_text)
+                                )
                     occ_bab = _build_occurrences(
                         [{"text": s["text"][:100], "full_text": s["text"],
                           "style": "", "page": None, "bab": None, "para_idx": None}
                          for s in bab_actuals],
                         actual_str=None, expected_str=None,
                     ) or None
-                    checks.append(ValidationCheckResult(
-                        category="document_structure", field="bab_order",
-                        status="passed",
-                        message=f"BAB berurutan dengan benar: {' → '.join(actual_bab_labels)}",
-                        expected=' → '.join(expected_bab_labels),
-                        actual=' → '.join(actual_bab_labels),
-                        occurrences=occ_bab,
-                    ))
+                    if bab_title_mismatches:
+                        _wrong_parts = [
+                            f"BAB {num}: ditemukan '{act}', seharusnya '{_bab_label(num, exp)}'"
+                            for num, exp, act in bab_title_mismatches
+                        ]
+                        msg = f"Judul BAB tidak sesuai skema. {'; '.join(_wrong_parts)}"
+                        issues.append(ValidationIssue(
+                            category="document_structure", field="bab_order",
+                            severity="error", message=msg,
+                            expected=' → '.join(expected_bab_labels),
+                            actual=' → '.join(actual_bab_labels),
+                        ))
+                        checks.append(ValidationCheckResult(
+                            category="document_structure", field="bab_order",
+                            status="failed", message=msg,
+                            expected=' → '.join(expected_bab_labels),
+                            actual=' → '.join(actual_bab_labels),
+                            occurrences=occ_bab,
+                        ))
+                    else:
+                        checks.append(ValidationCheckResult(
+                            category="document_structure", field="bab_order",
+                            status="passed",
+                            message=f"BAB berurutan dengan benar: {' → '.join(actual_bab_labels)}",
+                            expected=' → '.join(expected_bab_labels),
+                            actual=' → '.join(actual_bab_labels),
+                            occurrences=occ_bab,
+                        ))
 
-        # 3. Cek urutan major section secara keseluruhan
-        # Mapping type → label sederhana (untuk non-bab)
         def _section_label(section_type: str, title: str | None = None) -> str:
             if section_type == "sub_bab":
                 return "Sub BAB"
@@ -315,18 +335,15 @@ def _check_document_structure(
             if s.type not in type_to_label:
                 type_to_label[s.type] = _section_label(s.type, s.title)
 
-        # Expand type list ke label: "bab" dipecah ke label tiap BAB individual
         def _expand_labels(type_list: list[str], bab_labels: list[str]) -> str:
             parts: list[str] = []
             for t in type_list:
                 if t == "bab":
-                    # Expand ke nama tiap BAB; fallback ke "BAB" jika list kosong
                     parts.extend(bab_labels if bab_labels else ["BAB"])
                 else:
                     parts.append(type_to_label.get(t, t.replace("_", " ").upper()))
             return ' → '.join(parts)
 
-        # Ambil tipe unik dari actual (pertahankan urutan kemunculan pertama)
         seen: set[str] = set()
         actual_order: list[str] = []
         for s in actual_classified:
@@ -335,7 +352,6 @@ def _check_document_structure(
                 actual_order.append(key)
                 seen.add(key)
 
-        # Expected order: tipe dari major sections, deduplikasi (bab hanya sekali)
         seen = set()
         expected_order: list[str] = []
         for s in expected_major:
@@ -344,13 +360,9 @@ def _check_document_structure(
                 expected_order.append(key)
                 seen.add(key)
 
-        # Filter expected ke yang muncul di actual
         expected_filtered = [t for t in expected_order if t in actual_types_set]
-        # Filter actual ke yang ada di expected
         actual_filtered = [t for t in actual_order if t in set(expected_order)]
 
-        # Label display: BAB di-expand ke nama masing-masing
-        # expected_bab_labels dan actual_bab_labels sudah tersedia dari step 2
         exp_display = _expand_labels(expected_filtered, expected_bab_labels)
         act_display = _expand_labels(actual_filtered, actual_bab_labels)
 
@@ -422,22 +434,29 @@ def _check_lampiran_format(
     checks: list[ValidationCheckResult] = []
 
     t  = metadata.typography
-    ds = metadata.document_structure_artikel or metadata.document_structure_proposal
+    _ds_p2 = metadata.document_structure_proposal
+    _ds_a2 = metadata.document_structure_artikel
+    if _ds_p2 and _ds_p2.sections:
+        ds = _ds_p2
+    elif _ds_a2 and _ds_a2.sections:
+        ds = _ds_a2
+    else:
+        ds = _ds_p2 or _ds_a2
     expected_font    = t.font_family if t else None
     expected_size    = int(t.font_size_body_pt) if t and t.font_size_body_pt else None
     expected_spacing = _resolve_line_spacing(metadata)
 
-    # Separator dari payload; None → default "."
+    _body_align_str_lmp = (metadata.spacing.paragraph_alignment if metadata.spacing else None) or "JUSTIFY"
+    _expected_align_lmp = _CAPTION_ALIGN_MAP.get(_body_align_str_lmp.upper(), WD_ALIGN_PARAGRAPH.JUSTIFY)
     separator   = ds.lampiran_heading_separator if ds else None
     effective_sep = separator if separator is not None else "."
     lampiran_re = _build_lampiran_re(effective_sep)
 
-    # Rangkuman nilai yang diharapkan (dipakai di occurrences)
     expected_summary = ", ".join(filter(None, [
         expected_font or None,
         f"{expected_size}pt" if expected_size else None,
         f"spacing {expected_spacing}",
-        "JUSTIFY",
+        _body_align_str_lmp,
     ]))
 
     try:
@@ -457,11 +476,9 @@ def _check_lampiran_format(
             if not text or not _LAMPIRAN_BROAD_RE.match(text):
                 continue
 
-            # Entri Daftar Lampiran (style TOC/TOF) sudah divalidasi engine → skip
             if para.style.name in _TOC_TOF_STYLE_NAMES:
                 continue
 
-            # ── Separator ────────────────────────────────────────────────────
             _sep_ok = bool(lampiran_re.match(text))
             if not _sep_ok:
                 wrong_separator.append(text[:70])
@@ -479,19 +496,17 @@ def _check_lampiran_format(
             if _sep_ok:
                 sep_pass_items.append(para_info)
 
-            # ── Alignment harus JUSTIFY ──────────────────────────────────────
             align = para.paragraph_format.alignment
             if align is None:
                 try:
                     align = para.style.paragraph_format.alignment
                 except Exception:
                     align = None
-            if align is not None and align != WD_ALIGN_PARAGRAPH.JUSTIFY:
+            if align is not None and align != _expected_align_lmp:
                 _align_names = {0: "LEFT", 1: "CENTER", 2: "RIGHT", 3: "JUSTIFY"}
                 wrong_alignment.append({**para_info, "actual": _align_names.get(int(align), str(align))})
                 has_issue = True
 
-            # ── Font & size ──────────────────────────────────────────────────
             for run in para.runs:
                 if expected_font and run.font.name and run.font.name != expected_font:
                     wrong_font.append({**para_info, "actual": run.font.name})
@@ -504,7 +519,6 @@ def _check_lampiran_format(
                         has_issue = True
                         break
 
-            # ── Line spacing ─────────────────────────────────────────────────
             ls = para.paragraph_format.line_spacing
             if ls is not None:
                 try:
@@ -518,7 +532,6 @@ def _check_lampiran_format(
             if not has_issue:
                 pass_items.append(para_info)
 
-        # ── Emit: format separator ───────────────────────────────────────────
         sep_display = f'titik (".")' if effective_sep == "." else (
             f'"{effective_sep}"' if effective_sep else "tanpa titik"
         )
@@ -556,7 +569,6 @@ def _check_lampiran_format(
                 occurrences=occ_sep,
             ))
 
-        # Tidak ada judul lampiran sama sekali → skip atribut check
         if total == 0:
             checks.append(ValidationCheckResult(
                 category="typography", field="lampiran_format",
@@ -566,7 +578,6 @@ def _check_lampiran_format(
             ))
             return issues, checks
 
-        # ── Emit: atribut lolos → passed check dengan occurrences ────────────
         all_ok = not any([wrong_alignment, wrong_font, wrong_size, wrong_spacing])
         if pass_items:
             n_pass = len(pass_items)
@@ -588,11 +599,8 @@ def _check_lampiran_format(
                 occurrences=occs_pass,
             ))
 
-        # ── Emit: atribut gagal → issue per atribut ──────────────────────────
-        # alignment → error (konsisten dengan caption_alignment_* dan body_alignment)
-        # font/size/spacing → warning
         for field, items, label, expected_val, is_error in [
-            ("lampiran_alignment", wrong_alignment, "alignment",    "JUSTIFY",              True),
+            ("lampiran_alignment", wrong_alignment, "alignment",    _body_align_str_lmp,    True),
             ("lampiran_font",      wrong_font,      "font family",  expected_font or "",    False),
             ("lampiran_font_size", wrong_size,      "font size",    f"{expected_size}pt",   False),
             ("lampiran_spacing",   wrong_spacing,   "line spacing", str(expected_spacing),  False),

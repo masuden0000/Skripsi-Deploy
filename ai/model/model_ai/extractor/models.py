@@ -14,6 +14,22 @@ class Source(BaseModel):
 
 
 _VALID_CASE_STYLES = frozenset({"UPPERCASE", "LOWERCASE", "SENTENCE_CASE", "TOGGLE_CASE"})
+_VALID_SPACING_RULES: frozenset[str] = frozenset(
+    {"SINGLE", "ONE_POINT_FIVE", "DOUBLE", "MULTIPLE", "AT_LEAST", "EXACTLY"}
+)
+_SPACING_RULE_ALIASES: dict[str, str] = {
+    "EXACT":          "EXACTLY",
+    "AT LEAST":       "AT_LEAST",
+    "ONE POINT FIVE": "ONE_POINT_FIVE",
+    "1.5":            "ONE_POINT_FIVE",
+    "1.5 BARIS":      "ONE_POINT_FIVE",
+    "1,5 BARIS":      "ONE_POINT_FIVE",
+    "TUNGGAL":        "SINGLE",
+    "GANDA":          "DOUBLE",
+    "BEBERAPA":       "MULTIPLE",
+    "SEDIKITNYA":     "AT_LEAST",
+    "TEPAT":          "EXACTLY",
+}
 
 
 class TypographyExtracted(BaseModel):
@@ -88,6 +104,7 @@ class SpacingExtracted(BaseModel):
     heading_3_alignment: str | None = None
     heading_4_alignment: str | None = None
     heading_5_alignment: str | None = None
+    line_spacing_rule_title_abstract: str | None = None
     line_spacing_title_abstract: float | None = None
     line_spacing_rule_bibliography: str | None = None
     line_spacing_bibliography: float | None = None
@@ -139,6 +156,13 @@ class SpacingExtracted(BaseModel):
             self.line_spacing_rule = normalized if normalized in self._VALID_RULES else None
             if self.line_spacing_rule in {"SINGLE", "ONE_POINT_FIVE", "DOUBLE"}:
                 self.line_spacing = None
+
+        if self.line_spacing_rule_title_abstract is not None:
+            raw = self.line_spacing_rule_title_abstract.strip().upper()
+            normalized = self._RULE_ALIASES.get(raw, raw)
+            self.line_spacing_rule_title_abstract = normalized if normalized in self._VALID_RULES else None
+            if self.line_spacing_rule_title_abstract in {"SINGLE", "ONE_POINT_FIVE", "DOUBLE"}:
+                self.line_spacing_title_abstract = None
 
         if self.line_spacing_rule_bibliography is not None:
             raw = self.line_spacing_rule_bibliography.strip().upper()
@@ -278,21 +302,27 @@ class FiguresTablesExtracted(BaseModel):
     caption_alignment_lampiran: str | None = None
     budget_format_rules: "BudgetFormatRules | None" = None
     caption_font_size: int | None = None
+    caption_line_spacing_rule: str | None = None
     caption_line_spacing: float | None = None
 
     _VALID_CAPTION_ALIGNMENTS: ClassVar[frozenset[str]] = frozenset({"CENTER", "LEFT", "RIGHT", "JUSTIFY"})
 
     @model_validator(mode="after")
     def _normalize_caption_alignments(self) -> "FiguresTablesExtracted":
-        """Normalise alignment strings dari LLM: strip, upper-case, validasi ke enum.
-        Nilai yang tidak dikenal di-set None (→ default CENTER saat digunakan).
-        """
+        """Normalise alignment strings dan caption spacing rule dari LLM."""
         for field in ("caption_alignment_figure", "caption_alignment_table", "caption_alignment_lampiran"):
             raw = getattr(self, field)
             if raw is None:
                 continue
             normalized = raw.strip().upper()
             setattr(self, field, normalized if normalized in self._VALID_CAPTION_ALIGNMENTS else None)
+
+        if self.caption_line_spacing_rule is not None:
+            raw = self.caption_line_spacing_rule.strip().upper()
+            normalized = _SPACING_RULE_ALIASES.get(raw, raw)
+            self.caption_line_spacing_rule = normalized if normalized in _VALID_SPACING_RULES else None
+            if self.caption_line_spacing_rule in {"SINGLE", "ONE_POINT_FIVE", "DOUBLE"}:
+                self.caption_line_spacing = None
         return self
 
 

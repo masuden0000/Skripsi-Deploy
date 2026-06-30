@@ -82,16 +82,23 @@ def _spacing_bibliography(spacing: dict) -> dict:
 
 
 def _spacing_title_abstract(spacing: dict) -> dict:
-    raw = spacing.get("line_spacing_title_abstract")
-    if raw is None:
+    _VALID = {"SINGLE", "ONE_POINT_FIVE", "DOUBLE", "MULTIPLE", "AT_LEAST", "EXACTLY"}
+    rule = (spacing.get("line_spacing_rule_title_abstract") or "").upper()
+    ls   = spacing.get("line_spacing_title_abstract")
+    if rule in _VALID:
+        if rule in {"SINGLE", "ONE_POINT_FIVE", "DOUBLE"}:
+            return {"line_spacing_rule": rule, "line_spacing": None}
+        if rule == "MULTIPLE" and ls is None:
+            ls = 1.0
+        return {"line_spacing_rule": rule, "line_spacing": ls}
+    # fallback: gunakan nilai numerik saja
+    if ls is None:
         return _spacing_single()
     try:
-        val = float(raw)
+        val = float(ls)
     except (TypeError, ValueError):
         return _spacing_single()
-    if val == 1.0:
-        return _spacing_single()
-    return {"line_spacing_rule": "MULTIPLE", "line_spacing": val}
+    return _spacing_single() if val == 1.0 else {"line_spacing_rule": "MULTIPLE", "line_spacing": val}
 
 
 def _apply_base_styles_artikel(document: Document, typography: dict, spacing: dict, figures_tables: dict | None = None) -> None:
@@ -141,11 +148,19 @@ def _apply_base_styles_artikel(document: Document, typography: dict, spacing: di
     ft = figures_tables or {}
     caption_size = ft.get("caption_font_size") or body_size
     caption_ls   = ft.get("caption_line_spacing") or 1.0
-    cap_spacing  = (
-        {"line_spacing_rule": "SINGLE", "line_spacing": None}
-        if caption_ls == 1.0
-        else {"line_spacing_rule": "MULTIPLE", "line_spacing": caption_ls}
-    )
+    _VALID_RULES_SET = {"SINGLE", "ONE_POINT_FIVE", "DOUBLE", "MULTIPLE", "AT_LEAST", "EXACTLY"}
+    caption_rule = (ft.get("caption_line_spacing_rule") or "").upper()
+    if caption_rule in _VALID_RULES_SET:
+        cap_spacing = {
+            "line_spacing_rule": caption_rule,
+            "line_spacing": caption_ls if caption_rule not in {"SINGLE", "ONE_POINT_FIVE", "DOUBLE"} else None,
+        }
+    else:
+        cap_spacing = (
+            {"line_spacing_rule": "SINGLE", "line_spacing": None}
+            if caption_ls == 1.0
+            else {"line_spacing_rule": "MULTIPLE", "line_spacing": caption_ls}
+        )
     try:
         caption_style = document.styles["Caption"]
     except KeyError:

@@ -61,7 +61,6 @@ export type ExtractionPayload = {
     font_size_title_pt?: number | null
     font_size_author_pt?: number | null
     font_size_abstract_pt?: number | null
-    title_style?: "BOLD_UPPERCASE" | "BOLD" | "UPPERCASE" | "NORMAL" | null
     heading_4_case: "UPPERCASE" | "LOWERCASE" | "SENTENCE_CASE" | "TOGGLE_CASE" | null
     heading_5_case: "UPPERCASE" | "LOWERCASE" | "SENTENCE_CASE" | "TOGGLE_CASE" | null
     heading_1_bold: boolean | null
@@ -88,7 +87,13 @@ export type ExtractionPayload = {
     heading_4_alignment: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
     heading_5_alignment: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
     // PKM-AI
+    line_spacing_rule_title_abstract?: string | null
     line_spacing_title_abstract?: number | null
+    line_spacing_rule_bibliography?: string | null
+    line_spacing_bibliography?: number | null
+    title_case?: "UPPERCASE" | "LOWERCASE" | "SENTENCE_CASE" | "TOGGLE_CASE" | null
+    title_alignment?: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
+    title_bold?: boolean | null
   }
   document_structure_proposal?: {
     sections: SectionItem[]
@@ -119,6 +124,7 @@ export type ExtractionPayload = {
     caption_alignment_lampiran: "CENTER" | "LEFT" | "RIGHT" | "JUSTIFY" | null
     // PKM-AI
     caption_font_size?: number | null
+    caption_line_spacing_rule?: string | null
     caption_line_spacing?: number | null
   }
   page_count_limits: {
@@ -355,16 +361,10 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
                   value={data.typography.font_size_abstract_pt ?? null}
                   onChange={(v) => patch("typography", { font_size_abstract_pt: v })}
                 />
-                <SelectFieldInput
-                  label="Gaya Judul Artikel"
-                  value={data.typography.title_style ?? null}
-                  options={[
-                    { value: "BOLD_UPPERCASE", label: "Bold + UPPERCASE" },
-                    { value: "BOLD",           label: "Bold" },
-                    { value: "UPPERCASE",      label: "UPPERCASE" },
-                    { value: "NORMAL",         label: "Normal" },
-                  ]}
-                  onChange={(v) => patch("typography", { title_style: v as ExtractionPayload["typography"]["title_style"] })}
+                <NumberFieldInput
+                  label="Ukuran Font Caption (pt)"
+                  value={data.figures_and_tables.caption_font_size ?? null}
+                  onChange={(v) => patch("figures_and_tables", { caption_font_size: v })}
                 />
               </>
             ) : (
@@ -446,7 +446,7 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
             <div className="mt-3 px-1">
               <FieldRow>
                 <SelectFieldInput
-                  label="Aturan Spasi"
+                  label="Aturan Spasi Paragraf"
                   value={rule}
                   options={[
                     { value: "SINGLE",          label: "Tunggal" },
@@ -465,33 +465,105 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
                   }}
                 />
                 <NumberFieldInput
-                  label={isGrupC ? "Spasi Baris (pt)" : "Spasi Baris"}
+                  label={isGrupC ? "Spasi Baris Paragraf (pt)" : "Spasi Baris Paragraf"}
                   value={data.spacing.line_spacing}
                   onChange={(v) => patch("spacing", { line_spacing: v })}
                   disabled={isGrupA}
                   placeholder={isGrupA ? "—" : isGrupC ? "contoh: 14.0" : "contoh: 1.15"}
                   hint={spasiBarisHint}
                 />
-                <SelectFieldInput
-                  label="Alignment Paragraf"
-                  value={data.spacing.paragraph_alignment?.toUpperCase() ?? null}
-                  options={[
-                    { value: "JUSTIFY", label: "Justify" },
-                    { value: "LEFT",    label: "Left" },
-                    { value: "CENTER",  label: "Center" },
-                    { value: "RIGHT",   label: "Right" },
-                  ]}
-                  onChange={(v) => patch("spacing", { paragraph_alignment: v })}
-                />
-                {isArtikel && (
-                  <NumberFieldInput
-                    label="Spasi Halaman Judul/Abstrak"
-                    value={data.spacing.line_spacing_title_abstract ?? null}
-                    onChange={(v) => patch("spacing", { line_spacing_title_abstract: v })}
-                    placeholder="contoh: 1.0"
-                    hint="Spasi baris khusus halaman judul dan abstrak PKM-AI (biasanya 1.0)."
-                  />
-                )}
+                {isArtikel && (() => {
+                  const ruleTA = data.spacing.line_spacing_rule_title_abstract?.toUpperCase() ?? null
+                  const isGrupATA = ruleTA !== null && ["SINGLE","ONE_POINT_FIVE","DOUBLE"].includes(ruleTA)
+                  const ruleCap = data.figures_and_tables.caption_line_spacing_rule?.toUpperCase() ?? null
+                  const isGrupACap = ruleCap !== null && ["SINGLE","ONE_POINT_FIVE","DOUBLE"].includes(ruleCap)
+                  const ruleRef = data.spacing.line_spacing_rule_bibliography?.toUpperCase() ?? null
+                  const isGrupARef = ruleRef !== null && ["SINGLE","ONE_POINT_FIVE","DOUBLE"].includes(ruleRef)
+                  return (
+                    <>
+                      <SelectFieldInput
+                        label="Aturan Spasi Judul Artikel, Nama Penulis, Alamat Institusi, Abstrak"
+                        value={ruleTA}
+                        options={[
+                          { value: "SINGLE",         label: "Tunggal" },
+                          { value: "ONE_POINT_FIVE", label: "1.5 Baris" },
+                          { value: "DOUBLE",         label: "Ganda" },
+                          { value: "MULTIPLE",       label: "Beberapa" },
+                          { value: "AT_LEAST",       label: "Sedikitnya" },
+                          { value: "EXACTLY",        label: "Tepat" },
+                        ]}
+                        onChange={(v) => {
+                          const grupA = ["SINGLE", "ONE_POINT_FIVE", "DOUBLE"]
+                          patch("spacing", {
+                            line_spacing_rule_title_abstract: v,
+                            ...(grupA.includes(v) ? { line_spacing_title_abstract: null } : {}),
+                          })
+                        }}
+                      />
+                      <NumberFieldInput
+                        label="Spasi Baris Judul Artikel, Nama Penulis, Alamat Institusi, Abstrak"
+                        value={data.spacing.line_spacing_title_abstract ?? null}
+                        onChange={(v) => patch("spacing", { line_spacing_title_abstract: v })}
+                        disabled={isGrupATA}
+                        placeholder={isGrupATA ? "—" : "contoh: 1.0"}
+                        hint="Spasi baris khusus zona judul/penulis/institusi/abstrak PKM-AI."
+                      />
+                      <SelectFieldInput
+                        label="Aturan Spasi Daftar Pustaka"
+                        value={ruleRef}
+                        options={[
+                          { value: "SINGLE",         label: "Tunggal" },
+                          { value: "ONE_POINT_FIVE", label: "1.5 Baris" },
+                          { value: "DOUBLE",         label: "Ganda" },
+                          { value: "MULTIPLE",       label: "Beberapa" },
+                          { value: "AT_LEAST",       label: "Sedikitnya" },
+                          { value: "EXACTLY",        label: "Tepat" },
+                        ]}
+                        onChange={(v) => {
+                          const grupA = ["SINGLE", "ONE_POINT_FIVE", "DOUBLE"]
+                          patch("spacing", {
+                            line_spacing_rule_bibliography: v,
+                            ...(grupA.includes(v) ? { line_spacing_bibliography: null } : {}),
+                          })
+                        }}
+                      />
+                      <NumberFieldInput
+                        label="Spasi Baris Daftar Pustaka"
+                        value={data.spacing.line_spacing_bibliography ?? null}
+                        onChange={(v) => patch("spacing", { line_spacing_bibliography: v })}
+                        disabled={isGrupARef}
+                        placeholder={isGrupARef ? "—" : "contoh: 1.15"}
+                        hint="Pengali desimal — hanya untuk aturan Beberapa/Sedikitnya/Tepat."
+                      />
+                      <SelectFieldInput
+                        label="Aturan Spasi Caption"
+                        value={ruleCap}
+                        options={[
+                          { value: "SINGLE",         label: "Tunggal" },
+                          { value: "ONE_POINT_FIVE", label: "1.5 Baris" },
+                          { value: "DOUBLE",         label: "Ganda" },
+                          { value: "MULTIPLE",       label: "Beberapa" },
+                          { value: "AT_LEAST",       label: "Sedikitnya" },
+                          { value: "EXACTLY",        label: "Tepat" },
+                        ]}
+                        onChange={(v) => {
+                          const grupA = ["SINGLE", "ONE_POINT_FIVE", "DOUBLE"]
+                          patch("figures_and_tables", {
+                            caption_line_spacing_rule: v,
+                            ...(grupA.includes(v) ? { caption_line_spacing: null } : {}),
+                          })
+                        }}
+                      />
+                      <NumberFieldInput
+                        label="Spasi Baris Caption"
+                        value={data.figures_and_tables.caption_line_spacing ?? null}
+                        onChange={(v) => patch("figures_and_tables", { caption_line_spacing: v })}
+                        disabled={isGrupACap}
+                        placeholder={isGrupACap ? "—" : "contoh: 1.0"}
+                      />
+                    </>
+                  )
+                })()}
               </FieldRow>
             </div>
           </div>
@@ -770,7 +842,7 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
             />
             <SelectFieldInput
               label="Alignment Keterangan Gambar"
-              value={data.figures_and_tables.caption_alignment_figure ?? null}
+              value={data.figures_and_tables.caption_alignment_figure ?? "CENTER"}
               options={[
                 { value: "CENTER",  label: "Center" },
                 { value: "LEFT",    label: "Left" },
@@ -781,7 +853,7 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
             />
             <SelectFieldInput
               label="Alignment Keterangan Tabel"
-              value={data.figures_and_tables.caption_alignment_table ?? null}
+              value={data.figures_and_tables.caption_alignment_table ?? "CENTER"}
               options={[
                 { value: "CENTER",  label: "Center" },
                 { value: "LEFT",    label: "Left" },
@@ -792,7 +864,7 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
             />
             <SelectFieldInput
               label="Alignment Heading Lampiran"
-              value={data.figures_and_tables.caption_alignment_lampiran ?? null}
+              value={data.figures_and_tables.caption_alignment_lampiran ?? "CENTER"}
               options={[
                 { value: "CENTER",  label: "Center" },
                 { value: "LEFT",    label: "Left" },
@@ -818,21 +890,6 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
               placeholder="contoh: Lampiran {n}. {title}"
               hint="Gunakan {n} untuk nomor dan {title} untuk judul. Klik ⓘ untuk panduan lengkap."
             />
-            {isArtikel && (
-              <>
-                <NumberFieldInput
-                  label="Ukuran Font Caption (pt)"
-                  value={data.figures_and_tables.caption_font_size ?? null}
-                  onChange={(v) => patch("figures_and_tables", { caption_font_size: v })}
-                />
-                <NumberFieldInput
-                  label="Spasi Baris Caption"
-                  value={data.figures_and_tables.caption_line_spacing ?? null}
-                  onChange={(v) => patch("figures_and_tables", { caption_line_spacing: v })}
-                  placeholder="contoh: 1.0"
-                />
-              </>
-            )}
           </FieldRow>
         </div>
       </div>
@@ -841,11 +898,56 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
       <div>
         <SectionHeader title="7. Pengaturan Format" />
         <div className="mt-3 px-1">
+          {/* Alignment Paragraf */}
+          <FieldRow>
+            <SelectFieldInput
+              label="Alignment Paragraf"
+              value={data.spacing.paragraph_alignment?.toUpperCase() ?? null}
+              options={[
+                { value: "JUSTIFY", label: "Justify" },
+                { value: "LEFT",    label: "Left" },
+                { value: "CENTER",  label: "Center" },
+                { value: "RIGHT",   label: "Right" },
+              ]}
+              onChange={(v) => patch("spacing", { paragraph_alignment: v })}
+            />
+          </FieldRow>
+          {/* Judul Artikel (PKM-AI only) */}
+          {isArtikel && (
+            <FieldRow>
+              <SelectFieldInput
+                label="Style Judul"
+                value={data.spacing.title_case ?? "UPPERCASE"}
+                options={HEADING_CASE_OPTIONS}
+                onChange={(v) => patch("spacing", { title_case: (v || null) as ExtractionPayload["spacing"]["title_case"] })}
+              />
+              <SelectFieldInput
+                label="Alignment Judul"
+                value={data.spacing.title_alignment ?? "CENTER"}
+                options={[
+                  { value: "CENTER",  label: "Center" },
+                  { value: "LEFT",    label: "Left" },
+                  { value: "RIGHT",   label: "Right" },
+                  { value: "JUSTIFY", label: "Justify" },
+                ]}
+                onChange={(v) => patch("spacing", { title_alignment: v as ExtractionPayload["spacing"]["title_alignment"] })}
+              />
+              <SelectFieldInput
+                label="Bold Judul"
+                value={(data.spacing.title_bold ?? true) ? "ya" : "tidak"}
+                options={[
+                  { value: "ya",    label: "Ya" },
+                  { value: "tidak", label: "Tidak" },
+                ]}
+                onChange={(v) => patch("spacing", { title_bold: v === "ya" })}
+              />
+            </FieldRow>
+          )}
           {/* H1 */}
           <FieldRow>
             <SelectFieldInput
               label="Style Huruf Heading 1"
-              value={data.typography.heading_1_case ?? ""}
+              value={data.typography.heading_1_case ?? "UPPERCASE"}
               options={HEADING_CASE_OPTIONS}
               onChange={(v) => patch("typography", { heading_1_case: (v || null) as ExtractionPayload["typography"]["heading_1_case"] })}
             />

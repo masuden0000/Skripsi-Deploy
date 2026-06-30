@@ -53,14 +53,15 @@ Petakan ke enum berikut:
 
 Contoh penalaran: *"Konteks menyebut 'spasi 1,15' → angka desimal bebas → MULTIPLE, line_spacing = 1.15."*
 
-**Langkah 3 — Identifikasi spasi halaman judul/abstrak (line_spacing_title_abstract):**
+**Langkah 3 — Identifikasi spasi halaman judul/abstrak (line_spacing_rule_title_abstract dan line_spacing_title_abstract):**
 Artikel PKM-AI memiliki dua zona spasi berbeda:
-- **Zona 1: Halaman judul dan abstrak** — cari pernyataan seperti:
+- **Zona 1: Judul Artikel, Nama Penulis, Alamat Institusi, Abstrak** — cari pernyataan seperti:
   "judul dan abstrak menggunakan spasi 1,0", "halaman pertama spasi tunggal", "abstrak 1 spasi"
-  → Keluarkan sebagai `line_spacing_title_abstract` (float)
+  → Keluarkan `line_spacing_rule_title_abstract` menggunakan tabel enum di Langkah 2
+  → Keluarkan `line_spacing_title_abstract` (float) hanya jika rule adalah MULTIPLE/AT_LEAST/EXACTLY
 - **Zona 2: Body artikel** — sudah diekstrak di Langkah 2
 
-Jika panduan tidak membedakan spasi untuk halaman judul vs body → `line_spacing_title_abstract = null`.
+Jika panduan tidak membedakan → `line_spacing_rule_title_abstract = null`, `line_spacing_title_abstract = null`.
 
 **Langkah 4 — Identifikasi rata paragraf (paragraph_alignment):**
 Cari pernyataan tentang rata paragraf:
@@ -120,7 +121,8 @@ Jika tidak ditemukan → kedua field `null`.
 ## Output Fields
 - `line_spacing_rule`: aturan spasi baris body artikel (string enum atau null)
 - `line_spacing`: nilai spasi numerik body artikel — hanya untuk MULTIPLE/AT_LEAST/EXACTLY (float atau null)
-- `line_spacing_title_abstract`: spasi baris khusus halaman judul dan abstrak (float atau null)
+- `line_spacing_rule_title_abstract`: aturan spasi baris Judul Artikel, Nama Penulis, Alamat Institusi, Abstrak (string enum atau null)
+- `line_spacing_title_abstract`: nilai spasi numerik zona judul/abstrak — hanya untuk MULTIPLE/AT_LEAST/EXACTLY (float atau null)
 - `line_spacing_rule_bibliography`: aturan spasi baris daftar pustaka (string enum atau null)
 - `line_spacing_bibliography`: nilai spasi numerik daftar pustaka — hanya untuk MULTIPLE/AT_LEAST/EXACTLY (float atau null)
 - `paragraph_alignment`: rata paragraf (string enum atau null)

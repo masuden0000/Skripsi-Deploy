@@ -223,7 +223,7 @@ async def run_setup(project_id: str) -> bool:
         step="setup",
         command=command,
         project_id=project_id,
-        timeout_seconds=300,
+        timeout_seconds=1800,
     )
 
     if not success:

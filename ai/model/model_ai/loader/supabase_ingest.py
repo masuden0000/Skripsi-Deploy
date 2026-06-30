@@ -88,12 +88,13 @@ def _embed_documents_with_retry(contents: list[str]) -> list[list[float]]:
                     raise
                 if key_attempt < num_keys - 1:
                     CONFIG.rotate_google_key()
-                    print(f"[ingest] Key {key_attempt + 1}/{num_keys} exhausted, rotate ke key berikutnya...")
+                    print(f"[ingest] Key {key_attempt + 1}/{num_keys} exhausted, rotate ke key berikutnya...", flush=True)
         if cycle < EMBED_MAX_RETRY_CYCLES - 1:
             print(
                 f"[ingest] Semua {num_keys} Google key exhausted "
                 f"(cycle {cycle + 1}/{EMBED_MAX_RETRY_CYCLES}). "
-                f"Menunggu {EMBED_RATE_LIMIT_WAIT} detik..."
+                f"Menunggu {EMBED_RATE_LIMIT_WAIT} detik...",
+                flush=True
             )
             time.sleep(EMBED_RATE_LIMIT_WAIT)
     raise RuntimeError(
@@ -144,7 +145,9 @@ def upsert_embeddings(project_id: str) -> int:
 
     all_batches = batched(chunks, BATCH_SIZE)
     total_rows = 0
+    total_batches = len(all_batches)
     for batch_idx, chunk_batch in enumerate(all_batches):
+        print(f"[ingest] Memproses batch embedding {batch_idx + 1}/{total_batches} ({len(chunk_batch)} chunks)...", flush=True)
         contents = [chunk.content for chunk in chunk_batch]
         embeddings = _embed_documents_with_retry(contents)
         rows = build_rows(chunk_batch, embeddings, source_file, project_id)

@@ -89,6 +89,8 @@ class SpacingExtracted(BaseModel):
     heading_4_alignment: str | None = None
     heading_5_alignment: str | None = None
     line_spacing_title_abstract: float | None = None
+    line_spacing_rule_bibliography: str | None = None
+    line_spacing_bibliography: float | None = None
     title_case: Literal["UPPERCASE", "LOWERCASE", "SENTENCE_CASE", "TOGGLE_CASE"] | None = None
     title_alignment: str | None = None
     title_bold: bool = True
@@ -137,6 +139,13 @@ class SpacingExtracted(BaseModel):
             self.line_spacing_rule = normalized if normalized in self._VALID_RULES else None
             if self.line_spacing_rule in {"SINGLE", "ONE_POINT_FIVE", "DOUBLE"}:
                 self.line_spacing = None
+
+        if self.line_spacing_rule_bibliography is not None:
+            raw = self.line_spacing_rule_bibliography.strip().upper()
+            normalized = self._RULE_ALIASES.get(raw, raw)
+            self.line_spacing_rule_bibliography = normalized if normalized in self._VALID_RULES else None
+            if self.line_spacing_rule_bibliography in {"SINGLE", "ONE_POINT_FIVE", "DOUBLE"}:
+                self.line_spacing_bibliography = None
 
         val = (self.heading_alignment or "CENTER").strip().upper()
         self.heading_alignment = val if val in self._VALID_HEADING_ALIGNMENTS else "CENTER"

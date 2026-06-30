@@ -68,6 +68,19 @@ def _spacing_body(spacing: dict) -> dict:
     return {"line_spacing_rule": rule, "line_spacing": ls}
 
 
+def _spacing_bibliography(spacing: dict) -> dict:
+    rule = spacing.get("line_spacing_rule_bibliography")
+    ls   = spacing.get("line_spacing_bibliography")
+    if not rule:
+        return _spacing_body(spacing)
+    rule = rule.upper()
+    if rule not in {"SINGLE", "ONE_POINT_FIVE", "DOUBLE", "MULTIPLE", "AT_LEAST", "EXACTLY"}:
+        return _spacing_body(spacing)
+    if rule == "MULTIPLE" and ls is None:
+        ls = 1.15
+    return {"line_spacing_rule": rule, "line_spacing": ls}
+
+
 def _spacing_title_abstract(spacing: dict) -> dict:
     raw = spacing.get("line_spacing_title_abstract")
     if raw is None:
@@ -469,10 +482,10 @@ def _render_artikel_daftar_pustaka(
     typography: dict,
     spacing: dict,
 ) -> None:
-    """Render Daftar Pustaka artikel: heading bold, isi Harvard style dengan hanging indent 1,15 spasi."""
-    body_font = typography.get("font_family") or "Times New Roman"
-    body_size = typography.get("font_size_body_pt") or 12
-    body_spacing = _spacing_body(spacing)
+    """Render Daftar Pustaka artikel: heading bold, isi Harvard style dengan hanging indent."""
+    body_font  = typography.get("font_family") or "Times New Roman"
+    body_size  = typography.get("font_size_body_pt") or 12
+    body_spacing = _spacing_bibliography(spacing)
 
     document.add_page_break()
 

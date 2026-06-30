@@ -71,7 +71,15 @@ Cari pernyataan tentang rata paragraf:
 
 Jika tidak disebutkan → `null`.
 
-**Langkah 5 — Ekstrak pengaturan format judul artikel (title_case, title_alignment, title_bold):**
+**Langkah 5 — Identifikasi spasi daftar pustaka (line_spacing_rule_bibliography dan line_spacing_bibliography):**
+Cari pernyataan yang secara eksplisit menyebut spasi untuk bagian **Daftar Pustaka**:
+- "daftar pustaka menggunakan spasi 1,15" → `line_spacing_rule_bibliography = "MULTIPLE"`, `line_spacing_bibliography = 1.15`
+- "referensi ditulis dengan spasi tunggal" → `line_spacing_rule_bibliography = "SINGLE"`, `line_spacing_bibliography = null`
+
+Jika tidak disebutkan terpisah → `line_spacing_rule_bibliography = null`, `line_spacing_bibliography = null`
+(sistem akan otomatis menggunakan spasi body sebagai fallback).
+
+**Langkah 7 — Ekstrak pengaturan format judul artikel (title_case, title_alignment, title_bold):**
 Cari pernyataan atau contoh tentang cara penulisan judul artikel pada halaman pertama:
 
 - **`title_case`** — huruf pada judul:
@@ -91,7 +99,7 @@ Cari pernyataan atau contoh tentang cara penulisan judul artikel pada halaman pe
   - "tidak tebal", "tidak bold", "normal weight" → `false`
   - Jika tidak disebutkan → `null` (sistem akan default `true`)
 
-**Langkah 6 — Terapkan default jika tidak ditemukan:**
+**Langkah 8 — Terapkan default jika tidak ditemukan:**
 Semua field yang tidak ditemukan → `null`.
 Jangan mengarang nilai berdasarkan pengetahuan umum PKM.
 
@@ -105,10 +113,16 @@ Jangan mengarang nilai berdasarkan pengetahuan umum PKM.
 - `title_alignment`: TEPAT SATU dari `"CENTER"`, `"LEFT"`, `"RIGHT"`, `"JUSTIFY"`, atau `null`
 - `title_bold`: boolean `true`, `false`, atau `null`
 
+## Normalization Rules — Spasi Daftar Pustaka
+Sama dengan body: gunakan tabel enum yang sama untuk `line_spacing_rule_bibliography`.
+Jika tidak ditemukan → kedua field `null`.
+
 ## Output Fields
 - `line_spacing_rule`: aturan spasi baris body artikel (string enum atau null)
 - `line_spacing`: nilai spasi numerik body artikel — hanya untuk MULTIPLE/AT_LEAST/EXACTLY (float atau null)
 - `line_spacing_title_abstract`: spasi baris khusus halaman judul dan abstrak (float atau null)
+- `line_spacing_rule_bibliography`: aturan spasi baris daftar pustaka (string enum atau null)
+- `line_spacing_bibliography`: nilai spasi numerik daftar pustaka — hanya untuk MULTIPLE/AT_LEAST/EXACTLY (float atau null)
 - `paragraph_alignment`: rata paragraf (string enum atau null)
 - `title_case`: style huruf judul artikel (string enum atau null)
 - `title_alignment`: rata judul artikel (string enum atau null)

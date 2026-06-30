@@ -42,7 +42,7 @@ Contoh penalaran: *"Saya menemukan section 'Lampiran 7' → saya gunakan section
 
 **Langkah 2 — Identifikasi halaman judul dan abstrak:**
 Cari apakah dokumen memiliki halaman pertama khusus yang memuat judul, nama penulis, dan abstrak.
-Jika ada → sertakan sebagai section pertama dengan `type: "judul_abstrak"`.
+Jika ada → sertakan sebagai section pertama dengan `type: "judul_abstrak"` dan `title: "Judul dan Abstrak"`.
 Ini adalah section wajib dan selalu hadir pertama untuk artikel ilmiah PKM-AI.
 
 **Langkah 3 — Identifikasi semua BAB artikel:**
@@ -59,7 +59,7 @@ Ikuti dokumen sumber — jika berbeda dari pola di atas, gunakan apa yang disebu
 
 **Langkah 4 — Identifikasi Daftar Pustaka:**
 Cek apakah dokumen menyebutkan adanya Daftar Pustaka/Referensi untuk artikel.
-Artikel ilmiah selalu memiliki daftar pustaka → sertakan dengan `required: true`.
+Artikel ilmiah selalu memiliki daftar pustaka → sertakan dengan `required: true` dan `title: "Daftar Pustaka"`.
 
 **Langkah 5 — Identifikasi lampiran:**
 Cari apakah dokumen menyebutkan lampiran untuk artikel.
@@ -91,7 +91,7 @@ Setiap entry di `sections` adalah objek dengan fields berikut:
 ## Aturan section judul_abstrak
 - Selalu hadir sebagai section **pertama** dalam artikel
 - Tidak memiliki nomor; judul bukan judul BAB melainkan konten artikel itu sendiri
-- Format: `{"type": "judul_abstrak", "required": true, "is_major_section": true}`
+- Format: `{"type": "judul_abstrak", "required": true, "is_major_section": true, "title": "Judul dan Abstrak"}`
 
 ## Aturan BAB Artikel
 - Gunakan `type: "bab"` untuk setiap section isi artikel
@@ -100,22 +100,22 @@ Setiap entry di `sections` adalah objek dengan fields berikut:
 - Format: `{"type": "bab", "number": 1, "title": "Pendahuluan", "required": true}`
 
 ## Aturan Lampiran Artikel
-- Header lampiran: `{"type": "lampiran_utama", "required": false}`
+- Header lampiran: `{"type": "lampiran_utama", "required": false, "title": "Lampiran"}`
 - Setiap item: `{"type": "item_lampiran", "lampiran_number": "Lampiran 1", "title": "BIODATA PENULIS"}`
 - Sertakan lampiran HANYA jika disebutkan eksplisit di dokumen sumber
 
 Contoh sections untuk artikel PKM-AI:
 ```json
 [
-  {"type": "judul_abstrak", "required": true, "is_major_section": true},
+  {"type": "judul_abstrak", "required": true, "is_major_section": true, "title": "Judul dan Abstrak"},
   {"type": "bab", "number": 1, "title": "Pendahuluan", "required": true},
   {"type": "bab", "number": 2, "title": "Metode", "required": true},
   {"type": "bab", "number": 3, "title": "Hasil dan Pembahasan", "required": true},
   {"type": "bab", "number": 4, "title": "Kesimpulan", "required": true},
   {"type": "bab", "number": 5, "title": "Ucapan Terima Kasih", "required": false},
   {"type": "bab", "number": 6, "title": "Kontribusi Penulis", "required": false},
-  {"type": "daftar_pustaka", "required": true, "is_major_section": true},
-  {"type": "lampiran_utama", "required": false, "is_major_section": true},
+  {"type": "daftar_pustaka", "required": true, "is_major_section": true, "title": "Daftar Pustaka"},
+  {"type": "lampiran_utama", "required": false, "is_major_section": true, "title": "Lampiran"},
   {"type": "item_lampiran", "lampiran_number": "Lampiran 1", "title": "BIODATA PENULIS"}
 ]
 ```

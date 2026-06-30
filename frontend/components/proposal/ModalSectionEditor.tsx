@@ -54,6 +54,8 @@ const TYPE_LABELS: Record<string, string> = {
   daftar_pustaka: "Daftar Pustaka",
   lampiran: "Lampiran",
   item_lampiran: "Item Lampiran",
+  judul_abstrak: "Judul & Abstrak",
+  lampiran_utama: "Lampiran",
 }
 
 const TYPE_BADGE_COLOR: Record<string, string> = {
@@ -66,6 +68,8 @@ const TYPE_BADGE_COLOR: Record<string, string> = {
   daftar_pustaka: "bg-red-100 text-red-600",
   lampiran: "bg-amber-100 text-amber-700",
   item_lampiran: "bg-amber-50 text-amber-600",
+  judul_abstrak: "bg-purple-100 text-purple-700",
+  lampiran_utama: "bg-amber-100 text-amber-700",
 }
 
 // Types whose title is fixed (not editable)
@@ -76,6 +80,8 @@ const FIXED_TITLE = new Set([
   "daftar_lampiran",
   "daftar_pustaka",
   "lampiran",
+  "judul_abstrak",
+  "lampiran_utama",
 ])
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -85,7 +91,8 @@ function isTitleEditable(s: SectionItem): boolean {
 }
 
 function isDeletable(s: SectionItem): boolean {
-  return s.required !== true
+  if (s.type === "judul_abstrak") return false
+  return true
 }
 
 /** Auto-generate sub_number for new sub_bab at insertIndex */
@@ -132,7 +139,9 @@ function getSectionKey(s: SectionItem, chapterFormat = "BAB {n}"): string {
     return makeInstructionKey("sub_bab", `${s.sub_number || ""} ${s.title || ""}`.trim())
   if (s.type === "item_lampiran")
     return makeInstructionKey("item_lampiran", `${s.lampiran_number || ""}. ${s.title || ""}`.trim())
-  return makeInstructionKey(s.type, s.title)
+  // Fallback title untuk section tanpa title — harus cocok dengan logika Python backend
+  const fallbackTitle = s.title || TYPE_LABELS[s.type] || s.type.toUpperCase().replace(/_/g, " ")
+  return makeInstructionKey(s.type, fallbackTitle)
 }
 
 /** Human-readable label for a section (used in Placeholder "Mengacu") */
@@ -213,7 +222,7 @@ function SortableRow({
           placeholder="Judul section..."
         />
       ) : (
-        <span className="min-w-0 flex-1 text-muted-foreground">{section.title || "—"}</span>
+        <span className="min-w-0 flex-1 text-muted-foreground">{section.title || TYPE_LABELS[section.type] || "—"}</span>
       )}
 
       {/* Delete button */}
@@ -361,8 +370,8 @@ function StrukturTab({
                     <Plus className="size-3" /> Sub-BAB
                   </button>
                 )}
-                {/* "+ Item Lampiran" button after lampiran section */}
-                {s.type === "lampiran" && (
+                {/* "+ Item Lampiran" button after lampiran section (proposal) atau lampiran_utama (PKM-AI) */}
+                {(s.type === "lampiran" || s.type === "lampiran_utama") && (
                   <button
                     className="mt-1 ml-8 flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary"
                     onClick={() => addItemLampiran(i)}
@@ -434,7 +443,8 @@ function PlaceholderTab({
 
   const autoRows = sections
     .filter((s) =>
-      ["bab", "sub_bab", "daftar_pustaka", "lampiran", "item_lampiran"].includes(s.type)
+      ["bab", "sub_bab", "daftar_pustaka", "lampiran", "item_lampiran",
+       "judul_abstrak", "lampiran_utama"].includes(s.type)
     )
     .map((s) => {
       const key = getSectionKey(s, fmt)

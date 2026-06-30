@@ -71,7 +71,27 @@ Cari pernyataan tentang rata paragraf:
 
 Jika tidak disebutkan → `null`.
 
-**Langkah 5 — Terapkan default jika tidak ditemukan:**
+**Langkah 5 — Ekstrak pengaturan format judul artikel (title_case, title_alignment, title_bold):**
+Cari pernyataan atau contoh tentang cara penulisan judul artikel pada halaman pertama:
+
+- **`title_case`** — huruf pada judul:
+  - "judul ditulis huruf kapital semua", "all caps", "cetak kapital" → `"UPPERCASE"`
+  - "judul huruf kecil semua" → `"LOWERCASE"`
+  - "judul huruf kalimat biasa" → `"SENTENCE_CASE"`
+  - Jika tidak disebutkan → `null`
+
+- **`title_alignment`** — rata judul:
+  - "judul rata tengah", "centered" → `"CENTER"`
+  - "rata kiri" → `"LEFT"`
+  - "rata kanan kiri", "justify" → `"JUSTIFY"`
+  - Jika tidak disebutkan → `null`
+
+- **`title_bold`** — ketebalan judul:
+  - "dicetak tebal", "bold", "huruf tebal" → `true`
+  - "tidak tebal", "tidak bold", "normal weight" → `false`
+  - Jika tidak disebutkan → `null` (sistem akan default `true`)
+
+**Langkah 6 — Terapkan default jika tidak ditemukan:**
 Semua field yang tidak ditemukan → `null`.
 Jangan mengarang nilai berdasarkan pengetahuan umum PKM.
 
@@ -81,9 +101,15 @@ Jangan mengarang nilai berdasarkan pengetahuan umum PKM.
 - Untuk `MULTIPLE`: `line_spacing` adalah pengali desimal (contoh: 1.15)
 - `line_spacing_title_abstract`: float atau `null` (contoh: 1.0)
 - `paragraph_alignment`: TEPAT SATU dari `"JUSTIFY"`, `"LEFT"`, `"RIGHT"`, `"CENTER"`, atau `null`
+- `title_case`: TEPAT SATU dari `"UPPERCASE"`, `"LOWERCASE"`, `"SENTENCE_CASE"`, `"TOGGLE_CASE"`, atau `null`
+- `title_alignment`: TEPAT SATU dari `"CENTER"`, `"LEFT"`, `"RIGHT"`, `"JUSTIFY"`, atau `null`
+- `title_bold`: boolean `true`, `false`, atau `null`
 
 ## Output Fields
 - `line_spacing_rule`: aturan spasi baris body artikel (string enum atau null)
 - `line_spacing`: nilai spasi numerik body artikel — hanya untuk MULTIPLE/AT_LEAST/EXACTLY (float atau null)
 - `line_spacing_title_abstract`: spasi baris khusus halaman judul dan abstrak (float atau null)
 - `paragraph_alignment`: rata paragraf (string enum atau null)
+- `title_case`: style huruf judul artikel (string enum atau null)
+- `title_alignment`: rata judul artikel (string enum atau null)
+- `title_bold`: apakah judul dicetak tebal (boolean atau null)

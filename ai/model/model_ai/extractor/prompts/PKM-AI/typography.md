@@ -61,18 +61,7 @@ Cari pernyataan yang MEMBEDAKAN ukuran font untuk:
 
 Jika elemen tidak disebutkan secara terpisah → `null` untuk elemen tersebut.
 
-**Langkah 5 — Inferensikan style judul artikel (title_style):**
-Cari pernyataan atau contoh tentang cara penulisan judul artikel:
-- "judul dicetak tebal, huruf kapital semua" → `"BOLD_UPPERCASE"`
-- "judul dicetak tebal, bukan all caps" → `"BOLD"`
-- "judul huruf kapital, tidak tebal" → `"UPPERCASE"`
-- "judul huruf biasa" → `"NORMAL"`
-
-Perhatikan dua aspek: (a) apakah tebal/bold? (b) apakah kapital semua?
-Kombinasikan menjadi salah satu dari 4 nilai enum.
-Jika tidak ada pernyataan maupun contoh → `null`.
-
-**Langkah 6 — Terapkan default jika tidak ditemukan:**
+**Langkah 5 — Terapkan default jika tidak ditemukan:**
 - `font_family` tidak disebutkan → `null`
 - `font_size_body_pt` tidak disebutkan → `null`
 - `font_size_heading_pt` tidak disebutkan, tapi `font_size_body_pt` ada → sama dengan `font_size_body_pt`
@@ -81,7 +70,6 @@ Jika tidak ada pernyataan maupun contoh → `null`.
 ## Normalization Rules
 - Gunakan JSON null (bukan string "null") untuk nilai yang tidak ditemukan
 - Semua `font_size_*_pt`: integer dalam pt (contoh: 12)
-- `title_style`: TEPAT salah satu dari `"BOLD_UPPERCASE"`, `"BOLD"`, `"UPPERCASE"`, `"NORMAL"`, atau `null`
 
 ## Output Fields
 - `font_family`: nama font utama dokumen (contoh: `"Times New Roman"`)
@@ -90,4 +78,3 @@ Jika tidak ada pernyataan maupun contoh → `null`.
 - `font_size_title_pt`: ukuran font judul artikel di halaman pertama (integer atau null)
 - `font_size_author_pt`: ukuran font nama penulis (integer atau null)
 - `font_size_abstract_pt`: ukuran font teks abstrak (integer atau null)
-- `title_style`: style penulisan judul artikel (string enum atau null)

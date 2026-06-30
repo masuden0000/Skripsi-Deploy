@@ -333,15 +333,16 @@ def _render_judul_abstrak(
     author_size  = typography.get("font_size_author_pt") or 10
     abstract_sz  = typography.get("font_size_abstract_pt") or 11
     title_spacing = _spacing_title_abstract(spacing)
-    title_style_raw = (typography.get("title_style") or "BOLD_UPPERCASE").upper()
-    title_is_bold = "BOLD" in title_style_raw
-    title_is_upper = "UPPERCASE" in title_style_raw
+    title_is_bold  = spacing.get("title_bold", True)
+    title_case_raw = (spacing.get("title_case") or "UPPERCASE").upper()
+    title_is_upper = title_case_raw == "UPPERCASE"
+    title_align    = _map_alignment((spacing.get("title_alignment") or "CENTER").upper())
 
     title_text = "JUDUL DIBUAT RINGKAS MAKSIMUM 20 KATA DENGAN MENONJOLKAN KATA KUNCI KEGIATAN ILMIAH DAN HASIL UTAMANYA, HURUF KAPITAL, HINDARI ADANYA SINGKATAN"
     if not title_is_upper:
         title_text = title_text.title()
 
-    p_title = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing, space_after_pt=0)
+    p_title = _add_styled_paragraph(document, title_align, title_spacing, space_after_pt=0)
     _add_run(p_title, title_text, body_font, title_size, bold=title_is_bold)
     _add_bookmark_to_paragraph(p_title, _bookmark_id_artikel("judul_abstrak"), _bookmark_name_artikel("judul_abstrak"))
 

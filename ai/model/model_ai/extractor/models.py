@@ -14,7 +14,6 @@ class Source(BaseModel):
 
 
 _VALID_CASE_STYLES = frozenset({"UPPERCASE", "LOWERCASE", "SENTENCE_CASE", "TOGGLE_CASE"})
-_VALID_TITLE_STYLES: frozenset[str] = frozenset({"BOLD_UPPERCASE", "BOLD", "UPPERCASE", "NORMAL"})
 
 
 class TypographyExtracted(BaseModel):
@@ -34,7 +33,6 @@ class TypographyExtracted(BaseModel):
     font_size_title_pt: int | None = None
     font_size_author_pt: int | None = None
     font_size_abstract_pt: int | None = None
-    title_style: Literal["BOLD_UPPERCASE", "BOLD", "UPPERCASE", "NORMAL"] | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -60,11 +58,6 @@ class TypographyExtracted(BaseModel):
                 normalized[field] = val.strip().lower() not in ("false", "0", "tidak", "no")
             elif val is None:
                 normalized[field] = True
-        raw_style = normalized.get("title_style")
-        if isinstance(raw_style, str):
-            normalized["title_style"] = raw_style.strip().upper()
-        if normalized.get("title_style") not in _VALID_TITLE_STYLES:
-            normalized["title_style"] = None
         return normalized
 
 
@@ -96,6 +89,9 @@ class SpacingExtracted(BaseModel):
     heading_4_alignment: str | None = None
     heading_5_alignment: str | None = None
     line_spacing_title_abstract: float | None = None
+    title_case: Literal["UPPERCASE", "LOWERCASE", "SENTENCE_CASE", "TOGGLE_CASE"] | None = None
+    title_alignment: str | None = None
+    title_bold: bool = True
 
     _RULE_ALIASES: dict[str, str] = {
         "EXACT":          "EXACTLY",
@@ -116,6 +112,23 @@ class SpacingExtracted(BaseModel):
 
     _VALID_HEADING_ALIGNMENTS: frozenset[str] = frozenset({"CENTER", "LEFT", "RIGHT", "JUSTIFY"})
 
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_title_fields(cls, data: object) -> object:
+        if not isinstance(data, dict):
+            return data
+        normalized = dict(data)
+        val = normalized.get("title_bold")
+        if isinstance(val, str):
+            normalized["title_bold"] = val.strip().lower() not in ("false", "0", "tidak", "no")
+        elif val is None:
+            normalized["title_bold"] = True
+        raw_case = normalized.get("title_case")
+        if isinstance(raw_case, str):
+            upper = raw_case.strip().upper()
+            normalized["title_case"] = upper if upper in _VALID_CASE_STYLES else None
+        return normalized
+
     @model_validator(mode="after")
     def _normalize_rule(self) -> "SpacingExtracted":
         if self.line_spacing_rule is not None:
@@ -128,12 +141,13 @@ class SpacingExtracted(BaseModel):
         val = (self.heading_alignment or "CENTER").strip().upper()
         self.heading_alignment = val if val in self._VALID_HEADING_ALIGNMENTS else "CENTER"
 
-        for field, default in (
-            ("heading_1_alignment", None),
-            ("heading_2_alignment", None),
-            ("heading_3_alignment", None),
-            ("heading_4_alignment", None),
-            ("heading_5_alignment", None),
+        for field in (
+            "heading_1_alignment",
+            "heading_2_alignment",
+            "heading_3_alignment",
+            "heading_4_alignment",
+            "heading_5_alignment",
+            "title_alignment",
         ):
             raw_val = getattr(self, field)
             if raw_val is None:

@@ -68,9 +68,6 @@ const TYPE_BADGE_COLOR: Record<string, string> = {
   item_lampiran: "bg-amber-50 text-amber-600",
 }
 
-// Types that cannot be deleted
-const NON_DELETABLE = new Set(["daftar_isi", "daftar_pustaka", "bab", "lampiran"])
-
 // Types whose title is fixed (not editable)
 const FIXED_TITLE = new Set([
   "daftar_isi",
@@ -88,11 +85,7 @@ function isTitleEditable(s: SectionItem): boolean {
 }
 
 function isDeletable(s: SectionItem): boolean {
-  if (NON_DELETABLE.has(s.type)) return false
-  if (s.type === "daftar_gambar" || s.type === "daftar_tabel" || s.type === "daftar_lampiran") {
-    return s.required !== true
-  }
-  return true
+  return s.required !== true
 }
 
 /** Auto-generate sub_number for new sub_bab at insertIndex */

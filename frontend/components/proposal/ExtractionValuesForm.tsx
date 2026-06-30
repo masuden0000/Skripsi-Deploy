@@ -506,7 +506,6 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
                         onChange={(v) => patch("spacing", { line_spacing_title_abstract: v })}
                         disabled={isGrupATA}
                         placeholder={isGrupATA ? "—" : "contoh: 1.0"}
-                        hint="Spasi baris khusus zona judul/penulis/institusi/abstrak PKM-AI."
                       />
                       <SelectFieldInput
                         label="Aturan Spasi Daftar Pustaka"

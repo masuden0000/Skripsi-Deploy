@@ -269,9 +269,25 @@ async def get_placeholders(project_id: str):
     """
     Baca generated_placeholders dan user_placeholders dari DB.
     generated_placeholders disimpan saat pipeline docx selesai — tidak di-generate ulang di sini.
+
+    Routing:
+      PKM-AI (Type B) → document_structure_artikel
+      Lainnya (Type A) → document_structure_proposal
     """
     try:
         supabase = get_supabase()
+
+        # Baca skema untuk menentukan structure key yang benar
+        project_result = (
+            supabase.table("projects")
+            .select("skema")
+            .eq("id", project_id)
+            .single()
+            .execute()
+        )
+        skema: str = (project_result.data or {}).get("skema") or "PKM-KC"
+        structure_key = "document_structure_artikel" if skema.upper() == "PKM-AI" else "document_structure_proposal"
+
         result = (
             supabase.table("document_metadata")
             .select("payload")
@@ -287,7 +303,7 @@ async def get_placeholders(project_id: str):
             )
 
         payload: dict = result.data.get("payload") or {}
-        doc_structure: dict = payload.get("document_structure_proposal") or {}
+        doc_structure: dict = payload.get(structure_key) or {}
 
         generated: dict = doc_structure.get("generated_placeholders") or {}
         user_overrides: dict = doc_structure.get("user_placeholders") or {}

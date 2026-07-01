@@ -534,6 +534,8 @@ def _render_artikel_daftar_pustaka(
     body_spacing = _spacing_bibliography(spacing)
 
     title = section.get("title") or "Daftar Pustaka"
+    # 1 spasi sebelum heading Daftar Pustaka
+    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing)
     p_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing)
     _add_run(p_head, title, body_font, body_size, bold=True)
     _add_bookmark_to_paragraph(p_head, _bookmark_id_artikel("daftar_pustaka"), _bookmark_name_artikel("daftar_pustaka"))
@@ -562,6 +564,8 @@ def _render_artikel_lampiran(
     body_spacing = _spacing_body(spacing)
 
     title = section.get("title") or "LAMPIRAN"
+    # 1 spasi sebelum heading Lampiran
+    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing)
     p_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing, space_after_pt=0)
     _add_run(p_head, title, body_font, body_size, bold=True)
     _add_bookmark_to_paragraph(p_head, _bookmark_id_artikel("lampiran"), _bookmark_name_artikel("lampiran"))

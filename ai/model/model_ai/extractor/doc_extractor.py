@@ -348,6 +348,20 @@ def _extract_key(
 
                 llm = _build_llm()
                 chain = llm.with_structured_output(extracted_cls)
+            elif "400" in err_str or "tool_use_failed" in err_str or "invalid_request_error" in err_str:
+                print(f"[extract] LLM Bad Request / Tool Call Failed (kemungkinan JSON malformed). Retry percobaan {attempt + 1}/{max_retries}...")
+                if attempt >= max_retries - 1:
+                    raise
+                
+                # Switch to Gemini jika sudah beberapa kali gagal karena format JSON yang buruk dari Groq
+                if not CONFIG._groq_exhausted and attempt >= 2:
+                    print(f"[extract] Terlalu banyak kegagalan format dari Groq, switch ke Gemini...")
+                    CONFIG._groq_exhausted = True
+                
+                llm = _build_llm()
+                chain = llm.with_structured_output(extracted_cls)
+                # Jeda sejenak sebelum retry
+                time.sleep(2)
             else:
                 raise
     else:

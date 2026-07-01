@@ -4,6 +4,8 @@ queries:
   - "aturan spasi baris khusus untuk halaman judul, abstrak, paragraf, caption, dan daftar pustaka referensi"
   - "jarak baris artikel ilmiah ketentuan penulisan"
   - "line spacing teks artikel PKM format penulisan"
+  - "spasi daftar pustaka referensi Harvard artikel PKM format penulisan"
+  - "spasi antar referensi baris daftar pustaka artikel ilmiah"
 section_focus:
   - "Lampiran 7"
   - "Sistematika Penulisan Isi Utama Artikel Ilmiah"
@@ -73,12 +75,23 @@ Cari pernyataan tentang rata paragraf:
 Jika tidak disebutkan → `null`.
 
 **Langkah 5 — Identifikasi spasi daftar pustaka (line_spacing_rule_bibliography dan line_spacing_bibliography):**
-Cari pernyataan yang secara eksplisit menyebut spasi untuk bagian **Daftar Pustaka**:
-- "daftar pustaka menggunakan spasi 1,15" → `line_spacing_rule_bibliography = "MULTIPLE"`, `line_spacing_bibliography = 1.15`
-- "referensi ditulis dengan spasi tunggal" → `line_spacing_rule_bibliography = "SINGLE"`, `line_spacing_bibliography = null`
+Cari informasi spasi untuk bagian **Daftar Pustaka / Referensi**. Pola yang sering ditemukan di panduan PKM:
 
-Jika tidak disebutkan terpisah → `line_spacing_rule_bibliography = null`, `line_spacing_bibliography = null`
-(sistem akan otomatis menggunakan spasi body sebagai fallback).
+**Pola 1 — Eksplisit satu kalimat:**
+- "Daftar Pustaka ditulis dengan spasi 1,15" → `MULTIPLE` + 1.15
+- "referensi menggunakan spasi tunggal" → `SINGLE` + null
+
+**Pola 2 — Kalimat terpisah (paling umum di panduan PKM):**
+Kalimat pertama menetapkan konteks daftar pustaka, kalimat berikutnya menyebut spasi tanpa mengulang kata "daftar pustaka".
+Contoh: *"Daftar pustaka ditulis dengan ... [aturan font]. Teks menggunakan jarak baris X spasi."*
+→ karena kalimat kedua berada dalam konteks paragraf daftar pustaka, ambil nilai X dan petakan ke enum.
+
+**Cara mendeteksi:**
+1. Temukan paragraf/section yang membahas format daftar pustaka atau referensi
+2. Dalam paragraf tersebut, cari angka spasi atau kata spasi tunggal/ganda
+3. Petakan ke enum dengan tabel di Langkah 2 — ikuti nilai yang tertulis di panduan, jangan asumsikan
+
+Jika tidak ditemukan sama sekali → `null` untuk keduanya.
 
 **Langkah 7 — Ekstrak pengaturan format judul artikel (title_case, title_alignment, title_bold):**
 Cari pernyataan atau contoh tentang cara penulisan judul artikel pada halaman pertama:

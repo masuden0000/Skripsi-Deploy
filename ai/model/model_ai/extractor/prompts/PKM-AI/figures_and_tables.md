@@ -60,11 +60,19 @@ Artikel PKM-AI mungkin menetapkan ukuran font khusus untuk keterangan gambar/tab
 - Keluarkan sebagai integer pt → `caption_font_size`
 - Jika tidak disebutkan → `null`
 
-**Langkah 5 — Ekstrak spasi caption (caption_line_spacing):**
-Artikel PKM-AI mungkin menetapkan spasi khusus untuk keterangan gambar/tabel:
-- Cari pernyataan seperti: "keterangan gambar spasi 1,0", "caption single spaced"
-- Keluarkan sebagai float → `caption_line_spacing`
-- Jika tidak disebutkan → `null`
+**Langkah 5 — Ekstrak spasi caption (caption_line_spacing_rule dan caption_line_spacing):**
+Artikel PKM-AI mungkin menetapkan spasi khusus untuk keterangan gambar/tabel.
+Gunakan tabel enum yang sama dengan spasi body:
+
+| Deskripsi di dokumen                        | `caption_line_spacing_rule` | `caption_line_spacing`      |
+|---------------------------------------------|-----------------------------|-----------------------------|
+| "spasi tunggal", "single", "1 spasi", "1,0" | `"SINGLE"`                  | `null` (wajib null)         |
+| "1,5 baris"                                 | `"ONE_POINT_FIVE"`          | `null` (wajib null)         |
+| Angka desimal bebas: 1.15, 1.25             | `"MULTIPLE"`                | angka tersebut (float)      |
+
+Contoh: "keterangan gambar spasi 1,0" atau "caption single spaced" → `caption_line_spacing_rule = "SINGLE"`, `caption_line_spacing = null`
+Contoh: "caption ditulis dengan spasi 1.15" → `caption_line_spacing_rule = "MULTIPLE"`, `caption_line_spacing = 1.15`
+Jika tidak disebutkan → keduanya `null`
 
 **Langkah 6 — Terapkan default jika contoh tidak ditemukan:**
 - Jika tidak ada contoh tabel: `table_caption_position = "ABOVE"` (standar akademik)
@@ -78,7 +86,8 @@ Artikel PKM-AI mungkin menetapkan spasi khusus untuk keterangan gambar/tabel:
 - `figure_caption_position`: `"ABOVE"` atau `"BELOW"`
 - Template caption: gunakan `{n}` untuk nomor urut, `{title}` untuk judul
 - `caption_font_size`: integer pt (contoh: 11)
-- `caption_line_spacing`: float (contoh: 1.0)
+- `caption_line_spacing_rule`: TEPAT SATU dari `"SINGLE"`, `"ONE_POINT_FIVE"`, `"DOUBLE"`, `"MULTIPLE"`, `"AT_LEAST"`, `"EXACTLY"`, atau `null`
+- `caption_line_spacing`: float hanya untuk MULTIPLE/AT_LEAST/EXACTLY — untuk SINGLE/ONE_POINT_FIVE/DOUBLE WAJIB `null`
 - `budget_format_rules`: WAJIB `null` untuk artikel ilmiah
 
 ## Output Fields
@@ -88,5 +97,6 @@ Artikel PKM-AI mungkin menetapkan spasi khusus untuk keterangan gambar/tabel:
 - `caption_format_table`: template format keterangan tabel
 - `caption_format_lampiran`: template format judul lampiran
 - `caption_font_size`: ukuran font keterangan gambar/tabel dalam pt (integer atau null)
-- `caption_line_spacing`: spasi keterangan gambar/tabel (float atau null)
+- `caption_line_spacing_rule`: aturan spasi caption (string enum atau null)
+- `caption_line_spacing`: nilai spasi numerik caption — hanya untuk MULTIPLE/AT_LEAST/EXACTLY (float atau null)
 - `budget_format_rules`: null (artikel ilmiah tidak memiliki anggaran)

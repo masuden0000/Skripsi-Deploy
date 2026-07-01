@@ -64,13 +64,16 @@ Artikel PKM-AI mungkin menetapkan ukuran font khusus untuk keterangan gambar/tab
 Artikel PKM-AI mungkin menetapkan spasi khusus untuk keterangan gambar/tabel.
 Gunakan tabel enum yang sama dengan spasi body:
 
-| Deskripsi di dokumen                        | `caption_line_spacing_rule` | `caption_line_spacing`      |
-|---------------------------------------------|-----------------------------|-----------------------------|
-| "spasi tunggal", "single", "1 spasi", "1,0" | `"SINGLE"`                  | `null` (wajib null)         |
-| "1,5 baris"                                 | `"ONE_POINT_FIVE"`          | `null` (wajib null)         |
-| Angka desimal bebas: 1.15, 1.25             | `"MULTIPLE"`                | angka tersebut (float)      |
+| Deskripsi di dokumen                                         | `caption_line_spacing_rule` | `caption_line_spacing`      |
+|--------------------------------------------------------------|-----------------------------|-----------------------------|
+| "spasi tunggal", "single", "1 spasi", "1,0", "spasi 1"      | `"SINGLE"`                  | `null` (wajib null)         |
+| "1,5 baris"                                                  | `"ONE_POINT_FIVE"`          | `null` (wajib null)         |
+| Angka desimal > 1: 1.15, 1.25, 2.0 (BUKAN 1 atau 1,0)       | `"MULTIPLE"`                | angka tersebut (float)      |
 
-Contoh: "keterangan gambar spasi 1,0" atau "caption single spaced" → `caption_line_spacing_rule = "SINGLE"`, `caption_line_spacing = null`
+**PENTING**: Nilai `1` atau `1,0` berarti spasi tunggal → SINGLE, bukan MULTIPLE.
+MULTIPLE hanya untuk angka desimal lebih dari 1 seperti 1.15 atau 1.25.
+
+Contoh: "keterangan gambar spasi 1" atau "jarak baris 1,0" → `caption_line_spacing_rule = "SINGLE"`, `caption_line_spacing = null`
 Contoh: "caption ditulis dengan spasi 1.15" → `caption_line_spacing_rule = "MULTIPLE"`, `caption_line_spacing = 1.15`
 Jika tidak disebutkan → keduanya `null`
 

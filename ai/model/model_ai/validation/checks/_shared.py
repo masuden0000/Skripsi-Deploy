@@ -32,6 +32,8 @@ _HEADING_TITLE_MAP: dict[str, str] = {
     "DAFTAR LAMPIRAN": "daftar_lampiran",
     "DAFTAR PUSTAKA": "daftar_pustaka",
     "LAMPIRAN": "lampiran",
+    "ABSTRAK": "abstrak",
+    "ABSTRACT": "abstract",
 }
 _BAB_RE = re.compile(r'^BAB\s+(\d+)\b', re.IGNORECASE)
 _SUB_BAB_RE = re.compile(r'^(\d+)\.(\d+)\b')

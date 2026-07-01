@@ -55,7 +55,7 @@ Cari deskripsi tentang apa yang dihitung sebagai "halaman inti" untuk artikel:
 - Sampai section mana hitungan berakhir? (Daftar Pustaka? Sebelum Lampiran?)
 - Apakah lampiran dikecualikan?
 
-Petakan ke nilai enum yang valid: `"judul_abstrak"`, `"bab"`, `"daftar_pustaka"`, `"lampiran_utama"`.
+Petakan ke nilai enum yang valid: `"judul_abstrak"`, `"bab"`, `"daftar_pustaka"`, `"lampiran"`.
 Jika tidak ditemukan eksplisit → gunakan default (Langkah 4).
 
 **Langkah 4 — Terapkan default jika tidak ditemukan:**
@@ -65,7 +65,7 @@ Jika tidak ditemukan eksplisit → gunakan default (Langkah 4).
 - `artikel_halaman_inti_maks` tidak ditemukan → `null`
 
 ## Normalization Rules
-- `halaman_inti_mulai` dan `halaman_inti_selesai` WAJIB menggunakan TEPAT salah satu nilai: `"judul_abstrak"`, `"bab"`, `"daftar_pustaka"`, `"lampiran_utama"` — jangan gunakan string bebas
+- `halaman_inti_mulai` dan `halaman_inti_selesai` WAJIB menggunakan TEPAT salah satu nilai: `"judul_abstrak"`, `"bab"`, `"daftar_pustaka"`, `"lampiran"` — jangan gunakan string bebas
 - Jangan keluarkan field untuk proposal atau laporan
 - `artikel_halaman_inti_min` dan `artikel_halaman_inti_maks`: integer atau null
 

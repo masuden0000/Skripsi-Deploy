@@ -1124,8 +1124,8 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
                 { value: "daftar_pustaka",label: "Daftar Pustaka" },
                 { value: "lampiran",      label: "Lampiran" },
                 ...(isArtikel ? [
-                  { value: "judul_abstrak",  label: "Judul & Abstrak" },
-                  { value: "lampiran_utama", label: "Lampiran (Artikel)" },
+                  { value: "judul",         label: "Judul" },
+                  { value: "judul_abstrak", label: "Judul & Abstrak (lama)" },
                 ] : []),
               ]}
               onChange={(v) => patch("page_count_limits", { halaman_inti_mulai: v })}
@@ -1139,8 +1139,8 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
                 { value: "daftar_pustaka",label: "Daftar Pustaka" },
                 { value: "lampiran",      label: "Lampiran" },
                 ...(isArtikel ? [
-                  { value: "judul_abstrak",  label: "Judul & Abstrak" },
-                  { value: "lampiran_utama", label: "Lampiran (Artikel)" },
+                  { value: "judul",         label: "Judul" },
+                  { value: "judul_abstrak", label: "Judul & Abstrak (lama)" },
                 ] : []),
               ]}
               onChange={(v) => patch("page_count_limits", { halaman_inti_selesai: v })}

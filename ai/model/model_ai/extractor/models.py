@@ -197,7 +197,8 @@ class SpacingInfo(SpacingExtracted):
 _VALID_SECTION_TYPES = frozenset({
     "daftar_isi", "daftar_gambar", "daftar_tabel", "daftar_lampiran",
     "daftar_pustaka", "bab", "sub_bab", "lampiran", "item_lampiran",
-    "judul_abstrak", "lampiran_utama",
+    "judul_abstrak",
+    "judul", "identitas_penulis", "abstrak", "abstract",
 })
 _MAJOR_SECTION_TYPES = frozenset({
     "daftar_isi",
@@ -209,7 +210,10 @@ _MAJOR_SECTION_TYPES = frozenset({
     "sub_bab",
     "lampiran",
     "judul_abstrak",
-    "lampiran_utama",
+    "judul",
+    "identitas_penulis",
+    "abstrak",
+    "abstract",
 })
 
 def _normalize_section_type(raw: str) -> str:
@@ -346,7 +350,7 @@ class FiguresTablesInfo(FiguresTablesExtracted):
 
 _VALID_HALAMAN_INTI_SECTIONS = frozenset({
     "bab", "daftar_isi", "daftar_pustaka", "lampiran",
-    "judul_abstrak", "lampiran_utama",
+    "judul_abstrak", "judul",
 })
 
 

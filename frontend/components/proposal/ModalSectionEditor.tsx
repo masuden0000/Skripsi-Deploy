@@ -56,6 +56,10 @@ const TYPE_LABELS: Record<string, string> = {
   item_lampiran: "Item Lampiran",
   judul_abstrak: "Judul & Abstrak",
   lampiran_utama: "Lampiran",
+  judul: "Judul",
+  identitas_penulis: "Identitas Penulis",
+  abstrak: "Abstrak",
+  abstract: "Abstract",
 }
 
 const TYPE_BADGE_COLOR: Record<string, string> = {
@@ -70,6 +74,10 @@ const TYPE_BADGE_COLOR: Record<string, string> = {
   item_lampiran: "bg-amber-50 text-amber-600",
   judul_abstrak: "bg-purple-100 text-purple-700",
   lampiran_utama: "bg-amber-100 text-amber-700",
+  judul: "bg-purple-100 text-purple-700",
+  identitas_penulis: "bg-purple-100 text-purple-700",
+  abstrak: "bg-purple-100 text-purple-700",
+  abstract: "bg-purple-100 text-purple-700",
 }
 
 // Types whose title is fixed (not editable)
@@ -82,6 +90,10 @@ const FIXED_TITLE = new Set([
   "lampiran",
   "judul_abstrak",
   "lampiran_utama",
+  "judul",
+  "identitas_penulis",
+  "abstrak",
+  "abstract",
 ])
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -91,7 +103,7 @@ function isTitleEditable(s: SectionItem): boolean {
 }
 
 function isDeletable(s: SectionItem): boolean {
-  if (s.type === "judul_abstrak") return false
+  if (["judul_abstrak", "judul", "identitas_penulis", "abstrak", "abstract"].includes(s.type)) return false
   return true
 }
 
@@ -444,7 +456,7 @@ function PlaceholderTab({
   const autoRows = sections
     .filter((s) =>
       ["bab", "sub_bab", "daftar_pustaka", "lampiran", "item_lampiran",
-       "judul_abstrak", "lampiran_utama"].includes(s.type)
+       "judul_abstrak", "lampiran_utama", "judul", "identitas_penulis", "abstrak", "abstract"].includes(s.type)
     )
     .map((s) => {
       const key = getSectionKey(s, fmt)

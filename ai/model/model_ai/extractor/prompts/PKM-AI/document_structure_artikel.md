@@ -40,10 +40,14 @@ Jangan scan seluruh konteks secara acak. Gunakan prioritas bertingkat:
 
 Contoh penalaran: *"Saya menemukan section 'Lampiran 7' → saya gunakan section itu."*
 
-**Langkah 2 — Identifikasi halaman judul dan abstrak:**
-Cari apakah dokumen memiliki halaman pertama khusus yang memuat judul, nama penulis, dan abstrak.
-Jika ada → sertakan sebagai section pertama dengan `type: "judul_abstrak"` dan `title: "Judul dan Abstrak"`.
-Ini adalah section wajib dan selalu hadir pertama untuk artikel ilmiah PKM-AI.
+**Langkah 2 — Identifikasi halaman pertama artikel (judul, penulis, abstrak):**
+Halaman pertama artikel PKM-AI selalu memuat empat elemen berurutan sebelum BAB 1:
+- Judul artikel → `{"type": "judul", "required": true, "is_major_section": true, "title": "Judul"}`
+- Identitas penulis (nama + afiliasi institusi) → `{"type": "identitas_penulis", "required": true, "is_major_section": true, "title": "Identitas Penulis"}`
+- Abstrak bahasa Indonesia → `{"type": "abstrak", "required": true, "is_major_section": true, "title": "Abstrak"}`
+- Abstract bahasa Inggris → `{"type": "abstract", "required": true, "is_major_section": true, "title": "Abstract"}`
+
+Sertakan keempat section ini selalu di urutan pertama.
 
 **Langkah 3 — Identifikasi semua BAB artikel:**
 Dari section sistematika yang ditemukan, catat seluruh BAB artikel beserta nomor dan judulnya.
@@ -63,7 +67,7 @@ Artikel ilmiah selalu memiliki daftar pustaka → sertakan dengan `required: tru
 
 **Langkah 5 — Identifikasi lampiran:**
 Cari apakah dokumen menyebutkan lampiran untuk artikel.
-- Jika ada → sertakan `lampiran_utama` sebagai header lampiran, diikuti `item_lampiran` untuk setiap lampiran.
+- Jika ada → sertakan `lampiran` sebagai header lampiran, diikuti `item_lampiran` untuk setiap lampiran.
 - Jika tidak ada referensi eksplisit tentang lampiran → tidak perlu disertakan (berbeda dari proposal).
 
 **Langkah 6 — Identifikasi format nama file:**
@@ -80,18 +84,20 @@ Jika tidak ada ketentuan eksplisit → `null`.
 ## Format sections
 Setiap entry di `sections` adalah objek dengan fields berikut:
 - `type`: nama section — gunakan TEPAT salah satu dari nilai berikut:
-  `"judul_abstrak"`, `"bab"`, `"daftar_pustaka"`, `"lampiran_utama"`, `"item_lampiran"`
-  **PENTING**: Jangan gunakan variasi lain. Jangan gunakan "sub_bab", "lampiran", "daftar_isi" — tipe itu hanya untuk proposal.
+  `"judul"`, `"identitas_penulis"`, `"abstrak"`, `"abstract"`, `"bab"`, `"daftar_pustaka"`, `"lampiran"`, `"item_lampiran"`
+  **PENTING**: Jangan gunakan `"judul_abstrak"`, `"sub_bab"`, `"daftar_isi"` — tipe itu hanya untuk proposal.
 - `required`: true jika wajib ada, false jika opsional
 - `number`: nomor BAB (integer) — hanya untuk `type: "bab"`
 - `title`: judul section (string) — untuk `"bab"` gunakan Title Case; untuk `"item_lampiran"` gunakan ALL CAPS
 - `lampiran_number`: nomor lampiran seperti `"Lampiran 1"` — hanya untuk `type: "item_lampiran"`
-- `is_major_section`: true untuk `"judul_abstrak"`, `"bab"`, `"daftar_pustaka"`, `"lampiran_utama"`
+- `is_major_section`: true untuk `"judul"`, `"identitas_penulis"`, `"abstrak"`, `"abstract"`, `"bab"`, `"daftar_pustaka"`, `"lampiran"`
 
-## Aturan section judul_abstrak
-- Selalu hadir sebagai section **pertama** dalam artikel
-- Tidak memiliki nomor; judul bukan judul BAB melainkan konten artikel itu sendiri
-- Format: `{"type": "judul_abstrak", "required": true, "is_major_section": true, "title": "Judul dan Abstrak"}`
+## Aturan Halaman Pertama Artikel (4 section wajib)
+Selalu sertakan keempat section ini di urutan pertama, sebelum BAB 1:
+- `{"type": "judul", "required": true, "is_major_section": true, "title": "Judul"}`
+- `{"type": "identitas_penulis", "required": true, "is_major_section": true, "title": "Identitas Penulis"}`
+- `{"type": "abstrak", "required": true, "is_major_section": true, "title": "Abstrak"}`
+- `{"type": "abstract", "required": true, "is_major_section": true, "title": "Abstract"}`
 
 ## Aturan BAB Artikel
 - Gunakan `type: "bab"` untuk setiap section isi artikel
@@ -100,14 +106,17 @@ Setiap entry di `sections` adalah objek dengan fields berikut:
 - Format: `{"type": "bab", "number": 1, "title": "Pendahuluan", "required": true}`
 
 ## Aturan Lampiran Artikel
-- Header lampiran: `{"type": "lampiran_utama", "required": false, "title": "Lampiran"}`
+- Header lampiran: `{"type": "lampiran", "required": false, "title": "Lampiran"}`
 - Setiap item: `{"type": "item_lampiran", "lampiran_number": "Lampiran 1", "title": "BIODATA PENULIS"}`
 - Sertakan lampiran HANYA jika disebutkan eksplisit di dokumen sumber
 
 Contoh sections untuk artikel PKM-AI:
 ```json
 [
-  {"type": "judul_abstrak", "required": true, "is_major_section": true, "title": "Judul dan Abstrak"},
+  {"type": "judul", "required": true, "is_major_section": true, "title": "Judul"},
+  {"type": "identitas_penulis", "required": true, "is_major_section": true, "title": "Identitas Penulis"},
+  {"type": "abstrak", "required": true, "is_major_section": true, "title": "Abstrak"},
+  {"type": "abstract", "required": true, "is_major_section": true, "title": "Abstract"},
   {"type": "bab", "number": 1, "title": "Pendahuluan", "required": true},
   {"type": "bab", "number": 2, "title": "Metode", "required": true},
   {"type": "bab", "number": 3, "title": "Hasil dan Pembahasan", "required": true},
@@ -115,7 +124,7 @@ Contoh sections untuk artikel PKM-AI:
   {"type": "bab", "number": 5, "title": "Ucapan Terima Kasih", "required": false},
   {"type": "bab", "number": 6, "title": "Kontribusi Penulis", "required": false},
   {"type": "daftar_pustaka", "required": true, "is_major_section": true, "title": "Daftar Pustaka"},
-  {"type": "lampiran_utama", "required": false, "is_major_section": true, "title": "Lampiran"},
+  {"type": "lampiran", "required": false, "is_major_section": true, "title": "Lampiran"},
   {"type": "item_lampiran", "lampiran_number": "Lampiran 1", "title": "BIODATA PENULIS"}
 ]
 ```

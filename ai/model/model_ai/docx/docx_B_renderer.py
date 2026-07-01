@@ -26,9 +26,13 @@ from model_ai.docx.instructional_placeholder_builder import make_instruction_key
 _SECTION_DELETE_NOTE = "(Catatan: bagian ini boleh dihapus)"
 
 _BOOKMARK_IDS_ARTIKEL: dict[str, int] = {
-    "judul_abstrak":  1,
-    "daftar_pustaka": 50,
-    "lampiran_utama": 51,
+    "judul_abstrak":     1,  # backward compat
+    "judul":             1,
+    "identitas_penulis": 2,
+    "abstrak":           3,
+    "abstract":          4,
+    "daftar_pustaka":   50,
+    "lampiran":         51,
 }
 
 
@@ -521,7 +525,7 @@ def _render_artikel_daftar_pustaka(
             _add_run(p, line.strip(), body_font, body_size)
 
 
-def _render_artikel_lampiran_utama(
+def _render_artikel_lampiran(
     document: Document,
     section: dict,
     typography: dict,
@@ -537,7 +541,7 @@ def _render_artikel_lampiran_utama(
     title = section.get("title") or "LAMPIRAN"
     p_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing, space_after_pt=0)
     _add_run(p_head, title, body_font, body_size, bold=True)
-    _add_bookmark_to_paragraph(p_head, _bookmark_id_artikel("lampiran_utama"), _bookmark_name_artikel("lampiran_utama"))
+    _add_bookmark_to_paragraph(p_head, _bookmark_id_artikel("lampiran"), _bookmark_name_artikel("lampiran"))
 
 
 def _render_artikel_item_lampiran(
@@ -589,7 +593,7 @@ def _render_artikel_body(
 ) -> None:
     """Iterasi seluruh section setelah judul_abstrak mengikuti urutan Sistematika C.
 
-    Urutan yang dikenal: bab → daftar_pustaka → lampiran_utama → item_lampiran.
+    Urutan yang dikenal: bab → daftar_pustaka → lampiran → item_lampiran.
     """
     lampiran_sep = doc_structure.get("lampiran_heading_separator")
     if lampiran_sep is None:
@@ -598,14 +602,14 @@ def _render_artikel_body(
     ft = figures_tables or {}
     for section in doc_structure.get("sections", []):
         sec_type = section.get("type")
-        if sec_type == "judul_abstrak":
+        if sec_type in {"judul_abstrak", "judul", "identitas_penulis", "abstrak", "abstract"}:
             continue
         if sec_type == "bab":
             _render_artikel_bab_section(document, section, typography, spacing, numbering, instructional_placeholders, ft)
         elif sec_type == "daftar_pustaka":
             _render_artikel_daftar_pustaka(document, section, typography, spacing)
-        elif sec_type == "lampiran_utama":
-            _render_artikel_lampiran_utama(document, section, typography, spacing)
+        elif sec_type == "lampiran":
+            _render_artikel_lampiran(document, section, typography, spacing)
         elif sec_type == "item_lampiran":
             _render_artikel_item_lampiran(document, section, typography, spacing, instructional_placeholders, lampiran_sep)
 
@@ -621,7 +625,7 @@ def render_article_docx_bytes(
       1. Halaman 1: judul_abstrak (spasi 1.0) — judul, penulis, institusi, abstrak ID/EN
       2. Bagian inti: bab artikel berurutan (spasi 1.15, format "{n}. {title}" bold)
       3. Daftar Pustaka (Harvard hanging indent, spasi 1.15)
-      4. Lampiran (jika ada): heading lampiran_utama + setiap item_lampiran
+      4. Lampiran (jika ada): heading lampiran + setiap item_lampiran
     Penomoran halaman: angka arab di header kanan, mulai halaman 1.
     """
     typography     = output_data.get("typography") or {}
@@ -648,7 +652,7 @@ def render_article_docx_bytes(
     )
 
     judul_section = next(
-        (s for s in doc_structure.get("sections", []) if s.get("type") == "judul_abstrak"),
+        (s for s in doc_structure.get("sections", []) if s.get("type") in {"judul_abstrak", "judul"}),
         None,
     )
     if judul_section is not None:

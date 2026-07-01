@@ -86,6 +86,49 @@ def build_instructional_placeholder_map(
                 use_llm=use_llm,
                 fallback_hint=f"jelaskan isi utama untuk bagian {heading_text.lower()}",
             )
+        elif section.type == "judul":
+            title = section.title or "JUDUL"
+            key = make_instruction_key("judul", title)
+            sources = _match_named_section_sources(chunks, "JUDUL")
+            placeholders[key] = _build_instruction_text(
+                display_title=title,
+                sources=sources,
+                use_llm=use_llm,
+                fallback_hint="tulis judul artikel ilmiah sesuai format dan ketentuan PKM-AI",
+            )
+        elif section.type == "identitas_penulis":
+            title = section.title or "IDENTITAS PENULIS"
+            key = make_instruction_key("identitas_penulis", title)
+            sources = _match_named_section_sources(chunks, "PENULIS")
+            placeholders[key] = _build_instruction_text(
+                display_title=title,
+                sources=sources,
+                use_llm=use_llm,
+                fallback_hint=(
+                    "tulis nama seluruh penulis beserta afiliasi institusi dan korespondensi "
+                    "sesuai format artikel ilmiah PKM-AI"
+                ),
+            )
+        elif section.type == "abstrak":
+            title = section.title or "ABSTRAK"
+            key = make_instruction_key("abstrak", title)
+            sources = _match_named_section_sources(chunks, "ABSTRAK")
+            placeholders[key] = _build_instruction_text(
+                display_title=title,
+                sources=sources,
+                use_llm=use_llm,
+                fallback_hint="tulis abstrak bahasa Indonesia disertai kata kunci sesuai ketentuan PKM-AI",
+            )
+        elif section.type == "abstract":
+            title = section.title or "ABSTRACT"
+            key = make_instruction_key("abstract", title)
+            sources = _match_named_section_sources(chunks, "ABSTRACT")
+            placeholders[key] = _build_instruction_text(
+                display_title=title,
+                sources=sources,
+                use_llm=use_llm,
+                fallback_hint="write the English abstract with keywords following PKM-AI article format requirements",
+            )
         elif section.type == "judul_abstrak":
             title = section.title or "JUDUL DAN ABSTRAK"
             key = make_instruction_key("judul_abstrak", title)
@@ -100,9 +143,9 @@ def build_instructional_placeholder_map(
                     "sesuai format artikel ilmiah PKM-AI"
                 ),
             )
-        elif section.type == "lampiran_utama":
+        elif section.type == "lampiran":
             title = section.title or "LAMPIRAN"
-            key = make_instruction_key("lampiran_utama", title)
+            key = make_instruction_key("lampiran", title)
             sources = _match_named_section_sources(chunks, title)
             placeholders[key] = _build_instruction_text(
                 display_title=title,

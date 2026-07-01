@@ -1,8 +1,8 @@
 ---
 queries:
-  - "spasi baris paragraf artikel ilmiah PKM-AI rata kanan kiri justify"
-  - "jarak baris 1.15 multiple spasi body artikel ilmiah ketentuan penulisan"
-  - "spasi halaman judul abstrak 1.0 single artikel ilmiah PKM"
+  - "ketentuan jarak spasi antar baris (line spacing) format penulisan utama naskah artikel PKM"
+  - "aturan spasi baris khusus untuk halaman judul, abstrak, paragraf, caption, dan daftar pustaka referensi"
+  - "jarak baris artikel ilmiah ketentuan penulisan"
   - "line spacing teks artikel PKM format penulisan"
 section_focus:
   - "Lampiran 7"

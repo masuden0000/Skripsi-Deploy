@@ -378,6 +378,10 @@ def _render_judul_abstrak(
     _add_run(p_title, title_text, body_font, title_size, bold=title_is_bold)
     _add_bookmark_to_paragraph(p_title, _bookmark_id_artikel("judul_abstrak"), _bookmark_name_artikel("judul_abstrak"))
 
+    # 2 spasi antara judul dan penulis
+    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+
     p_authors = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
     _add_run(p_authors, "Penulis Satu", body_font, author_size)
     _add_run(p_authors, "1)", body_font, author_size, superscript=True)
@@ -388,16 +392,29 @@ def _render_judul_abstrak(
     _add_run(p_authors, ", Penulis Terakhir", body_font, author_size)
     _add_run(p_authors, "2)*", body_font, author_size, superscript=True)
 
+    # 1 spasi antara penulis dan institusi 1
+    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+
     p_inst1 = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
     _add_run(p_inst1, "1", body_font, author_size, superscript=True)
     _add_run(p_inst1, "Nama institusi dan alamat institusi dari penulis satu dan dua", body_font, author_size)
+
+    # 1 spasi antara institusi 1 dan institusi 2
+    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
 
     p_inst2 = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
     _add_run(p_inst2, "2", body_font, author_size, superscript=True)
     _add_run(p_inst2, "Nama institusi dan alamat institusi dari penulis tiga dan terakhir", body_font, author_size)
 
+    # 1 spasi antara institusi 2 dan koresponden
+    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+
     p_corr = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing, space_after_pt=0)
     _add_run(p_corr, "*Penulis korespondensi: penulis_terakhir@univ.ac.id", body_font, author_size)
+
+    # 2 spasi antara koresponden dan blok catatan/instruksi
+    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
 
     _add_section_note(document, body_font)
     instr_key = make_instruction_key("judul_abstrak", section.get("title") or "JUDUL DAN ABSTRAK")
@@ -411,6 +428,9 @@ def _render_judul_abstrak(
 
     p_abstrak_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
     _add_run(p_abstrak_head, "ABSTRAK", body_font, abstract_sz, bold=False)
+
+    # 1 spasi antara heading ABSTRAK dan body abstrak
+    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
 
     p_abstrak_body = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
     _add_run(
@@ -426,8 +446,15 @@ def _render_judul_abstrak(
     _add_run(p_kata_kunci, "Kata-kata kunci: ", body_font, abstract_sz, bold=True)
     _add_run(p_kata_kunci, "[latar belakang], [tujuan], [metode], [hasil], [kesimpulan]. (3-5 kata/frasa)", body_font, abstract_sz)
 
+    # 2 spasi antara kata kunci abstrak dan heading ABSTRACT
+    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+
     p_abstract_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
     _add_run(p_abstract_head, "ABSTRACT", body_font, abstract_sz, italic=True)
+
+    # 1 spasi antara heading ABSTRACT dan body abstract
+    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
 
     p_abstract_body = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
     _add_run(
@@ -551,8 +578,13 @@ def _render_artikel_item_lampiran(
     spacing: dict,
     instructional_placeholders: dict[str, str],
     lampiran_separator: str,
+    prev_sec_type: str | None = None,
 ) -> None:
-    """Render satu item lampiran artikel: heading "Lampiran N. Title" + body placeholder."""
+    """Render satu item lampiran artikel: heading "Lampiran N. Title" + body placeholder.
+
+    Jika section sebelumnya adalah "lampiran" (header pembuka), tidak diberi blank paragraph
+    pemisah agar heading lampiran langsung menempel ke item pertama.
+    """
     body_font = typography.get("font_family") or "Times New Roman"
     body_size = typography.get("font_size_body_pt") or 12
     body_spacing = _spacing_body(spacing)
@@ -563,7 +595,9 @@ def _render_artikel_item_lampiran(
     sep_str = f"{lampiran_separator} " if lampiran_separator else " "
     heading_text = f"{lampiran_number}{sep_str}{title}".strip()
 
-    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing)
+    # Blank paragraph sebelum heading — dilewati jika langsung setelah header "lampiran"
+    if prev_sec_type != "lampiran":
+        _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing)
     p_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing)
     _add_run(p_head, heading_text, body_font, body_size, bold=True)
     _add_bookmark_to_paragraph(
@@ -600,6 +634,7 @@ def _render_artikel_body(
         lampiran_sep = "."
 
     ft = figures_tables or {}
+    prev_sec_type: str | None = None
     for section in doc_structure.get("sections", []):
         sec_type = section.get("type")
         if sec_type in {"judul_abstrak", "judul", "identitas_penulis", "abstrak", "abstract"}:
@@ -611,7 +646,8 @@ def _render_artikel_body(
         elif sec_type == "lampiran":
             _render_artikel_lampiran(document, section, typography, spacing)
         elif sec_type == "item_lampiran":
-            _render_artikel_item_lampiran(document, section, typography, spacing, instructional_placeholders, lampiran_sep)
+            _render_artikel_item_lampiran(document, section, typography, spacing, instructional_placeholders, lampiran_sep, prev_sec_type=prev_sec_type)
+        prev_sec_type = sec_type
 
 
 def render_article_docx_bytes(

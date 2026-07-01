@@ -197,7 +197,6 @@ class SpacingInfo(SpacingExtracted):
 _VALID_SECTION_TYPES = frozenset({
     "daftar_isi", "daftar_gambar", "daftar_tabel", "daftar_lampiran",
     "daftar_pustaka", "bab", "sub_bab", "lampiran", "item_lampiran",
-    "judul_abstrak",
     "judul", "identitas_penulis", "abstrak", "abstract",
 })
 _MAJOR_SECTION_TYPES = frozenset({
@@ -209,7 +208,6 @@ _MAJOR_SECTION_TYPES = frozenset({
     "bab",
     "sub_bab",
     "lampiran",
-    "judul_abstrak",
     "judul",
     "identitas_penulis",
     "abstrak",
@@ -350,14 +348,14 @@ class FiguresTablesInfo(FiguresTablesExtracted):
 
 _VALID_HALAMAN_INTI_SECTIONS = frozenset({
     "bab", "daftar_isi", "daftar_pustaka", "lampiran",
-    "judul_abstrak", "judul",
+    "judul",
 })
 
 
 class PageCountExtracted(BaseModel):
     proposal_halaman_inti_maks: int | None = None
-    halaman_inti_mulai: str = "bab"
-    halaman_inti_selesai: str = "daftar_pustaka"
+    halaman_inti_mulai: str | None = None
+    halaman_inti_selesai: str | None = None
     artikel_halaman_inti_min: int | None = None
     artikel_halaman_inti_maks: int | None = None
 
@@ -371,10 +369,10 @@ class PageCountExtracted(BaseModel):
         normalized.pop("catatan", None)
         normalized.pop("definisi_halaman_inti", None)
 
-        for field, default in (("halaman_inti_mulai", "bab"), ("halaman_inti_selesai", "daftar_pustaka")):
+        for field in ("halaman_inti_mulai", "halaman_inti_selesai"):
             val = normalized.get(field)
-            if val not in _VALID_HALAMAN_INTI_SECTIONS:
-                normalized[field] = default
+            if val is not None and val not in _VALID_HALAMAN_INTI_SECTIONS:
+                normalized[field] = None
 
         return normalized
 

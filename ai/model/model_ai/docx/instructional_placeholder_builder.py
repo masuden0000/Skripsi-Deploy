@@ -129,20 +129,6 @@ def build_instructional_placeholder_map(
                 use_llm=use_llm,
                 fallback_hint="write the English abstract with keywords following PKM-AI article format requirements",
             )
-        elif section.type == "judul_abstrak":
-            title = section.title or "JUDUL DAN ABSTRAK"
-            key = make_instruction_key("judul_abstrak", title)
-            sources = _match_named_section_sources(chunks, "JUDUL") or _match_named_section_sources(chunks, "ABSTRAK")
-            placeholders[key] = _build_instruction_text(
-                display_title=title,
-                sources=sources,
-                use_llm=use_llm,
-                fallback_hint=(
-                    "tulis judul artikel, nama seluruh penulis beserta afiliasi institusi, "
-                    "serta abstrak dalam bahasa Indonesia dan Inggris disertai kata kunci "
-                    "sesuai format artikel ilmiah PKM-AI"
-                ),
-            )
         elif section.type == "lampiran":
             title = section.title or "LAMPIRAN"
             key = make_instruction_key("lampiran", title)

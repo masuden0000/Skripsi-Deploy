@@ -41,13 +41,13 @@ Jangan scan seluruh konteks secara acak. Gunakan prioritas bertingkat:
 Contoh penalaran: *"Saya menemukan section 'Lampiran 7' → saya gunakan section itu."*
 
 **Langkah 2 — Identifikasi halaman pertama artikel (judul, penulis, abstrak):**
-Halaman pertama artikel PKM-AI selalu memuat empat elemen berurutan sebelum BAB 1:
-- Judul artikel → `{"type": "judul", "required": true, "is_major_section": true, "title": "Judul"}`
-- Identitas penulis (nama + afiliasi institusi) → `{"type": "identitas_penulis", "required": true, "is_major_section": true, "title": "Identitas Penulis"}`
-- Abstrak bahasa Indonesia → `{"type": "abstrak", "required": true, "is_major_section": true, "title": "Abstrak"}`
-- Abstract bahasa Inggris → `{"type": "abstract", "required": true, "is_major_section": true, "title": "Abstract"}`
-
-Sertakan keempat section ini selalu di urutan pertama.
+Lakukan pemindaian (scan) pada teks untuk mencari contoh format atau instruksi halaman pertama artikel. Biasanya ditandai dengan instruksi penulisan judul berhuruf kapital (misal: "JUDUL DIBUAT RINGKAS..."), diikuti oleh format nama penulis, dan bagian "ABSTRAK".
+Jika Anda menemukan pola teks tersebut, ekstrak menjadi urutan section yang sesuai:
+- `{"type": "judul", "required": true, "is_major_section": true, "title": "Judul"}`
+- `{"type": "identitas_penulis", "required": true, "is_major_section": true, "title": "Identitas Penulis"}`
+- `{"type": "abstrak", "required": true, "is_major_section": true, "title": "Abstrak"}`
+- `{"type": "abstract", "required": true, "is_major_section": true, "title": "Abstract"}` (jika disebutkan abstrak bahasa Inggris)
+Pastikan urutannya mengikuti apa yang tertulis di panduan sumber.
 
 **Langkah 3 — Identifikasi semua BAB artikel:**
 Dari section sistematika yang ditemukan, catat seluruh BAB artikel beserta nomor dan judulnya.
@@ -85,19 +85,16 @@ JANGAN mengarang format sendiri atau menggunakan contoh dari luar. Jika tidak ad
 Setiap entry di `sections` adalah objek dengan fields berikut:
 - `type`: nama section — gunakan TEPAT salah satu dari nilai berikut:
   `"judul"`, `"identitas_penulis"`, `"abstrak"`, `"abstract"`, `"bab"`, `"daftar_pustaka"`, `"lampiran"`, `"item_lampiran"`
-  **PENTING**: Jangan gunakan `"judul_abstrak"`, `"sub_bab"`, `"daftar_isi"` — tipe itu hanya untuk proposal.
+  **PENTING**: Jangan gunakan `"sub_bab"`, `"daftar_isi"` — tipe itu hanya untuk proposal.
 - `required`: true jika wajib ada, false jika opsional
 - `number`: nomor BAB (integer) — hanya untuk `type: "bab"`
 - `title`: judul section (string) — untuk `"bab"` gunakan Title Case; untuk `"item_lampiran"` gunakan ALL CAPS
 - `lampiran_number`: nomor lampiran seperti `"Lampiran 1"` — hanya untuk `type: "item_lampiran"`
 - `is_major_section`: true untuk `"judul"`, `"identitas_penulis"`, `"abstrak"`, `"abstract"`, `"bab"`, `"daftar_pustaka"`, `"lampiran"`
 
-## Aturan Halaman Pertama Artikel (4 section wajib)
-Selalu sertakan keempat section ini di urutan pertama, sebelum BAB 1:
-- `{"type": "judul", "required": true, "is_major_section": true, "title": "Judul"}`
-- `{"type": "identitas_penulis", "required": true, "is_major_section": true, "title": "Identitas Penulis"}`
-- `{"type": "abstrak", "required": true, "is_major_section": true, "title": "Abstrak"}`
-- `{"type": "abstract", "required": true, "is_major_section": true, "title": "Abstract"}`
+## Aturan Halaman Pertama Artikel
+- Jika konteks memuat instruksi atau pola yang mendemonstrasikan halaman judul (misalnya: judul, penulis, abstrak), ekstrak menjadi urutan section yang sesuai.
+- Gunakan tipe `"judul"`, `"identitas_penulis"`, `"abstrak"`, dan `"abstract"` HANYA JIKA memang secara tertulis didukung oleh contoh atau deskripsi di dalam teks sumber.
 
 ## Aturan BAB Artikel
 - Gunakan `type: "bab"` untuk setiap section isi artikel

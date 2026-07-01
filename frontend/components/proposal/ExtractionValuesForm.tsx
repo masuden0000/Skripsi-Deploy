@@ -1143,7 +1143,7 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
             )}
             <SelectFieldInput
               label="Halaman Inti Mulai Dari"
-              value={data.page_count_limits.halaman_inti_mulai}
+              value={data.page_count_limits.halaman_inti_mulai ?? (isArtikel ? "judul" : "bab")}
               options={[
                 { value: "bab",           label: "BAB" },
                 { value: "daftar_isi",    label: "Daftar Isi" },

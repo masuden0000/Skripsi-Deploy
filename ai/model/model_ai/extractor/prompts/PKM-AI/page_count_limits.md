@@ -50,12 +50,20 @@ Contoh penalaran:
 - *"Menemukan 'tidak lebih dari 15 halaman inti' → artikel_halaman_inti_maks = 15."*
 
 **Langkah 3 — Tentukan cakupan halaman inti artikel:**
-Cari deskripsi tentang apa yang dihitung sebagai "halaman inti" untuk artikel:
-- Dari section mana hitungan dimulai? (Judul+Abstrak? BAB 1?)
-- Sampai section mana hitungan berakhir? (Daftar Pustaka? Sebelum Lampiran?)
-- Apakah lampiran dikecualikan?
+Cari deskripsi tentang apa yang dihitung sebagai "halaman inti" untuk artikel.
 
-Petakan ke nilai enum yang valid: `"judul"`, `"bab"`, `"daftar_pustaka"`, `"lampiran"`.
+**Pola yang paling umum ditemukan di panduan PKM:**
+*"Bagian inti adalah halaman yang memuat isi keseluruhan artikel ilmiah dari halaman judul sampai dengan halaman akhir daftar pustaka"*
+→ `halaman_inti_mulai = "judul"`, `halaman_inti_selesai = "daftar_pustaka"`
+
+**Petakan teks panduan ke enum:**
+| Frasa di panduan                                  | Nilai                  |
+|---------------------------------------------------|------------------------|
+| "dari halaman judul", "mulai halaman judul"       | `"judul"`              |
+| "dari BAB 1", "dari bab pertama", "mulai bab"     | `"bab"`                |
+| "sampai daftar pustaka", "hingga daftar pustaka"  | `"daftar_pustaka"`     |
+| "sampai lampiran", "termasuk lampiran"            | `"lampiran"`           |
+
 Jika tidak ditemukan eksplisit → gunakan default (Langkah 4).
 
 **Langkah 4 — Terapkan default jika tidak ditemukan:**

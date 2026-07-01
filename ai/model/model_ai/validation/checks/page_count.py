@@ -237,8 +237,8 @@ def _check_page_count(
         ))
         return issues, checks
 
-    mulai_type   = pc.halaman_inti_mulai
-    selesai_type = pc.halaman_inti_selesai
+    mulai_type   = pc.halaman_inti_mulai or "bab"
+    selesai_type = pc.halaman_inti_selesai or "daftar_pustaka"
 
     try:
         doc = doc or DocxDocument(str(docx_path))

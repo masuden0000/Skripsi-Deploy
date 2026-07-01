@@ -26,7 +26,6 @@ from model_ai.docx.instructional_placeholder_builder import make_instruction_key
 _SECTION_DELETE_NOTE = "(Catatan: bagian ini boleh dihapus)"
 
 _BOOKMARK_IDS_ARTIKEL: dict[str, int] = {
-    "judul_abstrak":     1,  # backward compat
     "judul":             1,
     "identitas_penulis": 2,
     "abstrak":           3,
@@ -349,7 +348,7 @@ def _add_example_table_artikel(
         _force_paragraph_runs_black(cap_p)
 
 
-def _render_judul_abstrak(
+def _render_halaman_judul_artikel(
     document: Document,
     typography: dict,
     spacing: dict,
@@ -376,7 +375,7 @@ def _render_judul_abstrak(
 
     p_title = _add_styled_paragraph(document, title_align, title_spacing, space_after_pt=0)
     _add_run(p_title, title_text, body_font, title_size, bold=title_is_bold)
-    _add_bookmark_to_paragraph(p_title, _bookmark_id_artikel("judul_abstrak"), _bookmark_name_artikel("judul_abstrak"))
+    _add_bookmark_to_paragraph(p_title, _bookmark_id_artikel("judul"), _bookmark_name_artikel("judul"))
 
     # 2 spasi antara judul dan penulis
     _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
@@ -417,7 +416,7 @@ def _render_judul_abstrak(
     _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
 
     _add_section_note(document, body_font)
-    instr_key = make_instruction_key("judul_abstrak", section.get("title") or "JUDUL DAN ABSTRAK")
+    instr_key = make_instruction_key("judul", section.get("title") or "JUDUL")
     instr_text = instructional_placeholders.get(
         instr_key,
         "tulis judul artikel, nama seluruh penulis beserta afiliasi institusi, "
@@ -625,7 +624,7 @@ def _render_artikel_body(
     instructional_placeholders: dict[str, str],
     figures_tables: dict | None = None,
 ) -> None:
-    """Iterasi seluruh section setelah judul_abstrak mengikuti urutan Sistematika C.
+    """Iterasi seluruh section setelah judul mengikuti urutan Sistematika C.
 
     Urutan yang dikenal: bab → daftar_pustaka → lampiran → item_lampiran.
     """
@@ -637,7 +636,7 @@ def _render_artikel_body(
     prev_sec_type: str | None = None
     for section in doc_structure.get("sections", []):
         sec_type = section.get("type")
-        if sec_type in {"judul_abstrak", "judul", "identitas_penulis", "abstrak", "abstract"}:
+        if sec_type in {"judul", "identitas_penulis", "abstrak", "abstract"}:
             continue
         if sec_type == "bab":
             _render_artikel_bab_section(document, section, typography, spacing, numbering, instructional_placeholders, ft)
@@ -658,7 +657,7 @@ def render_article_docx_bytes(
     """Render DOCX artikel ilmiah PKM-AI dan kembalikan sebagai bytes.
 
     Urutan eksekusi mengikuti Sistematika C panduan PKM-AI:
-      1. Halaman 1: judul_abstrak (spasi 1.0) — judul, penulis, institusi, abstrak ID/EN
+      1. Halaman 1: judul (spasi 1.0) — judul, penulis, institusi, abstrak ID/EN
       2. Bagian inti: bab artikel berurutan (spasi 1.15, format "{n}. {title}" bold)
       3. Daftar Pustaka (Harvard hanging indent, spasi 1.15)
       4. Lampiran (jika ada): heading lampiran + setiap item_lampiran
@@ -688,11 +687,11 @@ def render_article_docx_bytes(
     )
 
     judul_section = next(
-        (s for s in doc_structure.get("sections", []) if s.get("type") in {"judul_abstrak", "judul"}),
+        (s for s in doc_structure.get("sections", []) if s.get("type") == "judul"),
         None,
     )
     if judul_section is not None:
-        _render_judul_abstrak(document, typography, spacing, instructional_placeholders, judul_section)
+        _render_halaman_judul_artikel(document, typography, spacing, instructional_placeholders, judul_section)
         document.add_page_break()
 
     _render_artikel_body(document, doc_structure, typography, spacing, numbering, instructional_placeholders, figures_tables)

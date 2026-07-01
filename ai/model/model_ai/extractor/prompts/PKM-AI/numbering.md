@@ -59,7 +59,7 @@ Cari contoh heading BAB yang muncul di konteks atau pernyataan tentang format ju
 Artikel ilmiah PKM-AI biasanya tidak menggunakan format BAB seperti proposal.
 Jika tidak ditemukan:
 - `preliminary`: `null` (artikel tidak punya halaman preliminari romawi)
-- `content`: decimal, FOOTER, CENTER, mulai dari `"judul_abstrak"`
+- `content`: decimal, FOOTER, CENTER, mulai dari `"judul"`
 - `chapter_format`: `"{n}."` (standar artikel: "1.", "2.", "3.")
 - `sub_chapter_format`: `"{bab}.{sub}"` (standar artikel)
 
@@ -67,7 +67,7 @@ Jika tidak ditemukan:
 - `format`: `"lowerRoman"` / `"upperRoman"` / `"decimal"`
 - `location`: `"HEADER"` atau `"FOOTER"`
 - `alignment`: `"RIGHT"`, `"LEFT"`, atau `"CENTER"`
-- `start_at_section`: nama section valid untuk artikel: `"judul_abstrak"`, `"bab"`, `"daftar_pustaka"`
+- `start_at_section`: nama section valid untuk artikel: `"judul"`, `"bab"`, `"daftar_pustaka"`
 - Gunakan JSON null untuk nilai yang benar-benar tidak bisa diinferensikan
 
 ## Output Fields

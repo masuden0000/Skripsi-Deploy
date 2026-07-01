@@ -533,8 +533,6 @@ def _render_artikel_daftar_pustaka(
     body_size  = typography.get("font_size_body_pt") or 12
     body_spacing = _spacing_bibliography(spacing)
 
-    document.add_page_break()
-
     title = section.get("title") or "Daftar Pustaka"
     p_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing)
     _add_run(p_head, title, body_font, body_size, bold=True)
@@ -562,8 +560,6 @@ def _render_artikel_lampiran(
     body_font = typography.get("font_family") or "Times New Roman"
     body_size = typography.get("font_size_body_pt") or 12
     body_spacing = _spacing_body(spacing)
-
-    document.add_page_break()
 
     title = section.get("title") or "LAMPIRAN"
     p_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing, space_after_pt=0)

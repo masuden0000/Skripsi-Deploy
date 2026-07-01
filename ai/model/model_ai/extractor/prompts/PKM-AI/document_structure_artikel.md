@@ -72,8 +72,8 @@ Cari apakah dokumen menyebutkan lampiran untuk artikel.
 
 **Langkah 6 — Identifikasi format nama file:**
 Cari ketentuan penamaan file untuk pengumpulan berkas artikel PKM-AI.
-Contoh: "PKM-AI-NamaKetua-NamaInstitusi-JudulSingkat.pdf"
-Jika tidak ada ketentuan eksplisit → `null`.
+Ekstrak TEPAT seperti yang tertulis di panduan.
+JANGAN mengarang format sendiri atau menggunakan contoh dari luar. Jika tidak ada ketentuan eksplisit di teks → kembalikan `null`.
 
 ## Normalization Rules
 - Gunakan JSON null (bukan string "null") untuk nilai yang tidak ditemukan

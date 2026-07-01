@@ -473,12 +473,36 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
                   hint={spasiBarisHint}
                 />
                 {isArtikel && (() => {
+                  const GRUP_A = ["SINGLE", "ONE_POINT_FIVE", "DOUBLE"]
+                  const GRUP_C = ["AT_LEAST", "EXACTLY"]
+
                   const ruleTA = data.spacing.line_spacing_rule_title_abstract?.toUpperCase() ?? null
-                  const isGrupATA = ruleTA !== null && ["SINGLE","ONE_POINT_FIVE","DOUBLE"].includes(ruleTA)
+                  const isGrupATA = ruleTA !== null && GRUP_A.includes(ruleTA)
+                  const isGrupCTA = ruleTA !== null && GRUP_C.includes(ruleTA)
+                  const hintTA = isGrupATA
+                    ? "Dinonaktifkan — nilai sudah ditentukan oleh aturan"
+                    : isGrupCTA
+                    ? "Nilai dalam satuan pt (contoh: 14.0)"
+                    : "Pengali desimal (contoh: 1.0)"
+
                   const ruleCap = data.figures_and_tables.caption_line_spacing_rule?.toUpperCase() ?? null
-                  const isGrupACap = ruleCap !== null && ["SINGLE","ONE_POINT_FIVE","DOUBLE"].includes(ruleCap)
+                  const isGrupACap = ruleCap !== null && GRUP_A.includes(ruleCap)
+                  const isGrupCCap = ruleCap !== null && GRUP_C.includes(ruleCap)
+                  const hintCap = isGrupACap
+                    ? "Dinonaktifkan — nilai sudah ditentukan oleh aturan"
+                    : isGrupCCap
+                    ? "Nilai dalam satuan pt (contoh: 14.0)"
+                    : "Pengali desimal (contoh: 1.0)"
+
                   const ruleRef = data.spacing.line_spacing_rule_bibliography?.toUpperCase() ?? null
-                  const isGrupARef = ruleRef !== null && ["SINGLE","ONE_POINT_FIVE","DOUBLE"].includes(ruleRef)
+                  const isGrupARef = ruleRef !== null && GRUP_A.includes(ruleRef)
+                  const isGrupCRef = ruleRef !== null && GRUP_C.includes(ruleRef)
+                  const hintRef = isGrupARef
+                    ? "Dinonaktifkan — nilai sudah ditentukan oleh aturan"
+                    : isGrupCRef
+                    ? "Nilai dalam satuan pt (contoh: 14.0)"
+                    : "Pengali desimal (contoh: 1.15)"
+
                   return (
                     <>
                       <SelectFieldInput
@@ -501,11 +525,12 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
                         }}
                       />
                       <NumberFieldInput
-                        label="Spasi Baris Judul Artikel, Nama Penulis, Alamat Institusi, Abstrak"
+                        label={isGrupCTA ? "Spasi Baris Judul Artikel, Nama Penulis, Alamat Institusi, Abstrak (pt)" : "Spasi Baris Judul Artikel, Nama Penulis, Alamat Institusi, Abstrak"}
                         value={data.spacing.line_spacing_title_abstract ?? null}
                         onChange={(v) => patch("spacing", { line_spacing_title_abstract: v })}
                         disabled={isGrupATA}
-                        placeholder={isGrupATA ? "—" : "contoh: 1.0"}
+                        placeholder={isGrupATA ? "—" : isGrupCTA ? "contoh: 14.0" : "contoh: 1.0"}
+                        hint={hintTA}
                       />
                       <SelectFieldInput
                         label="Aturan Spasi Daftar Pustaka"
@@ -527,12 +552,12 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
                         }}
                       />
                       <NumberFieldInput
-                        label="Spasi Baris Daftar Pustaka"
+                        label={isGrupCRef ? "Spasi Baris Daftar Pustaka (pt)" : "Spasi Baris Daftar Pustaka"}
                         value={data.spacing.line_spacing_bibliography ?? null}
                         onChange={(v) => patch("spacing", { line_spacing_bibliography: v })}
                         disabled={isGrupARef}
-                        placeholder={isGrupARef ? "—" : "contoh: 1.15"}
-                        hint="Pengali desimal — hanya untuk aturan Beberapa/Sedikitnya/Tepat."
+                        placeholder={isGrupARef ? "—" : isGrupCRef ? "contoh: 14.0" : "contoh: 1.15"}
+                        hint={hintRef}
                       />
                       <SelectFieldInput
                         label="Aturan Spasi Caption"
@@ -554,11 +579,12 @@ export function ExtractionValuesForm({ data, onChange, projectId }: Props) {
                         }}
                       />
                       <NumberFieldInput
-                        label="Spasi Baris Caption"
+                        label={isGrupCCap ? "Spasi Baris Caption (pt)" : "Spasi Baris Caption"}
                         value={data.figures_and_tables.caption_line_spacing ?? null}
                         onChange={(v) => patch("figures_and_tables", { caption_line_spacing: v })}
                         disabled={isGrupACap}
-                        placeholder={isGrupACap ? "—" : "contoh: 1.0"}
+                        placeholder={isGrupACap ? "—" : isGrupCCap ? "contoh: 14.0" : "contoh: 1.0"}
+                        hint={hintCap}
                       />
                     </>
                   )

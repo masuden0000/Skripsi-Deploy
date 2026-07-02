@@ -237,7 +237,7 @@ def _check_page_count(
         ))
         return issues, checks
 
-    mulai_type   = pc.halaman_inti_mulai or "bab"
+    mulai_type   = pc.halaman_inti_mulai or "judul"
     selesai_type = pc.halaman_inti_selesai or "daftar_pustaka"
 
     try:

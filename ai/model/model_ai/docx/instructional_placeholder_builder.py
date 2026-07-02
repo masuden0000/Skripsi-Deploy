@@ -301,9 +301,13 @@ def _build_instruction_text(
         result = _build_instruction_text_with_llm(display_title, sources)
         if result:
             return result
-        print(f"[placeholder] '{display_title}': LLM tidak menghasilkan output, pakai fallback.", flush=True)
+        print(f"[placeholder] '{display_title}': LLM tidak menghasilkan output, pakai konten chunk.", flush=True)
     elif use_llm and not sources:
         print(f"[placeholder] '{display_title}': 0 sumber chunk ditemukan, pakai fallback langsung.", flush=True)
+    if sources:
+        excerpt = _clean_source_text(sources[0].content)[:600].strip()
+        if excerpt:
+            return f"[Panduan: {excerpt}]"
     return fallback_hint
 
 

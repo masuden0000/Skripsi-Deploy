@@ -122,6 +122,26 @@ def _build_lampiran_re(separator: str | None) -> re.Pattern:
     return re.compile(pattern, re.IGNORECASE)
 
 
+def _build_bab_re(chapter_format: str | None) -> re.Pattern:
+    """Bangun regex deteksi heading BAB berdasarkan chapter_format dari metadata.
+
+    chapter_format="{n}."   → r'^(\\d+)\\.'   cocok "1.", "2.", ...
+    chapter_format="BAB {n}" → r'^BAB\\ (\\d+)' cocok "BAB 1", "BAB 2", ...
+    chapter_format=None     → fallback ke _BAB_RE default
+
+    PENTING: {n} HARUS diganti dengan capture group (\\d+) agar m.group(1) valid.
+    """
+    if not chapter_format or "{n}" not in chapter_format:
+        return _BAB_RE
+    escaped = re.escape(chapter_format)
+    pattern = escaped.replace(r'\{n\}', r'(\d+)')
+    # Jika format diakhiri titik (mis. "{n}."), tambah negative lookahead
+    # agar "1.1" (sub-bab) tidak ikut cocok sebagai BAB.
+    if chapter_format.endswith('.'):
+        pattern += r'(?!\d)'
+    return re.compile(f'^{pattern}', re.IGNORECASE)
+
+
 def _humanize_attr_value(attr_name: str, raw_value: str | None) -> str | None:
     """Konversi nilai atribut mentah ke label yang mudah dibaca manusia.
 

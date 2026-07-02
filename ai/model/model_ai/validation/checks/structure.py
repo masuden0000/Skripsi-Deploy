@@ -23,6 +23,7 @@ from ._shared import (
     _HEADING_TITLE_MAP,
     _HEADING_TITLE_MAP_INV,
     _build_lampiran_re,
+    _build_bab_re,
     _build_occurrences,
 )
 
@@ -30,6 +31,7 @@ from ._shared import (
 def _classify_heading(
     text: str,
     lampiran_re: re.Pattern | None = None,
+    bab_re: re.Pattern | None = None,
 ) -> tuple[str | None, dict]:
     """Klasifikasi teks heading menjadi tipe section + info tambahan.
 
@@ -42,7 +44,7 @@ def _classify_heading(
     if text_upper in _HEADING_TITLE_MAP:
         return _HEADING_TITLE_MAP[text_upper], {}
 
-    m = _BAB_RE.match(text_upper)
+    m = (bab_re or _BAB_RE).match(text_upper)
     if m:
         return "bab", {"number": int(m.group(1))}
 
@@ -57,19 +59,28 @@ def _classify_heading(
     return None, {}
 
 
-def _detect_artikel_pre_bab_sections(doc: DocxDocument, actual_classified: list[dict]) -> None:
+def _detect_artikel_pre_bab_sections(
+    doc: DocxDocument,
+    actual_classified: list[dict],
+    bab_re: re.Pattern | None = None,
+    pre_bab_types: set[str] | None = None,
+) -> None:
     """Deteksi section halaman pertama artikel PKM-AI yang tidak pakai heading style.
 
-    Layer 1 — position-based: jika ada paragraf non-kosong sebelum BAB 1 maka
-    judul dan identitas_penulis dianggap ada (pola tetap 2023–2026).
-    Layer 2 — plain-text fallback: scan teks sebelum BAB 1 untuk ABSTRAK/ABSTRACT
-    jika belum terdeteksi via heading map (layer 1).
+    pre_bab_types: tipe section yang diharapkan sebelum BAB 1, dibaca dari DB.
+                   Jika None, fallback ke {"judul", "identitas_penulis"}.
+
+    Layer 1 — position-based: tipe dari pre_bab_types yang tidak punya heading
+              (judul, identitas_penulis) dideteksi dari keberadaan paragraf sebelum BAB 1.
+    Layer 2 — text-based: tipe yang punya heading (abstrak, abstract) dideteksi
+              dari teks paragraf sebelum BAB 1.
     """
-    already_types = {s["type"] for s in actual_classified}
+    expected_pre_bab = pre_bab_types or {"judul", "identitas_penulis"}
+    already_types    = {s["type"] for s in actual_classified}
 
     bab1_idx: int | None = None
     for i, para in enumerate(doc.paragraphs):
-        if _BAB_RE.match(para.text.strip().upper()):
+        if (bab_re or _BAB_RE).match(para.text.strip().upper()):
             bab1_idx = i
             break
 
@@ -80,21 +91,24 @@ def _detect_artikel_pre_bab_sections(doc: DocxDocument, actual_classified: list[
     if not pre_bab_paras:
         return
 
-    if "judul" not in already_types:
-        actual_classified.insert(0, {"type": "judul", "text": pre_bab_paras[0].text.strip()})
-        already_types.add("judul")
-    if "identitas_penulis" not in already_types:
-        actual_classified.insert(1, {"type": "identitas_penulis", "text": "(identitas penulis)"})
-        already_types.add("identitas_penulis")
+    # Layer 1: section tanpa heading — deteksi berbasis posisi
+    position_types = [t for t in ["judul", "identitas_penulis"] if t in expected_pre_bab]
+    insert_idx = 0
+    for sec_type in position_types:
+        if sec_type not in already_types:
+            text = pre_bab_paras[0].text.strip() if sec_type == "judul" else f"({sec_type})"
+            actual_classified.insert(insert_idx, {"type": sec_type, "text": text})
+            already_types.add(sec_type)
+            insert_idx += 1
 
+    # Layer 2: section dengan heading — deteksi berbasis teks
+    heading_types = {t for t in expected_pre_bab if t not in {"judul", "identitas_penulis"}}
     for para in pre_bab_paras:
         text_upper = para.text.strip().upper()
-        if "abstrak" not in already_types and text_upper == "ABSTRAK":
-            actual_classified.append({"type": "abstrak", "text": para.text.strip()})
-            already_types.add("abstrak")
-        if "abstract" not in already_types and text_upper == "ABSTRACT":
-            actual_classified.append({"type": "abstract", "text": para.text.strip()})
-            already_types.add("abstract")
+        for sec_type in heading_types:
+            if sec_type not in already_types and text_upper == sec_type.upper():
+                actual_classified.append({"type": sec_type, "text": para.text.strip()})
+                already_types.add(sec_type)
 
 
 def _check_document_structure(
@@ -128,6 +142,8 @@ def _check_document_structure(
 
         _ds_sep = ds.lampiran_heading_separator if ds else None
         _lampiran_re = _build_lampiran_re(_ds_sep if _ds_sep is not None else ".")
+        _chapter_fmt = metadata.numbering.chapter_format if metadata.numbering else None
+        _bab_re = _build_bab_re(_chapter_fmt)
 
         actual_classified: list[dict] = []
         for para in doc.paragraphs:
@@ -137,12 +153,17 @@ def _check_document_structure(
             level = _heading_level_from_style(para.style)
             if level is None:
                 continue
-            section_type, extra = _classify_heading(text, lampiran_re=_lampiran_re)
+            section_type, extra = _classify_heading(text, lampiran_re=_lampiran_re, bab_re=_bab_re)
             if section_type:
                 actual_classified.append({"type": section_type, "text": text, **extra})
 
         if ds is _ds_a:
-            _detect_artikel_pre_bab_sections(doc, actual_classified)
+            first_bab_idx = next(
+                (i for i, s in enumerate(ds.sections) if s.type == "bab"),
+                len(ds.sections),
+            )
+            pre_bab_types = {s.type for s in ds.sections[:first_bab_idx]}
+            _detect_artikel_pre_bab_sections(doc, actual_classified, bab_re=_bab_re, pre_bab_types=pre_bab_types)
 
         expected_major = [s for s in ds.sections if s.is_major_section]
         required_non_bab_types = {

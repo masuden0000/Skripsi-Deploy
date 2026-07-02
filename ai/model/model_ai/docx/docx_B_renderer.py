@@ -353,122 +353,123 @@ def _render_halaman_judul_artikel(
     typography: dict,
     spacing: dict,
     instructional_placeholders: dict[str, str],
-    section: dict,
+    sections: list[dict],
 ) -> None:
-    """Render halaman pertama artikel: judul, penulis, abstrak Indonesia + Inggris.
-    Spasi seluruh halaman = 1.0 (line_spacing_title_abstract).
+    """Render halaman pertama artikel mengikuti urutan sections dari DB.
+
+    Tata letak antar section (jarak 2 baris) bersifat tetap.
+    Urutan dan tipe section mengikuti document_structure_artikel.sections.
     """
-    body_font    = typography.get("font_family") or "Times New Roman"
-    body_size    = typography.get("font_size_body_pt") or 12
-    title_size   = typography.get("font_size_title_pt") or 12
-    author_size  = typography.get("font_size_author_pt") or 10
-    abstract_sz  = typography.get("font_size_abstract_pt") or 11
-    title_spacing = _spacing_title_abstract(spacing)
+    body_font   = typography.get("font_family") or "Times New Roman"
+    title_size  = typography.get("font_size_title_pt") or 12
+    author_size = typography.get("font_size_author_pt") or 10
+    abstract_sz = typography.get("font_size_abstract_pt") or 11
+    title_spacing  = _spacing_title_abstract(spacing)
     title_is_bold  = spacing.get("title_bold", True)
     title_case_raw = (spacing.get("title_case") or "UPPERCASE").upper()
     title_is_upper = title_case_raw == "UPPERCASE"
     title_align    = _map_alignment((spacing.get("title_alignment") or "CENTER").upper())
 
-    title_text = "JUDUL DIBUAT RINGKAS MAKSIMUM 20 KATA DENGAN MENONJOLKAN KATA KUNCI KEGIATAN ILMIAH DAN HASIL UTAMANYA, HURUF KAPITAL, HINDARI ADANYA SINGKATAN"
-    if not title_is_upper:
-        title_text = title_text.title()
+    judul_section = next((s for s in sections if s.get("type") == "judul"), {})
 
-    p_title = _add_styled_paragraph(document, title_align, title_spacing, space_after_pt=0)
-    _add_run(p_title, title_text, body_font, title_size, bold=title_is_bold)
-    _add_bookmark_to_paragraph(p_title, _bookmark_id_artikel("judul"), _bookmark_name_artikel("judul"))
+    def _render_judul(sec: dict) -> None:
+        title_text = "JUDUL DIBUAT RINGKAS MAKSIMUM 20 KATA DENGAN MENONJOLKAN KATA KUNCI KEGIATAN ILMIAH DAN HASIL UTAMANYA, HURUF KAPITAL, HINDARI ADANYA SINGKATAN"
+        if not title_is_upper:
+            title_text = title_text.title()
+        p_title = _add_styled_paragraph(document, title_align, title_spacing, space_after_pt=0)
+        _add_run(p_title, title_text, body_font, title_size, bold=title_is_bold)
+        _add_bookmark_to_paragraph(p_title, _bookmark_id_artikel("judul"), _bookmark_name_artikel("judul"))
 
-    # 2 spasi antara judul dan penulis
-    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
-    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+    def _render_identitas_penulis(sec: dict) -> None:
+        p_authors = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        _add_run(p_authors, "Penulis Satu", body_font, author_size)
+        _add_run(p_authors, "1)", body_font, author_size, superscript=True)
+        _add_run(p_authors, ", Penulis Dua", body_font, author_size)
+        _add_run(p_authors, "1)", body_font, author_size, superscript=True)
+        _add_run(p_authors, ", Penulis Tiga", body_font, author_size)
+        _add_run(p_authors, "2)", body_font, author_size, superscript=True)
+        _add_run(p_authors, ", Penulis Terakhir", body_font, author_size)
+        _add_run(p_authors, "2)*", body_font, author_size, superscript=True)
 
-    p_authors = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
-    _add_run(p_authors, "Penulis Satu", body_font, author_size)
-    _add_run(p_authors, "1)", body_font, author_size, superscript=True)
-    _add_run(p_authors, ", Penulis Dua", body_font, author_size)
-    _add_run(p_authors, "1)", body_font, author_size, superscript=True)
-    _add_run(p_authors, ", Penulis Tiga", body_font, author_size)
-    _add_run(p_authors, "2)", body_font, author_size, superscript=True)
-    _add_run(p_authors, ", Penulis Terakhir", body_font, author_size)
-    _add_run(p_authors, "2)*", body_font, author_size, superscript=True)
+        _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        p_inst1 = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        _add_run(p_inst1, "1", body_font, author_size, superscript=True)
+        _add_run(p_inst1, "Nama institusi dan alamat institusi dari penulis satu dan dua", body_font, author_size)
 
-    # 1 spasi antara penulis dan institusi 1
-    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        p_inst2 = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        _add_run(p_inst2, "2", body_font, author_size, superscript=True)
+        _add_run(p_inst2, "Nama institusi dan alamat institusi dari penulis tiga dan terakhir", body_font, author_size)
 
-    p_inst1 = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
-    _add_run(p_inst1, "1", body_font, author_size, superscript=True)
-    _add_run(p_inst1, "Nama institusi dan alamat institusi dari penulis satu dan dua", body_font, author_size)
+        _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        p_corr = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing, space_after_pt=0)
+        _add_run(p_corr, "*Penulis korespondensi: penulis_terakhir@univ.ac.id", body_font, author_size)
 
-    # 1 spasi antara institusi 1 dan institusi 2
-    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        _add_section_note(document, body_font)
+        instr_key  = make_instruction_key("judul", judul_section.get("title") or "JUDUL")
+        instr_text = instructional_placeholders.get(
+            instr_key,
+            "tulis judul artikel, nama seluruh penulis beserta afiliasi institusi, "
+            "serta abstrak dalam bahasa Indonesia dan Inggris disertai kata kunci.",
+        )
+        p_note = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
+        _add_run(p_note, f"Instruksi: {instr_text}", body_font, 10, italic=True)
 
-    p_inst2 = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
-    _add_run(p_inst2, "2", body_font, author_size, superscript=True)
-    _add_run(p_inst2, "Nama institusi dan alamat institusi dari penulis tiga dan terakhir", body_font, author_size)
+    def _render_abstrak(sec: dict) -> None:
+        p_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        _add_run(p_head, "ABSTRAK", body_font, abstract_sz, bold=False)
+        _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        abstrak_text = instructional_placeholders.get(
+            make_instruction_key("abstrak", sec.get("title") or "ABSTRAK"),
+            "[Tulis abstrak dalam Bahasa Indonesia di sini dalam format satu paragraf, "
+            "cetak tegak, perataan rata kiri dan kanan, maksimum 250 kata. Abstrak memuat "
+            "latar belakang, tujuan, metode (termasuk cara analisis data jika ada data primer), "
+            "hasil utama secara ringkas dan runtut, serta kesimpulan yang selaras dengan tujuan.]",
+        )
+        p_body = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
+        _add_run(p_body, abstrak_text, body_font, abstract_sz)
+        p_kw = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
+        _add_run(p_kw, "Kata-kata kunci: ", body_font, abstract_sz, bold=True)
+        _add_run(p_kw, "[latar belakang], [tujuan], [metode], [hasil], [kesimpulan]. (3-5 kata/frasa)", body_font, abstract_sz)
 
-    # 1 spasi antara institusi 2 dan koresponden
-    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+    def _render_abstract(sec: dict) -> None:
+        p_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        _add_run(p_head, "ABSTRACT", body_font, abstract_sz, italic=True)
+        _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        abstract_text = instructional_placeholders.get(
+            make_instruction_key("abstract", sec.get("title") or "ABSTRACT"),
+            "[Write the abstract in English here as a single paragraph, italic style, "
+            "justified alignment, maximum 250 words. The Abstract contains a brief background, "
+            "aims and objectives, sequential methods (with the analysis performed for primary "
+            "data if applicable), concise results in the order of the method, and a conclusion "
+            "according to the objectives of the study.]",
+        )
+        p_body = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
+        _add_run(p_body, abstract_text, body_font, abstract_sz, italic=True)
+        p_kw = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing)
+        _add_run(p_kw, "Keywords: ", body_font, abstract_sz, bold=True, italic=True)
+        _add_run(p_kw, "[background], [objectives], [methods], [results], [conclusion]. (3-5 words/phrases)", body_font, abstract_sz, italic=True)
 
-    p_corr = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing, space_after_pt=0)
-    _add_run(p_corr, "*Penulis korespondensi: penulis_terakhir@univ.ac.id", body_font, author_size)
+    _dispatch: dict[str, object] = {
+        "judul": _render_judul,
+        "identitas_penulis": _render_identitas_penulis,
+        "abstrak": _render_abstrak,
+        "abstract": _render_abstract,
+    }
 
-    # 2 spasi antara koresponden dan blok catatan/instruksi
-    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
-    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
-
-    _add_section_note(document, body_font)
-    instr_key = make_instruction_key("judul", section.get("title") or "JUDUL")
-    instr_text = instructional_placeholders.get(
-        instr_key,
-        "tulis judul artikel, nama seluruh penulis beserta afiliasi institusi, "
-        "serta abstrak dalam bahasa Indonesia dan Inggris disertai kata kunci.",
-    )
-    p_note = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
-    _add_run(p_note, f"Instruksi: {instr_text}", body_font, 10, italic=True)
-
-    p_abstrak_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
-    _add_run(p_abstrak_head, "ABSTRAK", body_font, abstract_sz, bold=False)
-
-    # 1 spasi antara heading ABSTRAK dan body abstrak
-    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
-
-    p_abstrak_body = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
-    _add_run(
-        p_abstrak_body,
-        "[Tulis abstrak dalam Bahasa Indonesia di sini dalam format satu paragraf, "
-        "cetak tegak, perataan rata kiri dan kanan, maksimum 250 kata. Abstrak memuat "
-        "latar belakang, tujuan, metode (termasuk cara analisis data jika ada data primer), "
-        "hasil utama secara ringkas dan runtut, serta kesimpulan yang selaras dengan tujuan.]",
-        body_font, abstract_sz,
-    )
-
-    p_kata_kunci = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
-    _add_run(p_kata_kunci, "Kata-kata kunci: ", body_font, abstract_sz, bold=True)
-    _add_run(p_kata_kunci, "[latar belakang], [tujuan], [metode], [hasil], [kesimpulan]. (3-5 kata/frasa)", body_font, abstract_sz)
-
-    # 2 spasi antara kata kunci abstrak dan heading ABSTRACT
-    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
-    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
-
-    p_abstract_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
-    _add_run(p_abstract_head, "ABSTRACT", body_font, abstract_sz, italic=True)
-
-    # 1 spasi antara heading ABSTRACT dan body abstract
-    _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
-
-    p_abstract_body = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing, space_after_pt=0)
-    _add_run(
-        p_abstract_body,
-        "[Write the abstract in English here as a single paragraph, italic style, "
-        "justified alignment, maximum 250 words. The Abstract contains a brief background, "
-        "aims and objectives, sequential methods (with the analysis performed for primary "
-        "data if applicable), concise results in the order of the method, and a conclusion "
-        "according to the objectives of the study.]",
-        body_font, abstract_sz, italic=True,
-    )
-
-    p_keywords = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.JUSTIFY, title_spacing)
-    _add_run(p_keywords, "Keywords: ", body_font, abstract_sz, bold=True, italic=True)
-    _add_run(p_keywords, "[background], [objectives], [methods], [results], [conclusion]. (3-5 words/phrases)", body_font, abstract_sz, italic=True)
+    prev_type: str | None = None
+    for sec in sections:
+        sec_type = sec.get("type")
+        renderer = _dispatch.get(sec_type)
+        if renderer is None:
+            continue
+        if prev_type is not None:
+            _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+            _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.CENTER, title_spacing)
+        renderer(sec)
+        prev_type = sec_type
 
 
 def _render_artikel_bab_section(
@@ -623,20 +624,23 @@ def _render_artikel_body(
     numbering: dict,
     instructional_placeholders: dict[str, str],
     figures_tables: dict | None = None,
+    pre_bab_types: set[str] | None = None,
 ) -> None:
-    """Iterasi seluruh section setelah judul mengikuti urutan Sistematika C.
+    """Iterasi seluruh section setelah halaman pertama mengikuti urutan dari DB.
 
     Urutan yang dikenal: bab → daftar_pustaka → lampiran → item_lampiran.
+    pre_bab_types: tipe section yang sudah dirender di halaman pertama, dilewati di sini.
     """
     lampiran_sep = doc_structure.get("lampiran_heading_separator")
     if lampiran_sep is None:
         lampiran_sep = "."
 
+    skip_types = pre_bab_types or {"judul", "identitas_penulis", "abstrak", "abstract"}
     ft = figures_tables or {}
     prev_sec_type: str | None = None
     for section in doc_structure.get("sections", []):
         sec_type = section.get("type")
-        if sec_type in {"judul", "identitas_penulis", "abstrak", "abstract"}:
+        if sec_type in skip_types:
             continue
         if sec_type == "bab":
             _render_artikel_bab_section(document, section, typography, spacing, numbering, instructional_placeholders, ft)
@@ -686,15 +690,19 @@ def render_article_docx_bytes(
         start=1,
     )
 
-    judul_section = next(
-        (s for s in doc_structure.get("sections", []) if s.get("type") == "judul"),
-        None,
+    sections_list = doc_structure.get("sections", [])
+    first_bab_idx = next(
+        (i for i, s in enumerate(sections_list) if s.get("type") == "bab"),
+        len(sections_list),
     )
-    if judul_section is not None:
-        _render_halaman_judul_artikel(document, typography, spacing, instructional_placeholders, judul_section)
+    pre_bab_sections = sections_list[:first_bab_idx]
+    pre_bab_types    = {s.get("type") for s in pre_bab_sections}
+
+    if pre_bab_sections:
+        _render_halaman_judul_artikel(document, typography, spacing, instructional_placeholders, pre_bab_sections)
         document.add_page_break()
 
-    _render_artikel_body(document, doc_structure, typography, spacing, numbering, instructional_placeholders, figures_tables)
+    _render_artikel_body(document, doc_structure, typography, spacing, numbering, instructional_placeholders, figures_tables, pre_bab_types=pre_bab_types)
 
     format_nama_file = doc_structure.get("format_nama_file")
     if format_nama_file:

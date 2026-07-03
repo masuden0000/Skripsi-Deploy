@@ -419,40 +419,107 @@ def _build_issues_checks(
 
     _font_mismatch_items = report["errors"].get("font_mismatch", [])
     if _font_mismatch_items:
-        _total_font_count = sum(item.get("count", 1) for item in _font_mismatch_items)
-        _all_font_paras: list[dict] = []
-        _actual_fonts: list[str] = []
-        _expected_fonts: list[str] = []
+        import math as _math
+        from collections import defaultdict as _defaultdict
+
+        _BOOL_FONT_ATTRS = {"bold", "italic", "underline", "all_caps"}
+
+        def _split_font_attrs(attr_str: str):
+            sizes, families, bools = [], [], []
+            for p in (x.strip() for x in attr_str.split(",") if x.strip()):
+                try:
+                    sizes.append(float(p))
+                except ValueError:
+                    (bools if p.lower() in _BOOL_FONT_ATTRS else families).append(p)
+            return sizes, families, bools
+
+        def _size_ok(es: float, acts: list) -> bool:
+            return any(_math.isclose(es, a, rel_tol=0.02) for a in acts) if acts else False
+
+        _attr_grp = _defaultdict(lambda: {"actual": [], "expected": [], "paras": [], "count": 0})
+
         for _fmi in _font_mismatch_items:
-            _key = _fmi.get("key", "")
-            _paras = _fmi.get("paragraph_details", []) or _fmi.get("paragraphs", [])
-            _all_font_paras.extend(_coerce_paras(_paras))
+            _key    = _fmi.get("key", "")
+            _count  = _fmi.get("count", 1)
+            _paras  = _fmi.get("paragraph_details", []) or _fmi.get("paragraphs", [])
+            _valid  = _coerce_paras(_paras)
             _ma = _re.search(r"actual=\[([^\]]+)\]", _key)
             _me = _re.search(r"expected=\[([^\]]+)\]", _key)
-            if _ma and _ma.group(1) not in _actual_fonts:
-                _actual_fonts.append(_ma.group(1))
-            if _me and _me.group(1) not in _expected_fonts:
-                _expected_fonts.append(_me.group(1))
+            if not _ma or not _me:
+                continue
 
-        _fm_actual_str   = ", ".join(_actual_fonts)   or None
-        _fm_expected_str = ", ".join(_expected_fonts) or None
-        _fm_occurrences  = _build_occurrences(_all_font_paras, _fm_actual_str, _fm_expected_str) or None
-        _fm_location     = _para_location(_all_font_paras) if _all_font_paras and isinstance(_all_font_paras[0], dict) else None
-        _fm_msg = (
-            f"Font tidak sesuai: {_total_font_count} elemen. "
-            f"Ditemukan: {_fm_actual_str or '?'}, Seharusnya: {_fm_expected_str or '?'}"
-        )
-        issues.append(ValidationIssue(
-            category="typography", field="font_per_paragraph",
-            severity="error", message=_fm_msg, location=_fm_location,
-            occurrences=_fm_occurrences,
-        ))
-        checks.append(ValidationCheckResult(
-            category="typography", field="font_per_paragraph",
-            status="failed", message=_fm_msg, location=_fm_location,
-            expected=_fm_expected_str, actual=_fm_actual_str,
-            occurrences=_fm_occurrences,
-        ))
+            act_sz, act_fm, act_bl = _split_font_attrs(_ma.group(1))
+            exp_sz, exp_fm, exp_bl = _split_font_attrs(_me.group(1))
+
+            # Font family
+            if any(ef not in act_fm for ef in exp_fm):
+                g = _attr_grp["body_font_family"]
+                g["count"] += _count
+                g["paras"].extend(_valid)
+                for v in act_fm:
+                    if v not in g["actual"]: g["actual"].append(v)
+                for v in exp_fm:
+                    if v not in g["expected"]: g["expected"].append(v)
+
+            # Font size
+            if any(not _size_ok(es, act_sz) for es in exp_sz):
+                g = _attr_grp["body_font_size"]
+                g["count"] += _count
+                g["paras"].extend(_valid)
+                for v in act_sz:
+                    s = f"{v:g}pt"
+                    if s not in g["actual"]: g["actual"].append(s)
+                for v in exp_sz:
+                    s = f"{v:g}pt"
+                    if s not in g["expected"]: g["expected"].append(s)
+
+            # Bool attrs: bold, italic, underline, all_caps
+            for eb in exp_bl:
+                if eb not in act_bl:
+                    g = _attr_grp[f"body_{eb}"]
+                    g["count"] += _count
+                    g["paras"].extend(_valid)
+                    for v in act_bl:
+                        if v not in g["actual"]: g["actual"].append(v)
+                    if eb not in g["expected"]: g["expected"].append(eb)
+
+        _FONT_LABELS = {
+            "body_font_family": "Jenis huruf (font family)",
+            "body_font_size":   "Ukuran huruf (font size)",
+            "body_bold":        "Tebal (bold)",
+            "body_italic":      "Miring (italic)",
+            "body_underline":   "Garis bawah (underline)",
+            "body_all_caps":    "Semua kapital",
+        }
+
+        for _field, _data in _attr_grp.items():
+            _actual_str   = ", ".join(_data["actual"])   or None
+            _expected_str = ", ".join(_data["expected"]) or None
+            _label = _FONT_LABELS.get(_field, _field)
+            _seen: set = set()
+            _deduped: list = []
+            for p in _data["paras"]:
+                pid = p.get("para_idx") if isinstance(p, dict) else id(p)
+                if pid not in _seen:
+                    _seen.add(pid)
+                    _deduped.append(p)
+            _occurrences = _build_occurrences(_deduped, _actual_str, _expected_str) or None
+            _location    = _para_location(_deduped) if _deduped and isinstance(_deduped[0], dict) else None
+            _msg = (
+                f"{_label} tidak sesuai: {_data['count']} elemen. "
+                f"Ditemukan: {_actual_str or '?'}, Seharusnya: {_expected_str or '?'}"
+            )
+            issues.append(ValidationIssue(
+                category="typography", field=_field,
+                severity="error", message=_msg, location=_location,
+                occurrences=_occurrences,
+            ))
+            checks.append(ValidationCheckResult(
+                category="typography", field=_field,
+                status="failed", message=_msg, location=_location,
+                expected=_expected_str, actual=_actual_str,
+                occurrences=_occurrences,
+            ))
 
     normal_fmt_label = _normal_formatting_label(requirements) if requirements else None
 

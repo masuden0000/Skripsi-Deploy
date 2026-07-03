@@ -107,6 +107,14 @@ const FIELD_LABELS: Record<string, string> = {
   isi_start               : "Titik mulai penomoran arab (halaman isi/BAB)",
   body_line_spacing       : "Spasi baris teks isi (body)",
   heading_line_spacing    : "Spasi baris heading",
+  body_font_family        : "Jenis huruf teks isi",
+  body_font_size          : "Ukuran huruf teks isi",
+  body_bold               : "Tebal (bold)",
+  body_italic             : "Miring (italic)",
+  body_underline          : "Garis bawah (underline)",
+  body_all_caps           : "Semua kapital",
+  body_alignment          : "Rata teks isi (body)",
+  body_content            : "Konten teks isi (body)",
 }
 
 const PARAM_LABELS: Record<string, string> = {

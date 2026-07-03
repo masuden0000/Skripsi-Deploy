@@ -177,8 +177,6 @@ def _check_body_content(
     t = metadata.typography
     _body_align_str = (metadata.spacing.paragraph_alignment if metadata.spacing else None) or "JUSTIFY"
     expected_align  = _CAPTION_ALIGN_MAP.get(_body_align_str.upper(), WD_ALIGN_PARAGRAPH.JUSTIFY)
-    expected_font    = t.font_family if t else None
-    expected_size    = int(t.font_size_body_pt) if t and t.font_size_body_pt else None
     try:
         from model_ai.validation.validocx.wrapper import DocumentWrapper
 
@@ -187,10 +185,6 @@ def _check_body_content(
 
         align_pass: list[dict] = []
         align_fail: list[dict] = []
-        font_pass:  list[dict] = []
-        font_fail:  list[dict] = []
-        size_pass:  list[dict] = []
-        size_fail:  list[dict] = []
 
         for idx, para in enumerate(wrapper.iter_paragraphs()):
             text = para.text.strip()
@@ -225,98 +219,36 @@ def _check_body_content(
             else:
                 align_fail.append({**para_info, "actual": str(int(align))})
 
-            # Cek font: prioritaskan run yang punya font eksplisit (manual override),
-            # lalu fallback ke resolusi style/doc-default via wrapper.
-            _explicit_fn: str | None = None
-            _explicit_fs: float | None = None
-            for run in para.runs:
-                if not run.text.strip():
-                    continue
-                if run.font.name is not None and _explicit_fn is None:
-                    _explicit_fn = run.font.name
-                if run.font.size is not None and _explicit_fs is None:
-                    try:
-                        _explicit_fs = round(float(run.font.size.pt))
-                    except (TypeError, AttributeError):
-                        pass
-
-            run_font_attrs = wrapper.get_font_attributes(para)
-            fn = _explicit_fn or (run_font_attrs[0][1] if run_font_attrs else None)
-            if fn is not None:
-                if expected_font and fn != expected_font:
-                    font_fail.append({**para_info, "actual": fn})
-                else:
-                    font_pass.append(para_info)
-            else:
-                font_pass.append(para_info)
-
-            fs_raw = _explicit_fs if _explicit_fs is not None else (run_font_attrs[0][0] if run_font_attrs else None)
-            if fs_raw is not None:
-                try:
-                    fs_pt = round(float(fs_raw))
-                    if expected_size and fs_pt != expected_size:
-                        size_fail.append({**para_info, "actual": f"{fs_pt}pt"})
-                    else:
-                        size_pass.append(para_info)
-                except (TypeError, ValueError):
-                    size_pass.append(para_info)
-            else:
-                size_pass.append(para_info)
-
-        def _emit(
-            field: str,
-            label: str,
-            expected_val: str,
-            pass_list: list[dict],
-            fail_list: list[dict],
-            include_occurrences: bool = False,
-        ) -> None:
-            if not pass_list and not fail_list:
-                return
-            if fail_list:
-                actual_vals = list(dict.fromkeys(d.get("actual", "?") for d in fail_list))
-                actual_str  = ", ".join(str(v) for v in actual_vals[:3])
+        if align_pass or align_fail:
+            actual_vals = list(dict.fromkeys(d.get("actual", "?") for d in align_fail))
+            actual_str  = ", ".join(str(v) for v in actual_vals[:3])
+            if align_fail:
                 msg = (
-                    f"{label}: {len(fail_list)} elemen tidak sesuai "
-                    f"(ekspektasi: {expected_val}). Ditemukan: {actual_str}"
+                    f"Alignment: {len(align_fail)} elemen tidak sesuai "
+                    f"(ekspektasi: JUSTIFY). Ditemukan: {actual_str}"
                 )
-                occs = (
-                    _build_occurrences(fail_list, actual_str=actual_str,
-                                       expected_str=expected_val) or None
-                ) if include_occurrences else None
+                occs = _build_occurrences(align_fail, actual_str=actual_str, expected_str="JUSTIFY") or None
                 issues.append(ValidationIssue(
-                    category="typography", field=field,
+                    category="typography", field="body_alignment",
                     severity="error", message=msg,
-                    expected=expected_val, actual=actual_str,
+                    expected="JUSTIFY", actual=actual_str,
                     occurrences=occs,
                 ))
                 checks.append(ValidationCheckResult(
-                    category="typography", field=field,
+                    category="typography", field="body_alignment",
                     status="failed", message=msg,
-                    expected=expected_val, actual=actual_str,
+                    expected="JUSTIFY", actual=actual_str,
                     occurrences=occs,
                 ))
-            if pass_list:
-                occs = (
-                    _build_occurrences(pass_list, expected_str=expected_val) or None
-                ) if include_occurrences else None
+            if align_pass:
+                occs = _build_occurrences(align_pass, expected_str="JUSTIFY") or None
                 checks.append(ValidationCheckResult(
-                    category="typography", field=field,
+                    category="typography", field="body_alignment",
                     status="passed",
-                    message=f"{label}: {len(pass_list)} elemen lolos",
-                    expected=expected_val,
-                    actual=expected_val,
+                    message=f"Alignment: {len(align_pass)} elemen lolos",
+                    expected="JUSTIFY", actual="JUSTIFY",
                     occurrences=occs,
                 ))
-
-        _emit("body_alignment",    "Alignment (JUSTIFY)",            "JUSTIFY",
-              align_pass,   align_fail,   include_occurrences=True)
-        if expected_font:
-            _emit("body_font_family",  f"Font family ({expected_font})",   expected_font,
-                  font_pass,    font_fail,    include_occurrences=True)
-        if expected_size:
-            _emit("body_font_size",    f"Ukuran font ({expected_size}pt)", f"{expected_size}pt",
-                  size_pass,    size_fail,    include_occurrences=True)
     except Exception as exc:
         checks.append(ValidationCheckResult(
             category="typography", field="body_content",

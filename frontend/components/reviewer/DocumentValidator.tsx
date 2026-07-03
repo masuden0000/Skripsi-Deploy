@@ -105,6 +105,8 @@ const FIELD_LABELS: Record<string, string> = {
   bab_order               : "Urutan BAB",
   awal_start              : "Titik mulai penomoran romawi (halaman preliminary)",
   isi_start               : "Titik mulai penomoran arab (halaman isi/BAB)",
+  body_line_spacing       : "Spasi baris teks isi (body)",
+  heading_line_spacing    : "Spasi baris heading",
 }
 
 const PARAM_LABELS: Record<string, string> = {
@@ -131,6 +133,7 @@ const WORD_STYLE_LABELS: Record<string, string> = {
 // ─── Helper: format field label ───────────────────────────────────────────────
 
 function formatFieldLabel(field: string): string {
+  if (!field) return field
   if (FIELD_LABELS[field]) return FIELD_LABELS[field]
   if (field.startsWith("validocx_param.")) {
     const inner = field.replace("validocx_param.", "")
@@ -146,7 +149,10 @@ function formatFieldLabel(field: string): string {
     const stripped = inner.replace(/_/g, " ")
     return stripped.charAt(0).toUpperCase() + stripped.slice(1)
   }
-  return field
+  
+  // Fallback: hapus underscore dan kapitalisasi huruf pertama
+  const stripped = field.replace(/_/g, " ")
+  return stripped.charAt(0).toUpperCase() + stripped.slice(1)
 }
 
 function statusMessage(status: string, n: number): string {
@@ -412,7 +418,7 @@ function IssueListPanel({
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className={`text-sm truncate ${isActive ? "font-semibold text-pkm-900" : "font-medium text-gray-800"}`}>
-                      {FIELD_LABELS[issue.field ?? ""] ?? issue.field ?? CATEGORY_LABELS[issue.category] ?? issue.category}
+                      {formatFieldLabel(issue.field ?? CATEGORY_LABELS[issue.category] ?? issue.category)}
                     </p>
                     <p className="text-[11px] text-gray-400 truncate mt-0.5 leading-tight">{statusMessage(issue._isSkipped ? "skipped" : issue.severity, issue.occurrences?.length ?? 0)}</p>
                   </div>
@@ -448,7 +454,7 @@ function LocationPanel({ issue }: { issue: DisplayIssue | null }) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-gray-800 truncate">
-              {FIELD_LABELS[issue.field ?? ""] ?? issue.field ?? CATEGORY_LABELS[issue.category] ?? issue.category}
+              {formatFieldLabel(issue.field ?? CATEGORY_LABELS[issue.category] ?? issue.category)}
             </p>
             <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{statusMessage(issue._isSkipped ? "skipped" : issue.severity, occurrences.length)}</p>
           </div>

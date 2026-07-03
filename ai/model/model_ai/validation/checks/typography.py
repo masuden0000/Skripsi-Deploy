@@ -9,7 +9,6 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from model_ai.extractor.models import DocumentMetadata
 from model_ai.validation.models import ValidationCheckResult, ValidationIssue
 from model_ai.validation.validocx_adapter import (
-    _resolve_line_spacing,
     _heading_level_from_style,
 )
 
@@ -180,22 +179,18 @@ def _check_body_content(
     expected_align  = _CAPTION_ALIGN_MAP.get(_body_align_str.upper(), WD_ALIGN_PARAGRAPH.JUSTIFY)
     expected_font    = t.font_family if t else None
     expected_size    = int(t.font_size_body_pt) if t and t.font_size_body_pt else None
-    expected_spacing = _resolve_line_spacing(metadata)
-
     try:
         from model_ai.validation.validocx.wrapper import DocumentWrapper
 
         doc     = doc or DocxDocument(str(docx_path))
         wrapper = DocumentWrapper(doc)
 
-        align_pass:   list[dict] = []
-        align_fail:   list[dict] = []
-        font_pass:    list[dict] = []
-        font_fail:    list[dict] = []
-        size_pass:    list[dict] = []
-        size_fail:    list[dict] = []
-        spacing_pass: list[dict] = []
-        spacing_fail: list[dict] = []
+        align_pass: list[dict] = []
+        align_fail: list[dict] = []
+        font_pass:  list[dict] = []
+        font_fail:  list[dict] = []
+        size_pass:  list[dict] = []
+        size_fail:  list[dict] = []
 
         for idx, para in enumerate(wrapper.iter_paragraphs()):
             text = para.text.strip()
@@ -230,12 +225,9 @@ def _check_body_content(
             else:
                 align_fail.append({**para_info, "actual": str(int(align))})
 
-            _run_checked = False
-            for run in para.runs:
-                if not run.text.strip():
-                    continue
-                _run_checked = True
-                fn = run.font.name
+            run_font_attrs = wrapper.get_font_attributes(para)
+            if run_font_attrs:
+                fn = run_font_attrs[0][1]
                 if fn is not None:
                     if expected_font and fn != expected_font:
                         font_fail.append({**para_info, "actual": fn})
@@ -243,33 +235,21 @@ def _check_body_content(
                         font_pass.append(para_info)
                 else:
                     font_pass.append(para_info)
-                fs = run.font.size
-                if fs is not None:
-                    fs_pt = round(fs.pt)
-                    if expected_size and fs_pt != expected_size:
-                        size_fail.append({**para_info, "actual": f"{fs_pt}pt"})
-                    else:
+                fs_raw = run_font_attrs[0][0]
+                if fs_raw is not None:
+                    try:
+                        fs_pt = round(float(fs_raw))
+                        if expected_size and fs_pt != expected_size:
+                            size_fail.append({**para_info, "actual": f"{fs_pt}pt"})
+                        else:
+                            size_pass.append(para_info)
+                    except (TypeError, ValueError):
                         size_pass.append(para_info)
                 else:
                     size_pass.append(para_info)
-                break
-            if not _run_checked:
+            else:
                 font_pass.append(para_info)
                 size_pass.append(para_info)
-
-            if expected_spacing:
-                ls = para.paragraph_format.line_spacing
-                if ls is None:
-                    spacing_pass.append(para_info)
-                else:
-                    try:
-                        ls_val = round(float(ls), 2)
-                        if abs(ls_val - expected_spacing) > 0.05:
-                            spacing_fail.append({**para_info, "actual": str(ls_val)})
-                        else:
-                            spacing_pass.append(para_info)
-                    except (TypeError, ValueError):
-                        spacing_pass.append(para_info)
 
         def _emit(
             field: str,
@@ -325,10 +305,6 @@ def _check_body_content(
         if expected_size:
             _emit("body_font_size",    f"Ukuran font ({expected_size}pt)", f"{expected_size}pt",
                   size_pass,    size_fail,    include_occurrences=True)
-        if expected_spacing:
-            _emit("body_line_spacing", f"Spasi baris ({expected_spacing})", str(expected_spacing),
-                  spacing_pass, spacing_fail, include_occurrences=True)
-
     except Exception as exc:
         checks.append(ValidationCheckResult(
             category="typography", field="body_content",

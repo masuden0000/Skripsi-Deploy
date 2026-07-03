@@ -154,12 +154,8 @@ class DocumentWrapper(object):
             fetched_attributes = [self._convert_unit(size, unit), family]
             for attr, member in type(paragraph.style.font).__dict__.items():
                 if isinstance(member, property) and attr not in self._IGNORE_FONT_ATTRS:
-                    val = run.font.__getattribute__(attr)
-                    if val is None:
-                        val = self._find_paragraph_attribute(paragraph.style, 'font', attr)
-                    if val is None:
-                        val = self._get_normal_style_font_attr(attr)
-                        
+                    val = (run.font.__getattribute__(attr) or
+                    paragraph.style.font.__getattribute__(attr))
                     if val is True:
                         fetched_attributes.append(attr)
             runs.append(fetched_attributes)

@@ -362,63 +362,86 @@ def _build_issues_checks(
     issues: list[ValidationIssue] = []
     checks: list[ValidationCheckResult] = []
 
+    # section_missing — agregasi semua ke satu entry per field
+    _sec_miss_items: list = []
+    _sec_miss_attrs: list = []
     for item in report["errors"].get("section_missing", []):
-        msg = item.get("message", "Section attribute missing")
-        attr_m = _re.search(r"'([^']+)'", msg)
-        expected_attr = attr_m.group(1) if attr_m else "attribute"
-        occ_sec_missing = _build_occurrences(
-            [{"text": msg[:100], "full_text": msg, "style": "",
-              "page": None, "bab": None, "para_idx": None,
-              "actual": "Tidak ada"}],
-            actual_str="Tidak ada", expected_str=expected_attr,
-        ) or None
+        _sm_raw = item.get("message", "Section attribute missing")
+        _sm_am  = _re.search(r"'([^']+)'", _sm_raw)
+        _sm_exp = _sm_am.group(1) if _sm_am else "attribute"
+        _sec_miss_items.append({"text": _sm_raw[:100], "full_text": _sm_raw,
+            "style": "", "page": None, "bab": None, "para_idx": None, "actual": "Tidak ada"})
+        _sec_miss_attrs.append(_sm_exp)
+    if _sec_miss_items:
+        _sm_exp_all = ", ".join(sorted(set(_sec_miss_attrs)))
+        _sm_msg = f"Atribut halaman tidak ditemukan ({_sm_exp_all})"
         issues.append(ValidationIssue(
             category="page_layout", field="section_missing",
-            severity="error", message=msg,
-            expected=expected_attr, actual="Tidak ada",
+            severity="error", message=_sm_msg,
+            expected=_sm_exp_all, actual="Tidak ada",
         ))
         checks.append(ValidationCheckResult(
             category="page_layout", field="section_missing",
-            status="failed", message=msg,
-            expected=expected_attr, actual="Tidak ada",
-            occurrences=occ_sec_missing,
+            status="failed", message=_sm_msg,
+            expected=_sm_exp_all, actual="Tidak ada",
+            occurrences=_build_occurrences(_sec_miss_items, "Tidak ada", _sm_exp_all) or None,
         ))
 
+    # value_mismatch — agregasi per (category, field) agar label tidak duplikat
+    _vm_grp: dict = {}
     for item in report["errors"].get("value_mismatch", []):
-        key = item.get("key", "")
-        count = item.get("count", 1)
-        examples = item.get("examples", [])
-        paras = item.get("paragraph_details", []) or item.get("paragraphs", [])
-        category, field = _vm_category(key)
-        location = _para_location(paras) if isinstance(paras, list) and paras and isinstance(paras[0], dict) else None
+        _vk  = item.get("key", "")
+        _vc  = item.get("count", 1)
+        _vp  = item.get("paragraph_details", []) or item.get("paragraphs", [])
+        _vcat, _vfld = _vm_category(_vk)
 
-        example_str = f' Contoh: "{examples[0]}"' if examples else ""
-        msg = f"{key} ({count}x mismatch).{example_str}"
+        _vm_act_m  = _re.search(r"actual=(\S+)", _vk)
+        _vm_exp_m  = _re.search(r"expected=(\S+)", _vk)
+        _vm_attr_m = _re.search(r"\.(\w+)\s*:", _vk)
+        _vm_attr   = _vm_attr_m.group(1) if _vm_attr_m else ""
+        _vm_act_s  = _humanize_attr_value(_vm_attr, _vm_act_m.group(1) if _vm_act_m else None)
+        _vm_exp_s  = _humanize_attr_value(_vm_attr, _vm_exp_m.group(1) if _vm_exp_m else None)
 
-        vm_actual = _re.search(r"actual=(\S+)", key)
-        vm_expected = _re.search(r"expected=(\S+)", key)
-        vm_actual_raw = vm_actual.group(1) if vm_actual else None
-        vm_expected_raw = vm_expected.group(1) if vm_expected else None
+        _valid = _coerce_paras(_vp)
+        _ann   = [{**p, "actual": _vm_act_s} if isinstance(p, dict) and not p.get("actual") else p
+                  for p in _valid]
 
-        attr_match = _re.search(r"\.(\w+)\s*:", key)
-        attr_name = attr_match.group(1) if attr_match else ""
+        _gk = (_vcat, _vfld)
+        if _gk not in _vm_grp:
+            _vm_grp[_gk] = {"count": 0, "paras": [], "attr_names": [], "expected_strs": set()}
+        _g = _vm_grp[_gk]
+        _g["count"]    += _vc
+        _g["paras"].extend(_ann)
+        if _vm_attr:  _g["attr_names"].append(_vm_attr)
+        if _vm_exp_s: _g["expected_strs"].add(_vm_exp_s)
 
-        vm_actual_str   = _humanize_attr_value(attr_name, vm_actual_raw)
-        vm_expected_str = _humanize_attr_value(attr_name, vm_expected_raw)
-
-        valid_paras = _coerce_paras(paras)
-        occurrences = _build_occurrences(valid_paras, vm_actual_str, vm_expected_str) or None
+    for (_vcat2, _vfld2), _gd in _vm_grp.items():
+        _vm_seen: set = set()
+        _vm_dd:   list = []
+        for _p in _gd["paras"]:
+            if not isinstance(_p, dict): continue
+            _pk = (_p.get("para_idx"), (_p.get("text") or "")[:40])
+            if _pk not in _vm_seen:
+                _vm_seen.add(_pk)
+                _vm_dd.append(_p)
+        _vl  = _para_location(_vm_dd) if _vm_dd and isinstance(_vm_dd[0], dict) else None
+        _ve  = ", ".join(sorted(_gd["expected_strs"])) or None
+        _va  = ", ".join(sorted({p["actual"] for p in _vm_dd
+                                  if isinstance(p, dict) and p.get("actual")})) or None
+        _ad  = ", ".join(sorted(set(_gd["attr_names"]))) or "atribut"
+        _vm2 = f"Atribut tidak sesuai ({_ad}): {_gd['count']} elemen"
+        _vo  = _build_occurrences(_vm_dd, None, _ve) or None
 
         issues.append(ValidationIssue(
-            category=category, field=field,
-            severity="error", message=msg, location=location,
-            occurrences=occurrences,
+            category=_vcat2, field=_vfld2,
+            severity="error", message=_vm2, location=_vl,
+            occurrences=_vo,
         ))
         checks.append(ValidationCheckResult(
-            category=category, field=field,
-            status="failed", message=msg, location=location,
-            expected=vm_expected_str, actual=vm_actual_str,
-            occurrences=occurrences,
+            category=_vcat2, field=_vfld2,
+            status="failed", message=_vm2, location=_vl,
+            expected=_ve, actual=_va,
+            occurrences=_vo,
         ))
 
     _font_mismatch_items = report["errors"].get("font_mismatch", [])
@@ -426,7 +449,7 @@ def _build_issues_checks(
         import math as _math
         from collections import defaultdict as _defaultdict
 
-        _BOOL_FONT_ATTRS = {"bold", "italic", "underline", "all_caps"}
+        _BOOL_FONT_ATTRS = {"bold"}
 
         def _split_font_attrs(attr_str: str):
             sizes, families, bools = [], [], []
@@ -498,9 +521,6 @@ def _build_issues_checks(
             "body_font_family": "Jenis huruf (font family)",
             "body_font_size":   "Ukuran huruf (font size)",
             "body_bold":        "Tebal (bold)",
-            "body_italic":      "Miring (italic)",
-            "body_underline":   "Garis bawah (underline)",
-            "body_all_caps":    "Semua kapital",
         }
 
         for _field, _data in _attr_grp.items():
@@ -549,46 +569,72 @@ def _build_issues_checks(
 
     normal_fmt_label = _normal_formatting_label(requirements) if requirements else None
 
+    # undefined_styles — agregasi semua style tidak dikenal ke satu entry
+    _undef_total = 0
+    _undef_styles: list = []
+    _undef_paras: list = []
     for item in report["warnings"].get("undefined_styles", []):
-        style = item.get("style", "?")
-        count = item.get("count", 1)
-        paras = item.get("paragraph_details", []) or []
-        msg = f"Style tidak terdefinisi di requirements: '{style}' ({count}x elemen)"
-
-        valid_paras = _coerce_paras(paras)
-        occurrences = _build_occurrences(valid_paras, actual_str=style, expected_str=normal_fmt_label) or None
-
+        _us = item.get("style", "?")
+        _uc = item.get("count", 1)
+        _undef_total += _uc
+        _undef_styles.append(_us)
+        _up = _coerce_paras(item.get("paragraph_details", []) or [])
+        _undef_paras.extend([{**p, "actual": _us} if isinstance(p, dict) and not p.get("actual") else p
+                              for p in _up])
+    if _undef_total > 0:
+        _undef_seen: set = set()
+        _undef_dd:   list = []
+        for _p in _undef_paras:
+            if not isinstance(_p, dict): continue
+            _pk = (_p.get("para_idx"), (_p.get("text") or "")[:40])
+            if _pk not in _undef_seen:
+                _undef_seen.add(_pk)
+                _undef_dd.append(_p)
+        _us_names = ", ".join(sorted(set(_undef_styles)))
+        _us_msg   = f"Style tidak terdefinisi di requirements ({_us_names}): {_undef_total} elemen"
+        _us_occ   = _build_occurrences(_undef_dd, actual_str=None, expected_str=normal_fmt_label) or None
         issues.append(ValidationIssue(
             category="typography", field="undefined_style",
-            severity="error", message=msg,
-            occurrences=occurrences,
+            severity="error", message=_us_msg,
+            occurrences=_us_occ,
         ))
         checks.append(ValidationCheckResult(
             category="typography", field="undefined_style",
-            status="failed", message=msg,
-            expected=normal_fmt_label, actual=style,
-            occurrences=occurrences,
+            status="failed", message=_us_msg,
+            expected=normal_fmt_label, actual=_us_names,
+            occurrences=_us_occ,
         ))
 
+    # attr_inherited — agregasi semua ke satu entry
+    _inh_total = 0
+    _inh_paras: list = []
+    _inh_attr_names: list = []
     for item in report["warnings"].get("attr_inherited", []):
-        attr = item.get("attribute", "?")
-        count = item.get("count", 1)
-        paras = item.get("paragraph_details", []) or []
-        msg = f"Atribut '{attr}' tidak di-set eksplisit (diwarisi dari Word default), {count}x"
-
-        valid_paras = _coerce_paras(paras)
-        occurrences = _build_occurrences(valid_paras, actual_str="inherited", expected_str="explicit") or None
-
+        _inh_total += item.get("count", 1)
+        _inh_paras.extend(_coerce_paras(item.get("paragraph_details", []) or []))
+        _inh_attr_names.append(item.get("attribute", "?"))
+    if _inh_total > 0:
+        _inh_seen: set = set()
+        _inh_dd:   list = []
+        for _p in _inh_paras:
+            if not isinstance(_p, dict): continue
+            _pk = (_p.get("para_idx"), (_p.get("text") or "")[:40])
+            if _pk not in _inh_seen:
+                _inh_seen.add(_pk)
+                _inh_dd.append(_p)
+        _inh_ad  = ", ".join(sorted(set(_inh_attr_names))) or "atribut"
+        _inh_msg = f"Atribut tidak di-set eksplisit / diwarisi Word default ({_inh_ad}): {_inh_total} elemen"
+        _inh_occ = _build_occurrences(_inh_dd, actual_str="inherited", expected_str="explicit") or None
         issues.append(ValidationIssue(
             category="spacing", field="paragraph_inherited",
-            severity="error", message=msg,
-            occurrences=occurrences,
+            severity="error", message=_inh_msg,
+            occurrences=_inh_occ,
         ))
         checks.append(ValidationCheckResult(
             category="spacing", field="paragraph_inherited",
-            status="failed", message=msg,
+            status="failed", message=_inh_msg,
             expected="explicit", actual="inherited",
-            occurrences=occurrences,
+            occurrences=_inh_occ,
         ))
 
 

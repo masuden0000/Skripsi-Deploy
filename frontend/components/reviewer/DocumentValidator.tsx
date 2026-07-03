@@ -396,7 +396,7 @@ function IssueListPanel({
             <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border-b border-border/40">
               <span className="size-1.5 rounded-full bg-gray-300 shrink-0" />
               <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.07em]">
-                {CATEGORY_LABELS[cat] ?? cat}
+                {CATEGORY_LABELS[cat] ?? cat.replace(/_/g, " ")}
               </span>
             </div>
             {items.map(({ issue, idx }) => {
@@ -533,7 +533,7 @@ function PassedListPanel({
             <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border-b border-border/40">
               <span className="size-1.5 rounded-full bg-pkm-400 shrink-0" />
               <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.07em]">
-                {CATEGORY_LABELS[cat] ?? cat}
+                {CATEGORY_LABELS[cat] ?? cat.replace(/_/g, " ")}
               </span>
             </div>
             {items.map(({ check, idx }) => {

@@ -417,34 +417,41 @@ def _build_issues_checks(
             occurrences=occurrences,
         ))
 
-    for item in report["errors"].get("font_mismatch", []):
-        key = item.get("key", "")
-        count = item.get("count", 1)
-        examples = item.get("examples", [])
-        paras = item.get("paragraph_details", []) or item.get("paragraphs", [])
-        location = _para_location(paras) if isinstance(paras, list) and paras and isinstance(paras[0], dict) else None
+    _font_mismatch_items = report["errors"].get("font_mismatch", [])
+    if _font_mismatch_items:
+        _total_font_count = sum(item.get("count", 1) for item in _font_mismatch_items)
+        _all_font_paras: list[dict] = []
+        _actual_fonts: list[str] = []
+        _expected_fonts: list[str] = []
+        for _fmi in _font_mismatch_items:
+            _key = _fmi.get("key", "")
+            _paras = _fmi.get("paragraph_details", []) or _fmi.get("paragraphs", [])
+            _all_font_paras.extend(_coerce_paras(_paras))
+            _ma = _re.search(r"actual=\[([^\]]+)\]", _key)
+            _me = _re.search(r"expected=\[([^\]]+)\]", _key)
+            if _ma and _ma.group(1) not in _actual_fonts:
+                _actual_fonts.append(_ma.group(1))
+            if _me and _me.group(1) not in _expected_fonts:
+                _expected_fonts.append(_me.group(1))
 
-        example_str = f' Contoh: "{examples[0]}"' if examples else ""
-        msg = f"Font mismatch: {key} ({count}x).{example_str}"
-
-        fm_actual = _re.search(r"actual=\[([^\]]+)\]", key)
-        fm_expected = _re.search(r"expected=\[([^\]]+)\]", key)
-        fm_actual_str = fm_actual.group(1) if fm_actual else None
-        fm_expected_str = fm_expected.group(1) if fm_expected else None
-
-        valid_paras = _coerce_paras(paras)
-        occurrences = _build_occurrences(valid_paras, fm_actual_str, fm_expected_str) or None
-
+        _fm_actual_str   = ", ".join(_actual_fonts)   or None
+        _fm_expected_str = ", ".join(_expected_fonts) or None
+        _fm_occurrences  = _build_occurrences(_all_font_paras, _fm_actual_str, _fm_expected_str) or None
+        _fm_location     = _para_location(_all_font_paras) if _all_font_paras and isinstance(_all_font_paras[0], dict) else None
+        _fm_msg = (
+            f"Font tidak sesuai: {_total_font_count} elemen. "
+            f"Ditemukan: {_fm_actual_str or '?'}, Seharusnya: {_fm_expected_str or '?'}"
+        )
         issues.append(ValidationIssue(
             category="typography", field="font_per_paragraph",
-            severity="error", message=msg, location=location,
-            occurrences=occurrences,
+            severity="error", message=_fm_msg, location=_fm_location,
+            occurrences=_fm_occurrences,
         ))
         checks.append(ValidationCheckResult(
             category="typography", field="font_per_paragraph",
-            status="failed", message=msg, location=location,
-            expected=fm_expected_str, actual=fm_actual_str,
-            occurrences=occurrences,
+            status="failed", message=_fm_msg, location=_fm_location,
+            expected=_fm_expected_str, actual=_fm_actual_str,
+            occurrences=_fm_occurrences,
         ))
 
     normal_fmt_label = _normal_formatting_label(requirements) if requirements else None

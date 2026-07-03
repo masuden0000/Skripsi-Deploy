@@ -225,30 +225,42 @@ def _check_body_content(
             else:
                 align_fail.append({**para_info, "actual": str(int(align))})
 
+            # Cek font: prioritaskan run yang punya font eksplisit (manual override),
+            # lalu fallback ke resolusi style/doc-default via wrapper.
+            _explicit_fn: str | None = None
+            _explicit_fs: float | None = None
+            for run in para.runs:
+                if not run.text.strip():
+                    continue
+                if run.font.name is not None and _explicit_fn is None:
+                    _explicit_fn = run.font.name
+                if run.font.size is not None and _explicit_fs is None:
+                    try:
+                        _explicit_fs = round(float(run.font.size.pt))
+                    except (TypeError, AttributeError):
+                        pass
+
             run_font_attrs = wrapper.get_font_attributes(para)
-            if run_font_attrs:
-                fn = run_font_attrs[0][1]
-                if fn is not None:
-                    if expected_font and fn != expected_font:
-                        font_fail.append({**para_info, "actual": fn})
-                    else:
-                        font_pass.append(para_info)
+            fn = _explicit_fn or (run_font_attrs[0][1] if run_font_attrs else None)
+            if fn is not None:
+                if expected_font and fn != expected_font:
+                    font_fail.append({**para_info, "actual": fn})
                 else:
                     font_pass.append(para_info)
-                fs_raw = run_font_attrs[0][0]
-                if fs_raw is not None:
-                    try:
-                        fs_pt = round(float(fs_raw))
-                        if expected_size and fs_pt != expected_size:
-                            size_fail.append({**para_info, "actual": f"{fs_pt}pt"})
-                        else:
-                            size_pass.append(para_info)
-                    except (TypeError, ValueError):
-                        size_pass.append(para_info)
-                else:
-                    size_pass.append(para_info)
             else:
                 font_pass.append(para_info)
+
+            fs_raw = _explicit_fs if _explicit_fs is not None else (run_font_attrs[0][0] if run_font_attrs else None)
+            if fs_raw is not None:
+                try:
+                    fs_pt = round(float(fs_raw))
+                    if expected_size and fs_pt != expected_size:
+                        size_fail.append({**para_info, "actual": f"{fs_pt}pt"})
+                    else:
+                        size_pass.append(para_info)
+                except (TypeError, ValueError):
+                    size_pass.append(para_info)
+            else:
                 size_pass.append(para_info)
 
         def _emit(

@@ -18,6 +18,7 @@ class DocumentWrapper(object):
         self._modified = document.core_properties.modified
         self._last_modified_by = document.core_properties.last_modified_by
         self._doc_defaults = self._read_doc_defaults()
+        self._theme_fonts  = self._load_theme_fonts()
 
     def _read_doc_defaults(self):
         """
@@ -71,6 +72,71 @@ class DocumentWrapper(object):
         except Exception:
             pass
         return defaults
+
+    _OFFICE_DEFAULT_THEME_FONTS: dict = {
+        'minorHAnsi' : 'Calibri',
+        'majorHAnsi' : 'Calibri Light',
+        'minorAscii' : 'Calibri',
+        'majorAscii' : 'Calibri Light',
+        'minorBidi'  : 'Arial',
+        'majorBidi'  : 'Arial',
+    }
+
+    def _load_theme_fonts(self) -> dict:
+        """Baca pemetaan tema font dari word/theme/theme1.xml dalam paket docx.
+
+        Ketika pengguna memilih font dari toolbar Word (mis. Calibri), Word bisa
+        menyimpannya sebagai w:asciiTheme="minorHAnsi" — referensi ke tema aktif —
+        alih-alih w:ascii="Calibri". python-docx tidak meresolvisi tema, sehingga
+        run.font.name mengembalikan None untuk font berbasis tema.
+
+        Method ini membaca tema dari relasi part dokumen dan memetakan nama tema
+        (minorHAnsi, majorHAnsi, dll.) ke nama font aktual.
+        """
+        result = dict(self._OFFICE_DEFAULT_THEME_FONTS)
+        try:
+            doc_part = self._document.part
+            for rel in doc_part.rels.values():
+                if 'theme' in rel.reltype.lower():
+                    theme_el = rel.target_part.element
+                    ns = {'a': 'http://schemas.openxmlformats.org/drawingml/2006/main'}
+                    minor_el = theme_el.find('.//a:fontScheme/a:minorFont/a:latin', ns)
+                    major_el = theme_el.find('.//a:fontScheme/a:majorFont/a:latin', ns)
+                    if minor_el is not None:
+                        tf = minor_el.get('typeface')
+                        if tf:
+                            result['minorHAnsi'] = tf
+                            result['minorAscii'] = tf
+                    if major_el is not None:
+                        tf = major_el.get('typeface')
+                        if tf:
+                            result['majorHAnsi'] = tf
+                            result['majorAscii'] = tf
+                    break
+        except Exception:
+            pass
+        return result
+
+    def _resolve_run_theme_font(self, run) -> str | None:
+        """Baca w:asciiTheme dari XML run dan resolve ke nama font sebenarnya.
+
+        Dipanggil sebagai fallback pertama setelah run.font.name gagal (None),
+        untuk menangkap kasus font manual yang disimpan Word sebagai referensi tema.
+        """
+        try:
+            rpr = run._r.find(qn('w:rPr'))
+            if rpr is None:
+                return None
+            rfonts = rpr.find(qn('w:rFonts'))
+            if rfonts is None:
+                return None
+            theme_val = (rfonts.get(qn('w:asciiTheme')) or
+                         rfonts.get(qn('w:hAnsiTheme')))
+            if not theme_val:
+                return None
+            return self._theme_fonts.get(theme_val)
+        except Exception:
+            return None
 
     @property
     def author(self):
@@ -148,6 +214,7 @@ class DocumentWrapper(object):
                     self._doc_defaults.get('font_size_pt') or
                     self._get_normal_style_font_attr('size'))
             family = (run.font.name or
+                      self._resolve_run_theme_font(run) or
                       self._find_paragraph_attribute(paragraph.style, 'font', 'name') or
                       self._doc_defaults.get('font_name') or
                       self._get_normal_style_font_attr('name'))

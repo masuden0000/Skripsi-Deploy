@@ -282,14 +282,17 @@ def _build_occurrences(
             continue
         if not (detail.get("text") or "").strip():
             continue
-        item_actual = actual_str if actual_str is not None else detail.get("actual")
+        item_actual  = actual_str if actual_str is not None else detail.get("actual")
+        # Untuk font mismatch, run_text adalah teks spesifik run yang gagal
+        # (lebih presisi daripada teks penuh paragraf).
+        _display_text = detail.get("run_text") or detail.get("text") or ""
         result.append({
             "page"      : detail.get("page"),
             "bab"       : detail.get("bab"),
             "para_idx"  : detail.get("para_idx"),
             "style"     : detail.get("style"),
-            "text"      : (detail.get("text") or "")[:100],
-            "full_text" : detail.get("full_text") or "",
+            "text"      : _display_text[:100],
+            "full_text" : _display_text,
             "actual"    : item_actual,
             "expected"  : expected_str,
         })

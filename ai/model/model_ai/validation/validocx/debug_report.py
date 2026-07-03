@@ -278,7 +278,22 @@ def build_report(entries, docx_path=None, para_map=None, *, doc=None):
             return f"{m.group(3)}: actual=[{m.group(1)}] expected=[{m.group(2)}]"
         return msg
 
-    font_mismatch = _dedup(buckets.get(CAT_FONT_MISMATCH, []), fm_key)
+    _fm_raw       = buckets.get(CAT_FONT_MISMATCH, [])
+    font_mismatch = _dedup(_fm_raw, fm_key)
+
+    # Bangun mapping {fm_key → {para_idx → run_text}} dari log mentah.
+    # Teks yang diambil adalah teks run spesifik yang gagal (bukan teks penuh
+    # paragraf), sehingga frontend bisa menampilkan potongan kalimat yang
+    # benar-benar bermasalah, bukan seluruh paragraf.
+    _fm_para_texts: dict = defaultdict(dict)
+    for _fm_msg in _fm_raw:
+        _fk  = fm_key(_fm_msg)
+        _idx = _extract_para_idx(_fm_msg)
+        _txt = _extract_paragraph_text(_fm_msg)
+        if _idx is not None and _txt and _idx not in _fm_para_texts[_fk]:
+            _fm_para_texts[_fk][_idx] = _txt
+    for _item in font_mismatch:
+        _item["para_run_texts"] = _fm_para_texts.get(_item.get("key", ""), {})
 
     undef_data = defaultdict(lambda: {"count": 0, "paragraphs": []})
     for msg in buckets.get(CAT_UNDEF_STYLE, []):
@@ -313,6 +328,12 @@ def build_report(entries, docx_path=None, para_map=None, *, doc=None):
     if para_map:
         value_mismatch  = _inject_para_details(value_mismatch,  para_map)
         font_mismatch   = _inject_para_details(font_mismatch,   para_map)
+        for _fme in font_mismatch:
+            _rts = _fme.get("para_run_texts", {})
+            for _pd in _fme.get("paragraph_details", []):
+                _pi = _pd.get("para_idx")
+                if _pi in _rts:
+                    _pd["run_text"] = _rts[_pi]
         undefined_styles= _inject_para_details(undefined_styles,para_map)
         attr_inherited  = _inject_para_details(attr_inherited,  para_map)
         for item in parameter_summary:

@@ -185,7 +185,7 @@ class DocumentWrapper(object):
         for section in self._document.sections:
             yield section
 
-    _IGNORE_FONT_ATTRS = frozenset({'italic', 'cs_italic', 'cs_bold'})
+    _IGNORE_FONT_ATTRS = frozenset({'cs_italic', 'cs_bold'})
 
     def _get_normal_style_font_attr(self, attr):
         """Baca nilai font dari style 'Normal' sebagai final fallback."""
@@ -221,8 +221,16 @@ class DocumentWrapper(object):
             fetched_attributes = [self._convert_unit(size, unit), family]
             for attr, member in type(paragraph.style.font).__dict__.items():
                 if isinstance(member, property) and attr not in self._IGNORE_FONT_ATTRS:
-                    val = (run.font.__getattribute__(attr) or
-                    paragraph.style.font.__getattribute__(attr))
+                    run_val = run.font.__getattribute__(attr)
+                    if run_val is not None:
+                        val = run_val
+                    else:
+                        style_val = self._find_paragraph_attribute(paragraph.style, 'font', attr)
+                        if style_val is not None:
+                            val = style_val
+                        else:
+                            val = self._get_normal_style_font_attr(attr)
+                    
                     if val is True:
                         fetched_attributes.append(attr)
             runs.append(fetched_attributes)

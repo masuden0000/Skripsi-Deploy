@@ -706,37 +706,5 @@ def _check_format_nama_file(
     metadata: DocumentMetadata,
     doc: DocxDocument | None = None,
 ) -> tuple[list[ValidationIssue], list[ValidationCheckResult]]:
-    """Validasi format nama file yang dikumpulkan terhadap konvensi PKM.
-
-    Mengecek apakah nama file dimulai dengan 'PKM' (konvensi minimal).
-    Menampilkan format yang diharapkan dari metadata sebagai panduan.
-    """
-    issues: list[ValidationIssue] = []
-    checks: list[ValidationCheckResult] = []
-
-    ds_p = metadata.document_structure_proposal
-    ds_a = metadata.document_structure_artikel
-    fmt = None
-    if ds_p is not None:
-        fmt = ds_p.format_nama_file
-    if fmt is None and ds_a is not None:
-        fmt = ds_a.format_nama_file
-
-    if fmt is None:
-        return issues, checks
-
-    # Nama file berubah menjadi nama temp setelah proses upload ke server,
-    # sehingga tidak bisa divalidasi otomatis dari docx_path.
-    # Tampilkan format yang diharapkan sebagai panduan manual.
-    checks.append(ValidationCheckResult(
-        category="document_structure", field="format_nama_file",
-        status="skipped",
-        message=(
-            f"Format nama file tidak dapat divalidasi otomatis "
-            f"(nama file berubah saat upload). "
-            f"Pastikan nama file saat pengumpulan mengikuti: {fmt}"
-        ),
-        skip_reason="Nama file tidak tersedia saat validasi",
-    ))
-
-    return issues, checks
+    """Stub — format nama file tidak divalidasi otomatis."""
+    return [], []

@@ -725,53 +725,18 @@ def _check_format_nama_file(
     if fmt is None:
         return issues, checks
 
-    try:
-        filename_stem = Path(docx_path).stem
-        starts_pkm = filename_stem.upper().startswith("PKM")
-
-        if not starts_pkm:
-            msg = (
-                f"Nama file tidak diawali 'PKM'. "
-                f"Format yang diharapkan: {fmt}. "
-                f"Nama file saat ini: {filename_stem}"
-            )
-            issues.append(ValidationIssue(
-                category="document_structure", field="format_nama_file",
-                severity="warning", message=msg,
-                expected=fmt, actual=filename_stem,
-                occurrences=[{
-                    "para_idx": None,
-                    "style": "",
-                    "text": filename_stem,
-                    "full_text": filename_stem,
-                    "actual": filename_stem,
-                    "expected": fmt,
-                    "bab": None,
-                    "page": None,
-                }],
-            ))
-            checks.append(ValidationCheckResult(
-                category="document_structure", field="format_nama_file",
-                status="failed", message=msg,
-                expected=fmt, actual=filename_stem,
-            ))
-        else:
-            msg = (
-                f"Nama file diawali 'PKM': sesuai. "
-                f"Pastikan format lengkap mengikuti: {fmt}"
-            )
-            checks.append(ValidationCheckResult(
-                category="document_structure", field="format_nama_file",
-                status="passed", message=msg,
-                expected=fmt, actual=filename_stem,
-            ))
-
-    except Exception as exc:
-        checks.append(ValidationCheckResult(
-            category="document_structure", field="format_nama_file",
-            status="skipped",
-            message=f"Pengecekan format nama file dilewati: {exc}",
-            skip_reason=str(exc),
-        ))
+    # Nama file berubah menjadi nama temp setelah proses upload ke server,
+    # sehingga tidak bisa divalidasi otomatis dari docx_path.
+    # Tampilkan format yang diharapkan sebagai panduan manual.
+    checks.append(ValidationCheckResult(
+        category="document_structure", field="format_nama_file",
+        status="skipped",
+        message=(
+            f"Format nama file tidak dapat divalidasi otomatis "
+            f"(nama file berubah saat upload). "
+            f"Pastikan nama file saat pengumpulan mengikuti: {fmt}"
+        ),
+        skip_reason="Nama file tidak tersedia saat validasi",
+    ))
 
     return issues, checks

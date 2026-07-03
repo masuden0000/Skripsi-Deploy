@@ -459,7 +459,10 @@ def _build_issues_checks(
             if any(ef not in act_fm for ef in exp_fm):
                 g = _attr_grp["body_font_family"]
                 g["count"] += _count
-                g["paras"].extend(_valid)
+                _act_fm_str = ", ".join(act_fm) if act_fm else None
+                for _p in _valid:
+                    # Annotasi grup actual ke setiap dict agar per-occurrence akurat
+                    g["paras"].append({**_p, "group_actual": _act_fm_str})
                 for v in act_fm:
                     if v not in g["actual"]: g["actual"].append(v)
                 for v in exp_fm:
@@ -469,7 +472,9 @@ def _build_issues_checks(
             if any(not _size_ok(es, act_sz) for es in exp_sz):
                 g = _attr_grp["body_font_size"]
                 g["count"] += _count
-                g["paras"].extend(_valid)
+                _act_sz_str = ", ".join(f"{v:g}pt" for v in act_sz) if act_sz else None
+                for _p in _valid:
+                    g["paras"].append({**_p, "group_actual": _act_sz_str})
                 for v in act_sz:
                     s = f"{v:g}pt"
                     if s not in g["actual"]: g["actual"].append(s)
@@ -482,7 +487,9 @@ def _build_issues_checks(
                 if eb not in act_bl:
                     g = _attr_grp[f"body_{eb}"]
                     g["count"] += _count
-                    g["paras"].extend(_valid)
+                    _act_bl_str = ", ".join(act_bl) if act_bl else None
+                    for _p in _valid:
+                        g["paras"].append({**_p, "group_actual": _act_bl_str})
                     for v in act_bl:
                         if v not in g["actual"]: g["actual"].append(v)
                     if eb not in g["expected"]: g["expected"].append(eb)
@@ -500,44 +507,27 @@ def _build_issues_checks(
             _actual_str   = ", ".join(_data["actual"])   or None
             _expected_str = ", ".join(_data["expected"]) or None
             _label = _FONT_LABELS.get(_field, _field)
+            # Dedup per (para_idx, run_text_prefix) agar satu paragraf dengan
+            # beberapa run bermasalah (font berbeda) tetap menghasilkan occurrence terpisah.
             _seen: set = set()
             _deduped: list = []
             for p in _data["paras"]:
-                pid = p.get("para_idx") if isinstance(p, dict) else id(p)
-                if pid not in _seen:
-                    _seen.add(pid)
+                if not isinstance(p, dict):
+                    continue
+                _rt_prefix = (p.get("run_text") or "")[:40]
+                _pid_key   = (p.get("para_idx"), _rt_prefix)
+                if _pid_key not in _seen:
+                    _seen.add(_pid_key)
                     _deduped.append(p)
 
-            # Enrich setiap detail dengan actual spesifik paragraf tersebut,
-            # agar setiap occurrence menampilkan nilai aktualnya sendiri.
-            _exp_set: set[str] = set(_data.get("expected", []))
+            # Gunakan group_actual (font dari group fm_key masing-masing) sebagai
+            # actual per-occurrence, lebih akurat dari penggabungan semua font salah.
             for _pd in _deduped:
                 if not isinstance(_pd, dict) or _pd.get("actual") is not None:
                     continue
-                _runs = _pd.get("runs", [])
-                if _field == "body_font_family":
-                    _bad = list(dict.fromkeys(
-                        r["font_name"] for r in _runs
-                        if r.get("font_name") and r["font_name"] not in _exp_set
-                    ))
-                    if _bad:
-                        _pd["actual"] = ", ".join(_bad)
-                elif _field == "body_font_size":
-                    _exp_floats: set[float] = set()
-                    for _ev in _exp_set:
-                        try:
-                            _exp_floats.add(float(_ev.replace("pt", "")))
-                        except ValueError:
-                            pass
-                    _bad_sz = list(dict.fromkeys(
-                        f"{r['font_size']:g}pt" for r in _runs
-                        if r.get("font_size") is not None
-                        and not any(_math.isclose(float(r["font_size"]), ef, rel_tol=0.02)
-                                    for ef in _exp_floats)
-                    ))
-                    if _bad_sz:
-                        _pd["actual"] = ", ".join(_bad_sz)
-                # Bool attrs: tidak perlu override, "tidak ada" sudah cukup deskriptif
+                _ga = _pd.get("group_actual")
+                if _ga:
+                    _pd["actual"] = _ga
 
             _occurrences = _build_occurrences(_deduped, _actual_str, _expected_str) or None
             _location    = _para_location(_deduped) if _deduped and isinstance(_deduped[0], dict) else None

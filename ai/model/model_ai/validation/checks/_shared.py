@@ -282,10 +282,11 @@ def _build_occurrences(
             continue
         if not (detail.get("text") or "").strip():
             continue
-        item_actual  = actual_str if actual_str is not None else detail.get("actual")
-        # Untuk font mismatch, run_text adalah teks spesifik run yang gagal
-        # (lebih presisi daripada teks penuh paragraf).
-        _display_text = detail.get("run_text") or detail.get("text") or ""
+        # Per-detail actual (misal: font per paragraf) lebih spesifik dari actual_str
+        # (gabungan semua nilai). Gunakan detail.get("actual") jika tersedia.
+        item_actual   = detail.get("actual") if detail.get("actual") is not None else actual_str
+        # run_text: teks spesifik run yang gagal (font mismatch). full_text: teks penuh paragraf.
+        _display_text = detail.get("run_text") or detail.get("full_text") or detail.get("text") or ""
         result.append({
             "page"      : detail.get("page"),
             "bab"       : detail.get("bab"),
@@ -506,6 +507,38 @@ def _build_issues_checks(
                 if pid not in _seen:
                     _seen.add(pid)
                     _deduped.append(p)
+
+            # Enrich setiap detail dengan actual spesifik paragraf tersebut,
+            # agar setiap occurrence menampilkan nilai aktualnya sendiri.
+            _exp_set: set[str] = set(_data.get("expected", []))
+            for _pd in _deduped:
+                if not isinstance(_pd, dict) or _pd.get("actual") is not None:
+                    continue
+                _runs = _pd.get("runs", [])
+                if _field == "body_font_family":
+                    _bad = list(dict.fromkeys(
+                        r["font_name"] for r in _runs
+                        if r.get("font_name") and r["font_name"] not in _exp_set
+                    ))
+                    if _bad:
+                        _pd["actual"] = ", ".join(_bad)
+                elif _field == "body_font_size":
+                    _exp_floats: set[float] = set()
+                    for _ev in _exp_set:
+                        try:
+                            _exp_floats.add(float(_ev.replace("pt", "")))
+                        except ValueError:
+                            pass
+                    _bad_sz = list(dict.fromkeys(
+                        f"{r['font_size']:g}pt" for r in _runs
+                        if r.get("font_size") is not None
+                        and not any(_math.isclose(float(r["font_size"]), ef, rel_tol=0.02)
+                                    for ef in _exp_floats)
+                    ))
+                    if _bad_sz:
+                        _pd["actual"] = ", ".join(_bad_sz)
+                # Bool attrs: tidak perlu override, "tidak ada" sudah cukup deskriptif
+
             _occurrences = _build_occurrences(_deduped, _actual_str, _expected_str) or None
             _location    = _para_location(_deduped) if _deduped and isinstance(_deduped[0], dict) else None
             _msg = (

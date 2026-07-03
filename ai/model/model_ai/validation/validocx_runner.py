@@ -30,9 +30,17 @@ from model_ai.validation.validocx_adapter import (
 )
 
 from .checks._shared import _capture_log, _build_issues_checks
-from .checks.typography import _check_heading_case, _check_body_content
-from .checks.structure import _check_document_structure, _check_lampiran_format
-from .checks.figures_tables import _check_figures_tables, _check_caption_format
+from .checks.typography import (
+    _check_heading_case, _check_body_content, _check_title_format,
+    _check_font_size_sections, _check_section_line_spacing,
+)
+from .checks.structure import (
+    _check_document_structure, _check_lampiran_format, _check_format_nama_file,
+)
+from .checks.figures_tables import (
+    _check_figures_tables, _check_caption_format,
+    _check_caption_line_spacing, _check_budget_format,
+)
 from .checks.numbering import _check_numbering
 from .checks.page_count import _check_page_count
 
@@ -73,12 +81,22 @@ def run_validocx(
     lampiran_issues, lampiran_checks = _check_lampiran_format(path, metadata, doc)
     num_issues, num_checks           = _check_numbering(path, metadata, doc)
     pgcount_issues, pgcount_checks   = _check_page_count(path, metadata, doc)
-    body_issues, body_checks         = _check_body_content(path, metadata, doc)
+    body_issues, body_checks             = _check_body_content(path, metadata, doc)
+    title_issues, title_checks           = _check_title_format(path, metadata, doc)
+    fontsize_issues, fontsize_checks     = _check_font_size_sections(path, metadata, doc)
+    secspacing_issues, secspacing_checks = _check_section_line_spacing(path, metadata, doc)
+    filename_issues, filename_checks     = _check_format_nama_file(path, metadata, doc)
+    captls_issues, captls_checks         = _check_caption_line_spacing(path, metadata, doc)
+    budget_issues, budget_checks         = _check_budget_format(path, metadata, doc)
 
     all_issues = (issues + case_issues + struct_issues + fig_issues
                   + caption_issues + lampiran_issues + num_issues
-                  + pgcount_issues + body_issues)
+                  + pgcount_issues + body_issues + title_issues
+                  + fontsize_issues + secspacing_issues + filename_issues
+                  + captls_issues + budget_issues)
     all_checks = (checks + case_checks + struct_checks + fig_checks
                   + caption_checks + lampiran_checks + num_checks
-                  + pgcount_checks + body_checks)
+                  + pgcount_checks + body_checks + title_checks
+                  + fontsize_checks + secspacing_checks + filename_checks
+                  + captls_checks + budget_checks)
     return all_issues, all_checks

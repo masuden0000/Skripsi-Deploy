@@ -43,6 +43,36 @@ def _hdrftr_has_page_field(hdrftr) -> bool:
     return False
 
 
+def _hdrftr_page_alignment(hdrftr) -> str | None:
+    """Ambil alignment paragraf yang mengandung field PAGE di header/footer.
+
+    Returns 'LEFT', 'CENTER', 'RIGHT', atau None jika tidak ditemukan.
+    """
+    if hdrftr is None:
+        return None
+    _ALIGN_INT_TO_STR = {0: "LEFT", 1: "CENTER", 2: "RIGHT", 3: "JUSTIFY"}
+    try:
+        for para in hdrftr.paragraphs:
+            has_page = any(
+                'PAGE' in (el.text or '').upper()
+                for el in para._element.iter(qn('w:instrText'))
+            )
+            if not has_page:
+                continue
+            align = para.paragraph_format.alignment
+            if align is None:
+                try:
+                    align = para.style.paragraph_format.alignment
+                except Exception:
+                    pass
+            if align is not None:
+                return _ALIGN_INT_TO_STR.get(int(align), str(int(align)))
+            return "LEFT"
+    except Exception:
+        pass
+    return None
+
+
 def _read_section_page_numbering(sectPr) -> tuple[str, int]:
     """Baca format dan nomor awal dari elemen w:pgNumType dalam sectPr.
 
@@ -476,6 +506,38 @@ def _check_numbering(
             if exp_start:
                 _check_start_section(exp_start, doc, issues, checks, zone="awal")
 
+            exp_align = (prelim.alignment or "").upper() if prelim else None
+            if exp_align:
+                actual_align: str | None = None
+                for sec in doc.sections:
+                    if zone and sec._sectPr is zone["sectPr"]:
+                        hdr = sec.header if zone.get("has_header_page") else sec.footer
+                        actual_align = _hdrftr_page_alignment(hdr)
+                        break
+                if actual_align is not None:
+                    if actual_align != exp_align:
+                        msg_a = (
+                            f"Alignment nomor halaman awal seharusnya {exp_align}, "
+                            f"ditemukan {actual_align}."
+                        )
+                        issues.append(ValidationIssue(
+                            category="numbering", field="preliminary_alignment",
+                            severity="error", message=msg_a,
+                            expected=exp_align, actual=actual_align,
+                        ))
+                        checks.append(ValidationCheckResult(
+                            category="numbering", field="preliminary_alignment",
+                            status="failed", message=msg_a,
+                            expected=exp_align, actual=actual_align,
+                        ))
+                    else:
+                        checks.append(ValidationCheckResult(
+                            category="numbering", field="preliminary_alignment",
+                            status="passed",
+                            message=f"Alignment nomor halaman awal ({exp_align}): sesuai",
+                            expected=exp_align, actual=actual_align,
+                        ))
+
         if content:
             exp_fmt = _FORMAT_ALIAS.get((content.format or "").lower(), content.format)
             exp_loc = (content.location or "").upper()
@@ -564,6 +626,38 @@ def _check_numbering(
 
             if exp_start:
                 _check_start_section(exp_start, doc, issues, checks, zone="isi")
+
+            exp_align_c = (content.alignment or "").upper() if content else None
+            if exp_align_c:
+                actual_align_c: str | None = None
+                for sec in doc.sections:
+                    if content_zone and sec._sectPr is content_zone["sectPr"]:
+                        hdr_c = sec.header if content_zone.get("has_header_page") else sec.footer
+                        actual_align_c = _hdrftr_page_alignment(hdr_c)
+                        break
+                if actual_align_c is not None:
+                    if actual_align_c != exp_align_c:
+                        msg_ca = (
+                            f"Alignment nomor halaman isi seharusnya {exp_align_c}, "
+                            f"ditemukan {actual_align_c}."
+                        )
+                        issues.append(ValidationIssue(
+                            category="numbering", field="content_alignment",
+                            severity="error", message=msg_ca,
+                            expected=exp_align_c, actual=actual_align_c,
+                        ))
+                        checks.append(ValidationCheckResult(
+                            category="numbering", field="content_alignment",
+                            status="failed", message=msg_ca,
+                            expected=exp_align_c, actual=actual_align_c,
+                        ))
+                    else:
+                        checks.append(ValidationCheckResult(
+                            category="numbering", field="content_alignment",
+                            status="passed",
+                            message=f"Alignment nomor halaman isi ({exp_align_c}): sesuai",
+                            expected=exp_align_c, actual=actual_align_c,
+                        ))
 
     except Exception as exc:
         checks.append(ValidationCheckResult(

@@ -774,3 +774,249 @@ def _check_figures_tables(
         ))
 
     return issues, checks
+
+
+def _check_caption_line_spacing(
+    docx_path: Path,
+    metadata: DocumentMetadata,
+    doc: DocxDocument | None = None,
+) -> tuple[list[ValidationIssue], list[ValidationCheckResult]]:
+    """Validasi spasi baris pada paragraf caption gambar, tabel, dan lampiran."""
+    issues: list[ValidationIssue] = []
+    checks: list[ValidationCheckResult] = []
+
+    ft = metadata.figures_and_tables
+    if ft is None:
+        return issues, checks
+
+    rule_exp = ft.caption_line_spacing_rule
+    val_exp  = ft.caption_line_spacing
+
+    if rule_exp is None and val_exp is None:
+        return issues, checks
+
+    try:
+        doc = doc or DocxDocument(str(docx_path))
+
+        _CAPTION_RES = [_FIG_DETECT_RE, _TBL_DETECT_RE, _LAMPIRAN_BROAD_RE]
+
+        caption_paras: list = [
+            para for para in doc.paragraphs
+            if any(rx.match(para.text.strip()) for rx in _CAPTION_RES)
+        ]
+
+        if not caption_paras:
+            checks.append(ValidationCheckResult(
+                category="figures_tables", field="caption_line_spacing",
+                status="skipped",
+                message="Tidak ada paragraf caption gambar/tabel/lampiran ditemukan",
+                skip_reason="Tidak ada caption",
+            ))
+            return issues, checks
+
+        def _read_line_spacing_raw(para):
+            pPr = para._element.find(qn("w:pPr"))
+            if pPr is None:
+                return None, None
+            sp_el = pPr.find(qn("w:spacing"))
+            if sp_el is None:
+                return None, None
+            line_str  = sp_el.get(qn("w:line"))
+            line_rule = sp_el.get(qn("w:lineRule"))
+            if line_str is None:
+                return None, None
+            val = int(line_str)
+            if line_rule in ("auto", None):
+                mult = val / 240
+                if val == 240:
+                    return "SINGLE", 1.0
+                if val == 360:
+                    return "ONE_POINT_FIVE", 1.5
+                if val == 480:
+                    return "DOUBLE", 2.0
+                return "MULTIPLE", mult
+            if line_rule == "atLeast":
+                return "AT_LEAST", val / 20
+            if line_rule == "exact":
+                return "EXACTLY", val / 20
+            return None, None
+
+        _RULE_LABEL: dict[str, str] = {
+            "SINGLE":         "Spasi tunggal (1.0)",
+            "ONE_POINT_FIVE": "Satu setengah (1.5)",
+            "DOUBLE":         "Spasi ganda (2.0)",
+            "MULTIPLE":       "Kelipatan",
+            "AT_LEAST":       "Setidaknya",
+            "EXACTLY":        "Tepat",
+        }
+
+        mismatches: list[dict] = []
+        for para in caption_paras:
+            rule_a, val_a = _read_line_spacing_raw(para)
+            rule_ok = (rule_exp is None) or (rule_a == rule_exp.upper())
+            val_ok  = (val_exp is None or val_a is None) or abs(float(val_a) - float(val_exp)) < 0.1
+            if not rule_ok or not val_ok:
+                mismatches.append({
+                    "para_idx":  None,
+                    "style":     para.style.name,
+                    "text":      para.text.strip()[:100],
+                    "full_text": para.text.strip(),
+                    "actual":    f"{rule_a} {val_a:.2f}" if val_a else str(rule_a),
+                    "bab":       None,
+                    "page":      None,
+                })
+
+        rule_lbl = _RULE_LABEL.get((rule_exp or "").upper(), rule_exp or "")
+        exp_str  = f"{rule_lbl} {val_exp}" if val_exp else rule_lbl
+
+        if mismatches:
+            actual_str = mismatches[0]["actual"]
+            msg = (
+                f"Spasi baris caption tidak sesuai (ekspektasi: {exp_str}). "
+                f"{len(mismatches)} caption tidak sesuai."
+            )
+            occs = _build_occurrences(
+                mismatches, actual_str=actual_str, expected_str=exp_str
+            ) or None
+            issues.append(ValidationIssue(
+                category="figures_tables", field="caption_line_spacing",
+                severity="error", message=msg,
+                expected=exp_str, actual=actual_str,
+                occurrences=occs,
+            ))
+            checks.append(ValidationCheckResult(
+                category="figures_tables", field="caption_line_spacing",
+                status="failed", message=msg,
+                expected=exp_str, actual=actual_str,
+                occurrences=occs,
+            ))
+        else:
+            checks.append(ValidationCheckResult(
+                category="figures_tables", field="caption_line_spacing",
+                status="passed",
+                message=f"Spasi baris caption ({exp_str}): semua sesuai",
+                expected=exp_str, actual=exp_str,
+            ))
+
+    except Exception as exc:
+        checks.append(ValidationCheckResult(
+            category="figures_tables", field="caption_line_spacing",
+            status="skipped",
+            message=f"Pengecekan spasi caption dilewati: {exc}",
+            skip_reason=str(exc),
+        ))
+
+    return issues, checks
+
+
+def _check_budget_format(
+    docx_path: Path,
+    metadata: DocumentMetadata,
+    doc: DocxDocument | None = None,
+) -> tuple[list[ValidationIssue], list[ValidationCheckResult]]:
+    """Validasi keberadaan dan kategori tabel anggaran (RAB) pada dokumen proposal.
+
+    Mengecek apakah tabel anggaran ditemukan dan apakah kategori pengeluaran
+    yang ditetapkan metadata muncul di dalamnya. Tidak memvalidasi nilai nominal.
+    """
+    issues: list[ValidationIssue] = []
+    checks: list[ValidationCheckResult] = []
+
+    ft = metadata.figures_and_tables
+    if ft is None or ft.budget_format_rules is None:
+        return issues, checks
+
+    budget_rules = ft.budget_format_rules
+    budget_items = budget_rules.budget_items or []
+
+    try:
+        doc = doc or DocxDocument(str(docx_path))
+
+        _BUDGET_KEYWORDS = {
+            "jenis pengeluaran", "biaya", "anggaran", "rab",
+            "pengeluaran", "peralatan", "bahan", "perjalanan", "sewa",
+        }
+
+        budget_table = None
+        for tbl in doc.tables:
+            if not tbl.rows:
+                continue
+            header_text = " ".join(
+                c.text.strip().lower() for c in tbl.rows[0].cells
+            )
+            if any(kw in header_text for kw in _BUDGET_KEYWORDS):
+                budget_table = tbl
+                break
+
+        if budget_table is None:
+            msg = "Tabel anggaran (RAB) tidak ditemukan di dokumen."
+            issues.append(ValidationIssue(
+                category="figures_tables", field="budget_format",
+                severity="warning", message=msg,
+                expected="tabel anggaran", actual="tidak ditemukan",
+            ))
+            checks.append(ValidationCheckResult(
+                category="figures_tables", field="budget_format",
+                status="failed", message=msg,
+                expected="tabel anggaran", actual="tidak ditemukan",
+            ))
+            return issues, checks
+
+        if not budget_items:
+            checks.append(ValidationCheckResult(
+                category="figures_tables", field="budget_format",
+                status="passed",
+                message="Tabel anggaran ditemukan di dokumen.",
+                expected="tabel anggaran", actual="ditemukan",
+            ))
+            return issues, checks
+
+        all_table_text = " ".join(
+            c.text.strip().lower()
+            for row in budget_table.rows
+            for c in row.cells
+        )
+
+        missing_categories: list[str] = []
+        for item in budget_items:
+            jenis = (item.jenis_pengeluaran or "").strip().lower()
+            if jenis and jenis not in all_table_text:
+                missing_categories.append(item.jenis_pengeluaran or "")
+
+        if missing_categories:
+            missing_str = ", ".join(missing_categories[:5])
+            msg = (
+                f"Kategori anggaran berikut tidak ditemukan di tabel RAB: {missing_str}."
+            )
+            issues.append(ValidationIssue(
+                category="figures_tables", field="budget_format",
+                severity="warning", message=msg,
+                expected=", ".join(
+                    i.jenis_pengeluaran or "" for i in budget_items
+                ),
+                actual=f"tidak ada: {missing_str}",
+            ))
+            checks.append(ValidationCheckResult(
+                category="figures_tables", field="budget_format",
+                status="failed", message=msg,
+                expected=", ".join(i.jenis_pengeluaran or "" for i in budget_items),
+                actual=f"tidak ada: {missing_str}",
+            ))
+        else:
+            checks.append(ValidationCheckResult(
+                category="figures_tables", field="budget_format",
+                status="passed",
+                message="Tabel anggaran ditemukan dan semua kategori pengeluaran ada.",
+                expected=", ".join(i.jenis_pengeluaran or "" for i in budget_items),
+                actual="semua kategori ditemukan",
+            ))
+
+    except Exception as exc:
+        checks.append(ValidationCheckResult(
+            category="figures_tables", field="budget_format",
+            status="skipped",
+            message=f"Pengecekan tabel anggaran dilewati: {exc}",
+            skip_reason=str(exc),
+        ))
+
+    return issues, checks

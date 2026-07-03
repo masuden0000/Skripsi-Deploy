@@ -699,3 +699,79 @@ def _check_lampiran_format(
         ))
 
     return issues, checks
+
+
+def _check_format_nama_file(
+    docx_path: Path,
+    metadata: DocumentMetadata,
+    doc: DocxDocument | None = None,
+) -> tuple[list[ValidationIssue], list[ValidationCheckResult]]:
+    """Validasi format nama file yang dikumpulkan terhadap konvensi PKM.
+
+    Mengecek apakah nama file dimulai dengan 'PKM' (konvensi minimal).
+    Menampilkan format yang diharapkan dari metadata sebagai panduan.
+    """
+    issues: list[ValidationIssue] = []
+    checks: list[ValidationCheckResult] = []
+
+    ds_p = metadata.document_structure_proposal
+    ds_a = metadata.document_structure_artikel
+    fmt = None
+    if ds_p is not None:
+        fmt = ds_p.format_nama_file
+    if fmt is None and ds_a is not None:
+        fmt = ds_a.format_nama_file
+
+    if fmt is None:
+        return issues, checks
+
+    try:
+        filename_stem = Path(docx_path).stem
+        starts_pkm = filename_stem.upper().startswith("PKM")
+
+        if not starts_pkm:
+            msg = (
+                f"Nama file tidak diawali 'PKM'. "
+                f"Format yang diharapkan: {fmt}. "
+                f"Nama file saat ini: {filename_stem}"
+            )
+            issues.append(ValidationIssue(
+                category="document_structure", field="format_nama_file",
+                severity="warning", message=msg,
+                expected=fmt, actual=filename_stem,
+                occurrences=[{
+                    "para_idx": None,
+                    "style": "",
+                    "text": filename_stem,
+                    "full_text": filename_stem,
+                    "actual": filename_stem,
+                    "expected": fmt,
+                    "bab": None,
+                    "page": None,
+                }],
+            ))
+            checks.append(ValidationCheckResult(
+                category="document_structure", field="format_nama_file",
+                status="failed", message=msg,
+                expected=fmt, actual=filename_stem,
+            ))
+        else:
+            msg = (
+                f"Nama file diawali 'PKM': sesuai. "
+                f"Pastikan format lengkap mengikuti: {fmt}"
+            )
+            checks.append(ValidationCheckResult(
+                category="document_structure", field="format_nama_file",
+                status="passed", message=msg,
+                expected=fmt, actual=filename_stem,
+            ))
+
+    except Exception as exc:
+        checks.append(ValidationCheckResult(
+            category="document_structure", field="format_nama_file",
+            status="skipped",
+            message=f"Pengecekan format nama file dilewati: {exc}",
+            skip_reason=str(exc),
+        ))
+
+    return issues, checks

@@ -115,6 +115,22 @@ const FIELD_LABELS: Record<string, string> = {
   body_all_caps           : "Semua kapital",
   body_alignment          : "Rata teks isi (body)",
   body_content            : "Konten teks isi (body)",
+  title_case                    : "Kapitalisasi judul dokumen",
+  title_bold                    : "Tebal (bold) judul dokumen",
+  title_alignment               : "Rata teks judul dokumen",
+  title_format                  : "Format judul dokumen",
+  font_size_title               : "Ukuran font judul",
+  font_size_author              : "Ukuran font identitas penulis",
+  font_size_abstract            : "Ukuran font abstrak",
+  font_size_sections            : "Ukuran font section khusus",
+  line_spacing_title_abstract   : "Spasi baris judul-abstrak",
+  line_spacing_bibliography     : "Spasi baris daftar pustaka",
+  line_spacing_sections         : "Spasi baris section khusus",
+  format_nama_file              : "Format nama file pengumpulan",
+  preliminary_alignment         : "Alignment nomor halaman awal",
+  content_alignment             : "Alignment nomor halaman isi",
+  caption_line_spacing          : "Spasi baris caption",
+  budget_format                 : "Format tabel anggaran (RAB)",
 }
 
 const PARAM_LABELS: Record<string, string> = {

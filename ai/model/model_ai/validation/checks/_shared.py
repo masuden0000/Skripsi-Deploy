@@ -82,14 +82,14 @@ _NUM_FORMAT_DISPLAY: dict[str, str] = {
 }
 
 _ALIGNMENT_LABELS: dict[str, str] = {
-    "0": "rata kiri (LEFT)",
-    "1": "rata tengah (CENTER)",
-    "2": "rata kanan (RIGHT)",
-    "3": "rata kanan-kiri (JUSTIFY)",
-    "LEFT":    "rata kiri (LEFT)",
-    "CENTER":  "rata tengah (CENTER)",
-    "RIGHT":   "rata kanan (RIGHT)",
-    "JUSTIFY": "rata kanan-kiri (JUSTIFY)",
+    "0": "LEFT",
+    "1": "CENTER",
+    "2": "RIGHT",
+    "3": "JUSTIFY",
+    "LEFT":    "LEFT",
+    "CENTER":  "CENTER",
+    "RIGHT":   "RIGHT",
+    "JUSTIFY": "JUSTIFY",
 }
 
 _LINE_SPACING_LABELS: dict[str, str] = {

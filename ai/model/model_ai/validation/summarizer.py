@@ -129,19 +129,19 @@ def _get_pool() -> _KeyPool:
 
 
 _ALIGN_LABEL: dict[str, str] = {
-    "0":       "rata kiri",
-    "1":       "rata tengah",
-    "2":       "rata kanan",
-    "3":       "rata kanan-kiri (justify)",
-    "left":    "rata kiri",
-    "center":  "rata tengah",
-    "right":   "rata kanan",
-    "justify": "rata kanan-kiri (justify)",
-    "none":    "tidak diatur",
-    "rata kiri (left)":              "rata kiri",
-    "rata tengah (center)":          "rata tengah",
-    "rata kanan (right)":            "rata kanan",
-    "rata kanan-kiri (justify)":     "rata kanan-kiri (justify)",
+    "0":       "LEFT",
+    "1":       "CENTER",
+    "2":       "RIGHT",
+    "3":       "JUSTIFY",
+    "left":    "LEFT",
+    "center":  "CENTER",
+    "right":   "RIGHT",
+    "justify": "JUSTIFY",
+    "none":    "TIDAK DIATUR",
+    "rata kiri (left)":              "LEFT",
+    "rata tengah (center)":          "CENTER",
+    "rata kanan (right)":            "RIGHT",
+    "rata kanan-kiri (justify)":     "JUSTIFY",
 }
 
 _SPACING_LABEL: dict[str, str] = {

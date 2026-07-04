@@ -443,10 +443,10 @@ def _check_figures_tables(
 
         elements, scan_source = _build_content_elements(doc)
 
-        fig_pos_errors: list[str] = []
-        fig_fmt_errors: list[str] = []
-        tbl_pos_errors: list[str] = []
-        tbl_fmt_errors: list[str] = []
+        fig_pos_errors: list[dict] = []
+        fig_fmt_errors: list[dict] = []
+        tbl_pos_errors: list[dict] = []
+        tbl_fmt_errors: list[dict] = []
         fig_count = 0
         tbl_count = 0
         fig_pos_pass_items: list[dict] = []
@@ -454,6 +454,7 @@ def _check_figures_tables(
         tbl_pos_pass_items: list[dict] = []
         tbl_fmt_pass_items: list[dict] = []
 
+        current_bab: str | None = None
         for i, (etype, elem) in enumerate(elements):
             if etype != "para":
                 continue
@@ -461,12 +462,17 @@ def _check_figures_tables(
             if not text:
                 continue
 
+            # Lacak BAB aktif untuk konteks lokasi occurrence
+            bab_m = _BAB_RE.match(text.upper())
+            if bab_m and any(k in (elem.style.name or "").lower() for k in ("heading", "judul")):
+                current_bab = f"BAB {bab_m.group(1)}"
+
             if _FIG_DETECT_RE.match(text):
                 fig_count += 1
-                fig_para_info = {"text": text[:100], "full_text": text, "style": "", "page": None, "bab": None, "para_idx": None}
+                fig_para_info = {"text": text[:100], "full_text": text, "style": elem.style.name if elem.style else "", "page": None, "bab": current_bab, "para_idx": None}
                 if fig_fmt_re:
                     if not fig_fmt_re.match(text):
-                        fig_fmt_errors.append(text[:70])
+                        fig_fmt_errors.append(fig_para_info)
                     else:
                         fig_fmt_pass_items.append(fig_para_info)
                 if fig_pos_exp == "BELOW":
@@ -475,7 +481,7 @@ def _check_figures_tables(
                         for j in range(max(0, i - 3), i)
                     )
                     if not found_img:
-                        fig_pos_errors.append(f'"{text[:60]}"')
+                        fig_pos_errors.append(fig_para_info)
                     else:
                         fig_pos_pass_items.append(fig_para_info)
                 elif fig_pos_exp == "ABOVE":
@@ -484,28 +490,28 @@ def _check_figures_tables(
                         for j in range(i + 1, min(len(elements), i + 4))
                     )
                     if not found_img:
-                        fig_pos_errors.append(f'"{text[:60]}"')
+                        fig_pos_errors.append(fig_para_info)
                     else:
                         fig_pos_pass_items.append(fig_para_info)
 
             elif _TBL_DETECT_RE.match(text):
                 tbl_count += 1
-                tbl_para_info = {"text": text[:100], "full_text": text, "style": "", "page": None, "bab": None, "para_idx": None}
+                tbl_para_info = {"text": text[:100], "full_text": text, "style": elem.style.name if elem.style else "", "page": None, "bab": current_bab, "para_idx": None}
                 if tbl_fmt_re:
                     if not tbl_fmt_re.match(text):
-                        tbl_fmt_errors.append(text[:70])
+                        tbl_fmt_errors.append(tbl_para_info)
                     else:
                         tbl_fmt_pass_items.append(tbl_para_info)
                 if tbl_pos_exp == "ABOVE":
                     next_is_tbl = i + 1 < len(elements) and elements[i + 1][0] == "table"
                     if not next_is_tbl:
-                        tbl_pos_errors.append(f'"{text[:60]}"')
+                        tbl_pos_errors.append(tbl_para_info)
                     else:
                         tbl_pos_pass_items.append(tbl_para_info)
                 elif tbl_pos_exp == "BELOW":
                     prev_is_tbl = i > 0 and elements[i - 1][0] == "table"
                     if not prev_is_tbl:
-                        tbl_pos_errors.append(f'"{text[:60]}"')
+                        tbl_pos_errors.append(tbl_para_info)
                     else:
                         tbl_pos_pass_items.append(tbl_para_info)
 
@@ -528,12 +534,10 @@ def _check_figures_tables(
                 msg = (
                     f"Caption gambar seharusnya {fig_pos_exp} gambar. "
                     f"{len(fig_pos_errors)}x salah posisi. "
-                    f"Contoh: {fig_pos_errors[0]}"
+                    f"Contoh: \"{fig_pos_errors[0]['text']}\""
                 )
                 occ_fig_pos = _build_occurrences(
-                    [{"text": t[:100], "full_text": t, "style": "",
-                      "page": None, "bab": None, "para_idx": None}
-                     for t in fig_pos_errors],
+                    fig_pos_errors,
                     actual_str=f"bukan {fig_pos_exp}", expected_str=fig_pos_exp,
                 ) or None
                 issues.append(ValidationIssue(
@@ -560,23 +564,21 @@ def _check_figures_tables(
                     msg = (
                         f"Format caption gambar tidak sesuai pola '{fig_fmt_tpl}'. "
                         f"{len(fig_fmt_errors)}x salah format. "
-                        f"Contoh: \"{fig_fmt_errors[0]}\""
+                        f"Contoh: \"{fig_fmt_errors[0]['text']}\""
                     )
                     occ_fig_fmt = _build_occurrences(
-                        [{"text": t[:100], "full_text": t, "style": "",
-                          "page": None, "bab": None, "para_idx": None}
-                         for t in fig_fmt_errors],
+                        fig_fmt_errors,
                         actual_str=None, expected_str=fig_fmt_tpl,
                     ) or None
                     issues.append(ValidationIssue(
                         category="figures_tables", field="figure_caption_format",
                         severity="error", message=msg,
-                        expected=fig_fmt_tpl, actual=fig_fmt_errors[0],
+                        expected=fig_fmt_tpl, actual=fig_fmt_errors[0]["text"],
                     ))
                     checks.append(ValidationCheckResult(
                         category="figures_tables", field="figure_caption_format",
                         status="failed", message=msg,
-                        expected=fig_fmt_tpl, actual=fig_fmt_errors[0],
+                        expected=fig_fmt_tpl, actual=fig_fmt_errors[0]["text"],
                         occurrences=occ_fig_fmt,
                     ))
                 else:
@@ -593,12 +595,10 @@ def _check_figures_tables(
                 msg = (
                     f"Caption tabel seharusnya {tbl_pos_exp} tabel. "
                     f"{len(tbl_pos_errors)}x salah posisi. "
-                    f"Contoh: {tbl_pos_errors[0]}"
+                    f"Contoh: \"{tbl_pos_errors[0]['text']}\""
                 )
                 occ_tbl_pos = _build_occurrences(
-                    [{"text": t[:100], "full_text": t, "style": "",
-                      "page": None, "bab": None, "para_idx": None}
-                     for t in tbl_pos_errors],
+                    tbl_pos_errors,
                     actual_str=f"bukan {tbl_pos_exp}", expected_str=tbl_pos_exp,
                 ) or None
                 issues.append(ValidationIssue(
@@ -625,23 +625,21 @@ def _check_figures_tables(
                     msg = (
                         f"Format caption tabel tidak sesuai pola '{tbl_fmt_tpl}'. "
                         f"{len(tbl_fmt_errors)}x salah format. "
-                        f"Contoh: \"{tbl_fmt_errors[0]}\""
+                        f"Contoh: \"{tbl_fmt_errors[0]['text']}\""
                     )
                     occ_tbl_fmt = _build_occurrences(
-                        [{"text": t[:100], "full_text": t, "style": "",
-                          "page": None, "bab": None, "para_idx": None}
-                         for t in tbl_fmt_errors],
+                        tbl_fmt_errors,
                         actual_str=None, expected_str=tbl_fmt_tpl,
                     ) or None
                     issues.append(ValidationIssue(
                         category="figures_tables", field="table_caption_format",
                         severity="error", message=msg,
-                        expected=tbl_fmt_tpl, actual=tbl_fmt_errors[0],
+                        expected=tbl_fmt_tpl, actual=tbl_fmt_errors[0]["text"],
                     ))
                     checks.append(ValidationCheckResult(
                         category="figures_tables", field="table_caption_format",
                         status="failed", message=msg,
-                        expected=tbl_fmt_tpl, actual=tbl_fmt_errors[0],
+                        expected=tbl_fmt_tpl, actual=tbl_fmt_errors[0]["text"],
                         occurrences=occ_tbl_fmt,
                     ))
                 else:
@@ -655,8 +653,8 @@ def _check_figures_tables(
 
         if lamp_fmt_re or lamp_align_val is not None:
             lamp_count             = 0
-            lamp_fmt_errors:    list[str] = []
-            lamp_align_errors:  list[str] = []
+            lamp_fmt_errors:    list[dict] = []
+            lamp_align_errors:  list[dict] = []
             lamp_fmt_pass_items:   list[dict] = []
             lamp_align_pass_items: list[dict] = []
 
@@ -669,7 +667,7 @@ def _check_figures_tables(
 
                 if lamp_fmt_re:
                     if not lamp_fmt_re.match(text):
-                        lamp_fmt_errors.append(text[:70])
+                        lamp_fmt_errors.append(lamp_para_info)
                     else:
                         lamp_fmt_pass_items.append(lamp_para_info)
 
@@ -681,7 +679,7 @@ def _check_figures_tables(
                         except Exception:
                             align = None
                     if align is not None and align != lamp_align_val:
-                        lamp_align_errors.append(text[:70])
+                        lamp_align_errors.append({**lamp_para_info, "actual": _ALIGN_LABEL.get(int(align), str(align))})
                     else:
                         lamp_align_pass_items.append(lamp_para_info)
 
@@ -697,23 +695,21 @@ def _check_figures_tables(
                     msg = (
                         f"Format caption lampiran tidak sesuai pola '{lamp_fmt_tpl}'. "
                         f"{len(lamp_fmt_errors)}x salah. "
-                        f'Contoh: "{lamp_fmt_errors[0]}"'
+                        f"Contoh: \"{lamp_fmt_errors[0]['text']}\""
                     )
                     occ_lamp_fmt = _build_occurrences(
-                        [{"text": t[:100], "full_text": t, "style": "",
-                          "page": None, "bab": None, "para_idx": None}
-                         for t in lamp_fmt_errors],
+                        lamp_fmt_errors,
                         actual_str=None, expected_str=lamp_fmt_tpl,
                     ) or None
                     issues.append(ValidationIssue(
                         category="figures_tables", field="lampiran_caption_format",
                         severity="error", message=msg,
-                        expected=lamp_fmt_tpl, actual=lamp_fmt_errors[0],
+                        expected=lamp_fmt_tpl, actual=lamp_fmt_errors[0]["text"],
                     ))
                     checks.append(ValidationCheckResult(
                         category="figures_tables", field="lampiran_caption_format",
                         status="failed", message=msg,
-                        expected=lamp_fmt_tpl, actual=lamp_fmt_errors[0],
+                        expected=lamp_fmt_tpl, actual=lamp_fmt_errors[0]["text"],
                         occurrences=occ_lamp_fmt,
                     ))
                 else:
@@ -734,26 +730,24 @@ def _check_figures_tables(
                         skip_reason="Tidak ada paragraf diawali 'Lampiran '",
                     ))
                 elif lamp_align_errors:
+                    _first_actual = lamp_align_errors[0].get("actual", f"bukan {lamp_align_str}")
                     msg = (
                         f"{len(lamp_align_errors)} caption lampiran tidak {lamp_align_str}. "
-                        f'Contoh: "{lamp_align_errors[0]}"'
+                        f"Contoh: \"{lamp_align_errors[0]['text']}\""
                     )
                     occ_lamp_align = _build_occurrences(
-                        [{"text": t[:100], "full_text": t, "style": "",
-                          "page": None, "bab": None, "para_idx": None,
-                          "actual": f"bukan {lamp_align_str}"}
-                         for t in lamp_align_errors],
-                        actual_str=f"bukan {lamp_align_str}", expected_str=lamp_align_str,
+                        lamp_align_errors,
+                        actual_str=_first_actual, expected_str=lamp_align_str,
                     ) or None
                     issues.append(ValidationIssue(
                         category="figures_tables", field="lampiran_caption_alignment",
                         severity="error", message=msg,
-                        expected=lamp_align_str, actual=f"bukan {lamp_align_str}",
+                        expected=lamp_align_str, actual=_first_actual,
                     ))
                     checks.append(ValidationCheckResult(
                         category="figures_tables", field="lampiran_caption_alignment",
                         status="failed", message=msg,
-                        expected=lamp_align_str, actual=f"bukan {lamp_align_str}",
+                        expected=lamp_align_str, actual=_first_actual,
                         occurrences=occ_lamp_align,
                     ))
                 else:

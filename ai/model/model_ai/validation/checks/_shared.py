@@ -93,10 +93,10 @@ _ALIGNMENT_LABELS: dict[str, str] = {
 }
 
 _LINE_SPACING_LABELS: dict[str, str] = {
-    "1.0":  "1.0 (spasi tunggal)",
+    "1.0":  "1.0",
     "1.15": "1.15",
-    "1.5":  "1.5 (satu setengah)",
-    "2.0":  "2.0 (spasi ganda)",
+    "1.5":  "1.5",
+    "2.0":  "2.0",
 }
 
 _ALIGN_LABEL: dict[int, str] = {0: "LEFT", 1: "CENTER", 2: "RIGHT", 3: "JUSTIFY"}
@@ -204,9 +204,13 @@ def _vm_category(key: str) -> tuple[str, str]:
     if attr_part in _SECTION_ATTR_KEYS or key.lstrip().startswith("'Section"):
         return "page_layout", "section_attribute"
 
-    spacing_attrs = {"alignment", "line_spacing", "space_before", "space_after"}
-    is_spacing  = any(a in attr_part.lower() for a in spacing_attrs)
     is_heading  = any(k in style_part for k in _HEADING_STYLE_KEYWORDS)
+
+    if "alignment" in attr_part.lower():
+        return ("spacing", "heading_alignment") if is_heading else ("spacing", "body_alignment")
+
+    spacing_attrs = {"line_spacing", "space_before", "space_after"}
+    is_spacing  = any(a in attr_part.lower() for a in spacing_attrs)
 
     if is_heading:
         return ("spacing", "heading_attribute") if is_spacing else ("typography", "heading_attribute")

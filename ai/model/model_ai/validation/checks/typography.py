@@ -21,7 +21,7 @@ from ._shared import (
     _TOC_TOF_STYLE_NAMES,
     _build_occurrences,
     _is_heading_para,
-    _ALIGN_LABEL,
+    _humanize_attr_value,
 )
 
 
@@ -219,8 +219,7 @@ def _check_body_content(
             if align is None or align == expected_align:
                 align_pass.append(para_info)
             else:
-                align_str_val = _ALIGN_LABEL.get(int(align), str(int(align))) if align is not None else "None"
-                align_fail.append({**para_info, "actual": align_str_val})
+                align_str_val = _humanize_attr_value("alignment", str(int(align))) if align is not None else "None"
 
         if align_pass or align_fail:
             actual_vals = list(dict.fromkeys(d.get("actual", "?") for d in align_fail))

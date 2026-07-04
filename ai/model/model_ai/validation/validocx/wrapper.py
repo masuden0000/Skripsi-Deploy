@@ -198,18 +198,45 @@ class DocumentWrapper(object):
         except (KeyError, AttributeError):
             return None
 
+    def _get_ppr_rpr_font_size(self, paragraph):
+        """Baca font size dari w:pPr/w:rPr (paragraph mark character formatting).
+
+        Word menyimpan font size di sini ketika user mengubah ukuran font secara
+        manual melalui paragraph-level character formatting (pilih semua teks
+        termasuk paragraph mark lalu ubah ukuran). Fallback ini diperiksa sebelum
+        style chain agar override manual user tidak tertimpa nilai style default.
+        """
+        try:
+            from docx.shared import Pt as _Pt
+            pPr = paragraph._p.pPr
+            if pPr is None:
+                return None
+            rPr = pPr.rPr
+            if rPr is None:
+                return None
+            sz = rPr.find(qn('w:sz'))
+            if sz is not None:
+                val = sz.get(qn('w:val'))
+                if val:
+                    return _Pt(int(val) / 2)
+        except Exception:
+            pass
+        return None
+
     def get_font_attributes(self, paragraph, unit='pt'):
         """Get font attributes for specified paragraph.
 
         Fallback chain untuk size dan name (setara dengan get_paragraph_attributes):
           1. Run font (eksplisit di run XML)
-          2. Style chain (base_style → ancestor)
-          3. docDefaults (rPrDefault di styles.xml)
-          4. Style Normal sebagai final fallback
+          2. pPr/rPr (paragraph mark override — manual font change by user)
+          3. Style chain (base_style → ancestor)
+          4. docDefaults (rPrDefault di styles.xml)
+          5. Style Normal sebagai final fallback
         """
         runs = []
         for run in paragraph.runs:
             size = (run.font.size or
+                    self._get_ppr_rpr_font_size(paragraph) or
                     self._find_paragraph_attribute(paragraph.style, 'font', 'size') or
                     self._doc_defaults.get('font_size_pt') or
                     self._get_normal_style_font_attr('size'))

@@ -1,4 +1,4 @@
-﻿"""Typography checks: heading case and body content formatting. Keyword: automated document validation"""
+"""Typography checks: heading case and body content formatting. Keyword: automated document validation"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -21,6 +21,7 @@ from ._shared import (
     _TOC_TOF_STYLE_NAMES,
     _build_occurrences,
     _is_heading_para,
+    _humanize_attr_value,
 )
 
 
@@ -218,7 +219,8 @@ def _check_body_content(
             if align is None or align == expected_align:
                 align_pass.append(para_info)
             else:
-                align_fail.append({**para_info, "actual": str(int(align))})
+                align_str_val = _humanize_attr_value("alignment", str(int(align))) if align is not None else "None"
+                align_fail.append({**para_info, "actual": align_str_val})
 
         if align_pass or align_fail:
             actual_vals = list(dict.fromkeys(d.get("actual", "?") for d in align_fail))
@@ -366,15 +368,16 @@ def _check_title_format(
                 except Exception:
                     pass
             if actual_align is not None and actual_align != expected_align:
+                align_str_val = _humanize_attr_value("alignment", str(int(actual_align)))
                 issues.append(ValidationIssue(
                     category="typography", field="title_alignment",
                     severity="error",
                     message=(
                         f"Alignment judul tidak sesuai. "
-                        f"Ditemukan: {int(actual_align)}, Seharusnya: {title_align_str}"
+                        f"Ditemukan: {align_str_val}, Seharusnya: {title_align_str}"
                     ),
-                    expected=title_align_str, actual=str(int(actual_align)),
-                    occurrences=[{**para_info, "actual": str(int(actual_align)), "expected": title_align_str}],
+                    expected=title_align_str, actual=align_str_val,
+                    occurrences=[{**para_info, "actual": align_str_val, "expected": title_align_str}],
                 ))
             else:
                 checks.append(ValidationCheckResult(

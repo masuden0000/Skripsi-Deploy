@@ -362,30 +362,8 @@ def _build_issues_checks(
     issues: list[ValidationIssue] = []
     checks: list[ValidationCheckResult] = []
 
-    # section_missing — agregasi semua ke satu entry per field
-    _sec_miss_items: list = []
-    _sec_miss_attrs: list = []
-    for item in report["errors"].get("section_missing", []):
-        _sm_raw = item.get("message", "Section attribute missing")
-        _sm_am  = _re.search(r"'([^']+)'", _sm_raw)
-        _sm_exp = _sm_am.group(1) if _sm_am else "attribute"
-        _sec_miss_items.append({"text": _sm_raw[:100], "full_text": _sm_raw,
-            "style": "", "page": None, "bab": None, "para_idx": None, "actual": "Tidak ada"})
-        _sec_miss_attrs.append(_sm_exp)
-    if _sec_miss_items:
-        _sm_exp_all = ", ".join(sorted(set(_sec_miss_attrs)))
-        _sm_msg = f"Atribut halaman tidak ditemukan ({_sm_exp_all})"
-        issues.append(ValidationIssue(
-            category="page_layout", field="section_missing",
-            severity="error", message=_sm_msg,
-            expected=_sm_exp_all, actual="Tidak ada",
-        ))
-        checks.append(ValidationCheckResult(
-            category="page_layout", field="section_missing",
-            status="failed", message=_sm_msg,
-            expected=_sm_exp_all, actual="Tidak ada",
-            occurrences=_build_occurrences(_sec_miss_items, "Tidak ada", _sm_exp_all) or None,
-        ))
+    # section_missing dan section_attribute tidak ditulis ke issues/checks —
+    # keduanya adalah isu document-level tanpa konteks paragraf yang actionable.
 
     # value_mismatch — agregasi per (category, field) agar label tidak duplikat
     _vm_grp: dict = {}
@@ -415,7 +393,10 @@ def _build_issues_checks(
         if _vm_attr:  _g["attr_names"].append(_vm_attr)
         if _vm_exp_s: _g["expected_strs"].add(_vm_exp_s)
 
+    _SKIP_VM_FIELDS = {"section_attribute", "section_missing"}
     for (_vcat2, _vfld2), _gd in _vm_grp.items():
+        if _vfld2 in _SKIP_VM_FIELDS:
+            continue
         _vm_seen: set = set()
         _vm_dd:   list = []
         for _p in _gd["paras"]:
@@ -510,7 +491,7 @@ def _build_issues_checks(
                 if eb not in act_bl:
                     g = _attr_grp[f"body_{eb}"]
                     g["count"] += _count
-                    _act_bl_str = ", ".join(act_bl) if act_bl else None
+                    _act_bl_str = ", ".join(act_bl) if act_bl else f"tidak {eb}"
                     for _p in _valid:
                         g["paras"].append({**_p, "group_actual": _act_bl_str})
                     for v in act_bl:
@@ -605,37 +586,8 @@ def _build_issues_checks(
             occurrences=_us_occ,
         ))
 
-    # attr_inherited — agregasi semua ke satu entry
-    _inh_total = 0
-    _inh_paras: list = []
-    _inh_attr_names: list = []
-    for item in report["warnings"].get("attr_inherited", []):
-        _inh_total += item.get("count", 1)
-        _inh_paras.extend(_coerce_paras(item.get("paragraph_details", []) or []))
-        _inh_attr_names.append(item.get("attribute", "?"))
-    if _inh_total > 0:
-        _inh_seen: set = set()
-        _inh_dd:   list = []
-        for _p in _inh_paras:
-            if not isinstance(_p, dict): continue
-            _pk = (_p.get("para_idx"), (_p.get("text") or "")[:40])
-            if _pk not in _inh_seen:
-                _inh_seen.add(_pk)
-                _inh_dd.append(_p)
-        _inh_ad  = ", ".join(sorted(set(_inh_attr_names))) or "atribut"
-        _inh_msg = f"Atribut tidak di-set eksplisit / diwarisi Word default ({_inh_ad}): {_inh_total} elemen"
-        _inh_occ = _build_occurrences(_inh_dd, actual_str="inherited", expected_str="explicit") or None
-        issues.append(ValidationIssue(
-            category="spacing", field="paragraph_inherited",
-            severity="error", message=_inh_msg,
-            occurrences=_inh_occ,
-        ))
-        checks.append(ValidationCheckResult(
-            category="spacing", field="paragraph_inherited",
-            status="failed", message=_inh_msg,
-            expected="explicit", actual="inherited",
-            occurrences=_inh_occ,
-        ))
+    # attr_inherited tidak ditulis ke issues/checks — paragraf yang atributnya
+    # diwarisi dari Word default tidak actionable tanpa konteks yang lebih spesifik.
 
 
     s = report["summary"]

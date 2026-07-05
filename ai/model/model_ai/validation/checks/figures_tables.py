@@ -250,18 +250,20 @@ def _check_caption_format(
                     f"{len(wrong_fig_alignment)} caption gambar tidak {fig_align_str}. "
                     f'Contoh: "{wrong_fig_alignment[0]["text"]}"'
                 )
+                _occ_fig_align = _build_occurrences(
+                    wrong_fig_alignment, actual_str=None, expected_str=fig_align_str
+                ) or None
                 issues.append(ValidationIssue(
                     category="figures_tables", field="caption_alignment_figure",
                     severity="error", message=msg,
                     expected=fig_align_str, actual=first_act,
+                    occurrences=_occ_fig_align,
                 ))
                 checks.append(ValidationCheckResult(
                     category="figures_tables", field="caption_alignment_figure",
                     status="failed", message=msg,
                     expected=fig_align_str, actual=first_act,
-                    occurrences=_build_occurrences(
-                        wrong_fig_alignment, actual_str=None, expected_str=fig_align_str
-                    ),
+                    occurrences=_occ_fig_align,
                 ))
             else:
                 checks.append(ValidationCheckResult(
@@ -279,18 +281,20 @@ def _check_caption_format(
                     f"{len(wrong_tbl_alignment)} caption tabel tidak {tbl_align_str}. "
                     f'Contoh: "{wrong_tbl_alignment[0]["text"]}"'
                 )
+                _occ_tbl_align = _build_occurrences(
+                    wrong_tbl_alignment, actual_str=None, expected_str=tbl_align_str
+                ) or None
                 issues.append(ValidationIssue(
                     category="figures_tables", field="caption_alignment_table",
                     severity="error", message=msg,
                     expected=tbl_align_str, actual=first_act,
+                    occurrences=_occ_tbl_align,
                 ))
                 checks.append(ValidationCheckResult(
                     category="figures_tables", field="caption_alignment_table",
                     status="failed", message=msg,
                     expected=tbl_align_str, actual=first_act,
-                    occurrences=_build_occurrences(
-                        wrong_tbl_alignment, actual_str=None, expected_str=tbl_align_str
-                    ),
+                    occurrences=_occ_tbl_align,
                 ))
             else:
                 checks.append(ValidationCheckResult(
@@ -309,18 +313,20 @@ def _check_caption_format(
                 f"(seharusnya: {expected_font}). "
                 f'Contoh: "{wrong_font_items[0]["text"]}"'
             )
+            _occ_font = _build_occurrences(
+                wrong_font_items, actual_str=None, expected_str=expected_font
+            ) or None
             issues.append(ValidationIssue(
                 category="figures_tables", field="caption_font",
                 severity="error", message=msg,
                 expected=expected_font, actual=first_actual,
+                occurrences=_occ_font,
             ))
             checks.append(ValidationCheckResult(
                 category="figures_tables", field="caption_font",
                 status="failed", message=msg,
                 expected=expected_font, actual=first_actual,
-                occurrences=_build_occurrences(
-                    wrong_font_items, actual_str=None, expected_str=expected_font
-                ),
+                occurrences=_occ_font,
             ))
         elif expected_font and total_captions > 0:
             checks.append(ValidationCheckResult(
@@ -340,18 +346,20 @@ def _check_caption_format(
                 f"(seharusnya: {expected_size}pt). "
                 f'Contoh: "{wrong_size_items[0]["text"]}"'
             )
+            _occ_size = _build_occurrences(
+                wrong_size_items, actual_str=None, expected_str=f"{expected_size}pt"
+            ) or None
             issues.append(ValidationIssue(
                 category="figures_tables", field="caption_font_size",
                 severity="error", message=msg,
                 expected=f"{expected_size}pt", actual=first_actual_size,
+                occurrences=_occ_size,
             ))
             checks.append(ValidationCheckResult(
                 category="figures_tables", field="caption_font_size",
                 status="failed", message=msg,
                 expected=f"{expected_size}pt", actual=first_actual_size,
-                occurrences=_build_occurrences(
-                    wrong_size_items, actual_str=None, expected_str=f"{expected_size}pt"
-                ),
+                occurrences=_occ_size,
             ))
         elif expected_size and total_captions > 0:
             checks.append(ValidationCheckResult(
@@ -544,6 +552,7 @@ def _check_figures_tables(
                     category="figures_tables", field="figure_caption_position",
                     severity="error", message=msg, expected=fig_pos_exp,
                     actual=f"bukan {fig_pos_exp}",
+                    occurrences=occ_fig_pos,
                 ))
                 checks.append(ValidationCheckResult(
                     category="figures_tables", field="figure_caption_position",
@@ -574,6 +583,7 @@ def _check_figures_tables(
                         category="figures_tables", field="figure_caption_format",
                         severity="error", message=msg,
                         expected=fig_fmt_tpl, actual=fig_fmt_errors[0]["text"],
+                        occurrences=occ_fig_fmt,
                     ))
                     checks.append(ValidationCheckResult(
                         category="figures_tables", field="figure_caption_format",
@@ -605,6 +615,7 @@ def _check_figures_tables(
                     category="figures_tables", field="table_caption_position",
                     severity="error", message=msg, expected=tbl_pos_exp,
                     actual=f"bukan {tbl_pos_exp}",
+                    occurrences=occ_tbl_pos,
                 ))
                 checks.append(ValidationCheckResult(
                     category="figures_tables", field="table_caption_position",
@@ -635,6 +646,7 @@ def _check_figures_tables(
                         category="figures_tables", field="table_caption_format",
                         severity="error", message=msg,
                         expected=tbl_fmt_tpl, actual=tbl_fmt_errors[0]["text"],
+                        occurrences=occ_tbl_fmt,
                     ))
                     checks.append(ValidationCheckResult(
                         category="figures_tables", field="table_caption_format",
@@ -705,6 +717,7 @@ def _check_figures_tables(
                         category="figures_tables", field="lampiran_caption_format",
                         severity="error", message=msg,
                         expected=lamp_fmt_tpl, actual=lamp_fmt_errors[0]["text"],
+                        occurrences=occ_lamp_fmt,
                     ))
                     checks.append(ValidationCheckResult(
                         category="figures_tables", field="lampiran_caption_format",
@@ -743,6 +756,7 @@ def _check_figures_tables(
                         category="figures_tables", field="lampiran_caption_alignment",
                         severity="error", message=msg,
                         expected=lamp_align_str, actual=_first_actual,
+                        occurrences=occ_lamp_align,
                     ))
                     checks.append(ValidationCheckResult(
                         category="figures_tables", field="lampiran_caption_alignment",

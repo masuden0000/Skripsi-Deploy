@@ -363,6 +363,7 @@ def _check_start_section(
             message=fail_msg,
             expected=start_at,
             actual="Tidak ditemukan",
+            occurrences=occ_start,
         ))
         checks.append(ValidationCheckResult(
             category="numbering", field=field,
@@ -459,6 +460,7 @@ def _check_numbering(
                             category="numbering", field="preliminary_location",
                             severity="error", message=msg, expected=exp_loc,
                             actual=actual_loc,
+                            occurrences=occ_prelim_loc,
                         ))
                         checks.append(ValidationCheckResult(
                             category="numbering", field="preliminary_location",
@@ -494,6 +496,7 @@ def _check_numbering(
                     severity="error", message=msg,
                     expected=exp_fmt,
                     actual=actual_fmt,
+                    occurrences=occ_prelim_fmt,
                 ))
                 checks.append(ValidationCheckResult(
                     category="numbering", field="preliminary_format",
@@ -580,6 +583,7 @@ def _check_numbering(
                             category="numbering", field="content_location",
                             severity="error", message=msg, expected=exp_loc,
                             actual=actual_loc,
+                            occurrences=occ_content_loc,
                         ))
                         checks.append(ValidationCheckResult(
                             category="numbering", field="content_location",
@@ -615,6 +619,7 @@ def _check_numbering(
                     severity="error", message=msg,
                     expected=exp_fmt,
                     actual=actual_fmt,
+                    occurrences=occ_content_fmt,
                 ))
                 checks.append(ValidationCheckResult(
                     category="numbering", field="content_format",

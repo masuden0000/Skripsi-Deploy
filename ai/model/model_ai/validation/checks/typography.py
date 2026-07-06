@@ -23,6 +23,7 @@ from ._shared import (
     _is_heading_para,
     _humanize_attr_value,
 )
+from .page_count import _build_displayed_page_map
 
 
 def _text_matches_case_para(para, case_style: str) -> bool:
@@ -75,6 +76,8 @@ def _check_heading_case(
     try:
         doc = doc or DocxDocument(str(docx_path))
 
+        page_map = _build_displayed_page_map(doc)
+
         pass_per_level:     dict[int, list[dict]] = {lvl: [] for lvl in case_per_level}
         mismatch_per_level: dict[int, list[dict]] = {lvl: [] for lvl in case_per_level}
 
@@ -94,7 +97,7 @@ def _check_heading_case(
                 "text"      : text[:100],
                 "full_text" : text,
                 "bab"       : None,
-                "page"      : None,
+                "page"      : page_map.get(idx),
             }
             if not _text_matches_case_para(para, case_style):
                 mismatch_per_level[level].append(para_info)
@@ -184,6 +187,8 @@ def _check_body_content(
 
         doc     = doc or DocxDocument(str(docx_path))
         wrapper = DocumentWrapper(doc)
+        page_map = _build_displayed_page_map(doc)
+        para_idx_by_id = {id(p._p): i for i, p in enumerate(doc.paragraphs)}
 
         align_pass: list[dict] = []
         align_fail: list[dict] = []
@@ -201,13 +206,14 @@ def _check_body_content(
             ):
                 continue
 
+            _real_idx = para_idx_by_id.get(id(para._p))
             para_info: dict = {
                 "para_idx" : idx,
                 "style"    : para.style.name,
                 "text"     : text[:100],
                 "full_text": text,
                 "bab"      : None,
-                "page"     : None,
+                "page"     : page_map.get(_real_idx) if _real_idx is not None else None,
             }
 
             align = para.paragraph_format.alignment
@@ -289,15 +295,18 @@ def _check_title_format(
 
     try:
         doc = doc or DocxDocument(str(docx_path))
+        page_map = _build_displayed_page_map(doc)
 
         title_para = None
-        for para in doc.paragraphs:
+        title_idx  = 0
+        for idx, para in enumerate(doc.paragraphs):
             text = para.text.strip()
             if not text or len(text) < 6:
                 continue
             if _BAB_RE.match(text.upper()):
                 break
             title_para = para
+            title_idx  = idx
             break
 
         if title_para is None:
@@ -305,12 +314,12 @@ def _check_title_format(
 
         title_text = title_para.text.strip()
         para_info: dict = {
-            "para_idx" : 0,
+            "para_idx" : title_idx,
             "style"    : title_para.style.name,
             "text"     : title_text[:100],
             "full_text": title_text,
             "bab"      : None,
-            "page"     : None,
+            "page"     : page_map.get(title_idx),
         }
 
         # Bold — jalan style chain jika run tidak mendefinisikan bold secara eksplisit
@@ -437,6 +446,8 @@ def _check_font_size_sections(
 
     try:
         doc = doc or DocxDocument(str(docx_path))
+        page_map = _build_displayed_page_map(doc)
+        para_idx_by_id = {id(p._p): i for i, p in enumerate(doc.paragraphs)}
 
         title_para:     object | None = None
         author_paras:   list          = []
@@ -481,14 +492,15 @@ def _check_font_size_sections(
                 for run in runs:
                     actual = _resolve_size_pt(run, para.style)
                     if actual is not None and abs(actual - expected_pt) > 0.5:
+                        _pidx = para_idx_by_id.get(id(para._p))
                         mismatches.append({
-                            "para_idx": None,
+                            "para_idx": _pidx,
                             "style":    para.style.name,
                             "text":     para.text.strip()[:100],
                             "full_text": para.text.strip(),
                             "actual":   f"{actual:.1f}pt",
                             "bab":      None,
-                            "page":     None,
+                            "page":     page_map.get(_pidx) if _pidx is not None else None,
                         })
                         break
             exp_str = f"{expected_pt}pt"
@@ -563,6 +575,8 @@ def _check_section_line_spacing(
         from docx.oxml.ns import qn as _qn
 
         doc = doc or DocxDocument(str(docx_path))
+        page_map = _build_displayed_page_map(doc)
+        para_idx_by_id = {id(p._p): i for i, p in enumerate(doc.paragraphs)}
 
         ta_paras:  list = []
         bib_paras: list = []
@@ -638,14 +652,15 @@ def _check_section_line_spacing(
             for para in section_paras:
                 rule_a, val_a = _read_line_spacing(para)
                 if not _spacing_ok(rule_a, val_a, exp_rule_str, exp_val):
+                    _pidx = para_idx_by_id.get(id(para._p))
                     mismatches.append({
-                        "para_idx":  None,
+                        "para_idx":  _pidx,
                         "style":     para.style.name,
                         "text":      para.text.strip()[:100],
                         "full_text": para.text.strip(),
                         "actual":    f"{rule_a} {val_a:.2f}" if val_a else str(rule_a),
                         "bab":       None,
-                        "page":      None,
+                        "page":      page_map.get(_pidx) if _pidx is not None else None,
                     })
             rule_lbl = _RULE_LABEL.get((exp_rule_str or "").upper(), exp_rule_str or "")
             exp_str  = f"{rule_lbl} {exp_val}" if exp_val else rule_lbl

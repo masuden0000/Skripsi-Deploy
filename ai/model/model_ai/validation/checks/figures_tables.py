@@ -19,6 +19,7 @@ from ._shared import (
     _ALIGN_LABEL,
     _build_occurrences,
 )
+from .page_count import _build_displayed_page_map
 
 
 def _template_to_regex(template: str) -> re.Pattern:
@@ -156,6 +157,7 @@ def _check_caption_format(
 
     try:
         doc = doc or DocxDocument(str(docx_path))
+        page_map = _build_displayed_page_map(doc)
 
         wrong_fig_alignment: list[dict] = []
         wrong_tbl_alignment: list[dict] = []
@@ -168,10 +170,15 @@ def _check_caption_format(
         font_pass_items:      list[dict] = []
         size_pass_items:      list[dict] = []
 
-        for para in doc.paragraphs:
+        current_bab: str | None = None
+        for idx, para in enumerate(doc.paragraphs):
             text = para.text.strip()
             if not text:
                 continue
+
+            bab_m = _BAB_RE.match(text.upper())
+            if bab_m and any(k in (para.style.name or "").lower() for k in ("heading", "judul")):
+                current_bab = f"BAB {bab_m.group(1)}"
 
             is_fig = bool(_FIG_DETECT_RE.match(text))
             is_tbl = bool(_TBL_DETECT_RE.match(text))
@@ -183,7 +190,7 @@ def _check_caption_format(
             else:
                 tbl_total += 1
 
-            para_info = {"text": text[:100], "full_text": text, "style": para.style.name, "page": None, "bab": None, "para_idx": None}
+            para_info = {"text": text[:100], "full_text": text, "style": para.style.name, "page": page_map.get(idx), "bab": current_bab, "para_idx": idx}
 
             align = para.paragraph_format.alignment
             if align is None:
@@ -450,6 +457,12 @@ def _check_figures_tables(
         )
 
         elements, scan_source = _build_content_elements(doc)
+        page_map = _build_displayed_page_map(doc)
+        para_idx_by_id = {id(p._p): i for i, p in enumerate(doc.paragraphs)}
+
+        def _page_for(para) -> int | None:
+            real_idx = para_idx_by_id.get(id(para._p))
+            return page_map.get(real_idx) if real_idx is not None else None
 
         fig_pos_errors: list[dict] = []
         fig_fmt_errors: list[dict] = []
@@ -477,7 +490,7 @@ def _check_figures_tables(
 
             if _FIG_DETECT_RE.match(text):
                 fig_count += 1
-                fig_para_info = {"text": text[:100], "full_text": text, "style": elem.style.name if elem.style else "", "page": None, "bab": current_bab, "para_idx": None}
+                fig_para_info = {"text": text[:100], "full_text": text, "style": elem.style.name if elem.style else "", "page": _page_for(elem), "bab": current_bab, "para_idx": para_idx_by_id.get(id(elem._p))}
                 if fig_fmt_re:
                     if not fig_fmt_re.match(text):
                         fig_fmt_errors.append(fig_para_info)
@@ -504,7 +517,7 @@ def _check_figures_tables(
 
             elif _TBL_DETECT_RE.match(text):
                 tbl_count += 1
-                tbl_para_info = {"text": text[:100], "full_text": text, "style": elem.style.name if elem.style else "", "page": None, "bab": current_bab, "para_idx": None}
+                tbl_para_info = {"text": text[:100], "full_text": text, "style": elem.style.name if elem.style else "", "page": _page_for(elem), "bab": current_bab, "para_idx": para_idx_by_id.get(id(elem._p))}
                 if tbl_fmt_re:
                     if not tbl_fmt_re.match(text):
                         tbl_fmt_errors.append(tbl_para_info)
@@ -670,12 +683,12 @@ def _check_figures_tables(
             lamp_fmt_pass_items:   list[dict] = []
             lamp_align_pass_items: list[dict] = []
 
-            for para in doc.paragraphs:
+            for idx, para in enumerate(doc.paragraphs):
                 text = para.text.strip()
                 if not text or not _LAMPIRAN_BROAD_RE.match(text):
                     continue
                 lamp_count += 1
-                lamp_para_info = {"text": text[:100], "full_text": text, "style": para.style.name, "page": None, "bab": None, "para_idx": None}
+                lamp_para_info = {"text": text[:100], "full_text": text, "style": para.style.name, "page": page_map.get(idx), "bab": None, "para_idx": idx}
 
                 if lamp_fmt_re:
                     if not lamp_fmt_re.match(text):
@@ -805,6 +818,8 @@ def _check_caption_line_spacing(
 
     try:
         doc = doc or DocxDocument(str(docx_path))
+        page_map = _build_displayed_page_map(doc)
+        para_idx_by_id = {id(p._p): i for i, p in enumerate(doc.paragraphs)}
 
         _CAPTION_RES = [_FIG_DETECT_RE, _TBL_DETECT_RE, _LAMPIRAN_BROAD_RE]
 
@@ -864,14 +879,15 @@ def _check_caption_line_spacing(
             rule_ok = (rule_exp is None) or (rule_a == rule_exp.upper())
             val_ok  = (val_exp is None or val_a is None) or abs(float(val_a) - float(val_exp)) < 0.1
             if not rule_ok or not val_ok:
+                _pidx = para_idx_by_id.get(id(para._p))
                 mismatches.append({
-                    "para_idx":  None,
+                    "para_idx":  _pidx,
                     "style":     para.style.name,
                     "text":      para.text.strip()[:100],
                     "full_text": para.text.strip(),
                     "actual":    f"{rule_a} {val_a:.2f}" if val_a else str(rule_a),
                     "bab":       None,
-                    "page":      None,
+                    "page":      page_map.get(_pidx) if _pidx is not None else None,
                 })
 
         rule_lbl = _RULE_LABEL.get((rule_exp or "").upper(), rule_exp or "")

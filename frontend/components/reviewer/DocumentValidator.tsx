@@ -328,6 +328,11 @@ function OccurrenceCard({
     <div className={`rounded-lg border ${cardBorder} bg-white border-l-4 ${accentColor} overflow-hidden`}>
       {/* ── Header: halaman · BAB · style ── */}
       <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 ${headerBg} border-b ${headerBorder}`}>
+        {occ.page != null && (
+          <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+            Halaman {occ.page}
+          </span>
+        )}
         {occ.bab && (
           <>
             <span className="text-gray-300 text-xs">·</span>

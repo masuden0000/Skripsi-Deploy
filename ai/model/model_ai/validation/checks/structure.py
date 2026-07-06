@@ -26,6 +26,7 @@ from ._shared import (
     _build_bab_re,
     _build_occurrences,
 )
+from .page_count import _build_displayed_page_map
 
 
 def _classify_heading(
@@ -139,6 +140,7 @@ def _check_document_structure(
 
     try:
         doc = doc or DocxDocument(str(docx_path))
+        page_map = _build_displayed_page_map(doc)
 
         _ds_sep = ds.lampiran_heading_separator if ds else None
         _lampiran_re = _build_lampiran_re(_ds_sep if _ds_sep is not None else ".")
@@ -146,7 +148,7 @@ def _check_document_structure(
         _bab_re = _build_bab_re(_chapter_fmt)
 
         actual_classified: list[dict] = []
-        for para in doc.paragraphs:
+        for idx, para in enumerate(doc.paragraphs):
             text = para.text.strip()
             if not text:
                 continue
@@ -155,7 +157,11 @@ def _check_document_structure(
                 continue
             section_type, extra = _classify_heading(text, lampiran_re=_lampiran_re, bab_re=_bab_re)
             if section_type:
-                actual_classified.append({"type": section_type, "text": text, **extra})
+                actual_classified.append({
+                    "type": section_type, "text": text,
+                    "para_idx": idx, "page": page_map.get(idx),
+                    **extra,
+                })
 
         if ds is _ds_a:
             first_bab_idx = next(
@@ -222,7 +228,7 @@ def _check_document_structure(
         actual_major_found = [s for s in actual_classified if s["type"] in major_types_set]
         occ_req = _build_occurrences(
             [{"text": s["text"][:100], "full_text": s["text"],
-              "style": "", "page": None, "bab": None, "para_idx": None}
+              "style": "", "page": s.get("page"), "bab": None, "para_idx": s.get("para_idx")}
              for s in actual_major_found],
             actual_str=None, expected_str=None,
         ) or None
@@ -251,6 +257,7 @@ def _check_document_structure(
                 category="document_structure", field="required_section",
                 severity="error", message=msg,
                 expected=expected_display_req, actual=actual_display_req,
+                occurrences=occ_req,
             ))
             checks.append(ValidationCheckResult(
                 category="document_structure", field="required_section",
@@ -295,7 +302,7 @@ def _check_document_structure(
                 msg = f"BAB tidak berurutan. Ditemukan: {' → '.join(actual_ordered_labels)}"
                 occ_bab_err = _build_occurrences(
                     [{"text": s["text"][:100], "full_text": s["text"],
-                      "style": "", "page": None, "bab": None, "para_idx": None}
+                      "style": "", "page": s.get("page"), "bab": None, "para_idx": s.get("para_idx")}
                      for s in bab_actuals],
                     actual_str=None, expected_str=None,
                 ) or None
@@ -304,6 +311,7 @@ def _check_document_structure(
                     severity="error", message=msg,
                     expected=' → '.join(expected_sorted_labels),
                     actual=' → '.join(actual_ordered_labels),
+                    occurrences=occ_bab_err,
                 ))
                 checks.append(ValidationCheckResult(
                     category="document_structure", field="bab_order",
@@ -322,7 +330,7 @@ def _check_document_structure(
                     msg = f"BAB berikut tidak ditemukan: {', '.join(missing_labels)}"
                     occ_bab_missing = _build_occurrences(
                         [{"text": s["text"][:100], "full_text": s["text"],
-                          "style": "", "page": None, "bab": None, "para_idx": None}
+                          "style": "", "page": s.get("page"), "bab": None, "para_idx": s.get("para_idx")}
                          for s in bab_actuals],
                         actual_str=None, expected_str=None,
                     ) or None
@@ -331,6 +339,7 @@ def _check_document_structure(
                         severity="error", message=msg,
                         expected=' → '.join(expected_bab_labels),
                         actual=' → '.join(actual_bab_labels),
+                        occurrences=occ_bab_missing,
                     ))
                     checks.append(ValidationCheckResult(
                         category="document_structure", field="bab_order",
@@ -354,7 +363,7 @@ def _check_document_structure(
                                 )
                     occ_bab = _build_occurrences(
                         [{"text": s["text"][:100], "full_text": s["text"],
-                          "style": "", "page": None, "bab": None, "para_idx": None}
+                          "style": "", "page": s.get("page"), "bab": None, "para_idx": s.get("para_idx")}
                          for s in bab_actuals],
                         actual_str=None, expected_str=None,
                     ) or None
@@ -369,6 +378,7 @@ def _check_document_structure(
                             severity="error", message=msg,
                             expected=' → '.join(expected_bab_labels),
                             actual=' → '.join(actual_bab_labels),
+                            occurrences=occ_bab,
                         ))
                         checks.append(ValidationCheckResult(
                             category="document_structure", field="bab_order",
@@ -438,7 +448,7 @@ def _check_document_structure(
             )
             occ_sec_err = _build_occurrences(
                 [{"text": s["text"][:100], "full_text": s["text"],
-                  "style": "", "page": None, "bab": None, "para_idx": None}
+                  "style": "", "page": s.get("page"), "bab": None, "para_idx": s.get("para_idx")}
                  for s in actual_classified if s["type"] in set(expected_order)],
                 actual_str=None, expected_str=None,
             ) or None
@@ -447,6 +457,7 @@ def _check_document_structure(
                 severity="error", message=msg,
                 expected=exp_display,
                 actual=act_display,
+                occurrences=occ_sec_err,
             ))
             checks.append(ValidationCheckResult(
                 category="document_structure", field="section_order",
@@ -459,7 +470,7 @@ def _check_document_structure(
             major_found = [s for s in actual_classified if s["type"] in set(expected_order)]
             occ_sec = _build_occurrences(
                 [{"text": s["text"][:100], "full_text": s["text"],
-                  "style": "", "page": None, "bab": None, "para_idx": None}
+                  "style": "", "page": s.get("page"), "bab": None, "para_idx": s.get("para_idx")}
                  for s in major_found],
                 actual_str=None, expected_str=None,
             ) or None
@@ -525,6 +536,7 @@ def _check_lampiran_format(
 
     try:
         doc = doc or DocxDocument(str(docx_path))
+        page_map = _build_displayed_page_map(doc)
 
         pass_items:      list[dict] = []
         sep_pass_items:  list[dict] = []
@@ -532,10 +544,10 @@ def _check_lampiran_format(
         wrong_font:      list[dict] = []
         wrong_size:      list[dict] = []
         wrong_spacing:   list[dict] = []
-        wrong_separator: list[str]  = []
+        wrong_separator: list[dict] = []
         total = 0
 
-        for para in doc.paragraphs:
+        for idx, para in enumerate(doc.paragraphs):
             text = para.text.strip()
             if not text or not _LAMPIRAN_BROAD_RE.match(text):
                 continue
@@ -545,16 +557,19 @@ def _check_lampiran_format(
 
             _sep_ok = bool(lampiran_re.match(text))
             if not _sep_ok:
-                wrong_separator.append(text[:70])
+                wrong_separator.append({
+                    "text": text[:70], "full_text": text, "style": para.style.name,
+                    "page": page_map.get(idx), "bab": None, "para_idx": idx,
+                })
 
             total += 1
             para_info: dict = {
                 "text"      : text[:100],
                 "full_text" : text,
                 "style"     : para.style.name,
-                "page"      : None,
+                "page"      : page_map.get(idx),
                 "bab"       : None,
-                "para_idx"  : None,
+                "para_idx"  : idx,
             }
             has_issue = False
             if _sep_ok:
@@ -602,23 +617,22 @@ def _check_lampiran_format(
         if wrong_separator:
             msg = (
                 f"{len(wrong_separator)} judul lampiran tidak menggunakan format yang diharapkan "
-                f"({sep_display} setelah nomor). Contoh: \"{wrong_separator[0]}\""
+                f"({sep_display} setelah nomor). Contoh: \"{wrong_separator[0]['text']}\""
             )
             occ_sep_err = _build_occurrences(
-                [{"text": t[:100], "full_text": t, "style": "",
-                  "page": None, "bab": None, "para_idx": None}
-                 for t in wrong_separator],
+                wrong_separator,
                 actual_str=None, expected_str=effective_sep,
             ) or None
             issues.append(ValidationIssue(
                 category="document_structure", field="lampiran_separator",
                 severity="error", message=msg,
-                expected=effective_sep, actual=wrong_separator[0],
+                expected=effective_sep, actual=wrong_separator[0]["text"],
+                occurrences=occ_sep_err,
             ))
             checks.append(ValidationCheckResult(
                 category="document_structure", field="lampiran_separator",
                 status="failed", message=msg,
-                expected=effective_sep, actual=wrong_separator[0],
+                expected=effective_sep, actual=wrong_separator[0]["text"],
                 occurrences=occ_sep_err,
             ))
         else:

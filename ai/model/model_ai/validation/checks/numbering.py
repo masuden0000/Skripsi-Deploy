@@ -523,15 +523,23 @@ def _check_numbering(
                             f"Alignment nomor halaman awal seharusnya {exp_align}, "
                             f"ditemukan {actual_align}."
                         )
+                        occ_prelim_align = _build_occurrences(
+                            [{"text": actual_align, "full_text": msg_a, "style": "",
+                              "page": None, "bab": None, "para_idx": None,
+                              "actual": actual_align}],
+                            actual_str=actual_align, expected_str=exp_align,
+                        ) or None
                         issues.append(ValidationIssue(
                             category="numbering", field="preliminary_alignment",
                             severity="error", message=msg_a,
                             expected=exp_align, actual=actual_align,
+                            occurrences=occ_prelim_align,
                         ))
                         checks.append(ValidationCheckResult(
                             category="numbering", field="preliminary_alignment",
                             status="failed", message=msg_a,
                             expected=exp_align, actual=actual_align,
+                            occurrences=occ_prelim_align,
                         ))
                     else:
                         checks.append(ValidationCheckResult(
@@ -646,15 +654,23 @@ def _check_numbering(
                             f"Alignment nomor halaman isi seharusnya {exp_align_c}, "
                             f"ditemukan {actual_align_c}."
                         )
+                        occ_content_align = _build_occurrences(
+                            [{"text": actual_align_c, "full_text": msg_ca, "style": "",
+                              "page": None, "bab": None, "para_idx": None,
+                              "actual": actual_align_c}],
+                            actual_str=actual_align_c, expected_str=exp_align_c,
+                        ) or None
                         issues.append(ValidationIssue(
                             category="numbering", field="content_alignment",
                             severity="error", message=msg_ca,
                             expected=exp_align_c, actual=actual_align_c,
+                            occurrences=occ_content_align,
                         ))
                         checks.append(ValidationCheckResult(
                             category="numbering", field="content_alignment",
                             status="failed", message=msg_ca,
                             expected=exp_align_c, actual=actual_align_c,
+                            occurrences=occ_content_align,
                         ))
                     else:
                         checks.append(ValidationCheckResult(

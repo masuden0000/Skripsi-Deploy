@@ -974,15 +974,23 @@ def _check_budget_format(
 
         if budget_table is None:
             msg = "Tabel anggaran (RAB) tidak ditemukan di dokumen."
+            occ_no_table = _build_occurrences(
+                [{"text": "Tabel RAB", "full_text": msg,
+                  "style": "", "page": None, "bab": None, "para_idx": None,
+                  "actual": "tidak ditemukan"}],
+                actual_str="tidak ditemukan", expected_str="tabel anggaran",
+            ) or None
             issues.append(ValidationIssue(
                 category="figures_tables", field="budget_format",
                 severity="warning", message=msg,
                 expected="tabel anggaran", actual="tidak ditemukan",
+                occurrences=occ_no_table,
             ))
             checks.append(ValidationCheckResult(
                 category="figures_tables", field="budget_format",
                 status="failed", message=msg,
                 expected="tabel anggaran", actual="tidak ditemukan",
+                occurrences=occ_no_table,
             ))
             return issues, checks
 
@@ -1012,6 +1020,15 @@ def _check_budget_format(
             msg = (
                 f"Kategori anggaran berikut tidak ditemukan di tabel RAB: {missing_str}."
             )
+            occ_budget_miss = _build_occurrences(
+                [{"text": cat,
+                  "full_text": f"Kategori '{cat}' tidak ditemukan di tabel RAB",
+                  "style": "", "page": None, "bab": None, "para_idx": None,
+                  "actual": "tidak ditemukan"}
+                 for cat in missing_categories],
+                actual_str=f"tidak ada: {missing_str}",
+                expected_str=", ".join(i.jenis_pengeluaran or "" for i in budget_items),
+            ) or None
             issues.append(ValidationIssue(
                 category="figures_tables", field="budget_format",
                 severity="warning", message=msg,
@@ -1019,12 +1036,14 @@ def _check_budget_format(
                     i.jenis_pengeluaran or "" for i in budget_items
                 ),
                 actual=f"tidak ada: {missing_str}",
+                occurrences=occ_budget_miss,
             ))
             checks.append(ValidationCheckResult(
                 category="figures_tables", field="budget_format",
                 status="failed", message=msg,
                 expected=", ".join(i.jenis_pengeluaran or "" for i in budget_items),
                 actual=f"tidak ada: {missing_str}",
+                occurrences=occ_budget_miss,
             ))
         else:
             checks.append(ValidationCheckResult(

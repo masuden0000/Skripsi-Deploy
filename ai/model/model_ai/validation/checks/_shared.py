@@ -372,34 +372,95 @@ def _build_issues_checks(
     # mendapat field sendiri (margin_left, margin_right, dst.) dan actual/expected
     # yang informatif, alih-alih digabung ke satu entry "section_attribute" yang
     # sebelumnya di-skip.
-    _MARGIN_ATTR_LABELS: dict[str, str] = {
+    # Atribut section yang divisualisasikan ke pengguna: margin, ukuran kertas, orientasi.
+    _SECTION_LAYOUT_ATTRS: dict[str, str] = {
         "left_margin":   "Margin kiri",
         "right_margin":  "Margin kanan",
         "top_margin":    "Margin atas",
         "bottom_margin": "Margin bawah",
+        "page_width":    "Lebar kertas",
+        "page_height":   "Tinggi kertas",
+        "orientation":   "Orientasi kertas",
     }
+    _ORIENT_LABEL: dict[str, str] = {"0": "Portrait", "1": "Landscape"}
+    # Mapping dimensi (lebar, tinggi) → nama ukuran kertas
+    _PAPER_SIZE_NAME: dict[tuple[float, float], str] = {
+        (21.0, 29.7): "A4", (29.7, 21.0): "A4 Landscape",
+        (21.0, 33.0): "F4", (33.0, 21.0): "F4 Landscape",
+        (14.85, 21.0): "A5", (21.0, 14.85): "A5 Landscape",
+        (29.7, 42.0): "A3", (42.0, 29.7): "A3 Landscape",
+        (21.59, 27.94): "Letter", (27.94, 21.59): "Letter Landscape",
+    }
+
+    def _fmt_section_val(attr: str, raw: str) -> str:
+        if attr == "orientation":
+            return _ORIENT_LABEL.get(raw.split(".")[0], raw)
+        return f"{float(raw):g} cm"
+
     _SECTION_MISMATCH_RE = _re.compile(
         r"'Section \d+': attribute '(\w+)' with value ([\d.]+) does not match required value ([\d.]+)"
     )
-    _margin_errors: dict[str, tuple[str, str]] = {}
+    _section_errors: dict[str, tuple[str, str]] = {}
     for _mi in report["errors"].get("value_mismatch", []):
         _msm = _SECTION_MISMATCH_RE.search(_mi.get("key", ""))
         if not _msm:
             continue
         _mattr = _msm.group(1)
-        if _mattr not in _MARGIN_ATTR_LABELS:
+        if _mattr not in _SECTION_LAYOUT_ATTRS:
             continue
-        _margin_errors[_mattr] = (f"{float(_msm.group(2)):g} cm", f"{float(_msm.group(3)):g} cm")
+        _section_errors[_mattr] = (
+            _fmt_section_val(_mattr, _msm.group(2)),
+            _fmt_section_val(_mattr, _msm.group(3)),
+        )
 
-    _margin_req_attrs: dict = {}
+    _section_req_attrs: dict = {}
     if requirements:
         _secs = requirements.get("sections") or []
-        _margin_req_attrs = _secs[0].get("attributes", {}) if _secs else {}
+        _section_req_attrs = _secs[0].get("attributes", {}) if _secs else {}
 
-    for _mattr, _mlbl in _MARGIN_ATTR_LABELS.items():
-        _mfield = f"margin_{_mattr.replace('_margin', '')}"
-        if _mattr in _margin_errors:
-            _mact_s, _mexp_s = _margin_errors[_mattr]
+    # Cek ukuran kertas sebagai satu item gabungan (lebar + tinggi)
+    _pw_err = _section_errors.get("page_width")
+    _ph_err = _section_errors.get("page_height")
+    if _pw_err or _ph_err:
+        _act_w = float((_pw_err or (_fmt_section_val("page_width", str(_section_req_attrs.get("page_width", 0))), ""))[0].replace(" cm", "") or 0)
+        _act_h = float((_ph_err or (_fmt_section_val("page_height", str(_section_req_attrs.get("page_height", 0))), ""))[0].replace(" cm", "") or 0)
+        _exp_w = float((_pw_err[1] if _pw_err else _fmt_section_val("page_width", str(_section_req_attrs.get("page_width", 0)))).replace(" cm", "") or 0)
+        _exp_h = float((_ph_err[1] if _ph_err else _fmt_section_val("page_height", str(_section_req_attrs.get("page_height", 0)))).replace(" cm", "") or 0)
+        _act_size = _PAPER_SIZE_NAME.get((_act_w, _act_h), f"{_act_w:g} × {_act_h:g} cm")
+        _exp_size = _PAPER_SIZE_NAME.get((_exp_w, _exp_h), f"{_exp_w:g} × {_exp_h:g} cm")
+        _psmsg = f"Ukuran kertas tidak sesuai: ditemukan {_act_size}, seharusnya {_exp_size}"
+        issues.append(ValidationIssue(
+            category="page_layout", field="paper_size",
+            severity="error", message=_psmsg,
+            expected=_exp_size, actual=_act_size,
+        ))
+        checks.append(ValidationCheckResult(
+            category="page_layout", field="paper_size",
+            status="failed", message=_psmsg,
+            expected=_exp_size, actual=_act_size,
+        ))
+    elif "page_width" in _section_req_attrs and "page_height" in _section_req_attrs:
+        _exp_w2 = float(_section_req_attrs["page_width"])
+        _exp_h2 = float(_section_req_attrs["page_height"])
+        _exp_size2 = _PAPER_SIZE_NAME.get((_exp_w2, _exp_h2), f"{_exp_w2:g} × {_exp_h2:g} cm")
+        checks.append(ValidationCheckResult(
+            category="page_layout", field="paper_size",
+            status="passed",
+            message=f"Ukuran kertas sesuai: {_exp_size2}",
+            expected=_exp_size2, actual=_exp_size2,
+        ))
+
+    # Margin dan orientasi: tiap atribut satu field
+    _MARGIN_AND_ORIENT_ATTRS: dict[str, str] = {
+        "left_margin":   ("margin_left",    "Margin kiri"),
+        "right_margin":  ("margin_right",   "Margin kanan"),
+        "top_margin":    ("margin_top",     "Margin atas"),
+        "bottom_margin": ("margin_bottom",  "Margin bawah"),
+        "orientation":   ("page_orientation", "Orientasi kertas"),
+    }
+    for _mattr, (_mfield, _mlbl) in _MARGIN_AND_ORIENT_ATTRS.items():
+        if _mattr in _section_errors:
+            _mact_s, _mexp_s = _section_errors[_mattr]
             _mmsg = f"{_mlbl} tidak sesuai: ditemukan {_mact_s}, seharusnya {_mexp_s}"
             issues.append(ValidationIssue(
                 category="page_layout", field=_mfield,
@@ -411,8 +472,8 @@ def _build_issues_checks(
                 status="failed", message=_mmsg,
                 expected=_mexp_s, actual=_mact_s,
             ))
-        elif _mattr in _margin_req_attrs:
-            _mexp_s = f"{float(_margin_req_attrs[_mattr]):g} cm"
+        elif _mattr in _section_req_attrs:
+            _mexp_s = _fmt_section_val(_mattr, str(_section_req_attrs[_mattr]))
             checks.append(ValidationCheckResult(
                 category="page_layout", field=_mfield,
                 status="passed",
@@ -420,7 +481,7 @@ def _build_issues_checks(
                 expected=_mexp_s, actual=_mexp_s,
             ))
 
-    # section_missing dan section_attribute (non-margin) tidak ditulis ke
+    # section_missing dan section_attribute lainnya tidak ditulis ke
     # issues/checks — tidak actionable tanpa konteks paragraf.
 
     # value_mismatch — agregasi per (category, field) agar label tidak duplikat
@@ -441,6 +502,12 @@ def _build_issues_checks(
         _valid = _coerce_paras(_vp)
         _ann   = [{**p, "actual": _vm_act_s} if isinstance(p, dict) and not p.get("actual") else p
                   for p in _valid]
+        # Fallback: jika paragraph_details kosong, bangun dari examples yang sudah diambil
+        # dari teks log (tanda kutip di akhir pesan validocx). Ini terjadi jika
+        # _get_para_details gagal atau indeks paragraf tidak cocok dengan para_map.
+        if not _ann:
+            _ann = [{"text": ex, "full_text": ex, "actual": _vm_act_s}
+                    for ex in item.get("examples", []) if ex]
 
         _gk = (_vcat, _vfld)
         if _gk not in _vm_grp:
@@ -668,5 +735,15 @@ def _build_issues_checks(
         ),
         message=f"validocx: {counts_str}",
     ))
+
+    # Gate: buang issue yang tidak memiliki informasi apapun yang bisa ditampilkan.
+    # Issue dianggap displayable jika punya actual, expected, ATAU setidaknya satu
+    # occurrence dengan teks kutipan. Issue tanpa ketiganya tidak berguna di UI.
+    def _displayable(iss: ValidationIssue) -> bool:
+        if iss.actual is not None or iss.expected is not None:
+            return True
+        return any((occ.get("text") or "").strip() for occ in (iss.occurrences or []))
+
+    issues = [i for i in issues if _displayable(i)]
 
     return issues, checks

@@ -86,6 +86,8 @@ const FIELD_LABELS: Record<string, string> = {
   margin_right            : "Margin kanan",
   margin_top              : "Margin atas",
   margin_bottom           : "Margin bawah",
+  paper_size              : "Ukuran kertas",
+  page_orientation        : "Orientasi kertas",
   heading_1_case          : "Kapitalisasi Heading 1",
   heading_2_case          : "Kapitalisasi Heading 2",
   heading_3_case          : "Kapitalisasi Heading 3",
@@ -541,7 +543,6 @@ function LocationPanel({ issue }: { issue: DisplayIssue | null }) {
             <ActualExpectedBadges actual={issue.actual} expected={issue.expected} variant="error" />
           </div>
         )}
-
         {occurrences.length > 0 ? (
           occurrences.map((occ, i) => (
             <OccurrenceCard key={`${occ.para_idx}-${i}`} occ={occ} severity={issue.severity} />

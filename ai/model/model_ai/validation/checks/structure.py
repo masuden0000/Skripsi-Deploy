@@ -172,8 +172,13 @@ def _check_document_structure(
             _detect_artikel_pre_bab_sections(doc, actual_classified, bab_re=_bab_re, pre_bab_types=pre_bab_types)
 
         expected_major = [s for s in ds.sections if s.is_major_section]
+        # sub_bab dan item_lampiran adalah sub-elemen struktural — kehadirannya bergantung
+        # pada style heading dokumen yang bervariasi. Pengecekan "required section" hanya
+        # untuk section utama (daftar_isi, bab, lampiran, dll.), bukan sub-elemen.
+        _SUB_ELEMENT_TYPES = frozenset({"sub_bab", "item_lampiran"})
         required_non_bab_types = {
-            s.type for s in expected_major if s.required is not False and s.type != "bab"
+            s.type for s in expected_major
+            if s.required is not False and s.type != "bab" and s.type not in _SUB_ELEMENT_TYPES
         }
         required_bab_nums = {
             s.number for s in expected_major

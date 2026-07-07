@@ -223,6 +223,44 @@ class DocumentWrapper(object):
             pass
         return None
 
+    _BOOL_ATTR_TO_XML_TAG = {
+        'bold'         : 'w:b',
+        'italic'       : 'w:i',
+        'underline'    : 'w:u',
+        'all_caps'     : 'w:caps',
+        'small_caps'   : 'w:smallCaps',
+        'shadow'       : 'w:shadow',
+        'strike'       : 'w:strike',
+        'double_strike': 'w:dstrike',
+    }
+
+    def _get_ppr_rpr_bool(self, paragraph, attr):
+        """Baca boolean font attr dari w:pPr/w:rPr (paragraph mark character formatting).
+
+        Word sering menyimpan bold/italic heading di paragraph-mark rPr ketika
+        nilai diatur secara manual di level paragraf, bukan di run atau style.
+        Mirip dengan _get_ppr_rpr_font_size tetapi untuk atribut boolean.
+        """
+        tag_name = self._BOOL_ATTR_TO_XML_TAG.get(attr)
+        if not tag_name:
+            return None
+        try:
+            pPr = paragraph._p.pPr
+            if pPr is None:
+                return None
+            rPr = pPr.rPr
+            if rPr is None:
+                return None
+            el = rPr.find(qn(tag_name))
+            if el is None:
+                return None
+            w_val = el.get(qn('w:val'))
+            if w_val is None or w_val.lower() not in ('0', 'false', 'off'):
+                return True
+            return False
+        except Exception:
+            return None
+
     def get_font_attributes(self, paragraph, unit='pt'):
         """Get font attributes for specified paragraph.
 
@@ -256,8 +294,12 @@ class DocumentWrapper(object):
                         if style_val is not None:
                             val = style_val
                         else:
-                            val = self._get_normal_style_font_attr(attr)
-                    
+                            ppr_val = self._get_ppr_rpr_bool(paragraph, attr)
+                            if ppr_val is not None:
+                                val = ppr_val
+                            else:
+                                val = self._get_normal_style_font_attr(attr)
+
                     if val is True:
                         fetched_attributes.append(attr)
             runs.append(fetched_attributes)

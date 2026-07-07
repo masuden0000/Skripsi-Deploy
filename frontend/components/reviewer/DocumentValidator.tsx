@@ -5,9 +5,21 @@
  */
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
-import { ReviewerSurfaceCard } from "./shared"
+import {
+  AlertCircleIcon,
+  ArrowLeftIcon,
+  CheckCircleIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  DownloadIcon,
+  FileTextIcon,
+  LayersIcon,
+  Loader2Icon,
+  PlusIcon,
+  TrashIcon,
+  UploadIcon,
+} from "@/components/icons/public-icons"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -16,38 +28,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { YearPicker } from "@/components/ui/year-picker"
 import {
-  Loader2Icon,
-  UploadIcon,
-  CheckCircleIcon,
-  AlertCircleIcon,
-  FileTextIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  PlusIcon,
-  TrashIcon,
-  LayersIcon,
-  ArrowLeftIcon,
-  DownloadIcon,
-} from "@/components/icons/public-icons"
-import {
-  runDocumentValidation,
-  runBulkValidation,
   checkSessionStatus,
-  summarizeValidation,
   downloadBulkSummaryExcel,
   getPkmSchemas,
   getPkmSchemeLabel,
-  type ValidationResult,
+  runBulkValidation,
+  runDocumentValidation,
+  summarizeValidation,
+  type PkmSchema,
+  type ValidationCheck,
   type ValidationIssue,
   type ValidationOccurrence,
-  type ValidationCheck,
-  type ValidationSession,
+  type ValidationResult,
   type ValidationResultItem,
-  type PkmSchema,
+  type ValidationSession,
 } from "@/lib/api/pkm"
-import { YearPicker } from "@/components/ui/year-picker"
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
+import { useCallback, useEffect, useState } from "react"
+import { ReviewerSurfaceCard } from "./shared"
 
 // ─── Konstanta ───────────────────────────────────────────────────────────────
 

@@ -497,19 +497,38 @@ def _check_figures_tables(
                     else:
                         fig_fmt_pass_items.append(fig_para_info)
                 if fig_pos_exp == "BELOW":
-                    found_img = any(
-                        elements[j][0] == "para" and _para_contains_image(elements[j][1])
-                        for j in range(max(0, i - 3), i)
-                    )
+                    # Penelusuran ke belakang: lewati paragraf kosong, berhenti jika
+                    # ada paragraf berisi teks (bukan gambar) atau elemen non-paragraf.
+                    found_img = False
+                    for j in range(i - 1, max(-1, i - 8), -1):
+                        ej_type, ej_elem = elements[j]
+                        if ej_type == "para":
+                            if _para_contains_image(ej_elem):
+                                found_img = True
+                                break
+                            if (ej_elem.text or "").strip():
+                                break  # paragraf berisi teks bukan gambar → stop
+                            # paragraf kosong → teruskan penelusuran
+                        else:
+                            break  # tabel atau elemen lain di antara → stop
                     if not found_img:
                         fig_pos_errors.append(fig_para_info)
                     else:
                         fig_pos_pass_items.append(fig_para_info)
                 elif fig_pos_exp == "ABOVE":
-                    found_img = any(
-                        elements[j][0] == "para" and _para_contains_image(elements[j][1])
-                        for j in range(i + 1, min(len(elements), i + 4))
-                    )
+                    # Penelusuran ke depan: lewati paragraf kosong, berhenti jika
+                    # ada paragraf berisi teks (bukan gambar) atau elemen non-paragraf.
+                    found_img = False
+                    for j in range(i + 1, min(len(elements), i + 8)):
+                        ej_type, ej_elem = elements[j]
+                        if ej_type == "para":
+                            if _para_contains_image(ej_elem):
+                                found_img = True
+                                break
+                            if (ej_elem.text or "").strip():
+                                break
+                        else:
+                            break
                     if not found_img:
                         fig_pos_errors.append(fig_para_info)
                     else:
@@ -524,13 +543,32 @@ def _check_figures_tables(
                     else:
                         tbl_fmt_pass_items.append(tbl_para_info)
                 if tbl_pos_exp == "ABOVE":
-                    next_is_tbl = i + 1 < len(elements) and elements[i + 1][0] == "table"
+                    # Penelusuran ke depan: lewati paragraf kosong, berhenti jika
+                    # ada paragraf berisi teks atau elemen non-tabel.
+                    next_is_tbl = False
+                    for j in range(i + 1, min(len(elements), i + 5)):
+                        ej_type, ej_elem = elements[j]
+                        if ej_type == "table":
+                            next_is_tbl = True
+                            break
+                        if ej_type == "para" and (ej_elem.text or "").strip():
+                            break  # paragraf berisi teks di antara → stop
+                        # paragraf kosong → teruskan
                     if not next_is_tbl:
                         tbl_pos_errors.append(tbl_para_info)
                     else:
                         tbl_pos_pass_items.append(tbl_para_info)
                 elif tbl_pos_exp == "BELOW":
-                    prev_is_tbl = i > 0 and elements[i - 1][0] == "table"
+                    # Penelusuran ke belakang: lewati paragraf kosong, berhenti jika
+                    # ada paragraf berisi teks atau elemen non-tabel.
+                    prev_is_tbl = False
+                    for j in range(i - 1, max(-1, i - 5), -1):
+                        ej_type, ej_elem = elements[j]
+                        if ej_type == "table":
+                            prev_is_tbl = True
+                            break
+                        if ej_type == "para" and (ej_elem.text or "").strip():
+                            break
                     if not prev_is_tbl:
                         tbl_pos_errors.append(tbl_para_info)
                     else:

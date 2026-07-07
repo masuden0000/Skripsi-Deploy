@@ -299,6 +299,44 @@ function SummaryBar({
 // Prop `passed` mengubah warna aksen menjadi hijau pkm.
 // Tombol expand/collapse muncul jika `full_text` lebih panjang dari `text`.
 
+// ─── Sub-komponen: ActualExpectedBadges ───────────────────────────────────────
+// Satu-satunya tempat yang merender badge "Ditemukan"/"Seharusnya" di seluruh
+// panel detail masalah, agar styling dan kondisi tampil konsisten.
+function ActualExpectedBadges({
+  actual,
+  expected,
+  variant = "error",
+}: {
+  actual?: string | null
+  expected?: string | null
+  variant?: "error" | "passed"
+}) {
+  if (!actual && !expected) return null
+
+  const actualStyle =
+    variant === "error"
+      ? "bg-red-50 text-red-700 border-red-100"
+      : "bg-gray-50 text-gray-600 border-gray-200"
+  const actualDot = variant === "error" ? "bg-red-400" : "bg-gray-400"
+
+  return (
+    <div className="flex flex-wrap gap-2 pt-0.5">
+      {actual && (
+        <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md border ${actualStyle}`}>
+          <span className={`size-1.5 rounded-full shrink-0 ${actualDot}`} />
+          <span className="font-medium">Ditemukan:</span>&nbsp;{actual}
+        </span>
+      )}
+      {expected && (
+        <span className="inline-flex items-center gap-1.5 text-xs bg-pkm-50 text-pkm-700 px-2.5 py-1 rounded-md border border-pkm-100">
+          <span className="size-1.5 rounded-full bg-pkm-400 shrink-0" />
+          <span className="font-medium">Seharusnya:</span>&nbsp;{expected}
+        </span>
+      )}
+    </div>
+  )
+}
+
 function OccurrenceCard({
   occ,
   severity,
@@ -371,21 +409,8 @@ function OccurrenceCard({
           </button>
         )}
 
-        {!passed && (occ.actual || occ.expected) && (
-          <div className="flex flex-wrap gap-2 pt-0.5">
-            {occ.actual && (
-              <span className="inline-flex items-center gap-1.5 text-xs bg-red-50 text-red-700 px-2.5 py-1 rounded-md border border-red-100">
-                <span className="size-1.5 rounded-full bg-red-400 shrink-0" />
-                <span className="font-medium">Ditemukan:</span>&nbsp;{occ.actual}
-              </span>
-            )}
-            {occ.expected && (
-              <span className="inline-flex items-center gap-1.5 text-xs bg-pkm-50 text-pkm-700 px-2.5 py-1 rounded-md border border-pkm-100">
-                <span className="size-1.5 rounded-full bg-pkm-400 shrink-0" />
-                <span className="font-medium">Seharusnya:</span>&nbsp;{occ.expected}
-              </span>
-            )}
-          </div>
+        {!passed && (
+          <ActualExpectedBadges actual={occ.actual} expected={occ.expected} variant="error" />
         )}
       </div>
     </div>
@@ -479,6 +504,19 @@ function LocationPanel({ issue }: { issue: DisplayIssue | null }) {
 
   const occurrences = issue.occurrences ?? []
 
+  // Ringkasan actual/expected di level issue hanya berguna ditampilkan sebagai
+  // banner terpisah jika nilainya TIDAK sudah terwakili oleh occurrence manapun.
+  // Sebagian check (mis. bab_order, section_order) mengisi actual/expected level-issue
+  // dengan nilai agregat dokumen-wide yang tidak muncul di occurrence manapun — untuk
+  // kasus itu banner tetap perlu tampil. Sebagian check lain (mis. heading_case)
+  // menempelkan nilai issue-level yang sama persis ke setiap occurrence — untuk kasus
+  // itu banner akan redundan dan disembunyikan.
+  const hasIssueLevelSummary = Boolean(issue.expected || issue.actual)
+  const summaryAlreadyShownInOccurrence = occurrences.some(
+    (occ) => occ.actual === issue.actual && occ.expected === issue.expected
+  )
+  const showSummaryBanner = hasIssueLevelSummary && !summaryAlreadyShownInOccurrence
+
   return (
     <div className="flex flex-col overflow-y-auto">
       <div className="px-5 py-3.5 border-b border-border bg-white sticky top-0 z-10">
@@ -497,33 +535,23 @@ function LocationPanel({ issue }: { issue: DisplayIssue | null }) {
         </div>
       </div>
       <div className="flex-1 p-4 space-y-3 bg-gray-50/40">
+        {showSummaryBanner && (
+          <div className="rounded-lg border border-border bg-white p-4">
+            <ActualExpectedBadges actual={issue.actual} expected={issue.expected} variant="error" />
+          </div>
+        )}
+
         {occurrences.length > 0 ? (
           occurrences.map((occ, i) => (
             <OccurrenceCard key={`${occ.para_idx}-${i}`} occ={occ} severity={issue.severity} />
           ))
-        ) : (
+        ) : !hasIssueLevelSummary ? (
           <div className="rounded-lg border border-border bg-white p-4">
             <p className="text-sm text-gray-500">
               Masalah ini berlaku untuk seluruh dokumen, bukan pada elemen tertentu.
             </p>
-            {(issue.expected || issue.actual) && (
-              <div className="flex flex-wrap gap-2 mt-3">
-                {issue.actual && (
-                  <span className="inline-flex items-center gap-1.5 text-xs bg-red-50 text-red-700 px-2.5 py-1 rounded-md border border-red-100">
-                    <span className="size-1.5 rounded-full bg-red-400 shrink-0" />
-                    <span className="font-medium">Ditemukan:</span>&nbsp;{issue.actual}
-                  </span>
-                )}
-                {issue.expected && (
-                  <span className="inline-flex items-center gap-1.5 text-xs bg-pkm-50 text-pkm-700 px-2.5 py-1 rounded-md border border-pkm-100">
-                    <span className="size-1.5 rounded-full bg-pkm-400 shrink-0" />
-                    <span className="font-medium">Seharusnya:</span>&nbsp;{issue.expected}
-                  </span>
-                )}
-              </div>
-            )}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   )
@@ -642,22 +670,7 @@ function PassedDetailPanel({ check }: { check: ValidationCheck | null }) {
             <span className="text-xs font-semibold bg-pkm-100 text-pkm-700 px-2 py-0.5 rounded-full">Lolos &#x2713;</span>
             <span className="text-xs text-gray-500">Pengecekan ini sesuai dengan aturan</span>
           </div>
-          {(check.expected || check.actual) && (
-            <div className="flex flex-wrap gap-2 pt-0.5">
-              {check.actual && (
-                <span className="inline-flex items-center gap-1.5 text-xs bg-pkm-50 text-pkm-700 px-2.5 py-1 rounded-md border border-pkm-100">
-                  <span className="size-1.5 rounded-full bg-pkm-400 shrink-0" />
-                  <span className="font-medium">Ditemukan:</span>&nbsp;{check.actual}
-                </span>
-              )}
-              {check.expected && (
-                <span className="inline-flex items-center gap-1.5 text-xs bg-pkm-50 text-pkm-700 px-2.5 py-1 rounded-md border border-pkm-100">
-                  <span className="size-1.5 rounded-full bg-pkm-400 shrink-0" />
-                  <span className="font-medium">Seharusnya:</span>&nbsp;{check.expected}
-                </span>
-              )}
-            </div>
-          )}
+          <ActualExpectedBadges actual={check.actual} expected={check.expected} variant="passed" />
           {check.location && (
             <div className="border-t border-pkm-50 pt-2.5 mt-0.5">
               <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Lokasi</p>

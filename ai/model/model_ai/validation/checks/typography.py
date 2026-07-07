@@ -226,6 +226,7 @@ def _check_body_content(
                 align_pass.append(para_info)
             else:
                 align_str_val = _humanize_attr_value("alignment", str(int(align))) if align is not None else "None"
+                align_fail.append({**para_info, "actual": align_str_val})
 
         if align_pass or align_fail:
             actual_vals = list(dict.fromkeys(d.get("actual", "?") for d in align_fail))

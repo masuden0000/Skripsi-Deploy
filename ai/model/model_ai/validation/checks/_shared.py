@@ -366,8 +366,62 @@ def _build_issues_checks(
     issues: list[ValidationIssue] = []
     checks: list[ValidationCheckResult] = []
 
-    # section_missing dan section_attribute tidak ditulis ke issues/checks —
-    # keduanya adalah isu document-level tanpa konteks paragraf yang actionable.
+    # ── Margin / page layout ─────────────────────────────────────────────────────
+    # Section attribute mismatches (margin) bersifat document-wide — tidak ada
+    # konteks per-paragraf. Diproses secara terpisah agar setiap atribut margin
+    # mendapat field sendiri (margin_left, margin_right, dst.) dan actual/expected
+    # yang informatif, alih-alih digabung ke satu entry "section_attribute" yang
+    # sebelumnya di-skip.
+    _MARGIN_ATTR_LABELS: dict[str, str] = {
+        "left_margin":   "Margin kiri",
+        "right_margin":  "Margin kanan",
+        "top_margin":    "Margin atas",
+        "bottom_margin": "Margin bawah",
+    }
+    _SECTION_MISMATCH_RE = _re.compile(
+        r"'Section \d+': attribute '(\w+)' with value ([\d.]+) does not match required value ([\d.]+)"
+    )
+    _margin_errors: dict[str, tuple[str, str]] = {}
+    for _mi in report["errors"].get("value_mismatch", []):
+        _msm = _SECTION_MISMATCH_RE.search(_mi.get("key", ""))
+        if not _msm:
+            continue
+        _mattr = _msm.group(1)
+        if _mattr not in _MARGIN_ATTR_LABELS:
+            continue
+        _margin_errors[_mattr] = (f"{float(_msm.group(2)):g} cm", f"{float(_msm.group(3)):g} cm")
+
+    _margin_req_attrs: dict = {}
+    if requirements:
+        _secs = requirements.get("sections") or []
+        _margin_req_attrs = _secs[0].get("attributes", {}) if _secs else {}
+
+    for _mattr, _mlbl in _MARGIN_ATTR_LABELS.items():
+        _mfield = f"margin_{_mattr.replace('_margin', '')}"
+        if _mattr in _margin_errors:
+            _mact_s, _mexp_s = _margin_errors[_mattr]
+            _mmsg = f"{_mlbl} tidak sesuai: ditemukan {_mact_s}, seharusnya {_mexp_s}"
+            issues.append(ValidationIssue(
+                category="page_layout", field=_mfield,
+                severity="error", message=_mmsg,
+                expected=_mexp_s, actual=_mact_s,
+            ))
+            checks.append(ValidationCheckResult(
+                category="page_layout", field=_mfield,
+                status="failed", message=_mmsg,
+                expected=_mexp_s, actual=_mact_s,
+            ))
+        elif _mattr in _margin_req_attrs:
+            _mexp_s = f"{float(_margin_req_attrs[_mattr]):g} cm"
+            checks.append(ValidationCheckResult(
+                category="page_layout", field=_mfield,
+                status="passed",
+                message=f"{_mlbl} sesuai: {_mexp_s}",
+                expected=_mexp_s, actual=_mexp_s,
+            ))
+
+    # section_missing dan section_attribute (non-margin) tidak ditulis ke
+    # issues/checks — tidak actionable tanpa konteks paragraf.
 
     # value_mismatch — agregasi per (category, field) agar label tidak duplikat
     _vm_grp: dict = {}

@@ -82,6 +82,10 @@ const FIELD_LABELS: Record<string, string> = {
   page_number             : "Nomor halaman",
   section_attribute       : "Atribut halaman",
   section_missing         : "Section tidak ditemukan",
+  margin_left             : "Margin kiri",
+  margin_right            : "Margin kanan",
+  margin_top              : "Margin atas",
+  margin_bottom           : "Margin bawah",
   heading_1_case          : "Kapitalisasi Heading 1",
   heading_2_case          : "Kapitalisasi Heading 2",
   heading_3_case          : "Kapitalisasi Heading 3",
@@ -504,18 +508,14 @@ function LocationPanel({ issue }: { issue: DisplayIssue | null }) {
 
   const occurrences = issue.occurrences ?? []
 
-  // Ringkasan actual/expected di level issue hanya berguna ditampilkan sebagai
-  // banner terpisah jika nilainya TIDAK sudah terwakili oleh occurrence manapun.
-  // Sebagian check (mis. bab_order, section_order) mengisi actual/expected level-issue
-  // dengan nilai agregat dokumen-wide yang tidak muncul di occurrence manapun — untuk
-  // kasus itu banner tetap perlu tampil. Sebagian check lain (mis. heading_case)
-  // menempelkan nilai issue-level yang sama persis ke setiap occurrence — untuk kasus
-  // itu banner akan redundan dan disembunyikan.
+  // Banner ringkasan issue-level hanya tampil jika occurrence TIDAK punya per-item
+  // actual — artinya info detail hanya tersedia di level issue (mis. bab_order,
+  // section_order yang actual/expected-nya berupa string agregat dokumen-wide).
+  // Jika tiap occurrence sudah punya occ.actual sendiri, badge per-card sudah cukup
+  // sehingga banner dihilangkan agar tidak terlihat redundan/membingungkan.
   const hasIssueLevelSummary = Boolean(issue.expected || issue.actual)
-  const summaryAlreadyShownInOccurrence = occurrences.some(
-    (occ) => occ.actual === issue.actual && occ.expected === issue.expected
-  )
-  const showSummaryBanner = hasIssueLevelSummary && !summaryAlreadyShownInOccurrence
+  const occurrencesHaveActual = occurrences.some((occ) => Boolean(occ.actual))
+  const showSummaryBanner = hasIssueLevelSummary && !occurrencesHaveActual
 
   return (
     <div className="flex flex-col overflow-y-auto">
@@ -536,7 +536,8 @@ function LocationPanel({ issue }: { issue: DisplayIssue | null }) {
       </div>
       <div className="flex-1 p-4 space-y-3 bg-gray-50/40">
         {showSummaryBanner && (
-          <div className="rounded-lg border border-border bg-white p-4">
+          <div className="rounded-lg border border-border bg-white p-4 space-y-2">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Ringkasan masalah</p>
             <ActualExpectedBadges actual={issue.actual} expected={issue.expected} variant="error" />
           </div>
         )}

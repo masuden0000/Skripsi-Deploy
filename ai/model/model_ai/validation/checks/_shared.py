@@ -444,12 +444,13 @@ def _build_issues_checks(
 
         _gk = (_vcat, _vfld)
         if _gk not in _vm_grp:
-            _vm_grp[_gk] = {"count": 0, "paras": [], "attr_names": [], "expected_strs": set()}
+            _vm_grp[_gk] = {"count": 0, "paras": [], "attr_names": [], "expected_strs": set(), "actual_strs": set()}
         _g = _vm_grp[_gk]
         _g["count"]    += _vc
         _g["paras"].extend(_ann)
         if _vm_attr:  _g["attr_names"].append(_vm_attr)
         if _vm_exp_s: _g["expected_strs"].add(_vm_exp_s)
+        if _vm_act_s: _g["actual_strs"].add(_vm_act_s)
 
     _SKIP_VM_FIELDS = {"section_attribute", "section_missing"}
     for (_vcat2, _vfld2), _gd in _vm_grp.items():
@@ -465,8 +466,10 @@ def _build_issues_checks(
                 _vm_dd.append(_p)
         _vl  = _para_location(_vm_dd) if _vm_dd and isinstance(_vm_dd[0], dict) else None
         _ve  = ", ".join(sorted(_gd["expected_strs"])) or None
-        _va  = ", ".join(sorted({p["actual"] for p in _vm_dd
-                                  if isinstance(p, dict) and p.get("actual")})) or None
+        _va  = (", ".join(sorted({p["actual"] for p in _vm_dd
+                                   if isinstance(p, dict) and p.get("actual")}))
+                or ", ".join(sorted(_gd["actual_strs"]))
+                or None)
         _ad  = ", ".join(sorted(set(_gd["attr_names"]))) or "atribut"
         _vm2 = f"Atribut tidak sesuai ({_ad}): {_gd['count']} elemen"
         _vo  = _build_occurrences(_vm_dd, None, _ve) or None
@@ -474,6 +477,7 @@ def _build_issues_checks(
         issues.append(ValidationIssue(
             category=_vcat2, field=_vfld2,
             severity="error", message=_vm2, location=_vl,
+            actual=_va, expected=_ve,
             occurrences=_vo,
         ))
         checks.append(ValidationCheckResult(

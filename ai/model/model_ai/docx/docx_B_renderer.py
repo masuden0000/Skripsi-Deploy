@@ -498,6 +498,7 @@ def _render_artikel_bab_section(
     p_head = document.add_paragraph(style="Heading 1")
     p_head.paragraph_format.space_before = Pt(0)
     p_head.paragraph_format.space_after  = Pt(0)
+    p_head.paragraph_format.page_break_before = False
     _apply_line_spacing(p_head.paragraph_format, body_spacing)
     _add_run(p_head, heading_text, body_font, body_size, bold=True)
     _add_bookmark_to_paragraph(p_head, _bookmark_id_artikel("bab", num), _bookmark_name_artikel("bab", num))

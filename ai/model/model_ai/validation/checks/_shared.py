@@ -385,12 +385,21 @@ def _build_issues_checks(
     _ORIENT_LABEL: dict[str, str] = {"0": "Portrait", "1": "Landscape"}
     # Mapping dimensi (lebar, tinggi) → nama ukuran kertas
     _PAPER_SIZE_NAME: dict[tuple[float, float], str] = {
-        (21.0, 29.7): "A4", (29.7, 21.0): "A4 Landscape",
-        (21.0, 33.0): "F4", (33.0, 21.0): "F4 Landscape",
-        (14.85, 21.0): "A5", (21.0, 14.85): "A5 Landscape",
-        (29.7, 42.0): "A3", (42.0, 29.7): "A3 Landscape",
-        (21.59, 27.94): "Letter", (27.94, 21.59): "Letter Landscape",
+        (21.0,  29.7):  "A4",            (29.7,  21.0):  "A4 Landscape",
+        (21.0,  33.0):  "F4",            (33.0,  21.0):  "F4 Landscape",
+        (14.85, 21.0):  "A5",            (21.0,  14.85): "A5 Landscape",
+        (29.7,  42.0):  "A3",            (42.0,  29.7):  "A3 Landscape",
+        (21.59, 27.94): "Letter",        (27.94, 21.59): "Letter Landscape",
+        (21.59, 35.56): "Legal",         (35.56, 21.59): "Legal Landscape",
+        (21.59, 33.02): "Folio",         (33.02, 21.59): "Folio Landscape",
     }
+
+    def _match_paper_name(w: float, h: float, tol: float = 0.5) -> str | None:
+        """Fuzzy match dimensi ke nama ukuran kertas dengan toleransi ±tol cm."""
+        for (pw, ph), name in _PAPER_SIZE_NAME.items():
+            if abs(w - pw) <= tol and abs(h - ph) <= tol:
+                return name
+        return None
 
     def _fmt_section_val(attr: str, raw: str) -> str:
         if attr == "orientation":
@@ -426,8 +435,8 @@ def _build_issues_checks(
         _act_h = float((_ph_err or (_fmt_section_val("page_height", str(_section_req_attrs.get("page_height", 0))), ""))[0].replace(" cm", "") or 0)
         _exp_w = float((_pw_err[1] if _pw_err else _fmt_section_val("page_width", str(_section_req_attrs.get("page_width", 0)))).replace(" cm", "") or 0)
         _exp_h = float((_ph_err[1] if _ph_err else _fmt_section_val("page_height", str(_section_req_attrs.get("page_height", 0)))).replace(" cm", "") or 0)
-        _act_size = _PAPER_SIZE_NAME.get((_act_w, _act_h), f"{_act_w:g} × {_act_h:g} cm")
-        _exp_size = _PAPER_SIZE_NAME.get((_exp_w, _exp_h), f"{_exp_w:g} × {_exp_h:g} cm")
+        _act_size = _match_paper_name(_act_w, _act_h) or f"{_act_w:g} × {_act_h:g} cm"
+        _exp_size = _match_paper_name(_exp_w, _exp_h) or f"{_exp_w:g} × {_exp_h:g} cm"
         _psmsg = f"Ukuran kertas tidak sesuai: ditemukan {_act_size}, seharusnya {_exp_size}"
         issues.append(ValidationIssue(
             category="page_layout", field="paper_size",
@@ -442,7 +451,7 @@ def _build_issues_checks(
     elif "page_width" in _section_req_attrs and "page_height" in _section_req_attrs:
         _exp_w2 = float(_section_req_attrs["page_width"])
         _exp_h2 = float(_section_req_attrs["page_height"])
-        _exp_size2 = _PAPER_SIZE_NAME.get((_exp_w2, _exp_h2), f"{_exp_w2:g} × {_exp_h2:g} cm")
+        _exp_size2 = _match_paper_name(_exp_w2, _exp_h2) or f"{_exp_w2:g} × {_exp_h2:g} cm"
         checks.append(ValidationCheckResult(
             category="page_layout", field="paper_size",
             status="passed",

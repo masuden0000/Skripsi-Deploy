@@ -753,6 +753,13 @@ def _render_named_section(
                 if section["type"] == "daftar_pustaka":
                     bibliography_style = section.get("bibliography_style")
                     break
+        instr_text = instructional_placeholders.get(make_instruction_key("daftar_pustaka", title))
+        if instr_text:
+            p_instr = document.add_paragraph(instr_text)
+            _apply_line_spacing(p_instr.paragraph_format, spacing)
+            p_instr.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            p_instr.paragraph_format.space_after = Pt(0)
+            _force_paragraph_runs_black(p_instr)
         placeholder_text = _get_bibliography_placeholder(bibliography_style)
         paragraphs = placeholder_text.strip().split("\n\n")
         for para_text in paragraphs:
@@ -864,6 +871,25 @@ def _render_sub_bab_section(
             _force_paragraph_runs_black(cap_p)
 
     elif sub_num and bab_num == 4 and str(sub_num).endswith(".2"):
+        body_placeholder = document.add_paragraph(
+            instructional_placeholders.get(
+                make_instruction_key("sub_bab", heading_text),
+                f"Instruksi pengisian untuk {heading_text}: lengkapi isi bagian ini sesuai panduan.",
+            )
+        )
+        _apply_line_spacing(body_placeholder.paragraph_format, spacing)
+        body_placeholder.paragraph_format.alignment = _map_alignment(
+            (spacing.get("paragraph_alignment") or "JUSTIFY").upper()
+        )
+        body_placeholder.paragraph_format.space_after = Pt(0)
+        _force_paragraph_runs_black(body_placeholder)
+
+        sep_table = document.add_paragraph()
+        sep_table.paragraph_format.space_before = Pt(0)
+        sep_table.paragraph_format.space_after  = Pt(0)
+        sep_table.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+        sep_table.paragraph_format.line_spacing = 1.15
+
         fmt = figures_tables.get("caption_format_table") or "Tabel {bab}.{n}. {title}"
         caption_text = (
             fmt.replace("{bab}", str(bab_num)).replace("{n}", "2")

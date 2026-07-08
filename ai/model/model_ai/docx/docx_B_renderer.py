@@ -130,6 +130,7 @@ def _apply_base_styles_artikel(document: Document, typography: dict, spacing: di
         h1.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
         h1.paragraph_format.space_before = Pt(0)
         h1.paragraph_format.space_after = Pt(0)
+        h1.paragraph_format.page_break_before = False
         style_el = h1._element
         rPr = style_el.find(qn("w:rPr"))
         if rPr is None:

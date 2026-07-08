@@ -564,7 +564,7 @@ def _render_artikel_lampiran(
     body_size = typography.get("font_size_body_pt") or 12
     body_spacing = _spacing_body(spacing)
 
-    title = section.get("title") or "LAMPIRAN"
+    title = section.get("title") or "Lampiran"
     # 1 spasi sebelum heading Lampiran
     _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing)
     p_head = _add_styled_paragraph(document, WD_ALIGN_PARAGRAPH.LEFT, body_spacing, space_after_pt=0)
@@ -639,11 +639,15 @@ def _render_artikel_body(
     skip_types = pre_bab_types or {"judul", "identitas_penulis", "abstrak", "abstract"}
     ft = figures_tables or {}
     prev_sec_type: str | None = None
+    bab_counter = 0
     for section in doc_structure.get("sections", []):
         sec_type = section.get("type")
         if sec_type in skip_types:
             continue
         if sec_type == "bab":
+            bab_counter += 1
+            if not section.get("number"):
+                section = {**section, "number": bab_counter}
             _render_artikel_bab_section(document, section, typography, spacing, numbering, instructional_placeholders, ft)
         elif sec_type == "daftar_pustaka":
             _render_artikel_daftar_pustaka(document, section, typography, spacing)

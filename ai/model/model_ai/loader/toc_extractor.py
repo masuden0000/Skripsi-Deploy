@@ -120,7 +120,11 @@ def _parse_entries_table(toc_text: str) -> list[tuple[str, int]]:
 def _build_ranges(entries: list[tuple[str, int]]) -> list[dict]:
     ranges = []
     for i, (heading, start_page) in enumerate(entries):
-        end_page = entries[i + 1][1] - 1 if i + 1 < len(entries) else 9999
+        if i + 1 < len(entries):
+            # max() mencegah end < start ketika dua entri TOC berada di halaman yang sama
+            end_page = max(start_page, entries[i + 1][1] - 1)
+        else:
+            end_page = 9999
         ranges.append({"heading": heading, "page_start": start_page, "page_end": end_page})
     return ranges
 

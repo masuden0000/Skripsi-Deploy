@@ -22,3 +22,13 @@ data/*.pdf
 data/**/*.json
 data/**/*.md
 data/**/*.pdf
+
+# RAGAS evaluation output
+ragas_results.csv
+ragas_results_*.csv
+evaluasi_ragas.md
+data_debug/evaluasi_ragas.md
+
+# Ground truth dataset (berisi data lokal, tidak di-commit)
+referensi*.json
+ground_truth*.json

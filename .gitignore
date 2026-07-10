@@ -62,6 +62,11 @@ ai/backend/jobs_temp/
 # Test fixtures (binary, personal data)
 ai/model/tests/*.docx
 
+# RAGAS evaluation — ground truth datasets dan output (data lokal, tidak di-commit)
+ai/referensi*.json
+ai/ground_truth*.json
+ai/model/ragas_results*.csv
+
 # Internal agent/tooling state
 .superpowers/
 TASKS.md

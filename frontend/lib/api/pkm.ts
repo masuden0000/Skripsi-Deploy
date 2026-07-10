@@ -223,7 +223,7 @@ export async function runDocumentValidation(
     if (!response.ok) {
       return {
         data: null,
-        error: json.error || `Request gagal (${response.status})`,
+        error: json.detail || json.error || `Request gagal (${response.status})`,
       }
     }
 
@@ -358,7 +358,7 @@ export async function runBulkValidation(
     const json = await response.json()
 
     if (!response.ok) {
-      return { data: null, error: json.error || `Request gagal (${response.status})` }
+      return { data: null, error: json.detail || json.error || `Request gagal (${response.status})` }
     }
 
     if (!json.session_id) {

@@ -112,6 +112,21 @@ export async function listAssignments() {
 export async function createAssignment(payload) {
   const values = normalizePayload(payload)
 
+  const { data: incomplete, error: incompleteError } = await adminClient
+    .from("assignments")
+    .select("id")
+    .eq("reviewer_id", values.reviewer_id)
+    .or("review_status.is.null,review_status.eq.menunggu_validasi")
+    .limit(1)
+
+  if (incompleteError) {
+    throw new AppError("Gagal memeriksa status tugas reviewer.", 500)
+  }
+
+  if (incomplete && incomplete.length > 0) {
+    throw new AppError("Reviewer masih memiliki tugas yang belum selesai.", 409)
+  }
+
   const { data, error } = await adminClient
     .from("assignments")
     .insert(values)
@@ -367,11 +382,13 @@ export async function getActiveAssignmentsByReviewerId(reviewerId) {
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
-  // Filter to only active periods (today is between tanggal_mulai and tanggal_selesai)
+  // Include assignment if period masih aktif ATAU tugas belum selesai (periode kedaluwarsa tapi belum ditandai selesai)
   const activeRows = (data ?? []).filter((row) => {
     const mulai = new Date(row.period.tanggal_mulai)
     const selesai = new Date(row.period.tanggal_selesai)
-    return today >= mulai && today <= selesai
+    const inActivePeriod = today >= mulai && today <= selesai
+    const isIncomplete = row.review_status !== "selesai"
+    return inActivePeriod || isIncomplete
   })
 
   const emailById = await buildEmailMap([reviewerId])
